@@ -7,10 +7,14 @@ class MisBudgetItem(models.Model):
     _inherit = "mis.budget.item"
 
     budget_control_id = fields.Many2one(
-        comodel_name="budget.control", ondelete="cascade", index=True,
+        comodel_name="budget.control",
+        ondelete="cascade",
+        index=True,
     )
     active = fields.Boolean(
-        compute="_compute_active", readonly=True, store=True,
+        compute="_compute_active",
+        readonly=True,
+        store=True,
     )
     state = fields.Selection(
         [("draft", "Draft"), ("done", "Controlled"), ("cancel", "Cancelled")],

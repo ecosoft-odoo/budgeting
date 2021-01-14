@@ -7,5 +7,7 @@ class AccountAnalyticLine(models.Model):
     _inherit = "account.analytic.line"
 
     activity_id = fields.Many2one(
-        comodel_name="budget.activity", string="Activity", index=True,
+        comodel_name="budget.activity",
+        string="Activity",
+        index=True,
     )

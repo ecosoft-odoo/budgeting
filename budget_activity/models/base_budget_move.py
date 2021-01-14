@@ -7,7 +7,9 @@ class BaseBudgetMove(models.AbstractModel):
     _inherit = "base.budget.move"
 
     activity_id = fields.Many2one(
-        comodel_name="budget.activity", string="Activity", index=True,
+        comodel_name="budget.activity",
+        string="Activity",
+        index=True,
     )
 
 
@@ -15,7 +17,9 @@ class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
 
     activity_id = fields.Many2one(
-        comodel_name="budget.activity", string="Activity", index=True,
+        comodel_name="budget.activity",
+        string="Activity",
+        index=True,
     )
 
     def _prepare_budget_commitment(

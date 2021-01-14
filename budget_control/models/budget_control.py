@@ -9,7 +9,9 @@ class BudgetControl(models.Model):
     _description = "Budget Control"
     _inherit = ["mail.thread"]
 
-    name = fields.Char(required=True,)
+    name = fields.Char(
+        required=True,
+    )
     assignee_id = fields.Many2one(
         comodel_name="res.users",
         string="Assigned To",
@@ -32,9 +34,15 @@ class BudgetControl(models.Model):
         domain=lambda self: self._get_mis_budget_domain(),
         help="List of mis.budget created by and linked to budget.period",
     )
-    date_from = fields.Date(related="budget_id.date_from",)
-    date_to = fields.Date(related="budget_id.date_to",)
-    active = fields.Boolean(default=True,)
+    date_from = fields.Date(
+        related="budget_id.date_from",
+    )
+    date_to = fields.Date(
+        related="budget_id.date_to",
+    )
+    active = fields.Boolean(
+        default=True,
+    )
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
         required=True,

@@ -21,4 +21,6 @@ class ExpenseBudgetMove(models.Model):
         store=True,
         index=True,
     )
-    move_id = fields.Many2one(comodel_name="account.move",)
+    move_id = fields.Many2one(
+        comodel_name="account.move",
+    )

@@ -9,7 +9,8 @@ class HRExpense(models.Model):
     _inherit = ["hr.expense", "budget.docline.mixin"]
 
     budget_move_ids = fields.One2many(
-        comodel_name="expense.budget.move", inverse_name="expense_id",
+        comodel_name="expense.budget.move",
+        inverse_name="expense_id",
     )
 
     def _write(self, vals):

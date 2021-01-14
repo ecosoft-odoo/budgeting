@@ -9,7 +9,9 @@ class BudgetTransfer(models.Model):
     _description = "Budget Transfer by Item"
 
     name = fields.Char(
-        required=True, readonly=True, states={"draft": [("readonly", False)]},
+        required=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
@@ -107,10 +109,13 @@ class BudgetTransferItem(models.Model):
     _description = "Budget Transfer by Item"
 
     transfer_id = fields.Many2one(
-        comodel_name="budget.transfer", ondelete="cascade", index=True,
+        comodel_name="budget.transfer",
+        ondelete="cascade",
+        index=True,
     )
     mis_budget_id = fields.Many2one(
-        comodel_name="mis.budget", related="transfer_id.mis_budget_id",
+        comodel_name="mis.budget",
+        related="transfer_id.mis_budget_id",
     )
     source_budget_control_id = fields.Many2one(
         comodel_name="budget.control",
@@ -137,18 +142,26 @@ class BudgetTransferItem(models.Model):
         required=True,
     )
     source_amount = fields.Float(
-        string="Source Amount", related="source_item_id.amount", readonly=True,
+        string="Source Amount",
+        related="source_item_id.amount",
+        readonly=True,
     )
     source_amount_available = fields.Float(
-        compute="_compute_amount_available", readonly=True,
+        compute="_compute_amount_available",
+        readonly=True,
     )
     target_amount = fields.Float(
-        string="Target Amount", related="target_item_id.amount", readonly=True,
+        string="Target Amount",
+        related="target_item_id.amount",
+        readonly=True,
     )
     target_amount_available = fields.Float(
-        compute="_compute_amount_available", readonly=True,
+        compute="_compute_amount_available",
+        readonly=True,
     )
-    amount = fields.Float(string="Transfer Amount",)
+    amount = fields.Float(
+        string="Transfer Amount",
+    )
     state = fields.Selection(
         [
             ("draft", "Draft"),

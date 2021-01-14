@@ -7,7 +7,9 @@ class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
     activity_id = fields.Many2one(
-        comodel_name="budget.activity", string="Activity", index=True,
+        comodel_name="budget.activity",
+        string="Activity",
+        index=True,
     )
 
     def _get_computed_account(self):

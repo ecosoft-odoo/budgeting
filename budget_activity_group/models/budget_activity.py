@@ -7,5 +7,6 @@ class BudgetActivity(models.Model):
     _inherit = "budget.activity"
 
     activity_group_id = fields.Many2one(
-        comodel_name="budget.activity.group", index=True,
+        comodel_name="budget.activity.group",
+        index=True,
     )

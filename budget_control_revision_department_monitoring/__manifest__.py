@@ -8,7 +8,7 @@
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-budgeting",
+    "website": "https://github.com/OCA/account-payment",
     "depends": ["budget_control_revision", "analytic_base_department"],
     "data": ["report/budget_monitor_revision_view.xml"],
     "installable": True,

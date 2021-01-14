@@ -8,7 +8,7 @@
     "license": "AGPL-3",
     "summary": "Keep track of revised budget control",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-budgeting",
+    "website": "https://github.com/OCA/account-payment",
     "depends": ["base_revision", "budget_control"],
     "data": [
         "security/ir.model.access.csv",

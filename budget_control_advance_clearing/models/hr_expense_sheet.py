@@ -7,7 +7,8 @@ class HRExpenseSheet(models.Model):
     _inherit = "hr.expense.sheet"
 
     advance_budget_move_ids = fields.One2many(
-        comodel_name="advance.budget.move", inverse_name="sheet_id",
+        comodel_name="advance.budget.move",
+        inverse_name="sheet_id",
     )
     is_clearing = fields.Boolean(
         string="Clearing", compute="_compute_clearing", store=True

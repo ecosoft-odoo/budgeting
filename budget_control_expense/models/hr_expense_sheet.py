@@ -8,7 +8,8 @@ class HRExpenseSheet(models.Model):
     _inherit = "hr.expense.sheet"
 
     budget_move_ids = fields.One2many(
-        comodel_name="expense.budget.move", inverse_name="sheet_id",
+        comodel_name="expense.budget.move",
+        inverse_name="sheet_id",
     )
 
     def recompute_budget_move(self):

@@ -22,7 +22,8 @@ class PurchaseRequestBudgetMove(models.Model):
         help="Commit budget for this purchase_request_line_id",
     )
     purchase_id = fields.Many2one(
-        comodel_name="purchase.order", related="purchase_line_id.order_id",
+        comodel_name="purchase.order",
+        related="purchase_line_id.order_id",
     )
     purchase_line_id = fields.Many2one(
         comodel_name="purchase.order.line",
@@ -30,4 +31,6 @@ class PurchaseRequestBudgetMove(models.Model):
         index=True,
         help="Uncommit budget from this purchase_line_id",
     )
-    move_id = fields.Many2one(comodel_name="account.move",)
+    move_id = fields.Many2one(
+        comodel_name="account.move",
+    )

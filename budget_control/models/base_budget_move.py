@@ -7,7 +7,10 @@ class BaseBudgetMove(models.AbstractModel):
     _name = "base.budget.move"
     _description = "Abstract class to be extended by budgt commit documents"
 
-    date = fields.Date(required=True, index=True,)
+    date = fields.Date(
+        required=True,
+        index=True,
+    )
     account_id = fields.Many2one(
         comodel_name="account.account",
         string="Account",
@@ -23,13 +26,19 @@ class BaseBudgetMove(models.AbstractModel):
         readonly=True,
     )
     analytic_tag_ids = fields.Many2many(
-        comodel_name="account.analytic.tag", string="Analytic Tags",
+        comodel_name="account.analytic.tag",
+        string="Analytic Tags",
     )
     amount_currency = fields.Float(
-        required=True, help="Amount in multi currency",
+        required=True,
+        help="Amount in multi currency",
     )
-    credit = fields.Float(readonly=True,)
-    debit = fields.Float(readonly=True,)
+    credit = fields.Float(
+        readonly=True,
+    )
+    debit = fields.Float(
+        readonly=True,
+    )
     company_id = fields.Many2one(
         "res.company",
         string="Company",
@@ -43,8 +52,14 @@ class BudgetDoclineMixin(models.AbstractModel):
     _name = "budget.docline.mixin"
     _description = "Mixin used in each document line model that commit budget"
 
-    amount_commit = fields.Float(compute="_compute_commit", store=True,)
-    date_commit = fields.Date(compute="_compute_commit", store=True,)
+    amount_commit = fields.Float(
+        compute="_compute_commit",
+        store=True,
+    )
+    date_commit = fields.Date(
+        compute="_compute_commit",
+        store=True,
+    )
 
     @api.depends("budget_move_ids", "budget_move_ids.date")
     def _compute_commit(self):

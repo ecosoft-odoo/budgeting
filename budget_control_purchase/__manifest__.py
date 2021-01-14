@@ -6,7 +6,7 @@
     "version": "14.0.1.0.0",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-budgeting",
+    "website": "https://github.com/OCA/account-payment",
     "depends": ["budget_control", "purchase", "analytic_tag_dimension"],
     "data": [
         "security/ir.model.access.csv",

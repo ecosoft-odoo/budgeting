@@ -7,7 +7,9 @@ class BudgetActivity(models.Model):
     _name = "budget.activity"
     _description = "Activity"
 
-    name = fields.Char(required=True,)
+    name = fields.Char(
+        required=True,
+    )
     active = fields.Boolean(default=True)
     account_id = fields.Many2one(
         comodel_name="account.account",

@@ -25,15 +25,22 @@ class BudgetPeriod(models.Model):
         ondelete="restrict",
         help="Automatically created mis budget",
     )
-    bm_date_from = fields.Date(string="Date From", required=True,)
-    bm_date_to = fields.Date(string="Date To", required=True,)
+    bm_date_from = fields.Date(
+        string="Date From",
+        required=True,
+    )
+    bm_date_to = fields.Date(
+        string="Date To",
+        required=True,
+    )
     account = fields.Boolean(
         string="On Account",
         default=False,
         help="Control budget on journal document(s), i.e., vendor bill",
     )
     control_all_analytic_accounts = fields.Boolean(
-        string="Control All Analytics", default=True,
+        string="Control All Analytics",
+        default=True,
     )
     control_analytic_account_ids = fields.Many2many(
         comodel_name="account.analytic.account",
