@@ -13,9 +13,7 @@
         "budget_control_operating_unit",
         "account_operating_unit",
     ],
-    "data": [
-        "report/budget_monitor_report_view.xml",
-    ],
+    "data": ["report/budget_monitor_report_view.xml"],
     "maintainers": ["Saran440"],
     "development_status": "Alpha",
 }

@@ -10,8 +10,6 @@
     "website": "https://github.com/OCA/account-budgeting",
     "depends": ["budget_control_exception"],
     "license": "AGPL-3",
-    "data": [
-        "data/budget_source_fund_exception_data.xml",
-    ],
+    "data": ["data/budget_source_fund_exception_data.xml"],
     "installable": True,
 }

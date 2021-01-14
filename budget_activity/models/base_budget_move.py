@@ -7,9 +7,7 @@ class BaseBudgetMove(models.AbstractModel):
     _inherit = "base.budget.move"
 
     activity_id = fields.Many2one(
-        comodel_name="budget.activity",
-        string="Activity",
-        index=True,
+        comodel_name="budget.activity", string="Activity", index=True,
     )
 
 
@@ -17,9 +15,7 @@ class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
 
     activity_id = fields.Many2one(
-        comodel_name="budget.activity",
-        string="Activity",
-        index=True,
+        comodel_name="budget.activity", string="Activity", index=True,
     )
 
     def _prepare_budget_commitment(
@@ -41,6 +37,10 @@ class BudgetDoclineMixin(models.AbstractModel):
         )
         res["activity_id"] = self.activity_id.id
         # Only if docline has activity and not product, change account code
-        if "activity_id" in self and self["activity_id"] and not self.product_id:
+        if (
+            "activity_id" in self
+            and self["activity_id"]
+            and not self.product_id
+        ):
             res["account_id"] = self["activity_id"].account_id.id
         return res

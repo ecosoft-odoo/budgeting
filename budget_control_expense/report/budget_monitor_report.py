@@ -6,9 +6,7 @@ from odoo import fields, models
 class BudgetMonitorReport(models.Model):
     _inherit = "budget.monitor.report"
 
-    res_id = fields.Reference(
-        selection_add=[("hr.expense", "Expense")],
-    )
+    res_id = fields.Reference(selection_add=[("hr.expense", "Expense")],)
     amount_type = fields.Selection(
         selection_add=[("4_ex_commit", "EX Commit")],
     )
@@ -34,6 +32,5 @@ class BudgetMonitorReport(models.Model):
 
     def _get_sql(self):
         return super()._get_sql() + "union ({} {})".format(
-            self._select_ex_commit(),
-            self._from_ex_commit(),
+            self._select_ex_commit(), self._from_ex_commit(),
         )

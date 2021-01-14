@@ -21,8 +21,7 @@ class GenerateBudgetControl(models.TransientModel):
         readonly=True,
     )
     state = fields.Selection(
-        [("choose", "choose"), ("get", "get")],
-        default="choose",
+        [("choose", "choose"), ("get", "get")], default="choose",
     )
     analytic_group_ids = fields.Many2many(
         comodel_name="account.analytic.group",
@@ -103,7 +102,9 @@ class GenerateBudgetControl(models.TransientModel):
         self.write(
             {
                 "state": "get",
-                "result_analytic_account_ids": [(6, 0, existing_analytics.ids)],
+                "result_analytic_account_ids": [
+                    (6, 0, existing_analytics.ids)
+                ],
                 "result_budget_control_ids": [(6, 0, budget_controls.ids)],
             }
         )

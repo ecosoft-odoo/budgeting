@@ -7,8 +7,7 @@ class HRExpenseSheet(models.Model):
     _inherit = "hr.expense.sheet"
 
     advance_budget_move_ids = fields.One2many(
-        comodel_name="advance.budget.move",
-        inverse_name="sheet_id",
+        comodel_name="advance.budget.move", inverse_name="sheet_id",
     )
     is_clearing = fields.Boolean(
         string="Clearing", compute="_compute_clearing", store=True
@@ -24,7 +23,9 @@ class HRExpenseSheet(models.Model):
     @api.depends("expense_line_ids")
     def _compute_clearing(self):
         for sheet in self:
-            sheet.is_clearing = bool(sheet.expense_line_ids.filtered("is_clearing"))
+            sheet.is_clearing = bool(
+                sheet.expense_line_ids.filtered("is_clearing")
+            )
         return
 
     def _check_budget_expense(self):
@@ -32,7 +33,9 @@ class HRExpenseSheet(models.Model):
             return super()._check_budget_expense()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
-            BudgetPeriod.check_budget(doc.advance_budget_move_ids, doc_type="advance")
+            BudgetPeriod.check_budget(
+                doc.advance_budget_move_ids, doc_type="advance"
+            )
 
     def recompute_advance_budget_move(self):
         self.mapped("advance_budget_move_ids").unlink()

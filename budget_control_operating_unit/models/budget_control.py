@@ -16,4 +16,6 @@ class BudgetControl(models.Model):
     def _compute_budget_operating_unit(self):
         for rec in self:
             if len(rec.analytic_account_id.operating_unit_ids) == 1:
-                rec.operating_unit_id = rec.analytic_account_id.operating_unit_ids.id
+                rec.operating_unit_id = (
+                    rec.analytic_account_id.operating_unit_ids.id
+                )

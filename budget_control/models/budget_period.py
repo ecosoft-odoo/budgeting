@@ -25,22 +25,15 @@ class BudgetPeriod(models.Model):
         ondelete="restrict",
         help="Automatically created mis budget",
     )
-    bm_date_from = fields.Date(
-        string="Date From",
-        required=True,
-    )
-    bm_date_to = fields.Date(
-        string="Date To",
-        required=True,
-    )
+    bm_date_from = fields.Date(string="Date From", required=True,)
+    bm_date_to = fields.Date(string="Date To", required=True,)
     account = fields.Boolean(
         string="On Account",
         default=False,
         help="Control budget on journal document(s), i.e., vendor bill",
     )
     control_all_analytic_accounts = fields.Boolean(
-        string="Control All Analytics",
-        default=True,
+        string="Control All Analytics", default=True,
     )
     control_analytic_account_ids = fields.Many2many(
         comodel_name="account.analytic.account",
@@ -48,7 +41,10 @@ class BudgetPeriod(models.Model):
         string="Controlled Analytics",
     )
     control_level = fields.Selection(
-        selection=[("analytic", "Analytic"), ("analytic_kpi", "Analytic & KPI")],
+        selection=[
+            ("analytic", "Analytic"),
+            ("analytic_kpi", "Analytic & KPI"),
+        ],
         string="Level of Control (TBD)",
         required=True,
         default="analytic",
@@ -157,7 +153,9 @@ class BudgetPeriod(models.Model):
         periods = self._create_budget_move_periods()
         sumcols_list = []
         for period, sign in periods.items():
-            sumcols_list.append((0, 0, {"sign": sign, "period_to_sum_id": period.id}))
+            sumcols_list.append(
+                (0, 0, {"sign": sign, "period_to_sum_id": period.id})
+            )
         Period.create(
             {
                 "name": "Available",
@@ -262,7 +260,9 @@ class BudgetPeriod(models.Model):
                     }
                 }
                 ctx = {"mis_report_filters": analytic_filter}
-                matrix[analytic_id] = instance.with_context(ctx)._compute_matrix()
+                matrix[analytic_id] = instance.with_context(
+                    ctx
+                )._compute_matrix()
         return matrix
 
     @api.model
@@ -335,7 +335,9 @@ class BudgetPeriod(models.Model):
                 )
         return warnings
 
-    def get_report_amount(self, kpi_names=None, col_names=None, analytic_id=False):
+    def get_report_amount(
+        self, kpi_names=None, col_names=None, analytic_id=False
+    ):
         self.ensure_one()
         return self._get_amount(
             self.report_instance_id.id,
@@ -354,7 +356,10 @@ class BudgetPeriod(models.Model):
             [("name", "in", kpi_names), ("report_id", "=", report.id)]
         )
         periods = self.env["mis.report.instance.period"].search(
-            [("name", "in", col_names), ("report_instance_id", "=", instance.id)]
+            [
+                ("name", "in", col_names),
+                ("report_instance_id", "=", instance.id),
+            ]
         )
         ctx = {}
         if analytic_id:

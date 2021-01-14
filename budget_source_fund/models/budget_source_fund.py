@@ -12,7 +12,9 @@ class BudgetSourceFund(models.Model):
     name = fields.Char(required=True, string="Source of Fund")
     active = fields.Boolean(default=True)
     company_id = fields.Many2one(
-        comodel_name="res.company", default=lambda self: self.env.company, readonly=True
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        readonly=True,
     )
     fund_group_id = fields.Many2one(
         comodel_name="budget.source.fund.group",
@@ -26,7 +28,9 @@ class BudgetSourceFund(models.Model):
         readonly=True,
     )
 
-    _sql_constraints = [("unique_name", "UNIQUE(name)", "Group must be unique")]
+    _sql_constraints = [
+        ("unique_name", "UNIQUE(name)", "Group must be unique")
+    ]
 
 
 class BudgetSourceFundLine(models.Model):

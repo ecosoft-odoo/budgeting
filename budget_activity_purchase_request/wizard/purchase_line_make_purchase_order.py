@@ -30,7 +30,5 @@ class PurchaseRequestLineMakePurchaseOrderItem(models.TransientModel):
     _inherit = "purchase.request.line.make.purchase.order.item"
 
     activity_id = fields.Many2one(
-        comodel_name="budget.activity",
-        string="Activity",
-        readonly=False,
+        comodel_name="budget.activity", string="Activity", readonly=False,
     )

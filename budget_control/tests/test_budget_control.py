@@ -4,7 +4,6 @@
 import datetime
 
 from dateutil.rrule import MONTHLY
-
 from odoo.exceptions import UserError
 from odoo.tests.common import SavepointCase
 
@@ -86,11 +85,7 @@ class TestMisBudget(SavepointCase):
             {"name": "KPI3", "code": "KPI3", "user_type_id": type_exp}
         )
         # create report
-        report = self.env["mis.report"].create(
-            dict(
-                name="Test KPI",
-            )
-        )
+        report = self.env["mis.report"].create(dict(name="Test KPI",))
         self.kpi1 = self.env["mis.report.kpi"].create(
             dict(
                 report_id=report.id,

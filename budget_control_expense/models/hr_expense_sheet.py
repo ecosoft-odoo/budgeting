@@ -8,8 +8,7 @@ class HRExpenseSheet(models.Model):
     _inherit = "hr.expense.sheet"
 
     budget_move_ids = fields.One2many(
-        comodel_name="expense.budget.move",
-        inverse_name="sheet_id",
+        comodel_name="expense.budget.move", inverse_name="sheet_id",
     )
 
     def recompute_budget_move(self):
@@ -28,7 +27,9 @@ class HRExpenseSheet(models.Model):
             budget_control = BudgetControl.search(
                 [("analytic_account_id", "in", analytic_account_ids.ids)]
             )
-            if any(state != "done" for state in budget_control.mapped("state")):
+            if any(
+                state != "done" for state in budget_control.mapped("state")
+            ):
                 raise UserError(_("Analytic Account is not Controlled"))
             if vals.get("state") == "post":
                 expense_line.uncommit_expense_budget()

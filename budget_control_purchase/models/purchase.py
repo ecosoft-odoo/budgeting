@@ -29,7 +29,9 @@ class PurchaseOrder(models.Model):
             budget_control = BudgetControl.search(
                 [("analytic_account_id", "in", analytic_account_ids.ids)]
             )
-            if any(state != "done" for state in budget_control.mapped("state")):
+            if any(
+                state != "done" for state in budget_control.mapped("state")
+            ):
                 raise UserError(_("Analytic Account is not Controlled"))
             for purchase_line in self.mapped("order_line"):
                 purchase_line.commit_budget()
@@ -64,10 +66,14 @@ class PurchaseOrderLine(models.Model):
 
     def _get_po_line_account(self):
         fpos = self.order_id.fiscal_position_id
-        account = self.product_id.product_tmpl_id.get_product_accounts(fpos)["expense"]
+        account = self.product_id.product_tmpl_id.get_product_accounts(fpos)[
+            "expense"
+        ]
         return account
 
-    def commit_budget(self, product_qty=False, reverse=False, move_line_id=False):
+    def commit_budget(
+        self, product_qty=False, reverse=False, move_line_id=False
+    ):
         """Create budget commit for each purchase.order.line."""
         self.ensure_one()
         if self.state in ("purchase", "done"):
@@ -96,6 +102,8 @@ class PurchaseOrderLine(models.Model):
             )
             self.env["purchase.budget.move"].create(vals)
             if reverse:  # On reverse, make sure not over returned
-                self.env["budget.period"].check_over_returned_budget(self.order_id)
+                self.env["budget.period"].check_over_returned_budget(
+                    self.order_id
+                )
         else:
             self.budget_move_ids.unlink()

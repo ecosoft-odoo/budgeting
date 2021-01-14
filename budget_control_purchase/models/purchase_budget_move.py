@@ -22,8 +22,7 @@ class PurchaseBudgetMove(models.Model):
         help="Commit budget for this purchase_line_id",
     )
     move_id = fields.Many2one(
-        comodel_name="account.move",
-        related="move_line_id.move_id",
+        comodel_name="account.move", related="move_line_id.move_id",
     )
     move_line_id = fields.Many2one(
         comodel_name="account.move.line",

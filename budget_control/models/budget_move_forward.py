@@ -9,9 +9,7 @@ class BudgetMoveForward(models.Model):
     _inherit = ["mail.thread"]
 
     name = fields.Char(
-        required=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
+        required=True, readonly=True, states={"draft": [("readonly", False)]},
     )
     assignee_id = fields.Many2one(
         comodel_name="res.users",
@@ -38,14 +36,10 @@ class BudgetMoveForward(models.Model):
         # TODO: add domain, and default
     )
     date_budget_move = fields.Date(
-        related="to_budget_id.date_from",
-        string="Move to date",
+        related="to_budget_id.date_from", string="Move to date",
     )
     state = fields.Selection(
-        [
-            ("draft", "Draft"),
-            ("done", "Done"),
-        ],
+        [("draft", "Draft"), ("done", "Done")],
         string="Status",
         readonly=True,
         copy=False,
@@ -129,24 +123,11 @@ class BudgetMoveForwardLine(models.Model):
         required=True,
     )
     res_model = fields.Selection(
-        selection=[],
-        string="Res Model",
-        required=True,
+        selection=[], string="Res Model", required=True,
     )
-    res_id = fields.Integer(
-        string="Res ID",
-        required=True,
-    )
+    res_id = fields.Integer(string="Res ID", required=True,)
     document_id = fields.Reference(
-        selection=[],
-        string="Document",
-        required=True,
+        selection=[], string="Document", required=True,
     )
-    date_commit = fields.Date(
-        string="Date",
-        required=True,
-    )
-    amount_commit = fields.Float(
-        string="Commitment",
-        required=True,
-    )
+    date_commit = fields.Date(string="Date", required=True,)
+    amount_commit = fields.Float(string="Commitment", required=True,)

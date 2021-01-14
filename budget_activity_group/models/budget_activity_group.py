@@ -7,9 +7,7 @@ class BudgetActivityGroup(models.Model):
     _name = "budget.activity.group"
     _description = "Activity Group"
 
-    name = fields.Char(
-        required=True,
-    )
+    name = fields.Char(required=True,)
     active = fields.Boolean(default=True)
     activity_ids = fields.One2many(
         comodel_name="budget.activity", inverse_name="activity_group_id"

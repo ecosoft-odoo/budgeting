@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-
     <record id="budget_activity_view_tree" model="ir.ui.view">
         <field name="name">budget.activity.view.tree</field>
         <field name="model">budget.activity</field>
@@ -11,7 +10,6 @@
             </tree>
         </field>
     </record>
-
     <record id="view_budget_activity_filter" model="ir.ui.view">
         <field name="name">view.budget.activity.filter</field>
         <field name="model">budget.activity</field>
@@ -35,10 +33,9 @@
                         context="{'group_by': 'account_id'}"
                     />
                 </group>
-           </search>
+            </search>
         </field>
     </record>
-
     <record id="budget_activity_view_form" model="ir.ui.view">
         <field name="name">budget.activity.view.form</field>
         <field name="model">budget.activity</field>
@@ -69,14 +66,12 @@
             </form>
         </field>
     </record>
-
     <record id="budget_activity_action" model="ir.actions.act_window">
         <field name="name">Budget Activity</field>
         <field name="view_id" ref="budget_activity_view_tree" />
         <field name="res_model">budget.activity</field>
         <field name="view_mode">tree,form</field>
     </record>
-
     <menuitem
         id="budget_activity_menu"
         parent="budget_control.budget_config_menu"
@@ -84,5 +79,4 @@
         action="budget_activity_action"
         sequence="20"
     />
-
 </odoo>

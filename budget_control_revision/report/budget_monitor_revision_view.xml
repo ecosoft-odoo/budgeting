@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-
     <!-- <record id="view_budget_monitor_report_tree" model="ir.ui.view">
          <field name="name">budget.monitor.revision.report.tree</field>
          <field name="model">budget.monitor.revision.report</field>
@@ -13,19 +12,17 @@
              </tree>
          </field>
     </record> -->
-
     <record id="view_budget_monitor_report_pivot" model="ir.ui.view">
-         <field name="name">budget.monitor.revision.report.pivot</field>
-         <field name="model">budget.monitor.revision.report</field>
-         <field name="arch" type="xml">
-             <pivot string="Budget Monitoring">
-                 <field name="analytic_account_id" type="row" />
-                 <field name="amount_type" type="col" />
-                 <field name="amount" type="measure" />
-             </pivot>
-         </field>
+        <field name="name">budget.monitor.revision.report.pivot</field>
+        <field name="model">budget.monitor.revision.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Budget Monitoring">
+                <field name="analytic_account_id" type="row" />
+                <field name="amount_type" type="col" />
+                <field name="amount" type="measure" />
+            </pivot>
+        </field>
     </record>
-
     <!-- <record id="view_budget_monitor_report_graph" model="ir.ui.view">
          <field name="name">budget.monitor.revision.report.graph</field>
          <field name="model">budget.monitor.revision.report</field>
@@ -36,7 +33,6 @@
              </graph>
          </field>
     </record> -->
-
     <!-- Custom reports (aka filters) -->
     <record id="filter_budget_report_quarterly" model="ir.filters">
         <field name="name">By Quarter</field>
@@ -45,7 +41,6 @@
         <field name="user_id" eval="False" />
         <field name="context">{'pivot_column_groupby': ['date:quarter']}</field>
     </record>
-
     <record id="view_budget_monitor_revision_report_search" model="ir.ui.view">
         <field name="name">budget.monitor.revision.report.search</field>
         <field name="model">budget.monitor.revision.report</field>
@@ -69,7 +64,6 @@
             </search>
         </field>
     </record>
-
     <record
         id="action_budget_monitor_revision_report_all"
         model="ir.actions.act_window"
@@ -82,7 +76,6 @@
             name="context"
         >{'search_default_group_by_analytic': 1, 'search_default_group_by_revision': 1}</field>
     </record>
-
     <menuitem
         name="Budget Revision Monitoring"
         action="action_budget_monitor_revision_report_all"
@@ -90,5 +83,4 @@
         parent="budget_control.budget_report_menu"
         sequence="20"
     />
-
 </odoo>
