@@ -13,8 +13,7 @@ class HRExpense(models.Model):
         help="This Expense is clearing advance",
     )
     advance_budget_move_ids = fields.One2many(
-        comodel_name="advance.budget.move",
-        inverse_name="expense_id",
+        comodel_name="advance.budget.move", inverse_name="expense_id",
     )
 
     def _budget_move_create(self, vals):

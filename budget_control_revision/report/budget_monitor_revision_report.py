@@ -62,7 +62,5 @@ class BudgetMonitorRevisionReport(models.Model):
 
     def _get_sql(self):
         return "{} {} {}".format(
-            self._select_budget(),
-            self._from_budget(),
-            self._where_budget(),
+            self._select_budget(), self._from_budget(), self._where_budget(),
         )

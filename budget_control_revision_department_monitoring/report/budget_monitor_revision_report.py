@@ -11,7 +11,9 @@ class BudgetMonitorRevisionReport(models.Model):
 
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query = ",".join([select_budget_query, "aa.department_id"])
+        select_budget_query = ",".join(
+            [select_budget_query, "aa.department_id"]
+        )
         return select_budget_query
 
     def _from_budget(self):

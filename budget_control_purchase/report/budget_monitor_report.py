@@ -34,6 +34,5 @@ class BudgetMonitorReport(models.Model):
 
     def _get_sql(self):
         return super()._get_sql() + "union ({} {})".format(
-            self._select_po_commit(),
-            self._from_po_commit(),
+            self._select_po_commit(), self._from_po_commit(),
         )

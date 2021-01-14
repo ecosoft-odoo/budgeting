@@ -7,10 +7,7 @@
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
-    "depends": [
-        "budget_control_expense",
-        "hr_expense_advance_clearing",
-    ],
+    "depends": ["budget_control_expense", "hr_expense_advance_clearing"],
     "data": [
         "security/ir.model.access.csv",
         "views/budget_period_view.xml",

@@ -12,4 +12,6 @@ class BudgetSourceFundGroup(models.Model):
     name = fields.Char(required=True)
     active = fields.Boolean(default=True)
 
-    _sql_constraints = [("unique_name", "UNIQUE(name)", "Group must be unique")]
+    _sql_constraints = [
+        ("unique_name", "UNIQUE(name)", "Group must be unique")
+    ]

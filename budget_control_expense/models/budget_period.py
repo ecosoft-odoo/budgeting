@@ -16,7 +16,9 @@ class BudgetPeriod(models.Model):
         periods = super()._create_budget_move_periods()
         if self.expense:
             Period = self.env["mis.report.instance.period"]
-            model = self.env.ref("budget_control_expense.model_expense_budget_move")
+            model = self.env.ref(
+                "budget_control_expense.model_expense_budget_move"
+            )
             expense = Period.create(
                 {
                     "name": "Expense",

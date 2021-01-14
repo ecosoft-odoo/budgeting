@@ -8,7 +8,10 @@ class MisBudgetItem(models.Model):
 
     def name_get(self):
         return [
-            (record.id, "{}: {}".format(record.name, record.date_range_id.name))
+            (
+                record.id,
+                "{}: {}".format(record.name, record.date_range_id.name),
+            )
             for record in self
         ]
 

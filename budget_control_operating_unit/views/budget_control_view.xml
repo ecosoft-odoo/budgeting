@@ -12,7 +12,6 @@
             </field>
         </field>
     </record>
-
     <record id="view_budget_control_filter" model="ir.ui.view">
         <field name="name">view.budget.control.filter</field>
         <field name="model">budget.control</field>
@@ -27,7 +26,6 @@
             </xpath>
         </field>
     </record>
-
     <record id="budget_control_view_form" model="ir.ui.view">
         <field name="name">budget.control.view.form</field>
         <field name="model">budget.control</field>

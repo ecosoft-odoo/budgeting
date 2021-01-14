@@ -9,8 +9,7 @@ class HRExpense(models.Model):
     _inherit = ["hr.expense", "budget.docline.mixin"]
 
     budget_move_ids = fields.One2many(
-        comodel_name="expense.budget.move",
-        inverse_name="expense_id",
+        comodel_name="expense.budget.move", inverse_name="expense_id",
     )
 
     def _write(self, vals):
@@ -21,9 +20,17 @@ class HRExpense(models.Model):
         if vals.get("state") == "reported":
             BudgetControl = self.env["budget.control"]
             budget_control = BudgetControl.search(
-                [("analytic_account_id", "in", self.mapped("analytic_account_id").ids)]
+                [
+                    (
+                        "analytic_account_id",
+                        "in",
+                        self.mapped("analytic_account_id").ids,
+                    )
+                ]
             )
-            if any(state != "done" for state in budget_control.mapped("state")):
+            if any(
+                state != "done" for state in budget_control.mapped("state")
+            ):
                 raise UserError(_("Analytic Account is not Controlled"))
             self.commit_budget()
         return res
@@ -63,14 +70,18 @@ class HRExpense(models.Model):
                 vals.update(
                     {
                         "expense_id": expense.id,
-                        "analytic_tag_ids": [(6, 0, expense.analytic_tag_ids.ids)],
+                        "analytic_tag_ids": [
+                            (6, 0, expense.analytic_tag_ids.ids)
+                        ],
                     }
                 )
                 expense._budget_move_create(vals)
                 if reverse and not expense._context.get(
                     "force_check_reverse", False
                 ):  # On reverse, make sure not over returned
-                    self.env["budget.period"].check_over_returned_budget(self.sheet_id)
+                    self.env["budget.period"].check_over_returned_budget(
+                        self.sheet_id
+                    )
             else:
                 expense._budget_move_unlink()
 

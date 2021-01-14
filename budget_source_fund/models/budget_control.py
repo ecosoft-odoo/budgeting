@@ -46,7 +46,9 @@ class BudgetControl(models.Model):
                     rec.fund_line_ids.unlink()
                     continue
                 fund_ids = fund_obj.browse(fund_val_ids[0][2])
-                fund_lines = [rec._get_fund_line_list(fund) for fund in fund_ids]
+                fund_lines = [
+                    rec._get_fund_line_list(fund) for fund in fund_ids
+                ]
                 vals.update({"fund_line_ids": fund_lines})
         res = super().write(vals)
         return res

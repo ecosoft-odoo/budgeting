@@ -29,7 +29,9 @@ class PurchaseRequest(models.Model):
             budget_control = BudgetControl.search(
                 [("analytic_account_id", "in", analytic_account_ids.ids)]
             )
-            if any(state != "done" for state in budget_control.mapped("state")):
+            if any(
+                state != "done" for state in budget_control.mapped("state")
+            ):
                 raise UserError(_("Analytic Account is not Controlled"))
             for pr_line in pr_lines:
                 pr_line.commit_budget()
@@ -40,7 +42,9 @@ class PurchaseRequest(models.Model):
         self.flush()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
-            BudgetPeriod.check_budget(doc.budget_move_ids, doc_type="purchase_request")
+            BudgetPeriod.check_budget(
+                doc.budget_move_ids, doc_type="purchase_request"
+            )
         return res
 
 
@@ -63,7 +67,9 @@ class PurchaseRequestLine(models.Model):
             pr_line.purchase_lines.uncommit_purchase_request_budget()
 
     def _get_pr_line_account(self):
-        account = self.product_id.product_tmpl_id.get_product_accounts()["expense"]
+        account = self.product_id.product_tmpl_id.get_product_accounts()[
+            "expense"
+        ]
         return account
 
     def commit_budget(self, reverse=False, purchase_line_id=False):
@@ -92,6 +98,8 @@ class PurchaseRequestLine(models.Model):
             )
             self.env["purchase.request.budget.move"].create(vals)
             if reverse:  # On reverse, make sure not over returned
-                self.env["budget.period"].check_over_returned_budget(self.request_id)
+                self.env["budget.period"].check_over_returned_budget(
+                    self.request_id
+                )
         else:
             self.budget_move_ids.unlink()

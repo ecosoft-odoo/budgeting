@@ -28,9 +28,7 @@ class BudgetMonitorReport(models.Model):
         selection=[("1_budget", "Budget"), ("8_actual", "Actual")],
         string="Type",
     )
-    account_id = fields.Many2one(
-        comodel_name="account.account",
-    )
+    account_id = fields.Many2one(comodel_name="account.account",)
     kpi_name = fields.Char()
 
     @property

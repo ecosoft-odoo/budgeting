@@ -7,12 +7,8 @@ class BudgetControl(models.Model):
     _name = "budget.control"
     _inherit = ["budget.control", "base.revision"]
 
-    current_revision_id = fields.Many2one(
-        comodel_name="budget.control",
-    )
-    old_revision_ids = fields.One2many(
-        comodel_name="budget.control",
-    )
+    current_revision_id = fields.Many2one(comodel_name="budget.control",)
+    old_revision_ids = fields.One2many(comodel_name="budget.control",)
     revision_number = fields.Integer(readonly=True)
 
     _sql_constraints = [

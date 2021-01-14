@@ -9,9 +9,7 @@ class BudgetTransfer(models.Model):
     _description = "Budget Transfer by Item"
 
     name = fields.Char(
-        required=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
+        required=True, readonly=True, states={"draft": [("readonly", False)]},
     )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
@@ -56,7 +54,9 @@ class BudgetTransfer(models.Model):
         self._check_budget_control()
         self.write({"state": "reverse"})
 
-    def _check_budget_available_analytic_kpi(self, budget_controls, kpis=False):
+    def _check_budget_available_analytic_kpi(
+        self, budget_controls, kpis=False
+    ):
         for budget_ctrl in budget_controls:
             for kpi in kpis:
                 balance = budget_ctrl.get_report_amount(
@@ -77,7 +77,10 @@ class BudgetTransfer(models.Model):
             balance = budget_ctrl.get_report_amount(["total"], ["Available"])
             if balance < 0.0:
                 raise ValidationError(
-                    _("This transfer will result in negative budget balance " "for %s")
+                    _(
+                        "This transfer will result in negative budget balance "
+                        "for %s"
+                    )
                     % budget_ctrl.name
                 )
         return True
@@ -104,13 +107,10 @@ class BudgetTransferItem(models.Model):
     _description = "Budget Transfer by Item"
 
     transfer_id = fields.Many2one(
-        comodel_name="budget.transfer",
-        ondelete="cascade",
-        index=True,
+        comodel_name="budget.transfer", ondelete="cascade", index=True,
     )
     mis_budget_id = fields.Many2one(
-        comodel_name="mis.budget",
-        related="transfer_id.mis_budget_id",
+        comodel_name="mis.budget", related="transfer_id.mis_budget_id",
     )
     source_budget_control_id = fields.Many2one(
         comodel_name="budget.control",
@@ -137,28 +137,24 @@ class BudgetTransferItem(models.Model):
         required=True,
     )
     source_amount = fields.Float(
-        string="Source Amount",
-        related="source_item_id.amount",
-        readonly=True,
+        string="Source Amount", related="source_item_id.amount", readonly=True,
     )
     source_amount_available = fields.Float(
-        compute="_compute_amount_available",
-        readonly=True,
+        compute="_compute_amount_available", readonly=True,
     )
     target_amount = fields.Float(
-        string="Target Amount",
-        related="target_item_id.amount",
-        readonly=True,
+        string="Target Amount", related="target_item_id.amount", readonly=True,
     )
     target_amount_available = fields.Float(
-        compute="_compute_amount_available",
-        readonly=True,
+        compute="_compute_amount_available", readonly=True,
     )
-    amount = fields.Float(
-        string="Transfer Amount",
-    )
+    amount = fields.Float(string="Transfer Amount",)
     state = fields.Selection(
-        [("draft", "Draft"), ("transfer", "Transferred"), ("reverse", "Reversed")],
+        [
+            ("draft", "Draft"),
+            ("transfer", "Transferred"),
+            ("reverse", "Reversed"),
+        ],
         string="Status",
         default="draft",
     )
@@ -197,9 +193,14 @@ class BudgetTransferItem(models.Model):
         for transfer in self:
             if transfer.state != "draft":
                 raise ValidationError(_("Invalid state!"))
-            if transfer.source_budget_control_id == transfer.target_budget_control_id:
+            if (
+                transfer.source_budget_control_id
+                == transfer.target_budget_control_id
+            ):
                 raise UserError(
-                    _("You can not transfer from the same budget control sheet!")
+                    _(
+                        "You can not transfer from the same budget control sheet!"
+                    )
                 )
             if transfer.amount < 0.0:
                 raise UserError(_("Transfer amount must be positive!"))

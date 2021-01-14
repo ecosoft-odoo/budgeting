@@ -18,7 +18,10 @@ class BudgetMoveForward(models.Model):
         domain_search = super()._get_domain_search(model)
         if model == "hr.expense":
             domain_search.extend(
-                [("analytic_account_id", "!=", False), ("state", "!=", "cancel")]
+                [
+                    ("analytic_account_id", "!=", False),
+                    ("state", "!=", "cancel"),
+                ]
             )
         return domain_search
 

@@ -9,9 +9,7 @@ class BudgetControl(models.Model):
     _description = "Budget Control"
     _inherit = ["mail.thread"]
 
-    name = fields.Char(
-        required=True,
-    )
+    name = fields.Char(required=True,)
     assignee_id = fields.Many2one(
         comodel_name="res.users",
         string="Assigned To",
@@ -34,15 +32,9 @@ class BudgetControl(models.Model):
         domain=lambda self: self._get_mis_budget_domain(),
         help="List of mis.budget created by and linked to budget.period",
     )
-    date_from = fields.Date(
-        related="budget_id.date_from",
-    )
-    date_to = fields.Date(
-        related="budget_id.date_to",
-    )
-    active = fields.Boolean(
-        default=True,
-    )
+    date_from = fields.Date(related="budget_id.date_from",)
+    date_to = fields.Date(related="budget_id.date_to",)
+    active = fields.Boolean(default=True,)
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
         required=True,
@@ -90,7 +82,9 @@ class BudgetControl(models.Model):
     def get_report_amount(self, kpi_names=None, col_names=None):
         self.ensure_one()
         BudgetPeriod = self.env["budget.period"]
-        budget_period = BudgetPeriod.search([("mis_budget_id", "=", self.budget_id.id)])
+        budget_period = BudgetPeriod.search(
+            [("mis_budget_id", "=", self.budget_id.id)]
+        )
         budget_period.ensure_one()
         return budget_period._get_amount(
             budget_period.report_instance_id.id,
@@ -106,7 +100,9 @@ class BudgetControl(models.Model):
             if not init or not plan.init_budget_commit or not plan.item_ids:
                 continue
             init_date = min(plan.item_ids.mapped("date_from"))
-            init_items = plan.item_ids.filtered(lambda l: l.date_from == init_date)
+            init_items = plan.item_ids.filtered(
+                lambda l: l.date_from == init_date
+            )
             for item in init_items:
                 kpi_name = item.kpi_expression_id.kpi_id.name
                 balance = plan.get_report_amount(
@@ -127,7 +123,11 @@ class BudgetControl(models.Model):
     def write(self, vals):
         # if any field in header changes, reset the plan matrix
         res = super().write(vals)
-        fixed_fields = ["budget_id", "plan_date_range_type_id", "analytic_account_id"]
+        fixed_fields = [
+            "budget_id",
+            "plan_date_range_type_id",
+            "analytic_account_id",
+        ]
         change_fields = list(vals.keys())
         if list(set(fixed_fields) & set(change_fields)):
             self.prepare_budget_control_matrix()

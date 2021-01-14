@@ -15,8 +15,5 @@ class ExceptionRule(models.Model):
             ("budget.control", "Budget Control"),
             ("mis.budget.item", "Budget Plan"),
         ],
-        ondelete={
-            "budget.control": "cascade",
-            "mis.budget.item": "cascade",
-        },
+        ondelete={"budget.control": "cascade", "mis.budget.item": "cascade"},
     )
