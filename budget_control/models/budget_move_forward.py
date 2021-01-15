@@ -42,7 +42,10 @@ class BudgetMoveForward(models.Model):
         string="Move to date",
     )
     state = fields.Selection(
-        [("draft", "Draft"), ("done", "Done")],
+        [
+            ("draft", "Draft"),
+            ("done", "Done"),
+        ],
         string="Status",
         readonly=True,
         copy=False,

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+
     <record id="view_budget_monitor_revision_report_search" model="ir.ui.view">
         <field name="name">budget.monitor.revision.report.search</field>
         <field name="model">budget.monitor.revision.report</field>
@@ -17,4 +18,5 @@
             </xpath>
         </field>
     </record>
+
 </odoo>

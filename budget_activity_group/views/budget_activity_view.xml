@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
+
     <record id="budget_activity_view_tree" model="ir.ui.view">
         <field name="name">budget.activity.view.tree</field>
         <field name="model">budget.activity</field>
@@ -10,6 +11,7 @@
             </xpath>
         </field>
     </record>
+
     <record id="view_budget_activity_filter" model="ir.ui.view">
         <field name="name">view.budget.activity.filter</field>
         <field name="model">budget.activity</field>
@@ -24,6 +26,7 @@
             </xpath>
         </field>
     </record>
+
     <record id="budget_activity_view_form" model="ir.ui.view">
         <field name="name">budget.activity.view.form</field>
         <field name="model">budget.activity</field>
@@ -40,4 +43,5 @@
             </xpath>
         </field>
     </record>
+
 </odoo>

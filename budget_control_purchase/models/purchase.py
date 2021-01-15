@@ -71,6 +71,18 @@ class PurchaseOrderLine(models.Model):
         ]
         return account
 
+    def _check_amount_currency_tax(
+        self, product_qty, date, doc_type="purchase"
+    ):
+        self.ensure_one()
+        budget_period = self.env["budget.period"]._get_eligible_budget_period(
+            date, doc_type
+        )
+        amount_currency = product_qty * self.price_unit
+        if budget_period.include_tax:
+            amount_currency += product_qty * self.price_tax / self.product_qty
+        return amount_currency
+
     def commit_budget(
         self, product_qty=False, reverse=False, move_line_id=False
     ):
@@ -82,7 +94,9 @@ class PurchaseOrderLine(models.Model):
             account = self._get_po_line_account()
             analytic_account = self.account_analytic_id
             doc_date = self.order_id.date_order
-            amount_currency = product_qty * self.price_unit
+            amount_currency = self._check_amount_currency_tax(
+                product_qty, doc_date
+            )
             currency = self.currency_id
             vals = self._prepare_budget_commitment(
                 account,

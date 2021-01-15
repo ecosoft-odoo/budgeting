@@ -7,10 +7,12 @@
         <field name="description">Helps you handle your budgeting needs.</field>
         <field name="sequence">10</field>
     </record>
+
     <record id="group_budget_control_user" model="res.groups">
         <field name="name">Budget User</field>
         <field name="category_id" ref="module_category_budget_control" />
     </record>
+
     <record id="group_budget_control_manager" model="res.groups">
         <field name="name">Budget Manager</field>
         <field name="category_id" ref="module_category_budget_control" />

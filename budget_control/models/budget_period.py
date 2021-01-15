@@ -66,6 +66,7 @@ class BudgetPeriod(models.Model):
         help="Budget control sheet in this budget control year, will use this "
         "data range to plan the budget.",
     )
+    include_tax = fields.Boolean(string="Included Tax")
 
     @api.model
     def create(self, vals):
@@ -128,6 +129,7 @@ class BudgetPeriod(models.Model):
         self.ensure_one()
         Period = self.env["mis.report.instance.period"]
         periods = {}
+        actual_model = self.env.ref("budget_control.model_account_budget_move")
         budget = Period.create(
             {
                 "name": "Budgeted",
@@ -145,7 +147,8 @@ class BudgetPeriod(models.Model):
                 "name": "Actuals",
                 "report_instance_id": self.report_instance_id.id,
                 "sequence": 90,
-                "source": "actuals",
+                "source": "actuals_alt",
+                "source_aml_model_id": actual_model.id,
                 "mode": "fix",
                 "manual_date_from": self.bm_date_from,
                 "manual_date_to": self.bm_date_to,
@@ -309,7 +312,7 @@ class BudgetPeriod(models.Model):
             kpi = kpis.get(account_id, False)
             if not kpi:
                 continue
-            if len(kpi) != 1:
+            if len(kpi) != 1 and not instance.report_id.is_activity:
                 account = Account.browse(account_id)
                 raise UserError(
                     _(

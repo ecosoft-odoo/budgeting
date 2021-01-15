@@ -7,13 +7,15 @@
     "version": "14.0.1.0.0",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-payment",
+    "website": "https://github.com/OCA/account-budgeting",
     "depends": [
         "budget_control",
         "budget_control_operating_unit",
         "account_operating_unit",
     ],
-    "data": ["report/budget_monitor_report_view.xml"],
+    "data": [
+        "report/budget_monitor_report_view.xml",
+    ],
     "maintainers": ["Saran440"],
     "development_status": "Alpha",
 }

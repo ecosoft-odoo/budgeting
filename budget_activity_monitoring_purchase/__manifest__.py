@@ -7,7 +7,7 @@
     "version": "14.0.1.0.0",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-payment",
+    "website": "https://github.com/OCA/account-budgeting",
     "depends": [
         "budget_activity_monitoring",
         "budget_control_purchase",

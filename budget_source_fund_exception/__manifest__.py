@@ -7,9 +7,11 @@
     "version": "14.0.1.0.0",
     "category": "Generic Modules/Budget Control",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-payment",
+    "website": "https://github.com/OCA/account-budgeting",
     "depends": ["budget_control_exception"],
     "license": "AGPL-3",
-    "data": ["data/budget_source_fund_exception_data.xml"],
+    "data": [
+        "data/budget_source_fund_exception_data.xml",
+    ],
     "installable": True,
 }

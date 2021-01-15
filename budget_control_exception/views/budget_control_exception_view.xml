@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
 <odoo>
+
     <record id="budget_control_view_form" model="ir.ui.view">
         <field name="name">budget.control.view.form</field>
         <field name="model">budget.control</field>
@@ -62,6 +63,7 @@
             </filter>
         </field>
     </record>
+
     <record id="action_budget_control_test_tree" model="ir.actions.act_window">
         <field name="name">Budget Control Exception Rules</field>
         <field name="res_model">exception.rule</field>
