@@ -21,7 +21,8 @@ class AccountMoveLine(models.Model):
 
     def _prepare_analytic_line(self):
         res = super()._prepare_analytic_line()
-        res[0]["activity_id"] = self.activity_id.id
+        for i, ml in enumerate(self):
+            res[i]["activity_id"] = ml.activity_id.id
         return res
 
     @api.onchange("activity_id")
