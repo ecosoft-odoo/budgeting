@@ -6,12 +6,6 @@ from odoo import fields, models
 class HRExpense(models.Model):
     _inherit = "hr.expense"
 
-    is_clearing = fields.Boolean(
-        string="Clear Advance",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
-        help="This Expense is clearing advance",
-    )
     advance_budget_move_ids = fields.One2many(
         comodel_name="advance.budget.move",
         inverse_name="expense_id",
@@ -20,7 +14,7 @@ class HRExpense(models.Model):
     def _budget_move_create(self, vals):
         self.ensure_one()
         new_vals = vals.copy()
-        if not self.advance and not self.is_clearing:
+        if not self.advance and not self.clearing:
             return super()._budget_move_create(vals)
         # Case : clearing we should decrease budget advance before increase
         if self.advance:
@@ -37,9 +31,9 @@ class HRExpense(models.Model):
 
     def _budget_move_unlink(self):
         self.ensure_one()
-        if not self.advance and not self.is_clearing:
+        if not self.advance and not self.clearing:
             return super()._budget_move_unlink()
-        if self.is_clearing:
+        if self.clearing:
             super()._budget_move_unlink()
         return self.advance_budget_move_ids.unlink()
 

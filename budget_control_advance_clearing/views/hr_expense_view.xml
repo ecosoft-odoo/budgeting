@@ -18,10 +18,6 @@
                     {'invisible': [False]}
                 </attribute>
             </field>
-            <xpath expr="//label[@for='advance']" position="after">
-                <field name="is_clearing" />
-                <label for="is_clearing" />
-            </xpath>
         </field>
     </record>
 
