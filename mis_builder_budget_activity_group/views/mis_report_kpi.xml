@@ -20,6 +20,7 @@
                     placeholder="Enter respectively variation, for example p, i, e. See also help tab."
                     attrs="{'invisible': [('activity_expression', '=', False)]}"
                 />
+                <field name="not_affect_budget" />
             </xpath>
         </field>
     </record>
