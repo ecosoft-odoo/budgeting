@@ -35,9 +35,10 @@ class MisReportKpi(models.Model):
         self.ensure_one()
         dom = "('activity_id', 'in', {})".format(tuple(activity_ids.ids))
         if self.not_affect_budget:
-            not_affect_budget = """
-                '|', ('move_id', '=', False), ('move_id.not_affect_budget', '=', False)
-            """
+            not_affect_budget = (
+                "'|', ('move_id', '=', False), "
+                "('move_id.not_affect_budget', '=', False)"
+            )
             dom = ", ".join([dom, not_affect_budget])
         return dom
 
