@@ -15,6 +15,11 @@
                     name="activity"
                     context="{'group_by':'activity_name'}"
                 />
+                <filter
+                    string="Activity Group"
+                    name="activity_group"
+                    context="{'group_by':'activity_group'}"
+                />
             </xpath>
         </field>
     </record>

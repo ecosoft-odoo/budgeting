@@ -9,18 +9,24 @@ class BudgetMonitorReport(models.Model):
 
     # Purchase Request
     def _select_pr_commit(self):
-        select_po_query = super()._select_pr_commit()
-        select_po_query = ",".join(
-            [select_po_query, "ba.name as activity_name"]
-        )
-        return select_po_query
-
-    def _from_pr_commit(self):
-        from_po_query = super()._from_pr_commit()
-        from_po_query = "\n".join(
+        select_pr_query = super()._select_pr_commit()
+        select_pr_query = ",".join(
             [
-                from_po_query,
-                "left outer join budget_activity ba on a.activity_id = ba.id",
+                select_pr_query,
+                "bag.name as activity_group, ba.name as activity_name",
             ]
         )
-        return from_po_query
+        return select_pr_query
+
+    def _from_pr_commit(self):
+        from_pr_query = super()._from_pr_commit()
+        from_pr_query = "\n".join(
+            [
+                from_pr_query,
+                "left outer join budget_activity ba \
+                    on a.activity_id = ba.id \
+                 left outer join budget_activity_group bag \
+                    on ba.activity_group_id = bag.id",
+            ]
+        )
+        return from_pr_query

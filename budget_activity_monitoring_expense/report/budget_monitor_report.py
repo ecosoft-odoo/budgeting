@@ -11,16 +11,22 @@ class BudgetMonitorReport(models.Model):
     def _select_ex_commit(self):
         select_po_query = super()._select_ex_commit()
         select_po_query = ",".join(
-            [select_po_query, "ba.name as activity_name"]
+            [
+                select_po_query,
+                "bag.name as activity_group, ba.name as activity_name",
+            ]
         )
         return select_po_query
 
     def _from_ex_commit(self):
-        from_po_query = super()._from_ex_commit()
-        from_po_query = "\n".join(
+        from_ex_commit = super()._from_ex_commit()
+        from_ex_commit = "\n".join(
             [
-                from_po_query,
-                "left outer join budget_activity ba on a.activity_id = ba.id",
+                from_ex_commit,
+                "left outer join budget_activity ba \
+                    on a.activity_id = ba.id \
+                 left outer join budget_activity_group bag \
+                    on ba.activity_group_id = bag.id",
             ]
         )
-        return from_po_query
+        return from_ex_commit

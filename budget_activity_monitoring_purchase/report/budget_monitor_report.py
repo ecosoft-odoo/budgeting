@@ -11,7 +11,10 @@ class BudgetMonitorReport(models.Model):
     def _select_po_commit(self):
         select_po_query = super()._select_po_commit()
         select_po_query = ",".join(
-            [select_po_query, "ba.name as activity_name"]
+            [
+                select_po_query,
+                "bag.name as activity_group, ba.name as activity_name",
+            ]
         )
         return select_po_query
 
@@ -20,7 +23,10 @@ class BudgetMonitorReport(models.Model):
         from_po_query = "\n".join(
             [
                 from_po_query,
-                "left outer join budget_activity ba on a.activity_id = ba.id",
+                "left outer join budget_activity ba \
+                    on a.activity_id = ba.id \
+                 left outer join budget_activity_group bag \
+                    on ba.activity_group_id = bag.id",
             ]
         )
         return from_po_query

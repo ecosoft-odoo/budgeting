@@ -17,7 +17,6 @@ class BudgetMonitorReport(models.Model):
         return """
             select 4000000000 + a.id as id,
             'hr.expense,' || a.expense_id as res_id,
-            null::char as kpi_name,
             a.analytic_account_id,
             a.date as date,
             '4_ex_commit' as amount_type,

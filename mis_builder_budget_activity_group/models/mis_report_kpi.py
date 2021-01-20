@@ -9,6 +9,9 @@ from odoo import api, fields, models
 class MisReportKpi(models.Model):
     _inherit = "mis.report.kpi"
 
+    description = fields.Char(
+        compute="_compute_name_activity", store=True, readonly=False
+    )
     activity_expression = fields.Boolean(
         compute="_compute_is_activity",
         readonly=False,
@@ -25,6 +28,13 @@ class MisReportKpi(models.Model):
     not_affect_budget = fields.Boolean(
         default=True, help="If check, Does not affect the budget."
     )
+
+    @api.depends("budget_activity_group")
+    def _compute_name_activity(self):
+        for rec in self:
+            rec.description = False
+            if rec.activity_expression and rec.budget_activity_group:
+                rec.description = rec.budget_activity_group.name
 
     @api.depends("report_id.is_activity")
     def _compute_is_activity(self):

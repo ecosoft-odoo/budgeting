@@ -17,7 +17,6 @@ class BudgetMonitorReport(models.Model):
         return """
             select 3000000000 + a.id as id,
             'purchase.order.line,' || a.purchase_line_id as res_id,
-            null::char as kpi_name,
             a.analytic_account_id,
             a.date as date,
             '3_po_commit' as amount_type,

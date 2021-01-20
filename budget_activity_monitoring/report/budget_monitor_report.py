@@ -7,21 +7,41 @@ from odoo import fields, models
 class BudgetMonitorReport(models.Model):
     _inherit = "budget.monitor.report"
 
+    activity_group = fields.Char(string="Activity Group")
     activity_name = fields.Char(string="Activity Name")
 
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
         select_budget_query = ",".join(
-            [select_budget_query, "null::char as activity_name"]
+            [
+                select_budget_query,
+                "mrk.description as activity_group, null::char as activity_name",
+            ]
         )
         return select_budget_query
+
+    def _from_budget(self):
+        from_budget_query = super()._from_budget()
+        from_budget_query = "\n".join(
+            [
+                from_budget_query,
+                "join mis_report_kpi_expression mrke \
+                 on mbi.kpi_expression_id = mrke.id \
+                 join mis_report_kpi mrk on mrke.kpi_id = mrk.id",
+            ]
+        )
+        return from_budget_query
 
     # Actual
     def _select_actual(self):
         select_actual_query = super()._select_actual()
         select_actual_query = ",".join(
-            [select_actual_query, "ba.name as activity_name"]
+            [
+                select_actual_query,
+                "bag.name as activity_group, \
+                 ba.name as activity_name",
+            ]
         )
         return select_actual_query
 
@@ -30,7 +50,10 @@ class BudgetMonitorReport(models.Model):
         from_actual_query = "\n".join(
             [
                 from_actual_query,
-                "left outer join budget_activity ba on aml.activity_id = ba.id",
+                "left outer join budget_activity ba \
+                    on a.activity_id = ba.id \
+                 left outer join budget_activity_group bag \
+                    on ba.activity_group_id = bag.id",
             ]
         )
         return from_actual_query

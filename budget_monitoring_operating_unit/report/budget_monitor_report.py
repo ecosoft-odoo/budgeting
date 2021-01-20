@@ -21,6 +21,6 @@ class BudgetMonitorReport(models.Model):
     def _select_actual(self):
         select_actual_query = super()._select_actual()
         select_actual_query = ",".join(
-            [select_actual_query, "aml.operating_unit_id"]
+            [select_actual_query, "b.operating_unit_id"]
         )
         return select_actual_query
