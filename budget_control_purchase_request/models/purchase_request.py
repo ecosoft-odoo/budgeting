@@ -18,11 +18,11 @@ class PurchaseRequest(models.Model):
 
     def _write(self, vals):
         """
-        - Commit budget when state changes to To be approved
+        - Commit budget when state changes to approved
         - Cancel/Draft document should delete all budget commitment
         """
         res = super()._write(vals)
-        if vals.get("state") in ("to_approve", "rejected", "draft"):
+        if vals.get("state") in ("approved", "rejected", "draft"):
             BudgetControl = self.env["budget.control"]
             pr_lines = self.mapped("line_ids")
             analytic_account_ids = pr_lines.mapped("analytic_account_id")
@@ -37,8 +37,8 @@ class PurchaseRequest(models.Model):
                 pr_line.commit_budget()
         return res
 
-    def button_to_approve(self):
-        res = super().button_to_approve()
+    def button_approved(self):
+        res = super().button_approved()
         self.flush()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:

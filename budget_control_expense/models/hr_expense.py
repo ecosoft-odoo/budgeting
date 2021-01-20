@@ -1,7 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import _, fields, models
-from odoo.exceptions import UserError
+from odoo import fields, models
 
 
 class HRExpense(models.Model):
@@ -13,28 +12,28 @@ class HRExpense(models.Model):
         inverse_name="expense_id",
     )
 
-    def _write(self, vals):
-        """
-        - Commit budget when state submitted
-        """
-        res = super()._write(vals)
-        if vals.get("state") == "reported":
-            BudgetControl = self.env["budget.control"]
-            budget_control = BudgetControl.search(
-                [
-                    (
-                        "analytic_account_id",
-                        "in",
-                        self.mapped("analytic_account_id").ids,
-                    )
-                ]
-            )
-            if any(
-                state != "done" for state in budget_control.mapped("state")
-            ):
-                raise UserError(_("Analytic Account is not Controlled"))
-            self.commit_budget()
-        return res
+    # def _write(self, vals):
+    #     """
+    #     - Commit budget when state submitted
+    #     """
+    #     res = super()._write(vals)
+    #     if vals.get("state") == "reported":
+    #         BudgetControl = self.env["budget.control"]
+    #         budget_control = BudgetControl.search(
+    #             [
+    #                 (
+    #                     "analytic_account_id",
+    #                     "in",
+    #                     self.mapped("analytic_account_id").ids,
+    #                 )
+    #             ]
+    #         )
+    #         if any(
+    #             state != "done" for state in budget_control.mapped("state")
+    #         ):
+    #             raise UserError(_("Analytic Account is not Controlled"))
+    #         self.commit_budget()
+    #     return res
 
     def recompute_budget_move(self):
         self.mapped("budget_move_ids").unlink()
@@ -65,7 +64,7 @@ class HRExpense(models.Model):
     def commit_budget(self, reverse=False):
         """Create budget commit for each expense."""
         for expense in self:
-            if expense.state in ("reported", "approved", "done"):
+            if expense.state in ("approved", "done"):
                 account = expense.account_id
                 analytic_account = expense.analytic_account_id
                 doc_date = expense.date
