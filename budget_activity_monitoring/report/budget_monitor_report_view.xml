@@ -13,7 +13,7 @@
                 <filter
                     string="Activity"
                     name="activity"
-                    context="{'group_by':'activity_name'}"
+                    context="{'group_by':'activity'}"
                 />
                 <filter
                     string="Activity Group"

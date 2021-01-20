@@ -7,26 +7,26 @@ from odoo import models
 class BudgetMonitorReport(models.Model):
     _inherit = "budget.monitor.report"
 
-    # Purchase
-    def _select_po_commit(self):
-        select_po_query = super()._select_po_commit()
-        select_po_query = ",".join(
+    # Advance
+    def _select_av_commit(self):
+        select_av_query = super()._select_av_commit()
+        select_av_query = ",".join(
             [
-                select_po_query,
+                select_av_query,
                 "bag.name as activity_group, ba.name as activity",
             ]
         )
-        return select_po_query
+        return select_av_query
 
-    def _from_po_commit(self):
-        from_po_query = super()._from_po_commit()
-        from_po_query = "\n".join(
+    def _from_av_commit(self):
+        from_av_commit = super()._from_av_commit()
+        from_av_commit = "\n".join(
             [
-                from_po_query,
+                from_av_commit,
                 "left outer join budget_activity ba \
                     on a.activity_id = ba.id",
                 "left outer join budget_activity_group bag \
                     on ba.activity_group_id = bag.id",
             ]
         )
-        return from_po_query
+        return from_av_commit

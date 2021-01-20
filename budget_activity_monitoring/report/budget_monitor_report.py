@@ -8,7 +8,7 @@ class BudgetMonitorReport(models.Model):
     _inherit = "budget.monitor.report"
 
     activity_group = fields.Char(string="Activity Group")
-    activity_name = fields.Char(string="Activity Name")
+    activity = fields.Char(string="Activity")
 
     # Budget
     def _select_budget(self):
@@ -16,7 +16,7 @@ class BudgetMonitorReport(models.Model):
         select_budget_query = ",".join(
             [
                 select_budget_query,
-                "mrk.description as activity_group, null::char as activity_name",
+                "mrk.description as activity_group, null::char as activity",
             ]
         )
         return select_budget_query
@@ -27,8 +27,8 @@ class BudgetMonitorReport(models.Model):
             [
                 from_budget_query,
                 "join mis_report_kpi_expression mrke \
-                 on mbi.kpi_expression_id = mrke.id \
-                 join mis_report_kpi mrk on mrke.kpi_id = mrk.id",
+                    on mbi.kpi_expression_id = mrke.id",
+                "join mis_report_kpi mrk on mrke.kpi_id = mrk.id",
             ]
         )
         return from_budget_query
@@ -39,8 +39,7 @@ class BudgetMonitorReport(models.Model):
         select_actual_query = ",".join(
             [
                 select_actual_query,
-                "bag.name as activity_group, \
-                 ba.name as activity_name",
+                "bag.name as activity_group, ba.name as activity",
             ]
         )
         return select_actual_query
@@ -51,8 +50,8 @@ class BudgetMonitorReport(models.Model):
             [
                 from_actual_query,
                 "left outer join budget_activity ba \
-                    on a.activity_id = ba.id \
-                 left outer join budget_activity_group bag \
+                    on a.activity_id = ba.id",
+                "left outer join budget_activity_group bag \
                     on ba.activity_group_id = bag.id",
             ]
         )

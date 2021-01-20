@@ -7,16 +7,16 @@ from odoo import models
 class BudgetMonitorReport(models.Model):
     _inherit = "budget.monitor.report"
 
-    # Purchase Request
+    # Expenses
     def _select_ex_commit(self):
-        select_po_query = super()._select_ex_commit()
-        select_po_query = ",".join(
+        select_ex_query = super()._select_ex_commit()
+        select_ex_query = ",".join(
             [
-                select_po_query,
-                "bag.name as activity_group, ba.name as activity_name",
+                select_ex_query,
+                "bag.name as activity_group, ba.name as activity",
             ]
         )
-        return select_po_query
+        return select_ex_query
 
     def _from_ex_commit(self):
         from_ex_commit = super()._from_ex_commit()
@@ -24,8 +24,8 @@ class BudgetMonitorReport(models.Model):
             [
                 from_ex_commit,
                 "left outer join budget_activity ba \
-                    on a.activity_id = ba.id \
-                 left outer join budget_activity_group bag \
+                    on a.activity_id = ba.id",
+                "left outer join budget_activity_group bag \
                     on ba.activity_group_id = bag.id",
             ]
         )

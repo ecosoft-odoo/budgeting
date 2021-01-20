@@ -13,7 +13,7 @@ class BudgetMonitorReport(models.Model):
         select_pr_query = ",".join(
             [
                 select_pr_query,
-                "bag.name as activity_group, ba.name as activity_name",
+                "bag.name as activity_group, ba.name as activity",
             ]
         )
         return select_pr_query
@@ -24,8 +24,8 @@ class BudgetMonitorReport(models.Model):
             [
                 from_pr_query,
                 "left outer join budget_activity ba \
-                    on a.activity_id = ba.id \
-                 left outer join budget_activity_group bag \
+                    on a.activity_id = ba.id",
+                "left outer join budget_activity_group bag \
                     on ba.activity_group_id = bag.id",
             ]
         )

@@ -16,15 +16,18 @@ class HRExpense(models.Model):
         new_vals = vals.copy()
         if not self.advance and not self.clearing:
             return super()._budget_move_create(vals)
-        # Case : clearing we should decrease budget advance before increase
         if self.advance:
             budget_move = self.env["advance.budget.move"].create(new_vals)
             return budget_move
-        # Convert debit to credit
+        # Case : Clearing, we should decrease budget advance before increase
         budget_move = False
-        if new_vals["debit"]:
+        advance_clearing = self.sheet_id.advance_sheet_id
+        if new_vals["debit"] and advance_clearing:
+            expense_id = advance_clearing.expense_line_ids[0]
             new_vals["credit"] = new_vals["debit"]
             new_vals["debit"] = 0.0
+            # Updated on advance
+            new_vals["activity_id"] = expense_id.activity_id.id
             budget_move = self.env["advance.budget.move"].create(new_vals)
         super()._budget_move_create(vals)
         return budget_move
