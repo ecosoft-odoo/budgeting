@@ -12,6 +12,15 @@ class HRExpense(models.Model):
     )
 
     def _budget_move_create(self, vals):
+        """
+        Case Expense
+        - Increase expense on expense
+        Case Advance
+        - Increase advance on employee advance
+        Case Clearing
+        - Decrease advance on origin employee advance
+        - Increase expense on expense
+        """
         self.ensure_one()
         new_vals = vals.copy()
         if not self.advance and not self.clearing:
@@ -19,11 +28,12 @@ class HRExpense(models.Model):
         if self.advance:
             budget_move = self.env["advance.budget.move"].create(new_vals)
             return budget_move
-        # Case : Clearing, we should decrease budget advance before increase
         budget_move = False
-        if new_vals["debit"]:
+        expense_advance = self.sheet_id.advance_sheet_id.expense_line_ids
+        if expense_advance and new_vals["debit"]:
             new_vals["credit"] = new_vals["debit"]
             new_vals["debit"] = 0.0
+            new_vals["activity_id"] = expense_advance.activity_id.id
             budget_move = self.env["advance.budget.move"].create(new_vals)
         super()._budget_move_create(vals)
         return budget_move
