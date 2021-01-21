@@ -18,14 +18,15 @@ class HRExpenseSheet(models.Model):
             expense_line.uncommit_expense_budget()
         return res
 
-    def _check_budget_expense(self):
-        if any(not exp.advance for exp in self):
-            return super()._check_budget_expense()
-        BudgetPeriod = self.env["budget.period"]
-        for doc in self:
-            BudgetPeriod.check_budget(
-                doc.advance_budget_move_ids, doc_type="advance"
-            )
+    def approve_expense_sheets(self):
+        res = super().approve_expense_sheets()
+        self.flush()
+        for sheet in self:
+            if sheet.advance:
+                sheet._check_budget_expense(
+                    sheet.advance_budget_move_ids, doc_type="advance"
+                )
+        return res
 
     def recompute_advance_budget_move(self):
         self.mapped("advance_budget_move_ids").unlink()

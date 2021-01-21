@@ -47,6 +47,23 @@ class PurchaseRequest(models.Model):
             )
         return res
 
+    def button_to_approve(self):
+        """ Pre-Commit Check Budget """
+        res = super().button_to_approve()
+        self.flush()
+        BudgetPeriod = self.env["budget.period"]
+        for doc in self:
+            pr_line = doc.line_ids
+            date_required = set(pr_line.mapped("date_required"))
+            BudgetPeriod.with_context(
+                {"date_manual": date_required.pop()}
+            ).check_budget(
+                doc.line_ids,
+                doc_type="purchase_request",
+                amount_precommit=sum(pr_line.mapped("estimated_cost")),
+            )
+        return res
+
 
 class PurchaseRequestLine(models.Model):
     _name = "purchase.request.line"
@@ -75,7 +92,7 @@ class PurchaseRequestLine(models.Model):
     def commit_budget(self, reverse=False, purchase_line_id=False):
         """Create budget commit for each purchase.request.line."""
         self.ensure_one()
-        if self.request_id.state in ("to_approve", "approved", "done"):
+        if self.request_id.state in ("approved", "done"):
             account = self._get_pr_line_account()
             analytic_account = self.analytic_account_id
             doc_date = self.request_id.date_start

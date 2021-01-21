@@ -12,29 +12,6 @@ class HRExpense(models.Model):
         inverse_name="expense_id",
     )
 
-    # def _write(self, vals):
-    #     """
-    #     - Commit budget when state submitted
-    #     """
-    #     res = super()._write(vals)
-    #     if vals.get("state") == "reported":
-    #         BudgetControl = self.env["budget.control"]
-    #         budget_control = BudgetControl.search(
-    #             [
-    #                 (
-    #                     "analytic_account_id",
-    #                     "in",
-    #                     self.mapped("analytic_account_id").ids,
-    #                 )
-    #             ]
-    #         )
-    #         if any(
-    #             state != "done" for state in budget_control.mapped("state")
-    #         ):
-    #             raise UserError(_("Analytic Account is not Controlled"))
-    #         self.commit_budget()
-    #     return res
-
     def recompute_budget_move(self):
         self.mapped("budget_move_ids").unlink()
         self.commit_budget()
