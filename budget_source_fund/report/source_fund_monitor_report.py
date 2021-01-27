@@ -16,6 +16,7 @@ class SourceFundMonitorReport(models.Model):
     budget_control_id = fields.Many2one(comodel_name="budget.control")
     amount = fields.Float()
     spent = fields.Float()
+    total = fields.Float()
     fund_group_name = fields.Char(string="Fund Group")
 
     @property
@@ -26,7 +27,8 @@ class SourceFundMonitorReport(models.Model):
         return """
             select sf_line.id, sf_line.date_range_id, sf_line.date_from,
             sf_line.date_to, sf_line.budget_control_id, sf_line.amount,
-            sf_line.spent, sf.name as fund_name, sf_group.name as fund_group_name
+            (sf_line.spent * -1) as spent, (sf_line.amount - sf_line.spent) as total,
+            sf.name as fund_name,sf_group.name as fund_group_name
         """
 
     def _from_source_fund(self):
