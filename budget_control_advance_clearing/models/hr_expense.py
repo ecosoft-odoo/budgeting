@@ -23,13 +23,14 @@ class HRExpense(models.Model):
         """
         self.ensure_one()
         new_vals = vals.copy()
-        if not self.advance and not self.clearing:
+        sheet_advance = self.sheet_id.advance_sheet_id  # clearing
+        if not self.advance and not sheet_advance:
             return super()._budget_move_create(vals)
         if self.advance:
             budget_move = self.env["advance.budget.move"].create(new_vals)
             return budget_move
         budget_move = False
-        expense_advance = self.sheet_id.advance_sheet_id.expense_line_ids
+        expense_advance = sheet_advance.expense_line_ids
         if expense_advance and new_vals["debit"]:
             new_vals["credit"] = new_vals["debit"]
             new_vals["debit"] = 0.0
@@ -40,9 +41,10 @@ class HRExpense(models.Model):
 
     def _budget_move_unlink(self):
         self.ensure_one()
-        if not self.advance and not self.clearing:
+        sheet_advance = self.sheet_id.advance_sheet_id  # clearing
+        if not self.advance and not sheet_advance:
             return super()._budget_move_unlink()
-        if self.clearing:
+        if sheet_advance:
             super()._budget_move_unlink()
         return self.advance_budget_move_ids.unlink()
 
