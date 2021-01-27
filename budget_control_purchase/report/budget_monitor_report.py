@@ -18,6 +18,7 @@ class BudgetMonitorReport(models.Model):
             select 3000000000 + a.id as id,
             'purchase.order.line,' || a.purchase_line_id as res_id,
             a.analytic_account_id,
+            a.analytic_group,
             a.date as date,
             '3_po_commit' as amount_type,
             a.credit-a.debit as amount,

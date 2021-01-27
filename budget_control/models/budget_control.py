@@ -48,6 +48,12 @@ class BudgetControl(models.Model):
         required=True,
         ondelete="restrict",
     )
+    analytic_group = fields.Many2one(
+        comodel_name="account.analytic.group",
+        string="Analytic Group",
+        related="analytic_account_id.group_id",
+        store=True,
+    )
     item_ids = fields.One2many(
         comodel_name="mis.budget.item",
         inverse_name="budget_control_id",

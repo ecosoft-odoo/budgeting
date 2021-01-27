@@ -18,6 +18,7 @@ class BudgetMonitorReport(models.Model):
             select 5000000000 + a.id as id,
             'hr.expense,' || a.expense_id as res_id,
             a.analytic_account_id,
+            a.analytic_group,
             a.date as date,
             '5_ex_commit' as amount_type,
             a.credit-a.debit as amount,

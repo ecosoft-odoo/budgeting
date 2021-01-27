@@ -22,6 +22,9 @@ class BudgetMonitorReport(models.Model):
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
     )
+    analytic_group = fields.Many2one(
+        comodel_name="account.analytic.group",
+    )
     date = fields.Date()
     amount = fields.Float()
     amount_type = fields.Selection(
@@ -41,6 +44,7 @@ class BudgetMonitorReport(models.Model):
             select 1000000000 + mbi.id as id,
             'mis.budget.item,' || mbi.id as res_id,
             mbi.analytic_account_id,
+            bc.analytic_group,
             mbi.date_from as date,  -- approx date
             '1_budget' as amount_type,
             mbi.amount as amount,
@@ -64,6 +68,7 @@ class BudgetMonitorReport(models.Model):
             select 8000000000 + a.id as id,
             'account.move.line,' || a.move_line_id as res_id,
             a.analytic_account_id,
+            a.analytic_group,
             a.date as date,
             '8_actual' as amount_type,
             a.credit-a.debit as amount,

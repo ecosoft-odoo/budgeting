@@ -9,6 +9,7 @@
                 <field name="name" />
                 <field name="budget_id" />
                 <field name="analytic_account_id" />
+                <field name="analytic_group" />
                 <field name="assignee_id" />
                 <field
                     name="state"
@@ -49,6 +50,11 @@
                         name="analytic"
                         string="Analytic Account"
                         context="{'group_by': 'analytic_account_id'}"
+                    />
+                    <filter
+                        name="analytic_group"
+                        string="Analytic Group"
+                        context="{'group_by': 'analytic_group'}"
                     />
                     <filter
                         name="mis_budget"
@@ -131,6 +137,7 @@
                         <group name="budget_control_left">
                             <field name="budget_id" />
                             <field name="analytic_account_id" />
+                            <field name="analytic_group" />
                             <field name="plan_date_range_type_id" />
                             <field name="init_budget_commit" />
                         </group>

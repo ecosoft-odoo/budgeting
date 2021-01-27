@@ -64,6 +64,11 @@
                         context="{'group_by':'res_id'}"
                     />
                     <filter
+                        string="Analytic Group"
+                        name="analytic_group"
+                        context="{'group_by':'analytic_group'}"
+                    />
+                    <filter
                         string="Analytic Account"
                         name="analytic_account_id"
                         context="{'group_by':'analytic_account_id'}"
