@@ -70,6 +70,12 @@ class BudgetControl(models.Model):
         help="If checked, the newly created budget control sheet will has "
         "initial budget equal to current budget commitment of its year.",
     )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        string="Company",
+        default=lambda self: self.env.company,
+        required=True,
+    )
     state = fields.Selection(
         [("draft", "Draft"), ("done", "Controlled"), ("cancel", "Cancelled")],
         string="Status",
