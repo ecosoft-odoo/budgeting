@@ -56,11 +56,11 @@ class HRExpenseSheet(models.Model):
             sheet._check_budget_expense(sheet.budget_move_ids)
         return res
 
-    def action_submit_sheet(self):
-        res = super().action_submit_sheet()
-        self.flush()
-        for sheet in self:
-            sheet._check_budget_expense(
-                sheet.expense_line_ids, amount_precommit=sheet.total_amount
-            )
-        return res
+    # def action_submit_sheet(self):
+    #     res = super().action_submit_sheet()
+    #     self.flush()
+    #     for sheet in self:
+    #         sheet._check_budget_expense(
+    #             sheet.expense_line_ids, amount_precommit=sheet.total_amount
+    #         )
+    #     return res
