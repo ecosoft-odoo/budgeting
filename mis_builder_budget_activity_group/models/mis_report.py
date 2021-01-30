@@ -25,7 +25,6 @@ class MisReport(models.Model):
         if self.is_activity:
             aep = AEPA(companies, currency, self.account_model)
             for kpi in self.all_kpi_ids:
-                kpi.expression_ids.flush()
                 for expression in kpi.expression_ids:
                     if expression.name:
                         aep.parse_expr(expression.name)
