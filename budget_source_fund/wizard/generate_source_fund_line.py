@@ -1,6 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import api, fields, models
+from odoo import fields, models
 
 
 class GenerateSourceFundLine(models.TransientModel):
@@ -12,17 +12,6 @@ class GenerateSourceFundLine(models.TransientModel):
         string="Budget Control",
         required=True,
     )
-    date_range_id = fields.Many2one(
-        comodel_name="date.range", string="Date Range"
-    )
-    date_from = fields.Date(string="From", required=True)
-    date_to = fields.Date(string="To", required=True)
-
-    @api.onchange("date_range_id")
-    def _onchange_date_range(self):
-        if self.date_range_id:
-            self.date_from = self.date_range_id.date_start
-            self.date_to = self.date_range_id.date_end
 
     def _check_dates(self, fund):
         if not self.budget_control_ids:
@@ -41,9 +30,8 @@ class GenerateSourceFundLine(models.TransientModel):
                 0,
                 0,
                 {
-                    "date_range_id": self.date_range_id.id,
-                    "date_from": self.date_from,
-                    "date_to": self.date_to,
+                    "date_from": budget.date_from,
+                    "date_to": budget.date_to,
                     "budget_control_id": budget.id,
                     "fund_id": fund.id,
                 },

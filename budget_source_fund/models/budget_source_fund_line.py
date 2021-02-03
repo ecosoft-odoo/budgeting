@@ -11,27 +11,25 @@ class BudgetSourceFundLine(models.Model):
 
     fund_id = fields.Many2one(comodel_name="budget.source.fund", readonly=True)
     active = fields.Boolean(related="fund_id.active")
-    date_range_id = fields.Many2one(
-        comodel_name="date.range",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
-    )
     date_from = fields.Date(
         required=True,
         string="From",
-        readonly=True,
         tracking=True,
         states={"draft": [("readonly", False)]},
     )
     date_to = fields.Date(
         required=True,
         string="To",
-        readonly=True,
         tracking=True,
         states={"draft": [("readonly", False)]},
     )
     budget_control_id = fields.Many2one(
-        comodel_name="budget.control", readonly=True
+        comodel_name="budget.control",
+    )
+    budget_id = fields.Many2one(
+        comodel_name="mis.budget",
+        related="budget_control_id.budget_id",
+        store=True,
     )
     company_currency_id = fields.Many2one(
         comodel_name="res.currency",
@@ -43,7 +41,6 @@ class BudgetSourceFundLine(models.Model):
     amount = fields.Monetary(
         default=0.0,
         currency_field="company_currency_id",
-        readonly=True,
         tracking=True,
         states={"draft": [("readonly", False)]},
     )

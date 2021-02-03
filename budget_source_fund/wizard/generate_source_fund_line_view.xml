@@ -8,13 +8,6 @@
                 <group>
                     <field name="budget_control_ids" widget="many2many_tags" />
                 </group>
-                <group>
-                    <group>
-                        <field name="date_range_id" />
-                        <field name="date_from" />
-                        <field name="date_to" />
-                    </group>
-                </group>
                 <footer>
                     <button
                         name="action_generate_line"

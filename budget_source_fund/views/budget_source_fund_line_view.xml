@@ -30,6 +30,11 @@
                         string="Budget Control"
                         context="{'group_by':'budget_control_id'}"
                     />
+                    <filter
+                        name="budget_id"
+                        string="Budget"
+                        context="{'group_by':'budget_id'}"
+                    />
                 </group>
            </search>
         </field>
@@ -41,10 +46,10 @@
         <field name="arch" type="xml">
             <tree delete="0" create="0">
                 <field name="fund_id" />
-                <field name="date_range_id" />
                 <field name="date_from" />
                 <field name="date_to" />
                 <field name="budget_control_id" />
+                <field name="budget_id" />
                 <field name="amount" sum="Total Amount" />
                 <field name="spent" sum="Spent" />
                 <field
@@ -58,6 +63,7 @@
         </field>
     </record>
 
+    <!-- Menu source of funds all -->
     <record id="view_budget_source_fund_line_form" model="ir.ui.view">
         <field name="name">budget.source.fund.line.form</field>
         <field name="model">budget.source.fund.line</field>
@@ -70,12 +76,12 @@
                     <group>
                         <group>
                             <field name="fund_id" />
+                            <field name="budget_id" />
                             <field name="budget_control_id" />
                             <field name="amount" />
                             <field name="spent" />
                         </group>
                         <group>
-                            <field name="date_range_id" />
                             <field name="date_from" />
                             <field name="date_to" />
                             <field name="active" invisible="1" />

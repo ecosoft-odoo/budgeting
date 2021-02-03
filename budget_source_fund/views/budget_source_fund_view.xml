@@ -40,6 +40,7 @@
         </field>
     </record>
 
+    <!-- Main source of funds configuration -->
     <record id="budget_source_fund_form" model="ir.ui.view">
         <field name="name">budget.source.fund.form</field>
         <field name="model">budget.source.fund</field>
@@ -79,11 +80,11 @@
                         <page name="fund_line" string="Allocation">
                             <field name="fund_line_ids">
                                 <tree editable="bottom">
-                                    <field name="date_range_id" />
                                     <field name="date_from" />
                                     <field name="date_to" />
                                     <field name="budget_control_id" />
-                                    <field name="amount" />
+                                    <field name="budget_id" invisible="1" />
+                                    <field name="amount" sum="Total Amount" />
                                     <field name="state" invisible="1" />
                                     <field name="company_currency_id" invisible="1" />
                                     <field name="active" invisible="1" />

@@ -9,7 +9,6 @@
                  <field name="fund_name" />
                  <field name="fund_group_name" />
                  <field name="budget_control_id" />
-                 <field name="date_range_id" />
                  <field name="date_from" />
                  <field name="date_to" />
                  <field name="amount" />
