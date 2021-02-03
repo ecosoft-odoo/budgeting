@@ -104,10 +104,10 @@
                         </h1>
                     </div>
                     <group>
-                        <group>
+                        <group name="budget_transfer_left">
                             <field name="budget_period_id" />
                         </group>
-                        <group>
+                        <group name="budget_transfer_right">
                             <field name="mis_budget_id" />
                         </group>
                     </group>
