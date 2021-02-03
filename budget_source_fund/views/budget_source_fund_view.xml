@@ -16,7 +16,7 @@
         <field name="name">budget.source.fund.filter</field>
         <field name="model">budget.source.fund</field>
         <field name="arch" type="xml">
-            <search string="Search Source of Fundl">
+            <search string="Search Source of Fund">
                 <field name="name" string="Source of Fund" />
                 <separator />
                 <filter
@@ -78,7 +78,7 @@
                     <notebook>
                         <page name="fund_line" string="Allocation">
                             <field name="fund_line_ids">
-                                <tree>
+                                <tree editable="bottom">
                                     <field name="date_range_id" />
                                     <field name="date_from" />
                                     <field name="date_to" />
