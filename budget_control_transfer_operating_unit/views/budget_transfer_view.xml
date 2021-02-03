@@ -53,6 +53,9 @@
                     options="{'no_create': True}"
                 />
             </xpath>
+            <xpath expr="//field[@name='transfer_item_ids']/tree" position="inside">
+                <field name="source_operating_unit_id" invisible="1" />
+            </xpath>
         </field>
     </record>
 
