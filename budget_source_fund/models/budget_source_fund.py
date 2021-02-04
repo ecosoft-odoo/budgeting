@@ -30,3 +30,12 @@ class BudgetSourceFund(models.Model):
     _sql_constraints = [
         ("unique_name", "UNIQUE(name)", "Group must be unique")
     ]
+
+    def action_open_fund_line(self):
+        self.ensure_one()
+        action = self.env.ref(
+            "budget_source_fund.budget_source_fund_line_action"
+        )
+        action_dict = action.read()[0]
+        action_dict["context"] = {"active_test": True}
+        return action_dict

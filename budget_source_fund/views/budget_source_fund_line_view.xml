@@ -19,6 +19,11 @@
                     string="Archived"
                     domain="[('active', '=', False)]"
                 />
+                <filter
+                    name="unarchived"
+                    string="Unarchived"
+                    domain="[('active', '=', True)]"
+                />
                 <group expand="0" string="Group By">
                     <filter
                         name="fund_id"
@@ -49,7 +54,7 @@
                 <field name="date_from" />
                 <field name="date_to" />
                 <field name="budget_control_id" />
-                <field name="budget_id" />
+                <field name="budget_id" optional="show" />
                 <field name="amount" sum="Total Amount" />
                 <field name="spent" sum="Spent" />
                 <field
@@ -58,6 +63,7 @@
                     decoration-info="state == 'draft'"
                     decoration-success="state == 'done'"
                 />
+                <field name="active" widget="boolean_toggle" />
                 <field name="company_currency_id" invisible="1" />
             </tree>
         </field>
@@ -73,15 +79,21 @@
                     <field name="state" widget="statusbar" />
                 </header>
                 <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
                     <group>
-                        <group>
+                        <group name="source_fund_line_left">
                             <field name="fund_id" />
                             <field name="budget_id" />
                             <field name="budget_control_id" />
                             <field name="amount" />
                             <field name="spent" />
                         </group>
-                        <group>
+                        <group name="source_fund_line_right">
                             <field name="date_from" />
                             <field name="date_to" />
                             <field name="active" invisible="1" />
@@ -100,6 +112,7 @@
         <field name="name">Source of Funds All</field>
         <field name="res_model">budget.source.fund.line</field>
         <field name="view_mode">tree,form</field>
+        <field name="context">{'active_test': False}</field>
     </record>
 
     <menuitem

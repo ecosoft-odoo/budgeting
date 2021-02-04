@@ -10,7 +10,15 @@ class BudgetSourceFundLine(models.Model):
     _rec_name = "fund_id"
 
     fund_id = fields.Many2one(comodel_name="budget.source.fund", readonly=True)
-    active = fields.Boolean(related="fund_id.active")
+    budget_control_id = fields.Many2one(
+        comodel_name="budget.control",
+    )
+    budget_id = fields.Many2one(
+        comodel_name="mis.budget",
+        related="budget_control_id.budget_id",
+        store=True,
+    )
+    active = fields.Boolean(related="budget_control_id.active")
     date_from = fields.Date(
         required=True,
         string="From",
@@ -22,14 +30,6 @@ class BudgetSourceFundLine(models.Model):
         string="To",
         tracking=True,
         states={"draft": [("readonly", False)]},
-    )
-    budget_control_id = fields.Many2one(
-        comodel_name="budget.control",
-    )
-    budget_id = fields.Many2one(
-        comodel_name="mis.budget",
-        related="budget_control_id.budget_id",
-        store=True,
     )
     company_currency_id = fields.Many2one(
         comodel_name="res.currency",

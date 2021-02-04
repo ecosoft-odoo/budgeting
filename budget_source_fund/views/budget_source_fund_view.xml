@@ -53,6 +53,15 @@
                         bg_color="bg-danger"
                         attrs="{'invisible': [('active', '=', True)]}"
                     />
+                    <div class="oe_button_box">
+                        <button
+                            name="action_open_fund_line"
+                            string="Allocation Funds"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-bars"
+                        />
+                    </div>
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only" />
                         <h1>

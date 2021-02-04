@@ -7,10 +7,10 @@
         <field name="arch" type="xml">
             <tree string="Budget Control Sheet">
                 <field name="name" />
-                <field name="budget_id" />
+                <field name="budget_id" optional="show" />
                 <field name="analytic_account_id" />
-                <field name="analytic_group" />
-                <field name="assignee_id" />
+                <field name="analytic_group" optional="show" />
+                <field name="assignee_id" optional="show" />
                 <field
                     name="state"
                     widget='badge'
