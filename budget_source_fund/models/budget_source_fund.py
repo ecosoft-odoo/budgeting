@@ -19,23 +19,15 @@ class BudgetSourceFund(models.Model):
     fund_group_id = fields.Many2one(
         comodel_name="budget.source.fund.group",
         string="Fund Group",
+        required=True,
         tracking=True,
     )
-    fund_line_ids = fields.One2many(
-        comodel_name="budget.source.fund.line",
+    budget_allocation_line = fields.One2many(
+        comodel_name="budget.source.fund.plan",
         inverse_name="fund_id",
-        string="Fund Line",
+        readonly=True,
     )
 
     _sql_constraints = [
         ("unique_name", "UNIQUE(name)", "Group must be unique")
     ]
-
-    def action_open_fund_line(self):
-        self.ensure_one()
-        action = self.env.ref(
-            "budget_source_fund.budget_source_fund_line_action"
-        )
-        action_dict = action.read()[0]
-        action_dict["context"] = {"active_test": True}
-        return action_dict

@@ -115,14 +115,14 @@
                         <tree editable="bottom">
                             <field name="transfer_id" invisible="1" />
                             <field name="mis_budget_id" invisible="1" />
-                            <field name="source_budget_control_id" />
-                            <field name="source_item_id" />
-                            <field name="source_amount" string="Amount" />
-                            <field name="source_amount_available" string="Available" />
                             <field name="target_budget_control_id" />
                             <field name="target_item_id" />
                             <field name="target_amount" string="Amount" />
                             <field name="target_amount_available" string="Available" />
+                            <field name="source_budget_control_id" />
+                            <field name="source_item_id" />
+                            <field name="source_amount" string="Amount" />
+                            <field name="source_amount_available" string="Available" />
                             <field name="amount" />
                         </tree>
                     </field>
@@ -140,7 +140,7 @@
 
     <menuitem
         id="menu_budget_transfer"
-        parent="budget_control.budget_budget_menu"
+        parent="budget_control.budget_control_menu"
         name="Budget Transfer"
         action="action_budget_transfer"
         sequence="100"

@@ -53,7 +53,7 @@
                         bg_color="bg-danger"
                         attrs="{'invisible': [('active', '=', True)]}"
                     />
-                    <div class="oe_button_box">
+                    <!-- <div class="oe_button_box">
                         <button
                             name="action_open_fund_line"
                             string="Allocation Funds"
@@ -61,7 +61,7 @@
                             class="oe_stat_button"
                             icon="fa-bars"
                         />
-                    </div>
+                    </div> -->
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only" />
                         <h1>
@@ -86,17 +86,20 @@
                         </group>
                     </group>
                     <notebook>
-                        <page name="fund_line" string="Allocation">
-                            <field name="fund_line_ids">
+                        <page name="budget_allocation" string="Budget Allocations">
+                            <field name="budget_allocation_line">
                                 <tree editable="bottom">
-                                    <field name="date_from" />
-                                    <field name="date_to" />
-                                    <field name="budget_control_id" />
-                                    <field name="budget_id" invisible="1" />
-                                    <field name="amount" sum="Total Amount" />
-                                    <field name="state" invisible="1" />
+                                    <field name="name" />
+                                    <field name="budget_period_id" />
+                                    <field name="allocated_amount" sum="Total Amount" />
+                                    <field
+                                        name="state"
+                                        widget="badge"
+                                        decoration-info="state == 'draft'"
+                                        decoration-success="state == 'done'"
+                                        optional="hide"
+                                    />
                                     <field name="company_currency_id" invisible="1" />
-                                    <field name="active" invisible="1" />
                                 </tree>
                             </field>
                         </page>
@@ -118,8 +121,8 @@
 
     <menuitem
         id="budget_source_fund_menu"
-        parent="budget_control.budget_config_menu"
-        name="Source of Funds"
+        parent="budget_source_fund.budget_source_of_fund_menu"
+        name="Source of Fund"
         action="budget_source_fund_action"
         sequence="25"
     />

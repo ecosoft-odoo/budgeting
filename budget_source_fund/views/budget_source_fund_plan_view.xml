@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="budget_source_fund_plan_filter" model="ir.ui.view">
+        <field name="name">budget.source.fund.plan.filter</field>
+        <field name="model">budget.source.fund.plan</field>
+        <field name="arch" type="xml">
+            <search string="Search Source of Fund Plan">
+                <field name="name" />
+                <field name="fund_id" string="Fund" />
+                <field name="budget_period_id" />
+                <filter
+                    name="state_draft"
+                    string="Draft"
+                    domain="[('state', '=', 'draft')]"
+                />
+                <filter
+                    name="state_done"
+                    string="Done"
+                    domain="[('state', '=', 'done')]"
+                />
+                <filter
+                    name="state_cancel"
+                    string="Cancelled"
+                    domain="[('state', '=', 'cancel')]"
+                />
+                <separator />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+                <group expand="0" string="Group By">
+                    <filter
+                        name="group_fund_id"
+                        string="Fund"
+                        context="{'group_by':'fund_id'}"
+                    />
+                    <filter
+                        name="group_budget_period"
+                        string="Budget Period"
+                        context="{'group_by':'budget_period_id'}"
+                    />
+                    <separator />
+                    <filter
+                        name="group_state"
+                        string="State"
+                        context="{'group_by':'state'}"
+                    />
+                </group>
+           </search>
+        </field>
+    </record>
+
+    <record id="view_budget_source_fund_plan_tree" model="ir.ui.view">
+        <field name="name">budget.source.fund.plan.tree</field>
+        <field name="model">budget.source.fund.plan</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name" />
+                <field name="fund_id" />
+                <field name="budget_period_id" />
+                <field name="allocated_amount" sum="Total Amount" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'done'"
+                />
+                <field name="active" widget="boolean_toggle" optional="hide" />
+                <field name="company_currency_id" optional="hide" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_budget_source_fund_plan_form" model="ir.ui.view">
+        <field name="name">budget.source.fund.plan.form</field>
+        <field name="model">budget.source.fund.plan</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_done"
+                        class="oe_highlight"
+                        states="draft"
+                        string="Done"
+                        type="object"
+                    />
+                    <button
+                        name="action_draft"
+                        states="done,cancel"
+                        string="Reset to Draft"
+                        type="object"
+                    />
+                    <button
+                        name="action_cancel"
+                        states="draft"
+                        string="Cancel"
+                        type="object"
+                    />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" />
+                        <h1>
+                            <field name="name" />
+                        </h1>
+                        <h4>
+                            <field
+                                name="fund_id"
+                                placeholder="Source of Fund"
+                                options="{'no_create': True}"
+                            />
+                        </h4>
+                    </div>
+                    <group>
+                        <group name="source_fund_plan_left">
+                            <field name="budget_period_id" />
+                            <field name="allocated_amount" />
+                        </group>
+                        <group name="source_fund_plan_right">
+                            <field name="active" invisible="1" />
+                            <field name="company_currency_id" invisible="1" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="allocation_line" string="Allocation">
+                            <field name="allocation_line">
+                                <tree editable="bottom">
+                                    <field name="date_from" />
+                                    <field name="date_to" />
+                                    <field name="analytic_account_id" />
+                                    <field name="budget_id" optional="hide" />
+                                    <field name="budget_control_id" optional="show" />
+                                    <field name="amount" sum="Total Amount" />
+                                    <field name="state" invisible="1" />
+                                    <field name="company_currency_id" invisible="1" />
+                                    <field name="active" invisible="1" />
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers" />
+                    <field name="message_ids" widget="mail_thread" />
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="budget_source_fund_plan_action" model="ir.actions.act_window">
+        <field name="name">Source of Fund Plan</field>
+        <field name="res_model">budget.source.fund.plan</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="source_of_fund_menu"
+        parent="budget_control.budget_budget_menu"
+        name="Source of Fund"
+        sequence="60"
+    />
+    <menuitem
+        id="budget_source_fund_plan_menu"
+        parent="budget_source_fund.source_of_fund_menu"
+        name="Source of Fund Plan"
+        action="budget_source_fund_plan_action"
+        sequence="20"
+    />
+
+</odoo>

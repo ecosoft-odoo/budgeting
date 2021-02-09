@@ -97,8 +97,14 @@
 
     <!-- Sub Header menu -->
     <menuitem
+        id="budget_config_sub_menu"
+        parent="budget_control.budget_config_menu"
+        name="Budget Configuration"
+        sequence="10"
+    />
+    <menuitem
         id="budget_period_menu"
-        parent="budget_config_menu"
+        parent="budget_config_sub_menu"
         name="Budget Period"
         action="budget_period_action"
         sequence="10"

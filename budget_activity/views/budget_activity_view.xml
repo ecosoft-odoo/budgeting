@@ -84,6 +84,13 @@
     <menuitem
         id="budget_activity_menu"
         parent="budget_control.budget_config_menu"
+        name="Activity"
+        sequence="20"
+    />
+
+    <menuitem
+        id="budget_budget_activity_menu"
+        parent="budget_activity.budget_activity_menu"
         name="Budget Activity"
         action="budget_activity_action"
         sequence="20"

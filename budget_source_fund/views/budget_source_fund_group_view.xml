@@ -43,9 +43,16 @@
     </record>
 
     <menuitem
-        id="budget_source_fund_group_menu"
+        id="budget_source_of_fund_menu"
         parent="budget_control.budget_config_menu"
-        name="Source of Fund Groups"
+        name="Source of Fund"
+        sequence="30"
+    />
+
+    <menuitem
+        id="budget_source_fund_group_menu"
+        parent="budget_source_fund.budget_source_of_fund_menu"
+        name="Source of Fund Group"
         action="budget_source_fund_group_action"
         sequence="25"
     />

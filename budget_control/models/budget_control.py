@@ -8,9 +8,12 @@ class BudgetControl(models.Model):
     _name = "budget.control"
     _description = "Budget Control"
     _inherit = ["mail.thread"]
+    _order = "budget_id desc, analytic_account_id"
 
     name = fields.Char(
         required=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     assignee_id = fields.Many2one(
         comodel_name="res.users",
@@ -23,8 +26,9 @@ class BudgetControl(models.Model):
             )
         ],
         tracking=True,
-        states={"done": [("readonly", True)]},
         copy=False,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     budget_id = fields.Many2one(
         comodel_name="mis.budget",
@@ -32,6 +36,8 @@ class BudgetControl(models.Model):
         required=True,
         ondelete="restrict",
         domain=lambda self: self._get_mis_budget_domain(),
+        readonly=True,
+        states={"draft": [("readonly", False)]},
         help="List of mis.budget created by and linked to budget.period",
     )
     date_from = fields.Date(
@@ -46,6 +52,8 @@ class BudgetControl(models.Model):
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
         required=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
         ondelete="restrict",
     )
     analytic_group = fields.Many2one(
@@ -59,14 +67,20 @@ class BudgetControl(models.Model):
         inverse_name="budget_control_id",
         string="Budget Items",
         copy=False,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     plan_date_range_type_id = fields.Many2one(
         comodel_name="date.range.type",
         string="Plan Date Range",
         required=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     init_budget_commit = fields.Boolean(
         string="Initial Budget By Commitment",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
         help="If checked, the newly created budget control sheet will has "
         "initial budget equal to current budget commitment of its year.",
     )

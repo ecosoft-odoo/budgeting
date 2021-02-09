@@ -75,8 +75,8 @@
     </record>
 
     <menuitem
-        id="budget_activity_group_menu"
-        parent="budget_control.budget_config_menu"
+        id="budget_budget_activity_group_menu"
+        parent="budget_activity.budget_activity_menu"
         name="Budget Activity Group"
         action="budget_activity_group_action"
         sequence="20"

@@ -1,4 +1,4 @@
-# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import _, api, fields, models
@@ -14,21 +14,22 @@ class BudgetControl(models.Model):
         compute="_compute_fund_ids",
         string="Funds",
     )
-    fund_line_ids = fields.One2many(
-        comodel_name="budget.source.fund.line",
+    allocation_line = fields.One2many(
+        comodel_name="budget.source.fund.allocation",
         inverse_name="budget_control_id",
     )
 
-    @api.depends("fund_line_ids")
+    @api.depends("allocation_line")
     def _compute_fund_ids(self):
         for rec in self:
-            rec.fund_ids = rec.fund_line_ids.mapped("fund_id").ids
+            fund_ids = rec.allocation_line.mapped("allocation_id.fund_id")
+            rec.write({"fund_ids": [(6, 0, fund_ids.ids)]})
 
-    @api.constrains("item_ids", "fund_line_ids")
+    @api.constrains("item_ids", "allocation_line")
     def _check_fund_amount(self):
         for rec in self:
             plan_amount = sum(rec.item_ids.mapped("amount"))
-            fund_amount = sum(rec.fund_line_ids.mapped("amount"))
+            fund_amount = sum(rec.allocation_line.mapped("amount"))
             currency_id = rec.company_id.currency_id
             if (
                 float_compare(

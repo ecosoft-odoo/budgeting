@@ -5,6 +5,7 @@ from odoo import api, fields, models
 
 class MisBudgetItem(models.Model):
     _inherit = "mis.budget.item"
+    _order = "kpi_expression_id"
 
     budget_control_id = fields.Many2one(
         comodel_name="budget.control",

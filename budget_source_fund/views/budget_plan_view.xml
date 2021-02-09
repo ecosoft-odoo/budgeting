@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <!-- <record id="budget_source_fund_plan_filter" model="ir.ui.view">
+        <field name="name">budget.source.fund.plan.filter</field>
+        <field name="model">budget.source.fund.plan</field>
+        <field name="arch" type="xml">
+            <search string="Search Source of Fund Plan">
+                <field name="name" />
+                <field name="fund_id" string="Fund" />
+                <field name="budget_period_id" />
+                <filter
+                    name="state_draft"
+                    string="Draft"
+                    domain="[('state', '=', 'draft')]"
+                />
+                <filter
+                    name="state_done"
+                    string="Done"
+                    domain="[('state', '=', 'done')]"
+                />
+                <filter
+                    name="state_cancel"
+                    string="Cancelled"
+                    domain="[('state', '=', 'cancel')]"
+                />
+                <separator />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+                <group expand="0" string="Group By">
+                    <filter
+                        name="group_fund_id"
+                        string="Fund"
+                        context="{'group_by':'fund_id'}"
+                    />
+                    <filter
+                        name="group_budget_period"
+                        string="Budget Period"
+                        context="{'group_by':'budget_period_id'}"
+                    />
+                    <separator />
+                    <filter
+                        name="group_state"
+                        string="State"
+                        context="{'group_by':'state'}"
+                    />
+                </group>
+           </search>
+        </field>
+    </record> -->
+
+    <record id="view_budget_plan_tree" model="ir.ui.view">
+        <field name="name">budget.plan.tree</field>
+        <field name="model">budget.plan</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name" />
+                <field name="budget_period_id" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'done'"
+                />
+                <field name="active" widget="boolean_toggle" optional="hide" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_budget_plan_form" model="ir.ui.view">
+        <field name="name">budget.plan.form</field>
+        <field name="model">budget.plan</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_plan_generate_budget_control"
+                        class="oe_highlight"
+                        string="Generate Budget Control"
+                        states="done"
+                        type="object"
+                    />
+                    <button
+                        name="action_done"
+                        class="oe_highlight"
+                        string="Done"
+                        states="draft"
+                        type="object"
+                    />
+                    <button
+                        name="action_draft"
+                        string="Reset to Draft"
+                        states="done,cancel"
+                        type="object"
+                    />
+                    <button
+                        name="action_cancel"
+                        string="Cancel"
+                        states="draft"
+                        type="object"
+                    />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" />
+                        <h1>
+                            <field name="name" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="budget_plan_left">
+                            <field name="budget_period_id" />
+                        </group>
+                        <group name="budget_plan_right">
+                            <field name="active" invisible="1" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="plan_line" string="Source of Fund Plan">
+                            <div class="oe_right" name="buttons">
+                                <button
+                                    name="action_generate_plan"
+                                    string="Generate Plan"
+                                    icon="fa-refresh"
+                                    type="object"
+                                />
+                            </div>
+                            <field name="fund_plan_line" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers" />
+                    <field name="message_ids" widget="mail_thread" />
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="budget_plan_action" model="ir.actions.act_window">
+        <field name="name">Budget Plan</field>
+        <field name="res_model">budget.plan</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="budget_plan_menu"
+        parent="budget_source_fund.source_of_fund_menu"
+        name="Budget Plan"
+        action="budget_plan_action"
+        sequence="10"
+    />
+
+</odoo>

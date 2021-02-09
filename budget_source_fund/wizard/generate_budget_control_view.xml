@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="view_generate_budget_control" model="ir.ui.view">
+        <field name="name">Generate Budget Control Sheets</field>
+        <field name="model">generate.budget.control</field>
+        <field name="inherit_id" ref="budget_control.view_generate_budget_control" />
+        <field name="arch" type="xml">
+            <field name="init_budget_commit" position="after">
+                <field name="budget_plan_id" invisible="1" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

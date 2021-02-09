@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_generate_source_fund_allocation" model="ir.ui.view">
+        <field name="name">Generate Source of Fund Allocation Form</field>
+        <field name="model">generate.source.fund.allocation</field>
+        <field name="arch" type="xml">
+            <form string="Generate Source of Fund Allocation">
+                <group>
+                    <group>
+                        <field name="analytic_group_ids" widget="many2many_tags" />
+                        <field name="all_analytic_accounts" />
+                    </group>
+                    <group>
+                        <field name="budget_period_id" invisible="1" />
+                    </group>
+                    <field name="analytic_account_ids" nolabel="1" />
+                </group>
+                <footer>
+                    <button
+                        name="action_generate_line"
+                        type="object"
+                        string="Generate"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_generate_source_fund" model="ir.actions.act_window">
+        <field name="name">Generate Source of Fund Allocation</field>
+        <field name="res_model">generate.source.fund.allocation</field>
+        <field name="view_mode">form</field>
+        <field name="binding_model_id" ref="model_budget_source_fund_plan" />
+        <field name="binding_view_types">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>
