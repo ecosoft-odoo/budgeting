@@ -25,11 +25,16 @@ class BudgetControl(models.Model):
             fund_ids = rec.allocation_line.mapped("allocation_id.fund_id")
             rec.write({"fund_ids": [(6, 0, fund_ids.ids)]})
 
+    def _get_amount_available(self):
+        self.ensure_one()
+        plan_amount = sum(self.item_ids.mapped("amount"))
+        fund_amount = sum(self.allocation_line.mapped("amount"))
+        return plan_amount, fund_amount
+
     @api.constrains("item_ids", "allocation_line")
     def _check_fund_amount(self):
         for rec in self:
-            plan_amount = sum(rec.item_ids.mapped("amount"))
-            fund_amount = sum(rec.allocation_line.mapped("amount"))
+            plan_amount, fund_amount = rec._get_amount_available()
             currency_id = rec.company_id.currency_id
             if (
                 float_compare(

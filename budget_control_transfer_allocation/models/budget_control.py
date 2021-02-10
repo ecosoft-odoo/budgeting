@@ -23,3 +23,10 @@ class BudgetControl(models.Model):
             rec.released_amount = rec.allocated_amount = sum(
                 rec.allocation_line.mapped("amount")
             )
+
+    def _get_amount_available(self):
+        """ Change fund amount constrain to released amount """
+        self.ensure_one()
+        plan_amount, fund_amount = super()._get_amount_available()
+        fund_amount = self.released_amount
+        return plan_amount, fund_amount
