@@ -7,7 +7,7 @@
     "license": "LGPL-3",
     "website": "https://github.com/OCA/account-budgeting",
     "category": "Accounting",
-    "depends": ["budget_control_transfer", "operating_unit"],
+    "depends": ["budget_control_transfer", "budget_control_operating_unit"],
     "data": [
         "security/budget_transfer_security.xml",
         "views/budget_transfer_view.xml",
