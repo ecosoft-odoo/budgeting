@@ -132,13 +132,17 @@
                     </group>
                     <notebook>
                         <page name="allocation_line" string="Allocation">
-                            <field name="allocation_line">
+                            <field
+                                name="allocation_line"
+                                context="{'default_budget_period_id': budget_period_id}"
+                            >
                                 <tree editable="bottom">
                                     <field name="date_from" />
                                     <field name="date_to" />
                                     <field name="analytic_account_id" />
+                                    <field name="budget_period_id" invisible="1" />
                                     <field name="budget_id" optional="hide" />
-                                    <field name="budget_control_id" optional="show" />
+                                    <field name="budget_control_id" optional="hide" />
                                     <field name="amount" sum="Total Amount" />
                                     <field name="state" invisible="1" />
                                     <field name="company_currency_id" invisible="1" />

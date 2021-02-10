@@ -34,6 +34,7 @@ class BudgetTransfer(models.Model):
     state = fields.Selection(
         [
             ("draft", "Draft"),
+            ("submit", "Submitted"),
             ("transfer", "Transferred"),
             ("reverse", "Reversed"),
             ("cancel", "Cancelled"),
@@ -44,6 +45,9 @@ class BudgetTransfer(models.Model):
 
     def action_cancel(self):
         self.write({"state": "cancel"})
+
+    def action_submit(self):
+        self.write({"state": "submit"})
 
     def action_transfer(self):
         self.mapped("transfer_item_ids").transfer()

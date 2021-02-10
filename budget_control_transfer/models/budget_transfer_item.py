@@ -35,14 +35,12 @@ class BudgetTransferItem(models.Model):
         comodel_name="mis.budget.item",
         domain="[('budget_control_id', '=', source_budget_control_id)]",
         ondelete="restrict",
-        required=True,
         index=True,
     )
     target_item_id = fields.Many2one(
         comodel_name="mis.budget.item",
         domain="[('budget_control_id', '=', target_budget_control_id)]",
         ondelete="restrict",
-        required=True,
         index=True,
     )
     source_amount = fields.Float(

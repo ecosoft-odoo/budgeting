@@ -70,15 +70,22 @@
             <form string="Budget Transfer">
                 <header>
                     <button
-                        name="action_transfer"
+                        name="action_submit"
                         states="draft"
+                        string="Submit"
+                        type="object"
+                        class="oe_highlight"
+                    />
+                    <button
+                        name="action_transfer"
+                        states="submit"
                         string="Transfer"
                         type="object"
                         class="oe_highlight"
                     />
                     <button
                         name="action_cancel"
-                        states="draft"
+                        states="draft,submit"
                         string="Cancel"
                         type="object"
                     />
@@ -91,7 +98,7 @@
                     <field
                         name="state"
                         widget="statusbar"
-                        statusbar_visible="draft,transfer"
+                        statusbar_visible="draft,submit,transfer"
                     />
                 </header>
                 <sheet>
@@ -116,11 +123,11 @@
                             <field name="transfer_id" invisible="1" />
                             <field name="mis_budget_id" invisible="1" />
                             <field name="target_budget_control_id" />
-                            <field name="target_item_id" />
+                            <field name="target_item_id" required="1" />
                             <field name="target_amount" string="Amount" />
                             <field name="target_amount_available" string="Available" />
                             <field name="source_budget_control_id" />
-                            <field name="source_item_id" />
+                            <field name="source_item_id" required="1" />
                             <field name="source_amount" string="Amount" />
                             <field name="source_amount_available" string="Available" />
                             <field name="amount" />
