@@ -47,7 +47,6 @@
                     decoration-info="state == 'draft'"
                     decoration-success="state == 'done'"
                 />
-                <field name="active" widget="boolean_toggle" />
                 <field name="company_currency_id" invisible="1" />
             </tree>
         </field>

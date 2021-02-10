@@ -23,16 +23,15 @@ class BudgetSourceFundPlan(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
-    plan_id = fields.Many2one(
-        comodel_name="budget.plan",
-    )
-    active = fields.Boolean(default=True)
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
         required=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
+    date_from = fields.Date(related="budget_period_id.bm_date_from")
+    date_to = fields.Date(related="budget_period_id.bm_date_to")
+    active = fields.Boolean(default=True)
     company_currency_id = fields.Many2one(
         comodel_name="res.currency",
         related="fund_id.company_id.currency_id",
@@ -76,8 +75,9 @@ class BudgetSourceFundPlan(models.Model):
         return True
 
     @api.constrains("allocation_line")
-    def _check_allocated_amount(self):
+    def _check_line_constrains(self):
         for rec in self:
+            # check allocated amount
             total_amount = sum(rec.allocation_line.mapped("amount"))
             if (
                 float_compare(
@@ -93,6 +93,15 @@ class BudgetSourceFundPlan(models.Model):
                         % (total_amount, rec.allocated_amount)
                     )
                 )
+            # check date inside budget period
+            date_from = (
+                x for x in rec.allocation_line if x.date_from < rec.date_from
+            )
+            date_to = (
+                x for x in rec.allocation_line if x.date_to > rec.date_to
+            )
+            if list(date_from) or list(date_to):
+                raise UserError(_("date from or date to is overlaps."))
 
     @api.constrains("state")
     def _check_allocated_empty(self):

@@ -14,11 +14,14 @@ class BudgetSourceFundAllocation(models.Model):
     )
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
+        required=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
     budget_control_id = fields.Many2one(
         comodel_name="budget.control",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",

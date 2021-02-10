@@ -7,7 +7,7 @@ from odoo import _, fields, models
 class BudgetPlan(models.Model):
     _name = "budget.plan"
     _inherit = ["mail.thread"]
-    _description = "Source of Fund Group"
+    _description = "Budget Plan"
 
     name = fields.Char(required=True, tracking=True)
     budget_period_id = fields.Many2one(

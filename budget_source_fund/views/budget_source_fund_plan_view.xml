@@ -67,7 +67,6 @@
                     decoration-info="state == 'draft'"
                     decoration-success="state == 'done'"
                 />
-                <field name="active" widget="boolean_toggle" optional="hide" />
                 <field name="company_currency_id" optional="hide" />
             </tree>
         </field>
@@ -123,18 +122,20 @@
                     <group>
                         <group name="source_fund_plan_left">
                             <field name="budget_period_id" />
-                            <field name="allocated_amount" />
+                            <field name="date_from" />
+                            <field name="date_to" />
                         </group>
                         <group name="source_fund_plan_right">
                             <field name="active" invisible="1" />
                             <field name="company_currency_id" invisible="1" />
+                            <field name="allocated_amount" />
                         </group>
                     </group>
                     <notebook>
                         <page name="allocation_line" string="Allocation">
                             <field
                                 name="allocation_line"
-                                context="{'default_budget_period_id': budget_period_id}"
+                                context="{'default_budget_period_id': budget_period_id, 'default_date_from': date_from, 'default_date_to': date_to}"
                             >
                                 <tree editable="bottom">
                                     <field name="date_from" />
@@ -146,7 +147,6 @@
                                     <field name="amount" sum="Total Amount" />
                                     <field name="state" invisible="1" />
                                     <field name="company_currency_id" invisible="1" />
-                                    <field name="active" invisible="1" />
                                 </tree>
                             </field>
                         </page>

@@ -42,11 +42,11 @@ class BudgetControl(models.Model):
                     fund_amount,
                     precision_rounding=currency_id.rounding,
                 )
-                == 1
+                == 0
             ):
                 raise UserError(
                     _(
-                        "you can plan total amount not more than %.2f%s"
+                        "you have to plan total amount is equal %.2f%s"
                         % (fund_amount, currency_id.symbol)
                     )
                 )
