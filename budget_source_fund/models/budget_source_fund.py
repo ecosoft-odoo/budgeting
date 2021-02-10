@@ -25,7 +25,6 @@ class BudgetSourceFund(models.Model):
     budget_allocation_line = fields.One2many(
         comodel_name="budget.source.fund.plan",
         inverse_name="fund_id",
-        readonly=True,
     )
 
     _sql_constraints = [

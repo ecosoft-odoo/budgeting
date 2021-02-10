@@ -143,6 +143,14 @@
                         </group>
                         <group name="budget_control_right">
                             <field name="active" invisible="1" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                            <field
+                                name="currency_id"
+                                groups="base.group_multi_currency"
+                            />
                             <field name="assignee_id" />
                             <field name="date_from" />
                             <field name="date_to" />

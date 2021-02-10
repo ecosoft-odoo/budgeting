@@ -90,6 +90,9 @@ class BudgetControl(models.Model):
         default=lambda self: self.env.company,
         required=True,
     )
+    currency_id = fields.Many2one(
+        comodel_name="res.currency", related="company_id.currency_id"
+    )
     state = fields.Selection(
         [("draft", "Draft"), ("done", "Controlled"), ("cancel", "Cancelled")],
         string="Status",
