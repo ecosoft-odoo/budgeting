@@ -31,22 +31,23 @@ class BudgetControl(models.Model):
         fund_amount = sum(self.allocation_line.mapped("amount"))
         return plan_amount, fund_amount
 
-    @api.constrains("item_ids", "allocation_line")
+    @api.constrains("item_ids", "allocation_line", "state")
     def _check_fund_amount(self):
         for rec in self:
             plan_amount, fund_amount = rec._get_amount_available()
             currency_id = rec.company_id.currency_id
-            if (
+            if rec.state == "done" and (
                 float_compare(
                     plan_amount,
                     fund_amount,
                     precision_rounding=currency_id.rounding,
                 )
-                == 0
+                != 0
             ):
                 raise UserError(
                     _(
-                        "you have to plan total amount is equal %.2f%s"
-                        % (fund_amount, currency_id.symbol)
+                        "you have to plan total amount is equal {:,.2f} {}".format(
+                            fund_amount, currency_id.symbol
+                        )
                     )
                 )
