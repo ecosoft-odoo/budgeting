@@ -160,6 +160,18 @@
         </field>
     </record>
 
+    <record id="view_budget_source_fund_plan_form_without_header" model="ir.ui.view">
+        <field name="name">budget.source.fund.plan.form.without.header</field>
+        <field name="model">budget.source.fund.plan</field>
+        <field name="inherit_id" ref="view_budget_source_fund_plan_form" />
+        <field name="priority" eval="35" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="attributes">
+                <attribute name="invisible">True</attribute>
+            </xpath>
+        </field>
+    </record>
+
     <record id="budget_source_fund_plan_action" model="ir.actions.act_window">
         <field name="name">Source of Fund Plan</field>
         <field name="res_model">budget.source.fund.plan</field>

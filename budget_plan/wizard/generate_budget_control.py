@@ -1,4 +1,4 @@
-# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import api, fields, models
 
@@ -18,7 +18,13 @@ class GenerateBudgetControl(models.TransientModel):
 
     @api.model
     def _get_budget_plan_id(self):
-        return self.env["budget.plan"].browse(self._context.get("active_id"))
+        model = self._context.get("active_model")
+        budget_plan = False
+        if model == "budget.plan":
+            budget_plan = self.env["budget.plan"].browse(
+                self._context.get("active_id")
+            )
+        return budget_plan
 
     @api.model
     def _get_budget_period_id(self):

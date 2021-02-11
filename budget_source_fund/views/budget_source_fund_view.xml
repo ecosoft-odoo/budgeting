@@ -8,6 +8,8 @@
             <tree string="Source of Funds" sample="1">
                 <field name="name" />
                 <field name="fund_group_id" />
+                <field name="date_from" />
+                <field name="date_to" />
             </tree>
         </field>
     </record>
@@ -24,6 +26,9 @@
                     name="fund_group_id"
                     domain="[('fund_group_id', '!=', False)]"
                 />
+                <filter name="filter_date_from" date="date_from" />
+                <filter name="filter_date_to" date="date_to" />
+                <separator />
                 <filter
                     string="Archived"
                     name="inactive"
@@ -53,15 +58,6 @@
                         bg_color="bg-danger"
                         attrs="{'invisible': [('active', '=', True)]}"
                     />
-                    <!-- <div class="oe_button_box">
-                        <button
-                            name="action_open_fund_line"
-                            string="Allocation Funds"
-                            type="object"
-                            class="oe_stat_button"
-                            icon="fa-bars"
-                        />
-                    </div> -->
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only" />
                         <h1>
@@ -77,7 +73,10 @@
                     </div>
                     <group>
                         <field name="active" invisible="1" />
-                        <group name="left_main" />
+                        <group name="left_main">
+                            <field name="date_from" />
+                            <field name="date_to" />
+                        </group>
                         <group name="right_main">
                             <field
                                 name="company_id"
@@ -114,7 +113,7 @@
     </record>
 
     <record id="budget_source_fund_action" model="ir.actions.act_window">
-        <field name="name">Source of Funds</field>
+        <field name="name">Source of Fund</field>
         <field name="res_model">budget.source.fund</field>
         <field name="view_mode">tree,form</field>
     </record>
@@ -124,7 +123,7 @@
         parent="budget_source_fund.budget_source_of_fund_menu"
         name="Source of Fund"
         action="budget_source_fund_action"
-        sequence="25"
+        sequence="20"
     />
 
 </odoo>

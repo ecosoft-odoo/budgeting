@@ -18,6 +18,11 @@ class BudgetPlan(models.Model):
         comodel_name="budget.source.fund.plan",
         inverse_name="plan_id",
     )
+    budget_control_count = fields.Integer(
+        # string="# of Budget Control",
+        # compute="_compute_budget_control_related_count",
+        # help="Count budget control in Plan",
+    )
     active = fields.Boolean(default=True)
     state = fields.Selection(
         [
@@ -28,6 +33,12 @@ class BudgetPlan(models.Model):
         default="draft",
         tracking=True,
     )
+
+    # def _compute_budget_control_related_count(self):
+    #     self.budget_control_count = len(self.billing_line_ids)
+
+    def button_open_budget_control(self):
+        pass
 
     def action_generate_plan(self):
         self.ensure_one()

@@ -99,8 +99,7 @@
         parent="budget_source_fund.source_of_fund_menu"
         name="Source of Funds Allocation"
         action="budget_source_fund_allocation_action"
-        sequence="20"
+        sequence="100"
     />
-
 
 </odoo>

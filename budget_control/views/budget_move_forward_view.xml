@@ -97,7 +97,7 @@
         parent="budget_control_menu"
         name="Budget Carry Forward"
         action="action_budget_move_forward"
-        sequence="100"
+        sequence="50"
     />
 
 </odoo>

@@ -26,6 +26,8 @@ class BudgetSourceFund(models.Model):
         comodel_name="budget.source.fund.plan",
         inverse_name="fund_id",
     )
+    date_from = fields.Date()
+    date_to = fields.Date()
 
     _sql_constraints = [
         ("unique_name", "UNIQUE(name)", "Group must be unique")

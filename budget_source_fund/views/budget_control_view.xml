@@ -11,19 +11,7 @@
             </xpath>
             <xpath expr="//notebook" position="inside">
                 <page name="source_fund" string="Funds">
-                    <field name="allocation_line">
-                        <!-- <tree editable="bottom">
-                            <field name="date_from" />
-                            <field name="date_to" />
-                            <field name="budget_control_id" />
-                            <field name="budget_id" invisible="1" />
-                            <field name="amount" sum="Total Amount" readonly="1" />
-                            <field name="spent" sum="Spent" />
-                            <field name="active" />
-                            <field name="state" invisible="1" />
-                            <field name="company_currency_id" invisible="1" />
-                        </tree> -->
-                    </field>
+                    <field name="allocation_line" readonly="1" />
                 </page>
             </xpath>
         </field>

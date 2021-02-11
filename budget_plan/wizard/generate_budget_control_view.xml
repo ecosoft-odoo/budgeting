@@ -6,9 +6,24 @@
         <field name="model">generate.budget.control</field>
         <field name="inherit_id" ref="budget_control.view_generate_budget_control" />
         <field name="arch" type="xml">
-            <field name="init_budget_commit" position="after">
+            <xpath expr="//form" position="inside">
                 <field name="budget_plan_id" invisible="1" />
-            </field>
+            </xpath>
+            <xpath expr="//group[@name='criteria']/group[1]" position="attributes">
+                <attribute
+                    name="attrs"
+                >{'invisible': [('budget_plan_id', '!=', False)]}</attribute>
+            </xpath>
+            <xpath expr="//group[@name='criteria']/group[2]" position="attributes">
+                <attribute
+                    name="attrs"
+                >{'invisible': [('budget_plan_id', '!=', False)]}</attribute>
+            </xpath>
+            <xpath expr="//field[@name='analytic_account_ids']" position="attributes">
+                <attribute
+                    name="attrs"
+                >{'readonly': [('budget_plan_id', '!=', False)]}</attribute>
+            </xpath>
         </field>
     </record>
 

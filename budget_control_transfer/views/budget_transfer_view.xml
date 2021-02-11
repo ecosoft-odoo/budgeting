@@ -150,7 +150,7 @@
         parent="budget_control.budget_control_menu"
         name="Budget Transfer"
         action="action_budget_transfer"
-        sequence="100"
+        sequence="30"
     />
 
 </odoo>
