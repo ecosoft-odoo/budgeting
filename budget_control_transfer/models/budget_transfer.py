@@ -1,6 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 
@@ -17,9 +17,9 @@ class BudgetTransfer(models.Model):
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
         string="Budget Year",
+        default=lambda self: self._get_budget_period(),
         required=True,
         readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     mis_budget_id = fields.Many2one(
         comodel_name="mis.budget",
@@ -44,10 +44,21 @@ class BudgetTransfer(models.Model):
         default="draft",
     )
 
+    @api.model
+    def _get_budget_period(self):
+        today = fields.Date.context_today(self)
+        BudgetPeriod = self.env["budget.period"]
+        budget_period = BudgetPeriod.search(
+            [("bm_date_from", "<=", today), ("bm_date_to", ">=", today)],
+            limit=1,
+        )
+        return budget_period
+
     def action_cancel(self):
         self.write({"state": "cancel"})
 
     def action_submit(self):
+        # self._check_state()
         self.write({"state": "submit"})
 
     def action_transfer(self):
@@ -99,11 +110,4 @@ class BudgetTransfer(models.Model):
             "source_budget_control_id"
         ) | transfers.mapped("target_budget_control_id")
         # Control all analytic
-        kpis = False
-        if self.budget_period_id.control_level == "analytic_kpi":
-            kpis = transfers.mapped(
-                "source_item_id.kpi_expression_id"
-            ) | transfers.mapped("target_item_id.kpi_expression_id")
-            self._check_budget_available_analytic_kpi(budget_controls, kpis)
-        else:
-            self._check_budget_available_analytic(budget_controls)
+        self._check_budget_available_analytic(budget_controls)

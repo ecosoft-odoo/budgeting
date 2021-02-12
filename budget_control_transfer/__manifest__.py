@@ -13,6 +13,7 @@
     ],
     "data": [
         "security/ir.model.access.csv",
+        "views/budget_control_view.xml",
         "views/budget_transfer_view.xml",
     ],
     "installable": True,

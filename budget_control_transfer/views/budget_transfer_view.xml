@@ -123,12 +123,10 @@
                             <field name="transfer_id" invisible="1" />
                             <field name="mis_budget_id" invisible="1" />
                             <field name="target_budget_control_id" />
-                            <field name="target_item_id" required="1" />
-                            <field name="target_amount" string="Amount" />
+                            <field name="target_state" optional="show" />
                             <field name="target_amount_available" string="Available" />
                             <field name="source_budget_control_id" />
-                            <field name="source_item_id" required="1" />
-                            <field name="source_amount" string="Amount" />
+                            <field name="source_state" optional="show" />
                             <field name="source_amount_available" string="Available" />
                             <field name="amount" />
                         </tree>
