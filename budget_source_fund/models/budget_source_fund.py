@@ -22,7 +22,7 @@ class BudgetSourceFund(models.Model):
         required=True,
         tracking=True,
     )
-    budget_allocation_line = fields.One2many(
+    source_fund_plan_line = fields.One2many(
         comodel_name="budget.source.fund.plan",
         inverse_name="fund_id",
     )

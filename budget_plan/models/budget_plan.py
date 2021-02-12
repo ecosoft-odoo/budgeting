@@ -18,10 +18,14 @@ class BudgetPlan(models.Model):
         comodel_name="budget.source.fund.plan",
         inverse_name="plan_id",
     )
+    budget_control_ids = fields.One2many(
+        comodel_name="budget.control",
+        inverse_name="plan_id",
+    )
     budget_control_count = fields.Integer(
-        # string="# of Budget Control",
-        # compute="_compute_budget_control_related_count",
-        # help="Count budget control in Plan",
+        string="# of Budget Control",
+        compute="_compute_budget_control_related_count",
+        help="Count budget control in Plan",
     )
     active = fields.Boolean(default=True)
     state = fields.Selection(
@@ -34,11 +38,32 @@ class BudgetPlan(models.Model):
         tracking=True,
     )
 
-    # def _compute_budget_control_related_count(self):
-    #     self.budget_control_count = len(self.billing_line_ids)
+    def _compute_budget_control_related_count(self):
+        self.budget_control_count = len(self.budget_control_ids)
 
     def button_open_budget_control(self):
-        pass
+        self.ensure_one()
+        action = {
+            "name": _("Budget Control Sheet"),
+            "type": "ir.actions.act_window",
+            "res_model": "budget.control",
+            "context": {"create": False},
+        }
+        if len(self.budget_control_ids) == 1:
+            action.update(
+                {
+                    "view_mode": "form",
+                    "res_id": self.budget_control_ids.id,
+                }
+            )
+        else:
+            action.update(
+                {
+                    "view_mode": "list,form",
+                    "domain": [("id", "in", self.budget_control_ids.ids)],
+                }
+            )
+        return action
 
     def action_generate_plan(self):
         self.ensure_one()

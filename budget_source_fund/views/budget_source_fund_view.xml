@@ -85,8 +85,11 @@
                         </group>
                     </group>
                     <notebook>
-                        <page name="budget_allocation" string="Budget Allocations">
-                            <field name="budget_allocation_line">
+                        <page name="source_fund_plan_line" string="Source of Fund Plan">
+                            <field
+                                name="source_fund_plan_line"
+                                context="{'form_view_ref': 'budget_source_fund.view_budget_source_fund_plan_form_without_header'}"
+                            >
                                 <tree editable="bottom">
                                     <field name="name" />
                                     <field name="budget_period_id" />

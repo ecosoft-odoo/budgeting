@@ -7,7 +7,7 @@ class GenerateBudgetControl(models.TransientModel):
     _inherit = "generate.budget.control"
 
     budget_plan_id = fields.Many2one(
-        comodel_name="budget.source.fund.plan",
+        comodel_name="budget.plan",
         default=lambda self: self._get_budget_plan_id(),
     )
 
@@ -48,6 +48,32 @@ class GenerateBudgetControl(models.TransientModel):
                 if bc.analytic_account_id == allocation.analytic_account_id:
                     allocation.write({"budget_control_id": bc.id})
         return allocations
+
+    def _prepare_value_duplicate_plan(self, vals):
+        plan_date_range_id = self.budget_period_id.plan_date_range_type_id.id
+        budget_id = self.budget_id.id
+        budget_name = self.budget_period_id.name
+        plan_id = self.budget_plan_id.id
+        return map(
+            lambda l: {
+                "name": "{} :: {}".format(
+                    budget_name, l["analytic_account_id"].name
+                ),
+                "budget_id": budget_id,
+                "analytic_account_id": l["analytic_account_id"].id,
+                "plan_date_range_type_id": plan_date_range_id,
+                "plan_id": plan_id,
+            },
+            vals,
+        )
+
+    def _prepare_value_duplicate(self, vals):
+        model = self._context.get("active_model")
+        if model == "budget.plan":
+            res = self._prepare_value_duplicate_plan(vals)
+        else:
+            res = super()._prepare_value_duplicate(vals)
+        return res
 
     def _hook_budget_controls(self, budget_controls):
         budget_controls = super()._hook_budget_controls(budget_controls)

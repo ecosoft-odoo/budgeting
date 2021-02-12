@@ -75,15 +75,17 @@ class GenerateBudgetControl(models.TransientModel):
             )
 
     def _prepare_value_duplicate(self, vals):
-        plan_date_range = self.budget_period_id.plan_date_range_type_id
+        plan_date_range_id = self.budget_period_id.plan_date_range_type_id.id
+        budget_id = self.budget_id.id
+        budget_name = self.budget_period_id.name
         return map(
             lambda l: {
                 "name": "{} :: {}".format(
-                    self.budget_period_id.name, l["analytic_account_id"].name
+                    budget_name, l["analytic_account_id"].name
                 ),
-                "budget_id": self.budget_id.id,
+                "budget_id": budget_id,
                 "analytic_account_id": l["analytic_account_id"].id,
-                "plan_date_range_type_id": plan_date_range.id,
+                "plan_date_range_type_id": plan_date_range_id,
             },
             vals,
         )

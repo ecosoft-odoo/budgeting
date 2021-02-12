@@ -165,6 +165,7 @@
         <field name="model">budget.source.fund.plan</field>
         <field name="inherit_id" ref="view_budget_source_fund_plan_form" />
         <field name="priority" eval="35" />
+        <field name="mode">primary</field>
         <field name="arch" type="xml">
             <xpath expr="//header" position="attributes">
                 <attribute name="invisible">True</attribute>
