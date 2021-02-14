@@ -101,6 +101,9 @@ class GenerateBudgetControl(models.TransientModel):
     def _hook_budget_controls(self, budget_controls):
         return budget_controls
 
+    def _create_budget_controls(self, vals):
+        return self.env["budget.control"].create(vals)
+
     def action_generate_budget_control(self):
         """Create new draft budget control sheet for all selected analytics."""
         self.ensure_one()
@@ -116,7 +119,7 @@ class GenerateBudgetControl(models.TransientModel):
         existing_analytics = self._hook_existing_analytics(existing_analytics)
         new_analytic = self.analytic_account_ids - existing_analytics
         vals = self._prepare_budget_control_sheet(new_analytic)
-        budget_controls = BudgetControl.create(vals)
+        budget_controls = self._create_budget_controls(vals)
         budget_controls = self._hook_budget_controls(budget_controls)
         budget_controls.do_init_budget_commit(self.init_budget_commit)
         # Return result

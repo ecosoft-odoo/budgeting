@@ -179,13 +179,22 @@ class BudgetControl(models.Model):
     def action_cancel(self):
         self.write({"state": "cancel"})
 
+    def _domain_kpi_expression(self):
+        return [
+            ("kpi_id.report_id", "=", self.budget_id.report_id.id),
+            ("kpi_id.budgetable", "=", True),
+        ]
+
     def prepare_budget_control_matrix(self):
         KpiExpression = self.env["mis.report.kpi.expression"]
         DateRange = self.env["date.range"]
+        if self._context.get("plan_manual", False):
+            return
         for plan in self:
             plan.item_ids.unlink()
             if not plan.plan_date_range_type_id:
                 raise UserError(_("Please select range"))
+            domain_kpi = plan._domain_kpi_expression()
             date_ranges = DateRange.search(
                 [
                     ("type_id", "=", plan.plan_date_range_type_id.id),
@@ -193,12 +202,7 @@ class BudgetControl(models.Model):
                     ("date_end", "<=", plan.date_to),
                 ]
             )
-            kpi_expressions = KpiExpression.search(
-                [
-                    ("kpi_id.report_id", "=", plan.budget_id.report_id.id),
-                    ("kpi_id.budgetable", "=", True),
-                ]
-            )
+            kpi_expressions = KpiExpression.search(domain_kpi)
             items = []
             for date_range in date_ranges:
                 for kpi_expression in kpi_expressions:
