@@ -2,3 +2,4 @@
 
 from . import hr_expense_advance_line
 from . import hr_expense_sheet
+from . import hr_expense

@@ -8,11 +8,6 @@
             ref="hr_expense_advance_clearing_detail.hr_expense_view_form"
         />
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='advance_line']" position="attributes">
-                <attribute
-                    name="context"
-                >{'default_operating_unit_id': operating_unit_id}</attribute>
-            </xpath>
             <xpath expr="//page[@name='advance']//tree" position="inside">
                 <field name="operating_unit_id" />
             </xpath>
