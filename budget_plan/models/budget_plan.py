@@ -99,6 +99,7 @@ class BudgetPlan(models.Model):
         return True
 
     def action_cancel(self):
+        self.budget_control_ids.action_cancel()
         self.write({"state": "cancel"})
         return True
 

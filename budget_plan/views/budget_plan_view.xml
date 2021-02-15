@@ -94,6 +94,7 @@
                         string="Cancel"
                         states="draft"
                         type="object"
+                        confirm="This operation will cancel all budget controls. Are you sure to continue?"
                     />
                     <field name="state" widget="statusbar" />
                 </header>
@@ -130,6 +131,7 @@
                         </group>
                         <group name="budget_plan_right">
                             <field name="active" invisible="1" />
+                            <field name="budget_control_ids" invisible="1" />
                         </group>
                     </group>
                     <notebook>

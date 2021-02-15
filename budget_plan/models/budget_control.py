@@ -9,4 +9,5 @@ class BudgetControl(models.Model):
     plan_id = fields.Many2one(
         comodel_name="budget.plan",
         index=True,
+        ondelete="restrict",
     )

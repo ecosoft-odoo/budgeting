@@ -16,6 +16,7 @@ class BudgetControl(models.Model):
     allocation_line = fields.One2many(
         comodel_name="budget.source.fund.allocation",
         inverse_name="budget_control_id",
+        copy=True,
     )
     allocated_amount = fields.Monetary(
         compute="_compute_allocated_released_amount",

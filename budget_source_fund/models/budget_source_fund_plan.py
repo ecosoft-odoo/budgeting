@@ -89,8 +89,10 @@ class BudgetSourceFundPlan(models.Model):
             ):
                 raise UserError(
                     _(
-                        "Total allocated (%.2f) is not equal Allocated Amount (%.2f)"
-                        % (total_amount, rec.allocated_amount)
+                        "Total allocated {:,.2f} is not equal "
+                        "Allocated Amount {:,.2f}".format(
+                            total_amount, rec.allocated_amount
+                        )
                     )
                 )
             # check date inside budget period

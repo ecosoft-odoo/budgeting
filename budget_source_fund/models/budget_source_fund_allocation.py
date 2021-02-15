@@ -68,7 +68,10 @@ class BudgetSourceFundAllocation(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
-    active = fields.Boolean(related="allocation_id.active")
+    active = fields.Boolean(
+        related="allocation_id.active",
+        store=True,
+    )
     state = fields.Selection(
         related="allocation_id.state",
         tracking=True,

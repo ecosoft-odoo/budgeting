@@ -1,4 +1,4 @@
-# Copyright 2020 Ecosoft Co., Ltd. (<http://ecosoft.co.th>)
+# Copyright 2021 Ecosoft Co., Ltd. (<http://ecosoft.co.th>)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 from odoo import models
@@ -19,10 +19,19 @@ class BaseRevision(models.AbstractModel):
 
     def copy_revision_with_context(self):
         ctx = self._context.copy()
-        ctx.update({"create_revision": True})
+        ctx.update(
+            {
+                "create_revision": True,
+                "kpi_ids": self.item_ids.mapped(
+                    "kpi_expression_id.kpi_id"
+                ).ids,
+            }
+        )
+        self.allocation_line.mapped("allocation_id").action_draft()
         new_revision = super(
             BaseRevision, self.with_context(ctx)
         ).copy_revision_with_context()
         self._copy_item_ids(new_revision)
         self.item_ids.write({"active": False})
+        self.allocation_line.write({"active": False})
         return new_revision
