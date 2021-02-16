@@ -42,6 +42,7 @@
                     string="New Revision"
                     type="object"
                     states="cancel"
+                    context="{'active_model': 'budget.control'}"
                 />
             </xpath>
             <xpath expr="//group[@name='budget_control_right']" position="inside">

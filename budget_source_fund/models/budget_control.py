@@ -37,13 +37,8 @@ class BudgetControl(models.Model):
             fund_ids = rec.allocation_line.mapped("allocation_id.fund_id")
             rec.write({"fund_ids": [(6, 0, fund_ids.ids)]})
 
-    def _get_amount_available(self):
-        plan_amount, fund_amount = super()._get_amount_available()
-        fund_amount = sum(self.allocation_line.mapped("amount"))
-        return plan_amount, fund_amount
-
     def _compare_plan_fund(self, plan_amount, fund_amount):
-        """ Check total amount plan have to less than or equal to released amount """
+        """ Check total amount plan have to equal released amount """
         amount_compare = (
             float_compare(
                 plan_amount,

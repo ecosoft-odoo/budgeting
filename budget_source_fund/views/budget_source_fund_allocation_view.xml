@@ -7,6 +7,11 @@
         <field name="arch" type="xml">
             <search string="Search Budget Source of Fund Allocation">
                 <field
+                    name="allocation_id"
+                    string="Allocation"
+                    filter_domain="[('allocation_id','ilike',self)]"
+                />
+                <field
                     name="analytic_account_id"
                     string="Analytic Account"
                     filter_domain="[('analytic_account_id','ilike',self)]"
@@ -18,6 +23,11 @@
                     domain="[('active', '=', False)]"
                 />
                 <group string="Group By" name="groupby">
+                    <filter
+                        name="groupby_allocation"
+                        string="Allocation"
+                        context="{'group_by': 'allocation_id'}"
+                    />
                     <filter
                         name="groupby_budget_period"
                         string="Budget Period"
@@ -32,7 +42,8 @@
         <field name="name">budget.source.fund.allocation.tree</field>
         <field name="model">budget.source.fund.allocation</field>
         <field name="arch" type="xml">
-            <tree editable="top">
+            <tree>
+                <field name="allocation_id" />
                 <field name="date_from" />
                 <field name="date_to" />
                 <field name="analytic_account_id" />

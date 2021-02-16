@@ -8,6 +8,7 @@ class BudgetPlan(models.Model):
     _name = "budget.plan"
     _inherit = ["mail.thread"]
     _description = "Budget Plan"
+    _order = "id desc"
 
     name = fields.Char(required=True, tracking=True)
     budget_period_id = fields.Many2one(
@@ -17,6 +18,7 @@ class BudgetPlan(models.Model):
     fund_plan_line = fields.One2many(
         comodel_name="budget.source.fund.plan",
         inverse_name="plan_id",
+        copy=False,
     )
     budget_control_ids = fields.One2many(
         comodel_name="budget.control",
@@ -100,6 +102,7 @@ class BudgetPlan(models.Model):
 
     def action_cancel(self):
         self.budget_control_ids.action_cancel()
+        self.fund_plan_line.action_cancel()
         self.write({"state": "cancel"})
         return True
 

@@ -8,16 +8,11 @@ class BaseRevision(models.AbstractModel):
     _inherit = "base.revision"
 
     def _copy_item_ids(self, new_revision):
-        for item in new_revision.item_ids:
-            old_item = self.item_ids.filtered(
-                lambda l: l.date_from == item.date_from
-                and l.date_to == item.date_to
-                and l.analytic_account_id == item.analytic_account_id
-                and l.kpi_expression_id == item.kpi_expression_id
-            )
-            item.update({"amount": old_item.amount})
+        old_items = self.item_ids
+        for i, item in enumerate(new_revision.item_ids):
+            item.update({"amount": old_items[i].amount})
 
-    def copy_revision_with_context(self):
+    def _copy_revision_budget_control(self):
         ctx = self._context.copy()
         ctx.update(
             {
@@ -34,4 +29,12 @@ class BaseRevision(models.AbstractModel):
         self._copy_item_ids(new_revision)
         self.item_ids.write({"active": False})
         self.allocation_line.write({"active": False})
+        return new_revision
+
+    def copy_revision_with_context(self):
+        model = self._context.get("active_model", False)
+        if model and model == "budget.control":
+            new_revision = self._copy_revision_budget_control()
+        else:
+            new_revision = super().copy_revision_with_context()
         return new_revision

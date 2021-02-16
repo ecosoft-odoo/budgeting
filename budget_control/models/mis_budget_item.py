@@ -18,7 +18,12 @@ class MisBudgetItem(models.Model):
         store=True,
     )
     state = fields.Selection(
-        [("draft", "Draft"), ("done", "Controlled"), ("cancel", "Cancelled")],
+        [
+            ("draft", "Draft"),
+            ("released", "Released"),
+            ("done", "Controlled"),
+            ("cancel", "Cancelled"),
+        ],
         string="Status",
         compute="_compute_budget_control_state",
         store=True,

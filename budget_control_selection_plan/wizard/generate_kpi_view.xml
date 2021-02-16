@@ -15,13 +15,7 @@
                 </group>
                 <notebook>
                     <page name="kpi" string="KPI's">
-                        <field name="kpi_ids">
-                            <tree>
-                                <field name="description" />
-                                <field name="name" />
-                                <field name="budgetable" />
-                            </tree>
-                        </field>
+                        <field name="kpi_ids" />
                     </page>
                 </notebook>
                 <footer>

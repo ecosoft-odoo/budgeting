@@ -12,6 +12,7 @@
     "data": [
         "security/ir.model.access.csv",
         "views/budget_control_view.xml",
+        "views/mis_report_kpi.xml",
         "wizard/generate_budget_control_view.xml",
         "wizard/generate_kpi_view.xml",
     ],

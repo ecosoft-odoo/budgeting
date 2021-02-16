@@ -15,7 +15,7 @@
                     name="state"
                     widget='badge'
                     decoration-success="state == 'done'"
-                    decoration-info="state == 'draft'"
+                    decoration-info="state in ['draft', 'released']"
                 />
             </tree>
         </field>
@@ -73,31 +73,39 @@
             <form string="Budget Control Sheet">
                 <header>
                     <button
+                        id="action_draft"
+                        name="action_draft"
+                        string="Set to Draft"
+                        type="object"
+                        states="released,done,cancel"
+                    />
+                    <button
+                        id="action_released"
+                        name="action_released"
+                        string="Released"
+                        class="btn-primary"
+                        type="object"
+                        states="draft"
+                    />
+                    <button
                         id="action_done"
                         name="action_done"
                         string="Control"
                         class="btn-primary"
                         type="object"
-                        states="draft"
+                        states="released"
                     />
                     <button
                         id="action_cancel"
                         name="action_cancel"
                         string="Cancel"
                         type="object"
-                        states="draft"
-                    />
-                    <button
-                        id="action_draft"
-                        name="action_draft"
-                        string="Set to Draft"
-                        type="object"
-                        states="done,cancel"
+                        states="draft,released"
                     />
                     <field
                         name="state"
                         widget="statusbar"
-                        statusbar_visible="draft,done"
+                        statusbar_visible="draft,released,done"
                     />
                 </header>
                 <sheet>

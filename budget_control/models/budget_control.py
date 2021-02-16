@@ -68,7 +68,10 @@ class BudgetControl(models.Model):
         string="Budget Items",
         copy=False,
         readonly=True,
-        states={"draft": [("readonly", False)]},
+        states={
+            "draft": [("readonly", False)],
+            "released": [("readonly", False)],
+        },
     )
     plan_date_range_type_id = fields.Many2one(
         comodel_name="date.range.type",
@@ -94,7 +97,12 @@ class BudgetControl(models.Model):
         comodel_name="res.currency", related="company_id.currency_id"
     )
     state = fields.Selection(
-        [("draft", "Draft"), ("done", "Controlled"), ("cancel", "Cancelled")],
+        [
+            ("draft", "Draft"),
+            ("released", "Released"),
+            ("done", "Controlled"),
+            ("cancel", "Cancelled"),
+        ],
         string="Status",
         readonly=True,
         copy=False,
@@ -170,11 +178,14 @@ class BudgetControl(models.Model):
             self.prepare_budget_control_matrix()
         return res
 
-    def action_done(self):
-        self.write({"state": "done"})
-
     def action_draft(self):
         self.write({"state": "draft"})
+
+    def action_released(self):
+        self.write({"state": "released"})
+
+    def action_done(self):
+        self.write({"state": "done"})
 
     def action_cancel(self):
         self.write({"state": "cancel"})

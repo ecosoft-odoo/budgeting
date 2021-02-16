@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
 
-    <record id="view_budget_plan_tree" model="ir.ui.view">
-        <field name="name">budget.plan.tree</field>
-        <field name="model">budget.plan</field>
-        <field name="inherit_id" ref="budget_plan.view_budget_plan_tree" />
+    <record id="view_budget_source_fund_plan_tree" model="ir.ui.view">
+        <field name="name">budget.source.fund.plan.tree</field>
+        <field name="model">budget.source.fund.plan</field>
+        <field
+            name="inherit_id"
+            ref="budget_source_fund.view_budget_source_fund_plan_tree"
+        />
         <field name="arch" type="xml">
             <field name="state" position="before">
                 <field name="revision_number" />
@@ -12,10 +15,13 @@
         </field>
     </record>
 
-    <record id="view_budget_plan_form" model="ir.ui.view">
-        <field name="name">budget.plan.form</field>
-        <field name="model">budget.plan</field>
-        <field name="inherit_id" ref="budget_plan.view_budget_plan_form" />
+    <record id="view_budget_source_fund_plan_form" model="ir.ui.view">
+        <field name="name">budget.source.fund.plan.form</field>
+        <field name="model">budget.source.fund.plan</field>
+        <field
+            name="inherit_id"
+            ref="budget_source_fund.view_budget_source_fund_plan_form"
+        />
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
                 <button
@@ -23,15 +29,10 @@
                     string="New Revision"
                     type="object"
                     states="cancel"
-                />
-                <button
-                    name="create_revision_budget_control"
-                    string="New Revision Budget Control"
-                    type="object"
-                    states="done"
+                    context="{'active_model': 'budget.source.fund.plan'}"
                 />
             </xpath>
-            <xpath expr="//group[@name='budget_plan_right']" position="inside">
+            <xpath expr="//group[@name='source_fund_plan_right']" position="inside">
                 <field name="revision_number" />
             </xpath>
             <xpath expr="//notebook" position="inside">
@@ -57,5 +58,4 @@
             </xpath>
         </field>
     </record>
-
 </odoo>

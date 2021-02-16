@@ -9,7 +9,11 @@
     "summary": "Keep track of revised by budget plan",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
-    "depends": ["base_revision", "budget_control_revision", "budget_plan"],
+    "depends": [
+        "budget_control_revision",
+        "budget_source_fund_revision",
+        "budget_plan",
+    ],
     "data": [
         "views/budget_plan_view.xml",
     ],

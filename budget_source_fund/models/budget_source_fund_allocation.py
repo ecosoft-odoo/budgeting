@@ -8,9 +8,12 @@ class BudgetSourceFundAllocation(models.Model):
     _inherit = ["mail.thread"]
     _description = "Source of Fund Allocation"
     _rec_name = "allocation_id"
+    _order = "allocation_id, analytic_account_id"
 
     allocation_id = fields.Many2one(
-        comodel_name="budget.source.fund.plan", required=True
+        comodel_name="budget.source.fund.plan",
+        required=True,
+        ondelete="cascade",
     )
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",

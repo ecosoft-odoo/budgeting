@@ -12,7 +12,7 @@
                     class="oe_highlight"
                     string="Selection Plan"
                     type="object"
-                    states="draft"
+                    states="draft,released"
                 />
             </xpath>
         </field>
