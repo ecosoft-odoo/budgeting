@@ -33,10 +33,12 @@ class BudgetTransferItem(models.Model):
     )
     source_amount_available = fields.Float(
         compute="_compute_amount_available",
+        store="True",
         readonly=True,
     )
     target_amount_available = fields.Float(
         compute="_compute_amount_available",
+        store="True",
         readonly=True,
     )
     source_state = fields.Selection(

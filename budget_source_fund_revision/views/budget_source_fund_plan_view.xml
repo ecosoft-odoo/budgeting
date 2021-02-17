@@ -40,7 +40,7 @@
                     <field
                         name="old_revision_ids"
                         domain="['|', ('active', '=', False), ('active', '=', True)]"
-                        context="{'active_test': False, 'form_view_ref': 'budget_control_revision.budget_control_view_form_without_header'}"
+                        context="{'active_test': False, 'form_view_ref': 'budget_source_fund.view_budget_source_fund_plan_form_without_header'}"
                         attrs="{'invisible': [('has_old_revisions', '=', False)]}"
                     >
                         <tree>

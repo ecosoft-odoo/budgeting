@@ -2,8 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
-
-# from odoo.tools import float_compare
+from odoo.tools import float_compare
 
 
 class BudgetSourceFundPlan(models.Model):
@@ -65,6 +64,7 @@ class BudgetSourceFundPlan(models.Model):
     )
 
     def action_done(self):
+        self._check_amount_allocation()
         self.write({"state": "done"})
         return True
 
@@ -76,27 +76,29 @@ class BudgetSourceFundPlan(models.Model):
         self.write({"state": "draft"})
         return True
 
-    # @api.constrains("allocation_line", "allocated_amount")
-    # def _check_line_constrains(self):
-    #     for rec in self:
-    #         # check allocated amount
-    #         total_amount = sum(rec.allocation_line.mapped("amount"))
-    #         if (
-    #             float_compare(
-    #                 rec.allocated_amount,
-    #                 total_amount,
-    #                 precision_rounding=rec.company_currency_id.rounding,
-    #             )
-    #             != 0
-    #         ):
-    #             raise UserError(
-    #                 _(
-    #                     "Total allocated {:,.2f} is not equal "
-    #                     "Allocated Amount {:,.2f}".format(
-    #                         total_amount, rec.allocated_amount
-    #                     )
-    #                 )
-    #             )
+    def _check_amount_allocation(self):
+        for rec in self:
+            # check lines empty
+            if not rec.allocation_line:
+                raise UserError(_("You need to add a line before confirm."))
+            # check amount allocated
+            total_amount = sum(rec.allocation_line.mapped("amount"))
+            if (
+                float_compare(
+                    rec.allocated_amount,
+                    total_amount,
+                    precision_rounding=rec.company_currency_id.rounding,
+                )
+                != 0
+            ):
+                raise UserError(
+                    _(
+                        "Total allocated {:,.2f} is not equal "
+                        "Allocated Amount {:,.2f}".format(
+                            total_amount, rec.allocated_amount
+                        )
+                    )
+                )
 
     @api.constrains("allocation_line")
     def _check_date_allocation(self):
@@ -110,9 +112,3 @@ class BudgetSourceFundPlan(models.Model):
             )
             if list(date_from) or list(date_to):
                 raise UserError(_("date from or date to is overlaps."))
-
-    @api.constrains("state")
-    def _check_allocated_empty(self):
-        for rec in self:
-            if rec.state == "done" and not rec.allocation_line:
-                raise UserError(_("You need to add a line before confirm."))

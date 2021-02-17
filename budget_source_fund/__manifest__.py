@@ -17,7 +17,7 @@
         "views/budget_source_fund_allocation_view.xml",
         "views/budget_control_view.xml",
         "wizard/generate_source_fund_allocation_view.xml",
-        # "report/source_fund_monitor_report_view.xml",
+        "report/source_fund_monitor_report_view.xml",
     ],
     "installable": True,
     "post_init_hook": "reset_allocated_amount",

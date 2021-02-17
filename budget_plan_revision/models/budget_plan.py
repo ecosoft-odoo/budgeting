@@ -19,6 +19,9 @@ class BudgetPlan(models.Model):
     )
     revision_number = fields.Integer(readonly=True)
 
+    def _auto_done(self, budget_control_ids):
+        pass
+
     def create_revision_budget_control(self):
         """ Crete new revision Budget Control and update to new plan """
         self.ensure_one()
@@ -37,6 +40,8 @@ class BudgetPlan(models.Model):
         domain = ast.literal_eval(action.get("domain", False))
         budget_control_ids = BudgetControl.browse(domain[0][2])
         budget_control_ids.write({"plan_id": self.id})
+        # Automatically state to control
+        self._auto_done(budget_control_ids)
         return action
 
     def create_revision(self):

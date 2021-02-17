@@ -73,16 +73,9 @@
             <form string="Budget Control Sheet">
                 <header>
                     <button
-                        id="action_draft"
-                        name="action_draft"
-                        string="Set to Draft"
-                        type="object"
-                        states="released,done,cancel"
-                    />
-                    <button
                         id="action_released"
                         name="action_released"
-                        string="Released"
+                        string="Release"
                         class="btn-primary"
                         type="object"
                         states="draft"
@@ -94,6 +87,13 @@
                         class="btn-primary"
                         type="object"
                         states="released"
+                    />
+                    <button
+                        id="action_draft"
+                        name="action_draft"
+                        string="Set to Draft"
+                        type="object"
+                        states="released,done,cancel"
                     />
                     <button
                         id="action_cancel"
@@ -204,6 +204,17 @@
         <field name="view_id" ref="budget_control_view_tree" />
         <field name="res_model">budget.control</field>
         <field name="view_mode">tree,form</field>
+    </record>
+
+    <record id="action_released_budget_control" model="ir.actions.server">
+        <field name="name">Release</field>
+        <field name="model_id" ref="budget_control.model_budget_control" />
+        <field name="binding_model_id" ref="budget_control.model_budget_control" />
+        <field name="state">code</field>
+        <field name="binding_view_types">list</field>
+        <field name="code">
+            action = records.action_released()
+        </field>
     </record>
 
     <menuitem

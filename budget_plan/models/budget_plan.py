@@ -1,7 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 
 
 class BudgetPlan(models.Model):
@@ -27,6 +27,7 @@ class BudgetPlan(models.Model):
     budget_control_count = fields.Integer(
         string="# of Budget Control",
         compute="_compute_budget_control_related_count",
+        store=True,
         help="Count budget control in Plan",
     )
     active = fields.Boolean(default=True)
@@ -40,6 +41,7 @@ class BudgetPlan(models.Model):
         tracking=True,
     )
 
+    @api.depends("budget_control_ids")
     def _compute_budget_control_related_count(self):
         self.budget_control_count = len(self.budget_control_ids)
 

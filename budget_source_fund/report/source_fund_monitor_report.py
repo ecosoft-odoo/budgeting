@@ -32,8 +32,9 @@ class SourceFundMonitorReport(models.Model):
 
     def _from_source_fund(self):
         return """
-            from budget_source_fund_line sf_line
-            join budget_source_fund sf on sf_line.fund_id = sf.id
+            from budget_source_fund_allocation sf_line
+            join budget_source_fund_plan sf_plan on sf_line.allocation_id = sf_plan.id
+            join budget_source_fund sf on sf_plan.fund_id = sf.id
             left join budget_source_fund_group sf_group
             on sf.fund_group_id = sf_group.id
         """

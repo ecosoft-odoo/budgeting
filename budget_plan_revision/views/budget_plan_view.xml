@@ -22,13 +22,13 @@
                     name="create_revision"
                     string="New Revision"
                     type="object"
-                    states="cancel"
+                    attrs="{'invisible': ['|', ('budget_control_count', '=', 0), ('state', '!=', 'cancel')]}"
                 />
                 <button
                     name="create_revision_budget_control"
                     string="New Revision Budget Control"
                     type="object"
-                    states="done"
+                    attrs="{'invisible': ['|', '|', ('revision_number', '=', 0), ('budget_control_count', '!=', 0), ('state', '!=', 'done')]}"
                 />
             </xpath>
             <xpath expr="//group[@name='budget_plan_right']" position="inside">
@@ -39,7 +39,7 @@
                     <field
                         name="old_revision_ids"
                         domain="['|', ('active', '=', False), ('active', '=', True)]"
-                        context="{'active_test': False, 'form_view_ref': 'budget_control_revision.budget_control_view_form_without_header'}"
+                        context="{'active_test': False, 'form_view_ref': 'budget_plan.view_budget_plan_form_without_header'}"
                         attrs="{'invisible': [('has_old_revisions', '=', False)]}"
                     >
                         <tree>

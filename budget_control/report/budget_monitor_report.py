@@ -60,7 +60,8 @@ class BudgetMonitorReport(models.Model):
 
     def _where_budget(self):
         return """
-            where mbi.active = true and mbi.state = 'done'
+            -- where mbi.active = true and mbi.state = 'done'
+            where mbi.active = true
         """
 
     def _select_actual(self):

@@ -6,5 +6,5 @@ from odoo import models
 class BudgetTransfer(models.Model):
     _name = "budget.transfer"
     _inherit = ["budget.transfer", "tier.validation"]
-    _state_from = ["draft"]
+    _state_from = ["submit"]
     _state_to = ["transfer"]
