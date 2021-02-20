@@ -10,15 +10,17 @@ class BudgetPlan(models.Model):
     _description = "Budget Plan"
     _order = "id desc"
 
-    name = fields.Char(required=True, tracking=True)
+    name = fields.Char(
+        required=True,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
         required=True,
-    )
-    fund_plan_line = fields.One2many(
-        comodel_name="budget.source.fund.plan",
-        inverse_name="plan_id",
-        copy=False,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     budget_control_ids = fields.One2many(
         comodel_name="budget.control",
@@ -30,6 +32,24 @@ class BudgetPlan(models.Model):
         store=True,
         help="Count budget control in Plan",
     )
+    total_amount = fields.Monetary(compute="_compute_total_amount")
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.user.company_id,
+        required=False,
+        string="Company",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    currency_id = fields.Many2one(
+        comodel_name="res.currency", related="company_id.currency_id"
+    )
+    plan_line = fields.One2many(
+        comodel_name="budget.plan.line",
+        inverse_name="plan_id",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
     active = fields.Boolean(default=True)
     state = fields.Selection(
         [
@@ -40,6 +60,11 @@ class BudgetPlan(models.Model):
         default="draft",
         tracking=True,
     )
+
+    @api.depends("plan_line")
+    def _compute_total_amount(self):
+        for rec in self:
+            rec.total_amount = sum(rec.plan_line.mapped("amount"))
 
     @api.depends("budget_control_ids")
     def _compute_budget_control_related_count(self):
@@ -71,34 +96,50 @@ class BudgetPlan(models.Model):
 
     def action_generate_plan(self):
         self.ensure_one()
-        SourceFundPlan = self.env["budget.source.fund.plan"]
-        fund_plan = SourceFundPlan.search(
+        Analytic = self.env["account.analytic.account"]
+        plan_analytic = self.plan_line.mapped("analytic_account_id")
+        analytic_ids = Analytic.search(
             [
                 ("budget_period_id", "=", self.budget_period_id.id),
-                ("state", "=", "done"),
+                ("id", "not in", plan_analytic.ids),
             ]
         )
-        fund_plan.write({"plan_id": self.id})
-        return fund_plan
+        if analytic_ids:
+            lines = list(
+                map(
+                    lambda l: (0, 0, {"analytic_account_id": l.id}),
+                    analytic_ids,
+                )
+            )
+            self.write({"plan_line": lines})
+        return True
 
-    def action_plan_generate_budget_control(self):
-        analytic_plan = self.mapped("fund_plan_line.allocation_line").mapped(
-            "analytic_account_id"
-        )
-        return {
-            "name": _("Generate Budget Control Sheet"),
-            "res_model": "generate.budget.control",
-            "view_mode": "form",
-            "context": {
-                "active_model": "budget.plan",
-                "active_ids": self.ids,
-                "default_analytic_account_ids": analytic_plan.ids,
-            },
-            "target": "new",
-            "type": "ir.actions.act_window",
+    def action_create_budget_control(self):
+        self.ensure_one()
+        GenerateBudgetControl = self.env["generate.budget.control"]
+        analytic_plan = self.plan_line.mapped("analytic_account_id")
+        ctx = {
+            "active_model": "budget.plan",
+            "active_ids": self.ids,
         }
+        budget_period = self.budget_period_id
+        generate_budget_id = GenerateBudgetControl.with_context(ctx).create(
+            {
+                "budget_period_id": budget_period.id,
+                "budget_id": budget_period.mis_budget_id.id,
+                "budget_plan_id": self.id,
+                "analytic_account_ids": [(6, 0, analytic_plan.ids)],
+            }
+        )
+        budget_control_view = (
+            generate_budget_id.action_generate_budget_control()
+        )
+        return budget_control_view
 
     def action_done(self):
+        lines = self.mapped("plan_line")
+        for line in lines:
+            line.allocated_amount = line.released_amount = line.amount
         self.write({"state": "done"})
         return True
 
@@ -111,3 +152,23 @@ class BudgetPlan(models.Model):
     def action_draft(self):
         self.write({"state": "draft"})
         return True
+
+
+class BudgetPlanLine(models.Model):
+    _name = "budget.plan.line"
+    _description = "Budget Plan Line"
+
+    plan_id = fields.Many2one(
+        comodel_name="budget.plan",
+    )
+    budget_period_id = fields.Many2one(
+        comodel_name="budget.period", related="plan_id.budget_period_id"
+    )
+    analytic_account_id = fields.Many2one(
+        comodel_name="account.analytic.account",
+        required=True,
+    )
+    allocated_amount = fields.Float(readonly=True)
+    released_amount = fields.Float(readonly=True)
+    amount = fields.Float()
+    spent = fields.Float(readonly=True)

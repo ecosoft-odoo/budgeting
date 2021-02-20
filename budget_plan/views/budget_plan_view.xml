@@ -52,13 +52,14 @@
             <tree>
                 <field name="name" />
                 <field name="budget_period_id" />
+                <field name="total_amount" />
+                <field name="currency_id" optional="hide" />
                 <field
                     name="state"
                     widget="badge"
                     decoration-info="state == 'draft'"
                     decoration-success="state == 'done'"
                 />
-                <field name="active" widget="boolean_toggle" optional="hide" />
             </tree>
         </field>
     </record>
@@ -70,7 +71,7 @@
             <form>
                 <header>
                     <button
-                        name="action_plan_generate_budget_control"
+                        name="action_create_budget_control"
                         class="oe_highlight"
                         string="Generate Budget Control"
                         states="done"
@@ -129,10 +130,18 @@
                     <group>
                         <group name="budget_plan_left">
                             <field name="budget_period_id" />
+                            <field name="total_amount" />
                         </group>
                         <group name="budget_plan_right">
                             <field name="active" invisible="1" />
-                            <field name="budget_control_ids" invisible="1" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                            <field
+                                name="currency_id"
+                                groups="base.group_multi_currency"
+                            />
                         </group>
                     </group>
                     <notebook>
@@ -146,10 +155,22 @@
                                     states="draft"
                                 />
                             </div>
-                            <field
-                                name="fund_plan_line"
-                                context="{'form_view_ref': 'budget_source_fund.view_budget_source_fund_plan_form_without_header'}"
-                            />
+                            <field name="plan_line">
+                                <tree editable="bottom">
+                                    <field name="budget_period_id" optional="hide" />
+                                    <field name="analytic_account_id" />
+                                    <field
+                                        name="allocated_amount"
+                                        sum="Total Allocated"
+                                    />
+                                    <field
+                                        name="released_amount"
+                                        sum="Total Released"
+                                    />
+                                    <field name="amount" sum="Total Amount" />
+                                    <field name="spent" sum="Total Spent" />
+                                </tree>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>
@@ -182,10 +203,10 @@
 
     <menuitem
         id="budget_plan_menu"
-        parent="budget_source_fund.source_of_fund_menu"
+        parent="budget_control.budget_control_menu"
         name="Budget Plan"
         action="budget_plan_action"
-        sequence="30"
+        sequence="25"
     />
 
 </odoo>

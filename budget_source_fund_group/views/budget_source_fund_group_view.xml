@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
 
+    <record id="budget_source_fund_group_filter" model="ir.ui.view">
+        <field name="name">budget.source.fund.group.filter</field>
+        <field name="model">budget.source.fund.group</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+            </search>
+        </field>
+    </record>
+
     <record id="budget_source_fund_group_tree" model="ir.ui.view">
         <field name="name">budget.source.fund.group.tree</field>
         <field name="model">budget.source.fund.group</field>
@@ -17,6 +32,12 @@
         <field name="arch" type="xml">
             <form string="Source of Fund Groups">
                 <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only" />
                         <h1>
@@ -24,9 +45,20 @@
                         </h1>
                     </div>
                     <group>
-                        <group />
-                        <group />
+                        <group name="fund_group_left" />
+                        <group name="fund_group_right">
+                            <field name="active" invisible="1" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
                     </group>
+                    <notebook>
+                        <page name="fund_line" string="Funds">
+                            <field name="fund_line" />
+                        </page>
+                    </notebook>
                 </sheet>
                 <div class="oe_chatter">
                     <field name="message_follower_ids" widget="mail_followers" />
@@ -41,13 +73,6 @@
         <field name="res_model">budget.source.fund.group</field>
         <field name="view_mode">tree,form</field>
     </record>
-
-    <menuitem
-        id="budget_source_of_fund_menu"
-        parent="budget_control.budget_config_menu"
-        name="Source of Fund"
-        sequence="30"
-    />
 
     <menuitem
         id="budget_source_fund_group_menu"

@@ -83,6 +83,11 @@
                             <field name="control_level" />
                         </group>
                     </group>
+                    <notebook>
+                        <page name="analytic_line" string="Analytic">
+                            <field name="analytic_line" widget="many2many" />
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>

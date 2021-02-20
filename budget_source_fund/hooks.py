@@ -9,4 +9,5 @@ def reset_allocated_amount(cr, registry):
         env = api.Environment(cr, SUPERUSER_ID, {})
         BudgetControl = env["budget.control"]
         budget_control = BudgetControl.search([], order="id")
-        budget_control._compute_allocated_released_amount()
+        if budget_control:
+            budget_control._compute_allocated_released_amount()

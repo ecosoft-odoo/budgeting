@@ -1,5 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
@@ -96,6 +97,19 @@ class BudgetControl(models.Model):
     currency_id = fields.Many2one(
         comodel_name="res.currency", related="company_id.currency_id"
     )
+    allocated_amount = fields.Monetary(
+        help="Initial total amount for plan",
+    )
+    released_amount = fields.Monetary(
+        compute="_compute_allocated_released_amount",
+        store=True,
+        help="Total amount for transfer current",
+    )
+    actual_amount = fields.Monetary(
+        string="Actual Amount",
+        compute="_compute_actual_amount",
+        help="Sum of actual amount",
+    )
     state = fields.Selection(
         [
             ("draft", "Draft"),
@@ -118,6 +132,21 @@ class BudgetControl(models.Model):
             "Duplicated analytic account for the same budget!",
         ),
     ]
+
+    @api.depends("allocated_amount")
+    def _compute_allocated_released_amount(self):
+        for rec in self:
+            rec.released_amount = rec.allocated_amount
+
+    @api.depends("item_ids")
+    def _compute_actual_amount(self):
+        AccountBudgetMove = self.env["account.budget.move"]
+        for rec in self:
+            account_move = AccountBudgetMove.search(
+                [("analytic_account_id", "=", rec.analytic_account_id.id)]
+            )
+            actual_amount = sum(account_move.mapped("debit"))
+            rec.actual_amount = actual_amount or 0.0
 
     @api.model
     def _get_mis_budget_domain(self):

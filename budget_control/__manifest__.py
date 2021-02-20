@@ -21,6 +21,7 @@
         "views/budget_period_view.xml",
         "views/mis_budget_item.xml",
         "views/budget_control_view.xml",
+        "views/analytic_account_views.xml",
         "views/account_move_views.xml",
         "views/budget_move_forward_view.xml",
         "wizard/generate_budget_control_view.xml",

@@ -67,6 +67,10 @@ class BudgetPeriod(models.Model):
         "data range to plan the budget.",
     )
     include_tax = fields.Boolean(string="Included Tax")
+    analytic_line = fields.One2many(
+        comodel_name="account.analytic.account",
+        inverse_name="budget_period_id",
+    )
 
     @api.model
     def create(self, vals):

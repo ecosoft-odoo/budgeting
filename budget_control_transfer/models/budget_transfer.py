@@ -58,7 +58,6 @@ class BudgetTransfer(models.Model):
         self.write({"state": "cancel"})
 
     def action_submit(self):
-        # self._check_state()
         self.write({"state": "submit"})
 
     def action_transfer(self):

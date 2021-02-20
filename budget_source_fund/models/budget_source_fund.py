@@ -16,19 +16,5 @@ class BudgetSourceFund(models.Model):
         default=lambda self: self.env.company,
         readonly=True,
     )
-    fund_group_id = fields.Many2one(
-        comodel_name="budget.source.fund.group",
-        string="Fund Group",
-        required=True,
-        tracking=True,
-    )
-    source_fund_plan_line = fields.One2many(
-        comodel_name="budget.source.fund.plan",
-        inverse_name="fund_id",
-    )
     date_from = fields.Date()
     date_to = fields.Date()
-
-    _sql_constraints = [
-        ("unique_name", "UNIQUE(name)", "Group must be unique")
-    ]

@@ -11,3 +11,7 @@ class BudgetControl(models.Model):
         index=True,
         ondelete="cascade",
     )
+    allocated_amount = fields.Monetary(
+        readonly=True,
+        help="Total amount from budget plan before revision",
+    )

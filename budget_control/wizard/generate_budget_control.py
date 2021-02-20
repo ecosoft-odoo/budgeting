@@ -16,7 +16,6 @@ class GenerateBudgetControl(models.TransientModel):
     budget_id = fields.Many2one(
         comodel_name="mis.budget",
         related="budget_period_id.mis_budget_id",
-        readonly=True,
     )
     state = fields.Selection(
         [("choose", "choose"), ("get", "get")],
@@ -78,22 +77,26 @@ class GenerateBudgetControl(models.TransientModel):
         plan_date_range_id = self.budget_period_id.plan_date_range_type_id.id
         budget_id = self.budget_id.id
         budget_name = self.budget_period_id.name
-        return map(
-            lambda l: {
-                "name": "{} :: {}".format(
-                    budget_name, l["analytic_account_id"].name
-                ),
-                "budget_id": budget_id,
-                "analytic_account_id": l["analytic_account_id"].id,
-                "plan_date_range_type_id": plan_date_range_id,
-            },
-            vals,
+        return list(
+            map(
+                lambda l: {
+                    "name": "{} :: {}".format(
+                        budget_name, l["analytic_account_id"].name
+                    ),
+                    "budget_id": budget_id,
+                    "analytic_account_id": l["analytic_account_id"].id,
+                    "plan_date_range_type_id": plan_date_range_id,
+                },
+                vals,
+            )
         )
 
+    def _prepare_value(self, analytic):
+        return [{"analytic_account_id": x} for x in analytic]
+
     def _prepare_budget_control_sheet(self, analytic):
-        vals = [{"analytic_account_id": x} for x in analytic]
-        vals = self._prepare_value_duplicate(vals)
-        return list(vals)
+        vals = self._prepare_value(analytic)
+        return self._prepare_value_duplicate(vals)
 
     def _hook_existing_analytics(self, existing_analytics):
         return existing_analytics
@@ -120,6 +123,9 @@ class GenerateBudgetControl(models.TransientModel):
         new_analytic = self.analytic_account_ids - existing_analytics
         vals = self._prepare_budget_control_sheet(new_analytic)
         budget_controls = self._create_budget_controls(vals)
+        # Update budget control in analytic
+        for bc in budget_controls:
+            bc.analytic_account_id.write({"budget_control_id": bc.id})
         budget_controls = self._hook_budget_controls(budget_controls)
         budget_controls.do_init_budget_commit(self.init_budget_commit)
         # Return result

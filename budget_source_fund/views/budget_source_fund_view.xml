@@ -7,7 +7,6 @@
         <field name="arch" type="xml">
             <tree string="Source of Funds" sample="1">
                 <field name="name" />
-                <field name="fund_group_id" />
                 <field name="date_from" />
                 <field name="date_to" />
             </tree>
@@ -21,11 +20,6 @@
             <search string="Search Source of Fund">
                 <field name="name" string="Source of Fund" />
                 <separator />
-                <filter
-                    string="Fund Group"
-                    name="fund_group_id"
-                    domain="[('fund_group_id', '!=', False)]"
-                />
                 <filter name="filter_date_from" date="date_from" />
                 <filter name="filter_date_to" date="date_to" />
                 <separator />
@@ -34,13 +28,7 @@
                     name="inactive"
                     domain="[('active', '=', False)]"
                 />
-                <group expand="0" string="Group By">
-                    <filter
-                        string="Fund Group"
-                        name="fund_group_id"
-                        context="{'group_by':'fund_group_id'}"
-                    />
-                </group>
+                <group expand="0" string="Group By" />
            </search>
         </field>
     </record>
@@ -63,13 +51,6 @@
                         <h1>
                             <field name="name" />
                         </h1>
-                        <h4>
-                            <field
-                                name="fund_group_id"
-                                placeholder="Group of Fund"
-                                options="{'no_create': True}"
-                            />
-                        </h4>
                     </div>
                     <group>
                         <field name="active" invisible="1" />
@@ -84,28 +65,6 @@
                             />
                         </group>
                     </group>
-                    <notebook>
-                        <page name="source_fund_plan_line" string="Source of Fund Plan">
-                            <field
-                                name="source_fund_plan_line"
-                                context="{'form_view_ref': 'budget_source_fund.view_budget_source_fund_plan_form_without_header'}"
-                            >
-                                <tree editable="bottom">
-                                    <field name="name" />
-                                    <field name="budget_period_id" />
-                                    <field name="allocated_amount" sum="Total Amount" />
-                                    <field
-                                        name="state"
-                                        widget="badge"
-                                        decoration-info="state == 'draft'"
-                                        decoration-success="state == 'done'"
-                                        optional="hide"
-                                    />
-                                    <field name="company_currency_id" invisible="1" />
-                                </tree>
-                            </field>
-                        </page>
-                    </notebook>
                 </sheet>
                 <div class="oe_chatter">
                     <field name="message_follower_ids" widget="mail_followers" />
@@ -120,6 +79,13 @@
         <field name="res_model">budget.source.fund</field>
         <field name="view_mode">tree,form</field>
     </record>
+
+    <menuitem
+        id="budget_source_of_fund_menu"
+        parent="budget_control.budget_config_menu"
+        name="Source of Fund"
+        sequence="30"
+    />
 
     <menuitem
         id="budget_source_fund_menu"
