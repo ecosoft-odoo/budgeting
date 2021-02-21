@@ -14,6 +14,10 @@ class BudgetFundConstraint(models.Model):
         required=True,
         index=True,
     )
+    budget_control_id = fields.Many2one(
+        comodel_name="budget.control",
+        readonly=True,
+    )
     fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
         required=True,

@@ -16,7 +16,6 @@
         # "report/source_fund_monitor_report_view.xml",
     ],
     "installable": True,
-    # "post_init_hook": "reset_allocated_amount",
     "maintainers": ["Saran440"],
     "development_status": "Alpha",
 }

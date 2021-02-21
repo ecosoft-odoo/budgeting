@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
 
-    <record id="budget_fund_constraint_view_tree" model="ir.ui.view">
-        <field name="name">budget.fund.constraint.view.tree</field>
+    <record id="fund_constraint_view_tree" model="ir.ui.view">
+        <field name="name">fund.constraint.view.tree</field>
         <field name="model">fund.constraint</field>
         <field name="arch" type="xml">
-            <tree string="Budget Fund Constraint">
+            <tree string="Fund Constraint">
                 <field name="name" />
                 <field name="analytic_account_id" />
                 <field name="fund_id" />
+                <field name="budget_control_id" optional="show" />
                 <field name="active" widget="boolean_toggle" optional="show" />
             </tree>
         </field>
     </record>
 
-    <record id="budget_fund_constraint_line_view_tree" model="ir.ui.view">
-        <field name="name">budget.fund.constraint.line.view.tree</field>
+    <record id="fund_constraint_line_view_tree" model="ir.ui.view">
+        <field name="name">fund.constraint.line.view.tree</field>
         <field name="model">fund.constraint.line</field>
         <field name="arch" type="xml">
             <tree editable="bottom">
@@ -25,8 +26,8 @@
         </field>
     </record>
 
-    <record id="budget_fund_constraint_view_filter" model="ir.ui.view">
-        <field name="name">budget.fund.constraint.view.filter</field>
+    <record id="fund_constraint_view_filter" model="ir.ui.view">
+        <field name="name">fund.constraint.view.filter</field>
         <field name="model">fund.constraint</field>
         <field name="arch" type="xml">
             <search>
@@ -54,16 +55,21 @@
                         string="Fund"
                         context="{'group_by': 'fund_id'}"
                     />
+                    <filter
+                        name="budget_control"
+                        string="Budget Control"
+                        context="{'group_by': 'budget_control_id'}"
+                    />
                 </group>
            </search>
         </field>
     </record>
 
-    <record id="budget_fund_constraint_view_form" model="ir.ui.view">
-        <field name="name">budget.fund.constraint.view.form</field>
+    <record id="fund_constraint_view_form" model="ir.ui.view">
+        <field name="name">fund.constraint.view.form</field>
         <field name="model">fund.constraint</field>
         <field name="arch" type="xml">
-            <form string="Budget Fund Constraint">
+            <form string="Fund Constraint">
                 <header />
                 <sheet>
                     <widget
@@ -82,6 +88,7 @@
                         <group name="fund_constraint_left">
                             <field name="analytic_account_id" />
                             <field name="fund_id" />
+                            <field name="budget_control_id" />
                         </group>
                         <group name="fund_constraint_right">
                             <field name="fund_amount" />
@@ -110,19 +117,19 @@
         </field>
     </record>
 
-    <record id="budget_fund_constraint_action" model="ir.actions.act_window">
-        <field name="name">Budget Fund Constraint</field>
-        <field name="view_id" ref="budget_fund_constraint_view_tree" />
+    <record id="fund_constraint_action" model="ir.actions.act_window">
+        <field name="name">Fund Constraint</field>
+        <field name="view_id" ref="fund_constraint_view_tree" />
         <field name="res_model">fund.constraint</field>
         <field name="context">{'active_test': False}</field>
         <field name="view_mode">tree,form</field>
     </record>
 
     <menuitem
-        id="budget_fund_constraint_menu"
+        id="fund_constraint_menu"
         parent="budget_source_fund.budget_source_of_fund_menu"
         name="Fund Constraint"
-        action="budget_fund_constraint_action"
+        action="fund_constraint_action"
         sequence="70"
     />
 
