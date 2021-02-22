@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
 
+    <record id="fund_constraint_line_view_tree" model="ir.ui.view">
+        <field name="name">fund.constraint.line.view.tree</field>
+        <field name="model">fund.constraint.line</field>
+        <field name="arch" type="xml">
+            <tree editable="bottom">
+                <field name="account_ids" widget="many2many_tags" />
+                <field name="allocation_amount" />
+            </tree>
+        </field>
+    </record>
+
     <record id="fund_constraint_view_tree" model="ir.ui.view">
         <field name="name">fund.constraint.view.tree</field>
         <field name="model">fund.constraint</field>
@@ -10,18 +21,8 @@
                 <field name="analytic_account_id" />
                 <field name="fund_id" />
                 <field name="budget_control_id" optional="show" />
+                <field name="fund_amount" />
                 <field name="active" widget="boolean_toggle" optional="show" />
-            </tree>
-        </field>
-    </record>
-
-    <record id="fund_constraint_line_view_tree" model="ir.ui.view">
-        <field name="name">fund.constraint.line.view.tree</field>
-        <field name="model">fund.constraint.line</field>
-        <field name="arch" type="xml">
-            <tree editable="bottom">
-                <field name="account_ids" widget="many2many_tags" />
-                <field name="allocation_amount" />
             </tree>
         </field>
     </record>

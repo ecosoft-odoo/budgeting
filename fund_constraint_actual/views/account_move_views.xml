@@ -10,7 +10,8 @@
                 expr="//field[@name='invoice_line_ids']/tree/field[@name='analytic_account_id']"
                 position="after"
             >
-                <field name="fund_id" />
+                <field name="fund_id" domain="[('id', 'in', fund_all)]" />
+                <field name="fund_all" widget="many2many_tags" optional="hide" />
             </xpath>
             <xpath
                 expr="//field[@name='line_ids']/tree/field[@name='analytic_account_id']"

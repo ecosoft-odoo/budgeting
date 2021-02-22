@@ -9,21 +9,30 @@ class AccountMoveLine(models.Model):
     fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
         compute="_compute_fund_id",
+        compute_sudo=True,
         readonly=False,
         store=True,
+    )
+    fund_all = fields.Many2many(
+        comodel_name="budget.source.fund",
+        relation="move_line_fund_rel",
+        column1="line_id",
+        column2="fund_id",
+        compute="_compute_fund_all",
+        compute_sudo=True,
     )
 
     @api.depends("analytic_account_id")
     def _compute_fund_id(self):
         for rec in self:
-            fund_ids = rec.analytic_account_id.budget_control_id.fund_ids
+            fund_ids = rec.analytic_account_id.fund_constraint.mapped(
+                "fund_id"
+            )
             rec.fund_id = len(fund_ids) == 1 and fund_ids.id or False
 
-    # @api.onchange("analytic_account_id")
-    # def _onchange_domain_analytic_account_id(self):
-    #     # filter out, if not selected analytic account
-    #     domain = [("id", "=", False)]
-    #     analytic_id = self.analytic_account_id
-    #     if analytic_id:
-    #         domain = [("id", "in", analytic_id.budget_control_id.fund_ids.ids)]
-    #     return {"domain": {"fund_id": domain}}
+    @api.depends("analytic_account_id")
+    def _compute_fund_all(self):
+        for rec in self:
+            rec.fund_all = rec.analytic_account_id.fund_constraint.mapped(
+                "fund_id"
+            )
