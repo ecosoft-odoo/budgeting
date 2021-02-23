@@ -129,8 +129,20 @@ class BudgetPlan(models.Model):
         return budget_control
 
     def create_revision(self):
+        """ Update amount from old budget control to new plan line """
         self._check_state_budget_control()
         res = super().create_revision()
+        domain = ast.literal_eval(res.get("domain", False))
+        new_plan = self.browse(domain[0][2])
+        new_plan_line = new_plan.mapped("plan_line")
+        for line in new_plan_line:
+            budget_control = line.analytic_account_id.budget_control_id
+            line.write(
+                {
+                    "allocated_amount": budget_control.allocated_amount,
+                    "released_amount": budget_control.released_amount,
+                }
+            )
         return res
 
 
