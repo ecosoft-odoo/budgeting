@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 {
-    "name": "Budget Plan - Revisions",
+    "name": "Budget Plan - Revision",
     "version": "14.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
@@ -11,8 +11,8 @@
     "website": "https://github.com/OCA/account-budgeting",
     "depends": [
         "budget_control_revision",
-        "budget_source_fund_revision",
         "budget_plan",
+        "base_revision",
     ],
     "data": [
         "views/budget_plan_view.xml",

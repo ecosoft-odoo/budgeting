@@ -58,5 +58,4 @@ class BudgetControl(models.Model):
             if old_items:
                 rec._copy_item_ids(old_items)
                 old_items.write({"active": False})
-            old_lastest.allocation_line.write({"budget_control_id": rec.id})
         return res

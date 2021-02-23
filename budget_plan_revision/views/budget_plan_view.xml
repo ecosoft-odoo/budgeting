@@ -17,22 +17,39 @@
         <field name="model">budget.plan</field>
         <field name="inherit_id" ref="budget_plan.view_budget_plan_form" />
         <field name="arch" type="xml">
-            <xpath expr="//header" position="inside">
+            <button name="action_create_budget_control" position="attributes">
+                <attribute
+                    name="attrs"
+                >{'invisible': ['|', '|', ('budget_control_count', '!=', 0), ('state', '!=', 'done'), ('revision_number', '!=', 0)]}</attribute>
+            </button>
+            <xpath
+                expr="//header/button[@name='action_create_budget_control']"
+                position="after"
+            >
                 <button
                     name="create_revision"
+                    class="oe_highlight"
                     string="New Revision"
                     type="object"
-                    attrs="{'invisible': ['|', ('budget_control_count', '=', 0), ('state', '!=', 'cancel')]}"
+                    attrs="{'invisible': ['|', ('budget_control_count', '=', 0), ('state', '!=', 'done')]}"
+                    confirm="This operation cannot be undone. Are you sure to continue?"
                 />
                 <button
                     name="create_revision_budget_control"
-                    string="New Revision Budget Control"
+                    class="oe_highlight"
+                    string="Update Budget Control"
                     type="object"
                     attrs="{'invisible': ['|', '|', ('revision_number', '=', 0), ('budget_control_count', '!=', 0), ('state', '!=', 'done')]}"
                 />
             </xpath>
             <xpath expr="//group[@name='budget_plan_right']" position="inside">
                 <field name="revision_number" />
+            </xpath>
+            <xpath
+                expr="//page[@name='plan_line']/field[@name='plan_line']/tree/field[@name='released_amount']"
+                position="after"
+            >
+                <field name="revision_number" optional="hide" />
             </xpath>
             <xpath expr="//notebook" position="inside">
                 <page string="Revisions">

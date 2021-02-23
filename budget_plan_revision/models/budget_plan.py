@@ -19,50 +19,122 @@ class BudgetPlan(models.Model):
     )
     revision_number = fields.Integer(readonly=True)
 
-    def _auto_done(self, budget_control_ids):
-        pass
+    def _check_state_budget_control(self):
+        for rec in self:
+            bc_state = set(rec.budget_control_ids.mapped("state"))
+            if len(bc_state) != 1 or "cancel" not in bc_state:
+                raise UserError(
+                    _(
+                        "Can not revision. All budget control have to state 'cancel'"
+                    )
+                )
+
+    def _update_allocated_amount(self, budget_control_ids):
+        for new_bc in budget_control_ids:
+            plan_line = self.plan_line.filtered(
+                lambda l: l.analytic_account_id == new_bc.analytic_account_id
+            )
+            new_bc.write({"allocated_amount": plan_line.allocated_amount})
+
+    def _get_context_wizard(self):
+        ctx = super()._get_context_wizard()
+        ctx.update({"revision": self.revision_number})
+        return ctx
+
+    def _filter_budget_control_active(self, old_plan):
+        """
+        - Filter out analytic is inactive
+        - Check case back to active but analytic was created and inactive.
+        - Create new budget with new analytic (if any)
+            i.e. Case back to active on Budget Plan Line
+            ===================================================================
+            Analytic    Revision    Active      |   Budget Control  Revision
+            ===================================================================
+            A1          1           True        |   A1              1
+            A2          1           True        |   A2              1
+            -------------------- New Revision --------------------
+            A1          2           True        |   A1              2
+            A2          2           False       |
+            A3          2           True        |   A3              2 (new)
+            -------------------- New Revision --------------------
+            A1          3           True        |   A1              3
+            A2          3           True        |   A2              3
+            A3          3           True        |   A3              3
+        """
+        BudgetControl = self.env["budget.control"]
+        plan_analytic = self.plan_line.filtered("active").mapped(
+            "analytic_account_id"
+        )
+        budget_control_inactive = old_plan.budget_control_ids.filtered(
+            lambda l: l.analytic_account_id.id not in plan_analytic.ids
+        )
+        budget_control_active = (
+            old_plan.budget_control_ids - budget_control_inactive
+        )
+        budget_control_inactive.write({"active": False})
+        # check analytic old revision and current
+        old_plan_analytic = old_plan.plan_line.filtered("active").mapped(
+            "analytic_account_id"
+        )
+        new_plan_analytic = plan_analytic.filtered(
+            lambda l: l.id not in old_plan_analytic.ids
+        )
+        bc_old = BudgetControl.search(
+            [
+                ("analytic_account_id", "in", new_plan_analytic.ids),
+                ("active", "=", False),
+            ],
+            order="id desc",
+            limit=1,
+        )
+        if bc_old:
+            action_old_bc = bc_old.create_revision()
+            domain = ast.literal_eval(action_old_bc.get("domain", False))
+            budget_control_ids = BudgetControl.browse(domain[0][2])
+            budget_control_ids.write(
+                {
+                    "revision_number": self.revision_number,
+                    "active": True,
+                    "plan_id": self.id,
+                }
+            )
+            for bc in budget_control_ids:
+                bc.write(
+                    {
+                        "name": "%s-%02d"
+                        % (bc.unrevisioned_name, self.revision_number)
+                    }
+                )
+            self._update_allocated_amount(budget_control_ids)
+        # Create new budget control, if new analytic
+        self.action_create_budget_control()
+        return budget_control_active
 
     def create_revision_budget_control(self):
         """ Crete new revision Budget Control and update to new plan """
-        self.ensure_one()
         BudgetControl = self.env["budget.control"]
-        budget_controls = self.old_revision_ids[0].budget_control_ids
-        control_state = set(budget_controls.mapped("state"))
-        if len(control_state) != 1 or "cancel" not in control_state:
-            raise UserError(
-                _(
-                    "Can not revision. All budget control have to state 'cancel'"
-                )
+        budget_control = []
+        for rec in self:
+            old_lasted = rec.old_revision_ids[0]
+            old_lasted._check_state_budget_control()
+            budget_control_active = rec._filter_budget_control_active(
+                old_lasted
             )
-        action = budget_controls.with_context(
-            {"active_model": "budget.control"}
-        ).create_revision()
-        domain = ast.literal_eval(action.get("domain", False))
-        budget_control_ids = BudgetControl.browse(domain[0][2])
-        budget_control_ids.write({"plan_id": self.id})
-        # Automatically state to control
-        self._auto_done(budget_control_ids)
-        return action
+            action_bc = budget_control_active.create_revision()
+            domain = ast.literal_eval(action_bc.get("domain", False))
+            budget_control_ids = BudgetControl.browse(domain[0][2])
+            rec._update_allocated_amount(budget_control_ids)
+            budget_control_ids.write({"plan_id": rec.id})
+            budget_control.append(budget_control_ids.ids)
+        return budget_control
 
     def create_revision(self):
-        """
-        Step to create new revision:
-        - Create new revision Budget Plan without Source of Fund Plan.
-        - Create new revision Source of Fund Plan and
-          update new Budget Plan on all source of fund plan.
-        - Remove plan from source of fund plan for generate new plan.
-        """
+        self._check_state_budget_control()
         res = super().create_revision()
-        SourceFundPlan = self.env["budget.source.fund.plan"]
-        domain_budget_plan = ast.literal_eval(res.get("domain", False))
-        new_budget_plan_ids = self.browse(domain_budget_plan[0][2])
-        # loop case multi
-        for rec in new_budget_plan_ids:
-            old_lasted = rec.old_revision_ids[0]
-            action_fund_plan = old_lasted.fund_plan_line.create_revision()
-            domain_fund_plan = ast.literal_eval(
-                action_fund_plan.get("domain", False)
-            )
-            new_plan_ids = SourceFundPlan.browse(domain_fund_plan[0][2])
-            new_plan_ids.write({"plan_id": False, "state": "draft"})
         return res
+
+
+class BudgetPlanLine(models.Model):
+    _inherit = "budget.plan.line"
+
+    revision_number = fields.Integer(related="plan_id.revision_number")

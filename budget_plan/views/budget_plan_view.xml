@@ -74,8 +74,8 @@
                         name="action_create_budget_control"
                         class="oe_highlight"
                         string="Generate Budget Control"
-                        states="done"
                         type="object"
+                        attrs="{'invisible': ['|', ('budget_control_count', '!=', 0), ('state', '!=', 'done')]}"
                     />
                     <button
                         name="action_done"
@@ -87,7 +87,7 @@
                     <button
                         name="action_draft"
                         string="Reset to Draft"
-                        states="done,cancel"
+                        states="cancel"
                         type="object"
                     />
                     <button
@@ -95,7 +95,6 @@
                         string="Cancel"
                         states="draft,done"
                         type="object"
-                        confirm="This operation will cancel all budget controls. Are you sure to continue?"
                     />
                     <field name="state" widget="statusbar" />
                 </header>
@@ -145,7 +144,7 @@
                         </group>
                     </group>
                     <notebook>
-                        <page name="plan_line" string="Source of Fund Plan">
+                        <page name="plan_line" string="Plan Allocation">
                             <div class="oe_right" name="buttons">
                                 <button
                                     name="action_generate_plan"
@@ -169,6 +168,7 @@
                                     />
                                     <field name="amount" sum="Total Amount" />
                                     <field name="spent" sum="Total Spent" />
+                                    <field name="active" optional="show" />
                                 </tree>
                             </field>
                         </page>

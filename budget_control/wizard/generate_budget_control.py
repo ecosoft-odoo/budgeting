@@ -98,8 +98,15 @@ class GenerateBudgetControl(models.TransientModel):
         vals = self._prepare_value(analytic)
         return self._prepare_value_duplicate(vals)
 
-    def _hook_existing_analytics(self, existing_analytics):
-        return existing_analytics
+    def _get_existing_budget(self):
+        BudgetControl = self.env["budget.control"]
+        existing_budget = BudgetControl.search(
+            [
+                ("budget_id", "=", self.budget_id.id),
+                ("analytic_account_id", "in", self.analytic_account_ids.ids),
+            ]
+        )
+        return existing_budget
 
     def _hook_budget_controls(self, budget_controls):
         return budget_controls
@@ -110,16 +117,10 @@ class GenerateBudgetControl(models.TransientModel):
     def action_generate_budget_control(self):
         """Create new draft budget control sheet for all selected analytics."""
         self.ensure_one()
-        BudgetControl = self.env["budget.control"]
         # Find existing controls, so we can skip.
-        existing_analytics = BudgetControl.search(
-            [
-                ("budget_id", "=", self.budget_id.id),
-                ("analytic_account_id", "in", self.analytic_account_ids.ids),
-            ]
-        ).mapped("analytic_account_id")
+        existing_budget = self._get_existing_budget()
+        existing_analytics = existing_budget.mapped("analytic_account_id")
         # Create budget controls that are not already exists
-        existing_analytics = self._hook_existing_analytics(existing_analytics)
         new_analytic = self.analytic_account_ids - existing_analytics
         vals = self._prepare_budget_control_sheet(new_analytic)
         budget_controls = self._create_budget_controls(vals)

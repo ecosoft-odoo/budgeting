@@ -6,7 +6,7 @@
         <field name="model">budget.source.fund</field>
         <field name="inherit_id" ref="budget_source_fund.budget_source_fund_form" />
         <field name="arch" type="xml">
-            <xpath expr="//notebook" position="after">
+            <xpath expr="//sheet" position="inside">
                 <group name="objective" string="Objective">
                     <field name="objective" nolabel="1" />
                 </group>

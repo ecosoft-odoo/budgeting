@@ -47,8 +47,10 @@ class BudgetPlan(models.Model):
     plan_line = fields.One2many(
         comodel_name="budget.plan.line",
         inverse_name="plan_id",
+        copy=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+        context={"active_test": False},
     )
     active = fields.Boolean(default=True)
     state = fields.Selection(
@@ -114,14 +116,21 @@ class BudgetPlan(models.Model):
             self.write({"plan_line": lines})
         return True
 
-    def action_create_budget_control(self):
-        self.ensure_one()
-        GenerateBudgetControl = self.env["generate.budget.control"]
-        analytic_plan = self.plan_line.mapped("analytic_account_id")
+    def _get_analytic_plan(self):
+        return self.plan_line.filtered("active").mapped("analytic_account_id")
+
+    def _get_context_wizard(self):
         ctx = {
             "active_model": "budget.plan",
             "active_ids": self.ids,
         }
+        return ctx
+
+    def action_create_budget_control(self):
+        self.ensure_one()
+        GenerateBudgetControl = self.env["generate.budget.control"]
+        analytic_plan = self._get_analytic_plan()
+        ctx = self._get_context_wizard()
         budget_period = self.budget_period_id
         generate_budget_id = GenerateBudgetControl.with_context(ctx).create(
             {
@@ -144,8 +153,6 @@ class BudgetPlan(models.Model):
         return True
 
     def action_cancel(self):
-        self.budget_control_ids.action_cancel()
-        self.fund_plan_line.action_cancel()
         self.write({"state": "cancel"})
         return True
 
@@ -172,3 +179,4 @@ class BudgetPlanLine(models.Model):
     released_amount = fields.Float(readonly=True)
     amount = fields.Float()
     spent = fields.Float(readonly=True)
+    active = fields.Boolean(default=True)
