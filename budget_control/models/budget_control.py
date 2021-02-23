@@ -106,6 +106,9 @@ class BudgetControl(models.Model):
         store=True,
         help="Total amount for transfer current",
     )
+    budget_amount = fields.Monetary(
+        compute="_compute_budget_amount", help="Total budget amount"
+    )
     actual_amount = fields.Monetary(
         string="Actual Amount",
         compute="_compute_actual_amount",
@@ -138,6 +141,11 @@ class BudgetControl(models.Model):
     def _compute_allocated_released_amount(self):
         for rec in self:
             rec.released_amount = rec.allocated_amount
+
+    @api.depends("item_ids")
+    def _compute_budget_amount(self):
+        for rec in self:
+            rec.budget_amount = sum(rec.item_ids.mapped("amount"))
 
     @api.depends("item_ids")
     def _compute_actual_amount(self):
@@ -233,7 +241,7 @@ class BudgetControl(models.Model):
 
     def action_done(self):
         for rec in self:
-            plan_amount = sum(self.item_ids.mapped("amount"))
+            plan_amount = rec.budget_amount
             fund_amount = rec.released_amount
             amount_compare, message = rec._compare_plan_fund(
                 plan_amount, fund_amount

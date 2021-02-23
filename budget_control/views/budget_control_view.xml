@@ -11,6 +11,7 @@
                 <field name="analytic_account_id" />
                 <field name="analytic_group" optional="show" />
                 <field name="assignee_id" optional="show" />
+                <field name="budget_amount" optional="show" />
                 <field name="actual_amount" optional="show" />
                 <field name="allocated_amount" optional="show" />
                 <field name="released_amount" optional="show" />
@@ -195,8 +196,13 @@
                             </field>
                         </page>
                     </notebook>
-                    <group name="amount_budget">
-                        <field name="actual_amount" />
+                    <group name="amount_budget" string="Summary Amount">
+                        <group name="amount_commit">
+                            <field name="budget_amount" />
+                        </group>
+                        <group name="amount_actual">
+                            <field name="actual_amount" />
+                        </group>
                     </group>
                 </sheet>
                 <div class="oe_chatter">

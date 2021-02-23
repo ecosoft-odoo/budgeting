@@ -31,21 +31,34 @@ class BudgetControl(models.Model):
         for i, item in enumerate(self.item_ids):
             item.update({"amount": old_items[i].amount})
 
+    def _get_kpi_analytic(self):
+        kpi_ids = list(
+            map(
+                lambda l: {
+                    l.analytic_account_id.id: l.item_ids.mapped(
+                        "kpi_expression_id.kpi_id"
+                    ).ids
+                },
+                self,
+            )
+        )
+        return kpi_ids
+
     def create_revision(self):
         """
         Step to create new revision:
         - Send context for auto create kpis from old revision.
+            kpi_ids         : Used with module budget_control_selection
+            create_revision : Create mis budget overlaps
         - Copy amount to new revision.
         - Inactive old item_ids, For report monitoring not duplicated.
         """
-        # TODO: Support multi value
         ctx = self._context.copy()
+        kpi_ids = self._get_kpi_analytic()
         ctx.update(
             {
                 "create_revision": True,
-                "kpi_ids": self.item_ids.mapped(
-                    "kpi_expression_id.kpi_id"
-                ).ids,
+                "kpi_ids": kpi_ids,
             }
         )
         res = super(BudgetControl, self.with_context(ctx)).create_revision()
