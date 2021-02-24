@@ -21,6 +21,7 @@
                 <field name="analytic_account_id" />
                 <field name="fund_id" />
                 <field name="budget_control_id" optional="show" />
+                <field name="budget_period_id" optional="show" />
                 <field name="fund_amount" />
                 <field name="active" widget="boolean_toggle" optional="show" />
             </tree>
@@ -61,6 +62,11 @@
                         string="Budget Control"
                         context="{'group_by': 'budget_control_id'}"
                     />
+                    <filter
+                        name="budget_period"
+                        string="Budget Period"
+                        context="{'group_by': 'budget_period_id'}"
+                    />
                 </group>
            </search>
         </field>
@@ -92,6 +98,7 @@
                             <field name="budget_control_id" />
                         </group>
                         <group name="fund_constraint_right">
+                            <field name="budget_period_id" />
                             <field name="fund_amount" />
                             <field name="active" />
                             <field

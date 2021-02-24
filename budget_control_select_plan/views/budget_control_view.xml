@@ -10,7 +10,7 @@
                 <button
                     name="action_select_plan"
                     class="oe_highlight"
-                    string="Selection Plan"
+                    string="Select Plan"
                     type="object"
                     states="draft,released"
                 />

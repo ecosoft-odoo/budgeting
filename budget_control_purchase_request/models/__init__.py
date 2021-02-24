@@ -3,4 +3,5 @@ from . import budget_period
 from . import purchase_request_budget_move
 from . import purchase
 from . import purchase_request
+from . import budget_control
 from . import budget_move_forward

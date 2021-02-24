@@ -6,7 +6,7 @@
         <field name="inherit_id" ref="budget_control.budget_control_view_tree" />
         <field name="arch" type="xml">
             <xpath expr="//tree/field[@name='amount_budget']" position="after">
-                <field name="amount_expense" optional="hide" />
+                <field name="amount_purchase_request" optional="hide" />
             </xpath>
         </field>
     </record>
@@ -20,7 +20,7 @@
                 expr="//group[@name='amount_budget']/field[@name='amount_budget']"
                 position="after"
             >
-                <field name="amount_expense" />
+                <field name="amount_purchase_request" />
             </xpath>
         </field>
     </record>

@@ -106,13 +106,30 @@ class BudgetControl(models.Model):
         store=True,
         help="Total amount for transfer current",
     )
-    budget_amount = fields.Monetary(
-        compute="_compute_budget_amount", help="Total budget amount"
+    # Total Amount
+    amount_budget = fields.Monetary(
+        string="Budget",
+        compute="_compute_amount_budget",
+        help="Sum of amount plan",
     )
-    actual_amount = fields.Monetary(
-        string="Actual Amount",
-        compute="_compute_actual_amount",
+    amount_total_commit = fields.Monetary(
+        string="Total Commitments",
+        compute="_compute_amount_commit",
+        help="Total Commit = Sum of PR / PO / EX / AV commit",
+    )
+    amount_actual = fields.Monetary(
+        string="Actual",
+        compute="_compute_amount_actual",
         help="Sum of actual amount",
+    )
+    amount_consumed = fields.Monetary(
+        string="Consumed",
+        compute="_compute_amount_budget",
+        help="Consumed = Total Commitments + Actual",
+    )
+    balance = fields.Monetary(
+        compute="_compute_amount_budget",
+        help="Balance = Total Budget - Consumed",
     )
     state = fields.Selection(
         [
@@ -142,20 +159,30 @@ class BudgetControl(models.Model):
         for rec in self:
             rec.released_amount = rec.allocated_amount
 
-    @api.depends("item_ids")
-    def _compute_budget_amount(self):
-        for rec in self:
-            rec.budget_amount = sum(rec.item_ids.mapped("amount"))
+    def _get_amount_total_commit(self):
+        return 0
 
     @api.depends("item_ids")
-    def _compute_actual_amount(self):
+    def _compute_amount_budget(self):
+        for rec in self:
+            rec.amount_budget = sum(rec.item_ids.mapped("amount"))
+            rec.amount_consumed = rec.amount_total_commit + rec.amount_actual
+            rec.balance = rec.amount_budget - rec.amount_consumed
+
+    @api.depends("item_ids")
+    def _compute_amount_commit(self):
+        for rec in self:
+            rec.amount_total_commit = rec._get_amount_total_commit()
+
+    @api.depends("item_ids")
+    def _compute_amount_actual(self):
         AccountBudgetMove = self.env["account.budget.move"]
         for rec in self:
             account_move = AccountBudgetMove.search(
                 [("analytic_account_id", "=", rec.analytic_account_id.id)]
             )
-            actual_amount = sum(account_move.mapped("debit"))
-            rec.actual_amount = actual_amount or 0.0
+            amount_actual = sum(account_move.mapped("debit"))
+            rec.amount_actual = amount_actual or 0.0
 
     @api.model
     def _get_mis_budget_domain(self):
@@ -241,7 +268,7 @@ class BudgetControl(models.Model):
 
     def action_done(self):
         for rec in self:
-            plan_amount = rec.budget_amount
+            plan_amount = rec.amount_budget
             fund_amount = rec.released_amount
             amount_compare, message = rec._compare_plan_fund(
                 plan_amount, fund_amount

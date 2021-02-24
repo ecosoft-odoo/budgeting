@@ -11,8 +11,11 @@
                 <field name="analytic_account_id" />
                 <field name="analytic_group" optional="show" />
                 <field name="assignee_id" optional="show" />
-                <field name="budget_amount" optional="show" />
-                <field name="actual_amount" optional="show" />
+                <field name="amount_budget" optional="show" />
+                <field name="amount_total_commit" optional="show" />
+                <field name="amount_actual" optional="hide" />
+                <field name="amount_consumed" optional="show" />
+                <field name="balance" optional="show" />
                 <field name="allocated_amount" optional="show" />
                 <field name="released_amount" optional="show" />
                 <field
@@ -194,16 +197,43 @@
                                     <field name="amount" />
                                 </tree>
                             </field>
+                            <!-- Totals Amount -->
+                            <group
+                                name="amount_budget"
+                                class="oe_subtotal_footer oe_right"
+                            >
+                                <div
+                                    class="oe_subtotal_footer_separator oe_inline o_td_label"
+                                >
+                                    <label for="amount_budget" />
+                                </div>
+                                <field
+                                    name="amount_budget"
+                                    nolabel="1"
+                                    class="oe_subtotal_footer_separator"
+                                />
+                                <field
+                                    name="amount_total_commit"
+                                    class="oe_subtotal_footer_separator"
+                                />
+                                <field name="amount_actual" />
+                                <field
+                                    name="amount_consumed"
+                                    class="oe_subtotal_footer_separator"
+                                />
+                                <div
+                                    class="oe_subtotal_footer_separator oe_inline o_td_label"
+                                >
+                                    <label for="balance" />
+                                </div>
+                                <field
+                                    name="balance"
+                                    nolabel="1"
+                                    class="oe_subtotal_footer_separator"
+                                />
+                            </group>
                         </page>
                     </notebook>
-                    <group name="amount_budget" string="Summary Amount">
-                        <group name="amount_commit">
-                            <field name="budget_amount" />
-                        </group>
-                        <group name="amount_actual">
-                            <field name="actual_amount" />
-                        </group>
-                    </group>
                 </sheet>
                 <div class="oe_chatter">
                     <field name="message_follower_ids" widget="mail_followers" />

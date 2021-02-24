@@ -7,26 +7,26 @@ from odoo import api, fields, models
 class BudgetControl(models.Model):
     _inherit = "budget.control"
 
-    amount_expense = fields.Monetary(
-        string="Expense",
-        compute="_compute_amount_expense",
+    amount_advance = fields.Monetary(
+        string="Advance",
+        compute="_compute_amount_advance",
         help="Sum of expense amount",
     )
 
     @api.depends("item_ids")
-    def _compute_amount_expense(self):
-        ExpenseBudgetMove = self.env["expense.budget.move"]
+    def _compute_amount_advance(self):
+        ExpenseBudgetMove = self.env["advance.budget.move"]
         for rec in self:
-            ex_move = ExpenseBudgetMove.search(
+            av_move = ExpenseBudgetMove.search(
                 [("analytic_account_id", "=", rec.analytic_account_id.id)]
             )
-            amount_expense = sum(ex_move.mapped("debit")) - sum(
-                ex_move.mapped("credit")
+            amount_advance = sum(av_move.mapped("debit")) - sum(
+                av_move.mapped("credit")
             )
-            rec.amount_expense = amount_expense or 0.0
+            rec.amount_advance = amount_advance or 0.0
 
     def _get_amount_total_commit(self):
         amount_commit = (
-            super()._get_amount_total_commit() + self.amount_expense
+            super()._get_amount_total_commit() + self.amount_advance
         )
         return amount_commit
