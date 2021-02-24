@@ -66,12 +66,8 @@ class BudgetTransferItem(models.Model):
         for transfer in self:
             source_budget_ctrl = transfer.source_budget_control_id
             target_budget_ctrl = transfer.target_budget_control_id
-            transfer.source_amount_available = (
-                source_budget_ctrl.released_amount
-            )
-            transfer.target_amount_available = (
-                target_budget_ctrl.released_amount
-            )
+            transfer.source_amount_available = source_budget_ctrl.balance
+            transfer.target_amount_available = target_budget_ctrl.balance
 
     def transfer(self):
         for transfer in self:

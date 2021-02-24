@@ -21,7 +21,7 @@ class GenerateKPI(models.TransientModel):
         relation="report_mis_report_rel",
         column1="mis_report_id",
         column2="report_id",
-        domain="[('report_id', '=', mis_report_id)]",
+        domain="[('report_id', '=', mis_report_id), ('budgetable', '=', True)]",
     )
 
     @api.model

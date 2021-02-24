@@ -35,6 +35,7 @@
                             <field name="write_date" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
+                            <field name="not_affect_budget" optional="hide" />
                         </tree>
                     </field>
                 </page>

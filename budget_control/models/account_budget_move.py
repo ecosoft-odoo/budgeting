@@ -12,3 +12,4 @@ class AccountBudgetMove(models.Model):
         comodel_name="account.move",
     )
     move_line_id = fields.Many2one(comodel_name="account.move.line")
+    not_affect_budget = fields.Boolean(related="move_id.not_affect_budget")

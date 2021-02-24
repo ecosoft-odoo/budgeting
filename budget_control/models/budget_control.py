@@ -179,7 +179,10 @@ class BudgetControl(models.Model):
         AccountBudgetMove = self.env["account.budget.move"]
         for rec in self:
             account_move = AccountBudgetMove.search(
-                [("analytic_account_id", "=", rec.analytic_account_id.id)]
+                [
+                    ("analytic_account_id", "=", rec.analytic_account_id.id),
+                    ("not_affect_budget", "=", False),
+                ]
             )
             amount_actual = sum(account_move.mapped("debit"))
             rec.amount_actual = amount_actual or 0.0
