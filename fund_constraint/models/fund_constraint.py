@@ -3,10 +3,10 @@
 from odoo import fields, models
 
 
-class BudgetFundConstraint(models.Model):
+class FundConstraint(models.Model):
     _name = "fund.constraint"
     _inherit = "mail.thread"
-    _description = "Budget Fund Constraint"
+    _description = "Fund Constraint"
 
     name = fields.Char(required=True)
     analytic_account_id = fields.Many2one(

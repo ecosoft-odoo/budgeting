@@ -71,24 +71,6 @@ class BudgetTransfer(models.Model):
         self._check_budget_control()
         self.write({"state": "reverse"})
 
-    def _check_budget_available_analytic_kpi(
-        self, budget_controls, kpis=False
-    ):
-        for budget_ctrl in budget_controls:
-            for kpi in kpis:
-                balance = budget_ctrl.get_report_amount(
-                    [kpi.kpi_id.name], ["Available"]
-                )
-                if balance < 0.0:
-                    raise ValidationError(
-                        _(
-                            "This transfer will result in negative budget balance "
-                            "for %s"
-                        )
-                        % budget_ctrl.name
-                    )
-        return True
-
     def _check_budget_available_analytic(self, budget_controls):
         for budget_ctrl in budget_controls:
             balance = budget_ctrl.get_report_amount(["total"], ["Available"])

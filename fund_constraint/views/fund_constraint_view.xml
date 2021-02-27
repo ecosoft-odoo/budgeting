@@ -95,9 +95,9 @@
                         <group name="fund_constraint_left">
                             <field name="analytic_account_id" />
                             <field name="fund_id" />
-                            <field name="budget_control_id" />
                         </group>
                         <group name="fund_constraint_right">
+                            <field name="budget_control_id" />
                             <field name="budget_period_id" />
                             <field name="fund_amount" />
                             <field name="active" />
