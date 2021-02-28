@@ -1,6 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class HRExpense(models.Model):
@@ -10,6 +10,39 @@ class HRExpense(models.Model):
         comodel_name="advance.budget.move",
         inverse_name="expense_id",
     )
+
+    @api.depends(
+        "budget_move_ids", "budget_move_ids.date", "advance_budget_move_ids"
+    )
+    def _compute_commit(self):
+        for rec in self:
+            if rec.advance_budget_move_ids:
+                advance_id = rec.sheet_id.advance_sheet_id
+                # advance
+                if not advance_id:
+                    debit = sum(rec.advance_budget_move_ids.mapped("debit"))
+                    credit = sum(rec.advance_budget_move_ids.mapped("credit"))
+                    rec.amount_commit = debit - credit
+                    rec.date_commit = min(
+                        rec.advance_budget_move_ids.mapped("date")
+                    )
+                    continue
+                # commit advance previous
+                debit = sum(advance_id.advance_budget_move_ids.mapped("debit"))
+                credit = sum(
+                    advance_id.advance_budget_move_ids.mapped("credit")
+                )
+                total_clearing = debit - credit
+                advance_id.expense_line_ids.amount_commit -= total_clearing
+                # commit clearing
+                debit = sum(rec.budget_move_ids.mapped("debit"))
+                credit = sum(rec.budget_move_ids.mapped("credit"))
+                rec.amount_commit = debit - credit
+                rec.date_commit = min(
+                    rec.advance_budget_move_ids.mapped("date")
+                )
+            else:
+                super()._compute_commit()
 
     def _budget_move_create(self, vals):
         """
