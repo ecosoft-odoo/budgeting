@@ -30,7 +30,7 @@ class GenerateKPI(models.TransientModel):
         return self.env["budget.control"].browse(active_id)
 
     def action_generate_plan(self):
-        self.budget_control_id.with_context(
+        self.budget_control_id.sudo().with_context(
             {"kpi_ids": self.kpi_ids.ids}
         ).prepare_budget_control_matrix()
         return True

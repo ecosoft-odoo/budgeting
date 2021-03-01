@@ -56,7 +56,7 @@
                     name="state"
                     widget="badge"
                     decoration-success="state == 'transfer'"
-                    decoration-info="state == 'draft'"
+                    decoration-info="state in ['draft', 'submit']"
                     optional="show"
                 />
             </tree>
