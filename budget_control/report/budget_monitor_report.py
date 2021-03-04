@@ -40,8 +40,9 @@ class BudgetMonitorReport(models.Model):
         return "%s" % (self._get_sql())
 
     def _select_budget(self):
-        return """
-            select 1000000000 + mbi.id as id,
+        return [
+            """
+            1000000000 + mbi.id as id,
             'mis.budget.item,' || mbi.id as res_id,
             mbi.analytic_account_id,
             bc.analytic_group,
@@ -51,6 +52,7 @@ class BudgetMonitorReport(models.Model):
             null::integer as account_id,
             bc.name as reference
         """
+        ]
 
     def _from_budget(self):
         return """
@@ -65,8 +67,9 @@ class BudgetMonitorReport(models.Model):
         """
 
     def _select_actual(self):
-        return """
-            select 8000000000 + a.id as id,
+        return [
+            """
+            8000000000 + a.id as id,
             'account.move.line,' || a.move_line_id as res_id,
             a.analytic_account_id,
             a.analytic_group,
@@ -76,6 +79,7 @@ class BudgetMonitorReport(models.Model):
             a.account_id,
             b.name as reference
         """
+        ]
 
     def _from_actual(self):
         return """
@@ -89,11 +93,15 @@ class BudgetMonitorReport(models.Model):
         """
 
     def _get_sql(self):
-        return "({} {} {}) union ({} {} {})".format(
-            self._select_budget(),
+        select_budget_query = self._select_budget()
+        select_budget = ", ".join(sorted(select_budget_query))
+        select_actual_query = self._select_actual()
+        select_actual = ", ".join(sorted(select_actual_query))
+        return "(select {} {} {}) union (select {} {} {})".format(
+            select_budget,
             self._from_budget(),
             self._where_budget(),
-            self._select_actual(),
+            select_actual,
             self._from_actual(),
             self._where_actual(),
         )

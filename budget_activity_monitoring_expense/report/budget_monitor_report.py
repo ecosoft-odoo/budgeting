@@ -10,11 +10,8 @@ class BudgetMonitorReport(models.Model):
     # Expenses
     def _select_ex_commit(self):
         select_ex_query = super()._select_ex_commit()
-        select_ex_query = ",".join(
-            [
-                select_ex_query,
-                "bag.name as activity_group, ba.name as activity",
-            ]
+        select_ex_query.append(
+            "bag.name as activity_group, ba.name as activity"
         )
         return select_ex_query
 

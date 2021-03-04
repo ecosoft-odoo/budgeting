@@ -14,8 +14,9 @@ class BudgetMonitorReport(models.Model):
     )
 
     def _select_ex_commit(self):
-        return """
-            select 5000000000 + a.id as id,
+        return [
+            """
+            5000000000 + a.id as id,
             'hr.expense,' || a.expense_id as res_id,
             a.analytic_account_id,
             a.analytic_group,
@@ -25,6 +26,7 @@ class BudgetMonitorReport(models.Model):
             a.account_id,
             b.name as reference
        """
+        ]
 
     def _from_ex_commit(self):
         return """
@@ -33,7 +35,9 @@ class BudgetMonitorReport(models.Model):
         """
 
     def _get_sql(self):
-        return super()._get_sql() + "union ({} {})".format(
-            self._select_ex_commit(),
+        select_ex_query = self._select_ex_commit()
+        select_ex = ", ".join(sorted(select_ex_query))
+        return super()._get_sql() + "union (select {} {})".format(
+            select_ex,
             self._from_ex_commit(),
         )

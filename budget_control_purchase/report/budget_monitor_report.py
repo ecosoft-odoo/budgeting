@@ -14,8 +14,20 @@ class BudgetMonitorReport(models.Model):
     )
 
     def _select_po_commit(self):
-        return """
-            select 3000000000 + a.id as id,
+        #     return """
+        #         select 3000000000 + a.id as id,
+        #         'purchase.order.line,' || a.purchase_line_id as res_id,
+        #         a.analytic_account_id,
+        #         a.analytic_group,
+        #         a.date as date,
+        #         '3_po_commit' as amount_type,
+        #         a.credit-a.debit as amount,
+        #         a.account_id,
+        #         b.name as reference
+        #    """
+        return [
+            """
+            3000000000 + a.id as id,
             'purchase.order.line,' || a.purchase_line_id as res_id,
             a.analytic_account_id,
             a.analytic_group,
@@ -25,6 +37,7 @@ class BudgetMonitorReport(models.Model):
             a.account_id,
             b.name as reference
        """
+        ]
 
     def _from_po_commit(self):
         return """
@@ -33,7 +46,9 @@ class BudgetMonitorReport(models.Model):
         """
 
     def _get_sql(self):
-        return super()._get_sql() + "union ({} {})".format(
-            self._select_po_commit(),
+        select_po_query = self._select_po_commit()
+        select_po = ", ".join(sorted(select_po_query))
+        return super()._get_sql() + "union (select {} {})".format(
+            select_po,
             self._from_po_commit(),
         )

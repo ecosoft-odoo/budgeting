@@ -13,11 +13,8 @@ class BudgetMonitorReport(models.Model):
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query = ",".join(
-            [
-                select_budget_query,
-                "mrk.description as activity_group, null::char as activity",
-            ]
+        select_budget_query.append(
+            "mrk.description as activity_group, null::char as activity"
         )
         return select_budget_query
 
@@ -36,11 +33,8 @@ class BudgetMonitorReport(models.Model):
     # Actual
     def _select_actual(self):
         select_actual_query = super()._select_actual()
-        select_actual_query = ",".join(
-            [
-                select_actual_query,
-                "bag.name as activity_group, ba.name as activity",
-            ]
+        select_actual_query.append(
+            "bag.name as activity_group, ba.name as activity"
         )
         return select_actual_query
 

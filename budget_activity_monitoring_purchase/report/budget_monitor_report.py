@@ -10,11 +10,8 @@ class BudgetMonitorReport(models.Model):
     # Purchase
     def _select_po_commit(self):
         select_po_query = super()._select_po_commit()
-        select_po_query = ",".join(
-            [
-                select_po_query,
-                "bag.name as activity_group, ba.name as activity",
-            ]
+        select_po_query.append(
+            "bag.name as activity_group, ba.name as activity"
         )
         return select_po_query
 

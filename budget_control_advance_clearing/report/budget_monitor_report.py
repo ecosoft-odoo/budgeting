@@ -15,8 +15,9 @@ class BudgetMonitorReport(models.Model):
     )
 
     def _select_av_commit(self):
-        return """
-            select 4000000000 + a.id as id,
+        return [
+            """
+            4000000000 + a.id as id,
             'hr.expense,' || a.expense_id as res_id,
             a.analytic_account_id,
             a.analytic_group,
@@ -26,6 +27,7 @@ class BudgetMonitorReport(models.Model):
             a.account_id,
             b.name as reference
        """
+        ]
 
     def _from_av_commit(self):
         return """
@@ -34,7 +36,9 @@ class BudgetMonitorReport(models.Model):
         """
 
     def _get_sql(self):
-        return super()._get_sql() + "union ({} {})".format(
-            self._select_av_commit(),
+        select_av_query = self._select_av_commit()
+        select_av = ", ".join(sorted(select_av_query))
+        return super()._get_sql() + "union (select {} {})".format(
+            select_av,
             self._from_av_commit(),
         )

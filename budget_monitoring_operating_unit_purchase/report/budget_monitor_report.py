@@ -9,5 +9,5 @@ class BudgetMonitorReport(models.Model):
 
     def _select_po_commit(self):
         select_po_query = super()._select_po_commit()
-        select_po_query = ",".join([select_po_query, "b.operating_unit_id"])
+        select_po_query.append("b.operating_unit_id")
         return select_po_query

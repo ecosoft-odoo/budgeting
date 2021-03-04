@@ -12,15 +12,11 @@ class BudgetMonitorReport(models.Model):
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query = ",".join(
-            [select_budget_query, "bc.operating_unit_id"]
-        )
+        select_budget_query.append("bc.operating_unit_id")
         return select_budget_query
 
     # Actual
     def _select_actual(self):
         select_actual_query = super()._select_actual()
-        select_actual_query = ",".join(
-            [select_actual_query, "b.operating_unit_id"]
-        )
+        select_actual_query.append("b.operating_unit_id")
         return select_actual_query
