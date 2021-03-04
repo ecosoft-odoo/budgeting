@@ -8,3 +8,4 @@ class BudgetTransfer(models.Model):
     _inherit = ["budget.transfer", "tier.validation"]
     _state_from = ["submit"]
     _state_to = ["transfer"]
+    _tier_validation_manual_config = False

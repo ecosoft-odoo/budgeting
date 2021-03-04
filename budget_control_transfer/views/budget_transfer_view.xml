@@ -53,6 +53,16 @@
                 <field name="name" />
                 <field name="budget_period_id" />
                 <field
+                    name="source_budget_transfer"
+                    widget="many2many_tags"
+                    optional="show"
+                />
+                <field
+                    name="target_budget_transfer"
+                    widget="many2many_tags"
+                    optional="show"
+                />
+                <field
                     name="state"
                     widget="badge"
                     decoration-success="state == 'transfer'"
@@ -113,6 +123,14 @@
                     <group>
                         <group name="budget_transfer_left">
                             <field name="budget_period_id" />
+                            <field
+                                name="source_budget_transfer"
+                                widget="many2many_tags"
+                            />
+                            <field
+                                name="target_budget_transfer"
+                                widget="many2many_tags"
+                            />
                         </group>
                         <group name="budget_transfer_right">
                             <field name="mis_budget_id" />
@@ -122,12 +140,12 @@
                         <tree editable="bottom">
                             <field name="transfer_id" invisible="1" />
                             <field name="mis_budget_id" invisible="1" />
-                            <field name="target_budget_control_id" />
-                            <field name="target_state" optional="show" />
-                            <field name="target_amount_available" string="Available" />
                             <field name="source_budget_control_id" />
                             <field name="source_state" optional="show" />
                             <field name="source_amount_available" string="Available" />
+                            <field name="target_budget_control_id" />
+                            <field name="target_state" optional="show" />
+                            <field name="target_amount_available" string="Available" />
                             <field name="amount" />
                         </tree>
                     </field>

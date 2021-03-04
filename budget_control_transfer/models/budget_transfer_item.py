@@ -111,16 +111,22 @@ class BudgetTransferItem(models.Model):
         - Budget Transfer have to state 'draft' or 'submit'
         - Budget Control Sheet have to state 'draft' only.
         """
+        BudgetControl = self.env["budget.control"]
         for transfer in self:
             state_transfer = transfer.transfer_id.state in ["draft", "submit"]
-            budget_state = (
+            source_budget = (
                 transfer.source_state != "draft"
-                or transfer.target_state != "draft"
+                and transfer.source_budget_control_id
+                or BudgetControl
             )
-            if state_transfer and budget_state:
+            target_budget = (
+                transfer.target_state != "draft"
+                and transfer.target_budget_control_id
+                or BudgetControl
+            )
+            budget_not_draft = source_budget + target_budget
+            budget_not_draft = ", ".join(budget_not_draft.mapped("name"))
+            if state_transfer and budget_not_draft:
                 raise UserError(
-                    _(
-                        "Budget Control in progress transfer. "
-                        "State Budget Control have to 'draft' only."
-                    )
+                    _("Change state {} to Draft. ".format(budget_not_draft))
                 )

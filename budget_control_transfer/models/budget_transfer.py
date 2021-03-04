@@ -32,6 +32,22 @@ class BudgetTransfer(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
+    source_budget_transfer = fields.Many2many(
+        comodel_name="budget.control",
+        relation="source_budget_transfer_rel",
+        column1="source_id",
+        column2="transfer_id",
+        compute="_compute_budget_transfer",
+        string="Source",
+    )
+    target_budget_transfer = fields.Many2many(
+        comodel_name="budget.control",
+        relation="target_budget_transfer_rel",
+        column1="target_id",
+        column2="transfer_id",
+        compute="_compute_budget_transfer",
+        string="Destination",
+    )
     state = fields.Selection(
         [
             ("draft", "Draft"),
@@ -42,7 +58,18 @@ class BudgetTransfer(models.Model):
         ],
         string="Status",
         default="draft",
+        tracking=True,
     )
+
+    @api.depends("transfer_item_ids")
+    def _compute_budget_transfer(self):
+        for rec in self:
+            rec.source_budget_transfer = rec.transfer_item_ids.mapped(
+                "source_budget_control_id"
+            )
+            rec.target_budget_transfer = rec.transfer_item_ids.mapped(
+                "target_budget_control_id"
+            )
 
     @api.model
     def _get_budget_period(self):

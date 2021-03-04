@@ -16,5 +16,3 @@ class BudgetSourceFund(models.Model):
         default=lambda self: self.env.company,
         readonly=True,
     )
-    date_from = fields.Date()
-    date_to = fields.Date()

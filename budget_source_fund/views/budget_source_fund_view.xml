@@ -7,8 +7,6 @@
         <field name="arch" type="xml">
             <tree string="Source of Funds" sample="1">
                 <field name="name" />
-                <field name="date_from" />
-                <field name="date_to" />
             </tree>
         </field>
     </record>
@@ -19,9 +17,6 @@
         <field name="arch" type="xml">
             <search string="Search Source of Fund">
                 <field name="name" string="Source of Fund" />
-                <separator />
-                <filter name="filter_date_from" date="date_from" />
-                <filter name="filter_date_to" date="date_to" />
                 <separator />
                 <filter
                     string="Archived"
@@ -54,10 +49,7 @@
                     </div>
                     <group>
                         <field name="active" invisible="1" />
-                        <group name="left_main">
-                            <field name="date_from" />
-                            <field name="date_to" />
-                        </group>
+                        <group name="left_main" />
                         <group name="right_main">
                             <field
                                 name="company_id"
