@@ -46,7 +46,7 @@ class BudgetTransfer(models.Model):
         column1="target_id",
         column2="transfer_id",
         compute="_compute_budget_transfer",
-        string="Destination",
+        string="Target",
     )
     state = fields.Selection(
         [

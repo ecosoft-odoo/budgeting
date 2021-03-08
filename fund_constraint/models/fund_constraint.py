@@ -29,9 +29,15 @@ class FundConstraint(models.Model):
         index=True,
     )
     fund_amount = fields.Monetary()
-    fund_constraint_line = fields.One2many(
-        comodel_name="fund.constraint.line",
+    account_constraint_line = fields.One2many(
+        comodel_name="account.constraint.line",
         inverse_name="fund_constraint_id",
+    )
+    fund_constraint_line = fields.Many2many(
+        comodel_name="fund.constraint",
+        relation="fund_constraint_other_rel",
+        column1="constraint_id",
+        column2="other_constraint_id",
     )
     company_id = fields.Many2one(
         comodel_name="res.company",

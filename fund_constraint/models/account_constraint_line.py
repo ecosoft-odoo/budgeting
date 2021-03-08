@@ -3,9 +3,9 @@
 from odoo import fields, models
 
 
-class FundConstraintLine(models.Model):
-    _name = "fund.constraint.line"
-    _description = "Fund Constraint Line"
+class AccountConstraintLine(models.Model):
+    _name = "account.constraint.line"
+    _description = "Account Constraint Line"
 
     fund_constraint_id = fields.Many2one(
         comodel_name="fund.constraint",

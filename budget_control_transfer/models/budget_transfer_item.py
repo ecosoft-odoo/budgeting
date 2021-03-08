@@ -26,7 +26,7 @@ class BudgetTransferItem(models.Model):
     )
     target_budget_control_id = fields.Many2one(
         comodel_name="budget.control",
-        string="Destination",
+        string="Target",
         domain="[('budget_id', '=', mis_budget_id)]",
         required=True,
         index=True,
@@ -48,7 +48,7 @@ class BudgetTransferItem(models.Model):
     )
     target_state = fields.Selection(
         related="target_budget_control_id.state",
-        string="Destination State",
+        string="Target State",
         store=True,
     )
     amount = fields.Float(
