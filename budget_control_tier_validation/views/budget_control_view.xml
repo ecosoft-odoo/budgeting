@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+
+    <record id="view_budget_control_filter" model="ir.ui.view">
+        <field
+            name="name"
+        >budget.control.select - budget_control_tier_validation</field>
+        <field name="model">budget.control</field>
+        <field name="inherit_id" ref="budget_control.view_budget_control_filter" />
+        <field name="arch" type="xml">
+            <filter name="my_budget_control_sheet" position="after">
+                <filter
+                    name="needs_review"
+                    string="Needs my Review"
+                    domain="[('reviewer_ids', 'in', uid), ('state', 'not in', ['done'])]"
+                    help="My budget control sheet to review"
+                />
+                <filter
+                    name="tier_validated"
+                    string="Validated"
+                    domain="[('validated', '=', True)]"
+                    help="Budget control sheet validated and ready to be controlled"
+                />
+            </filter>
+        </field>
+    </record>
+
+</odoo>
