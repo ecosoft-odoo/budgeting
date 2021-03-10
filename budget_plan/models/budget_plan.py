@@ -25,6 +25,7 @@ class BudgetPlan(models.Model):
     budget_control_ids = fields.One2many(
         comodel_name="budget.control",
         inverse_name="plan_id",
+        context={"active_test": False},
     )
     budget_control_count = fields.Integer(
         string="# of Budget Control",
@@ -78,7 +79,7 @@ class BudgetPlan(models.Model):
             "name": _("Budget Control Sheet"),
             "type": "ir.actions.act_window",
             "res_model": "budget.control",
-            "context": {"create": False},
+            "context": {"create": False, "active_test": False},
         }
         if len(self.budget_control_ids) == 1:
             action.update(
@@ -150,15 +151,12 @@ class BudgetPlan(models.Model):
         for line in lines:
             line.allocated_amount = line.released_amount = line.amount
         self.write({"state": "done"})
-        return True
 
     def action_cancel(self):
         self.write({"state": "cancel"})
-        return True
 
     def action_draft(self):
         self.write({"state": "draft"})
-        return True
 
 
 class BudgetPlanLine(models.Model):

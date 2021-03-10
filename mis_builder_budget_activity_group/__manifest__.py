@@ -9,7 +9,11 @@
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
     "depends": ["mis_builder_budget", "budget_activity_group"],
-    "data": ["views/mis_report.xml", "views/mis_report_kpi.xml"],
+    "data": [
+        "views/mis_report.xml",
+        "views/mis_report_kpi.xml",
+        "views/mis_budget_item.xml",
+    ],
     "installable": True,
     "development_status": "Alpha",
     "maintainers": ["Saran440"],

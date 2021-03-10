@@ -116,6 +116,12 @@
                     />
                 </header>
                 <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
                     <div class="oe_right" name="buttons">
                         <button
                             name="preview"
@@ -258,6 +264,17 @@
         <field name="binding_view_types">list</field>
         <field name="code">
             action = records.action_released()
+        </field>
+    </record>
+
+    <record id="action_control_budget_control" model="ir.actions.server">
+        <field name="name">Control</field>
+        <field name="model_id" ref="budget_control.model_budget_control" />
+        <field name="binding_model_id" ref="budget_control.model_budget_control" />
+        <field name="state">code</field>
+        <field name="binding_view_types">list</field>
+        <field name="code">
+            action = records.action_done()
         </field>
     </record>
 

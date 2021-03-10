@@ -9,7 +9,7 @@ from odoo.tools import float_compare
 class BudgetControl(models.Model):
     _name = "budget.control"
     _description = "Budget Control"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "base.budget.utils"]
     _order = "budget_id desc, analytic_account_id"
 
     name = fields.Char(
@@ -278,7 +278,7 @@ class BudgetControl(models.Model):
             )
             if amount_compare:
                 raise UserError(message)
-        return self.write({"state": "done"})
+        self.write({"state": "done"})
 
     def action_cancel(self):
         self.write({"state": "cancel"})
@@ -289,13 +289,25 @@ class BudgetControl(models.Model):
             ("kpi_id.budgetable", "=", True),
         ]
 
+    def _get_value_items(self, date_range, kpi_expression):
+        self.ensure_one()
+        return {
+            "budget_id": self.budget_id.id,
+            "kpi_expression_id": kpi_expression.id,
+            "date_range_id": date_range.id,
+            "date_from": date_range.date_start,
+            "date_to": date_range.date_end,
+            "analytic_account_id": self.analytic_account_id.id,
+        }
+
     def prepare_budget_control_matrix(self):
         KpiExpression = self.env["mis.report.kpi.expression"]
         DateRange = self.env["date.range"]
         if self._context.get("plan_manual", False):
             return
         for plan in self:
-            plan.item_ids.unlink()
+            if not self._context.get("skip_unlink", False):
+                plan.item_ids.unlink()
             if not plan.plan_date_range_type_id:
                 raise UserError(_("Please select range"))
             domain_kpi = plan._domain_kpi_expression()
@@ -310,14 +322,7 @@ class BudgetControl(models.Model):
             items = []
             for date_range in date_ranges:
                 for kpi_expression in kpi_expressions:
-                    vals = {
-                        "budget_id": plan.budget_id.id,
-                        "kpi_expression_id": kpi_expression.id,
-                        "date_range_id": date_range.id,
-                        "date_from": date_range.date_start,
-                        "date_to": date_range.date_end,
-                        "analytic_account_id": plan.analytic_account_id.id,
-                    }
+                    vals = plan._get_value_items(date_range, kpi_expression)
                     items += [(0, 0, vals)]
             plan.write({"item_ids": items})
             # Also reset the carry over budget

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form_budget" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.budget</field>
+        <field name="model">res.config.settings</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.res_config_settings_view_form_budget"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@data-key='budget_control']" position="inside">
+                <h2>Revision</h2>
+                <div
+                    class="row mt16 o_settings_container"
+                    name="budget_revision_setting_container"
+                >
+                    <div
+                        class="col-12 col-lg-6 o_setting_box"
+                        id="budget_revision_keep_plan"
+                    >
+                        <div class="o_setting_left_pane">
+                            <field name="keep_origin_plan" />
+                        </div>
+                        <div class="o_setting_right_pane">
+                            <label for="keep_origin_plan" />
+                            <div class="text-muted">
+                                Automatic archiving of original plan.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

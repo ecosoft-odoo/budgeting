@@ -18,8 +18,4 @@ class MisBudgetItem(models.Model):
             ):
                 self.is_readonly = False
                 break
-            rec.is_readonly = (
-                (rec.date_from < today or today > rec.date_to)
-                and True
-                or False
-            )
+            rec.is_readonly = rec.date_from <= today and True or False

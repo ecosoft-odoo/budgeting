@@ -3,7 +3,7 @@
 
 import ast
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -18,6 +18,10 @@ class BudgetPlan(models.Model):
         comodel_name="budget.plan",
     )
     revision_number = fields.Integer(readonly=True)
+
+    @api.depends("budget_control_ids", "revision_number")
+    def _compute_budget_control_related_count(self):
+        return super()._compute_budget_control_related_count()
 
     def _check_state_budget_control(self):
         for rec in self:
@@ -113,7 +117,6 @@ class BudgetPlan(models.Model):
     def create_revision_budget_control(self):
         """ Crete new revision Budget Control and update to new plan """
         BudgetControl = self.env["budget.control"]
-        budget_control = []
         for rec in self:
             old_lasted = rec.old_revision_ids[0]
             old_lasted._check_state_budget_control()
@@ -125,8 +128,8 @@ class BudgetPlan(models.Model):
             budget_control_ids = BudgetControl.browse(domain[0][2])
             rec._update_allocated_amount(budget_control_ids)
             budget_control_ids.write({"plan_id": rec.id})
-            budget_control.append(budget_control_ids.ids)
-        return budget_control
+            BudgetControl += budget_control_ids
+        return BudgetControl
 
     def create_revision(self):
         """ Update amount from old budget control to new plan line """
