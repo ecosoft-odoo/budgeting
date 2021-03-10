@@ -1,6 +1,5 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-
 {
     "name": "Budget Activity Group",
     "version": "14.0.1.0.0",
@@ -11,6 +10,7 @@
     "depends": ["budget_activity"],
     "data": [
         "security/ir.model.access.csv",
+        "report/budget_monitor_report_view.xml",
         "views/budget_activity_group_view.xml",
         "views/budget_activity_view.xml",
     ],
