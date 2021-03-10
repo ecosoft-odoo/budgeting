@@ -9,6 +9,7 @@
     "category": "Accounting",
     "depends": ["budget_control", "analytic_operating_unit"],
     "data": [
+        "report/budget_monitor_report_view.xml",
         "security/budget_control_security.xml",
         "views/budget_control_view.xml",
     ],
