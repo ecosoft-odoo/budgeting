@@ -66,7 +66,9 @@ class BudgetControl(models.Model):
         new_bc_ids = self.browse(domain[0][2])
         # loop case multi
         for rec in new_bc_ids:
-            old_lastest = rec.old_revision_ids[0]
+            old_lastest = self.filtered(
+                lambda l: l.current_revision_id.id == rec.id
+            )
             old_items = old_lastest.item_ids
             if old_items:
                 rec._copy_item_ids(old_items)

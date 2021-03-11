@@ -174,7 +174,21 @@ class BudgetPlanLine(models.Model):
         required=True,
     )
     allocated_amount = fields.Float(readonly=True)
-    released_amount = fields.Float(readonly=True)
+    released_amount = fields.Float(
+        compute="_compute_released_amount", store=True, readonly=True
+    )
     amount = fields.Float()
     spent = fields.Float(readonly=True)
     active = fields.Boolean(default=True)
+
+    @api.depends("plan_id.budget_control_ids.released_amount")
+    def _compute_released_amount(self):
+        for rec in self:
+            budget_control_ids = rec.plan_id.budget_control_ids
+            if budget_control_ids:
+                budget_control = budget_control_ids.filtered(
+                    lambda l: l.released_amount != rec.released_amount
+                    and l.analytic_account_id == rec.analytic_account_id
+                )
+                if budget_control:
+                    rec.released_amount = budget_control.released_amount
