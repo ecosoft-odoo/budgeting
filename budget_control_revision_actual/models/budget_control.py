@@ -27,33 +27,30 @@ class BudgetControl(models.Model):
     def _get_consumed_plan(self, date):
         """
         Update consumed amount (actual + commit)
-        since first date to previous month
+        since first date to current day.
         """
         self.ensure_one()
         MISReport = kpi = self.env["mis.report.kpi"]
         # Find Budget Move range before current month
-        first_month_day = date.replace(day=1)
         domain = [
             ("analytic_account_id", "=", self.analytic_account_id.id),
             ("not_affect_budget", "=", False),
-            ("date", "<", first_month_day),
+            ("date", "<=", date),
         ]
         account_budget_move = self.get_budget_move(
             doc_type="account", domain=domain
         )
         domain_commit = [
             ("analytic_account_id", "=", self.analytic_account_id.id),
-            ("date", "<", first_month_day),
+            ("date", "<=", date),
         ]
         commit_budget_move = self.get_budget_move(
             doc_type="commit", domain=domain_commit
         )
         budget_move = commit_budget_move
         budget_move["account_budget_move"] = account_budget_move
-        # Filter date range before current month
-        item_ids = self.item_ids.filtered(
-            lambda l: l.date_from < first_month_day
-        )
+        # Filter date range to current month
+        item_ids = self.item_ids.filtered(lambda l: l.date_from <= date)
         item_ids.write({"amount": 0.0})
         bm_nogroup = self._update_actual_value(item_ids, budget_move)
         # Case used activity group other plan
@@ -69,7 +66,7 @@ class BudgetControl(models.Model):
             ctx = {"skip_unlink": True, "kpi_ids": list(set(kpi.ids))}
             self.sudo().with_context(ctx).prepare_budget_control_matrix()
             item_new_ids = self.item_ids.filtered(
-                lambda l: l.date_from < first_month_day
+                lambda l: l.date_from <= date
                 and l.activity_group_id in kpi.mapped("budget_activity_group")
             )
             bm_nogroup = self._update_actual_value(item_new_ids, budget_move)

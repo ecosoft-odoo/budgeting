@@ -12,7 +12,7 @@
                     class="oe_highlight"
                     string="Update Actual Plan"
                     type="object"
-                    states="draft,released"
+                    states="draft,released,done"
                     groups="budget_control.group_budget_control_manager"
                 />
             </xpath>

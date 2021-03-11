@@ -140,10 +140,12 @@ class BudgetPlan(models.Model):
         new_plan_line = new_plan.mapped("plan_line")
         for line in new_plan_line:
             budget_control = line.analytic_account_id.budget_control_id
+            current_budget = budget_control.current_revision_id
             line.write(
                 {
-                    "allocated_amount": budget_control.allocated_amount,
-                    "released_amount": budget_control.released_amount,
+                    "allocated_amount": current_budget.allocated_amount,
+                    "released_amount": current_budget.released_amount,
+                    "amount": current_budget.released_amount,
                 }
             )
         return res
