@@ -17,7 +17,8 @@ class BudgetControl(models.Model):
 
     def _compare_plan_fund(self, plan_amount, fund_amount):
         """ Check total amount plan have to equal rolling amount """
-        if self.revision_number == 0:
+        # TODO: check revision by keep origin
+        if self.revision_number < 1 or self._context.get("keep_origin", False):
             fund_amount = self.released_amount
             amount_compare = (
                 float_compare(

@@ -20,7 +20,9 @@ class BudgetControl(models.Model):
                 )
                 if all_budget_move:
                     bm_nogroup[key] -= all_budget_move
-                    amount_consumed += sum(all_budget_move.mapped("debit"))
+                    amount_consumed += sum(
+                        all_budget_move.mapped("debit")
+                    ) - sum(all_budget_move.mapped("credit"))
             item.write({"amount": amount_consumed})
         return bm_nogroup
 

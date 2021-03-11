@@ -54,9 +54,9 @@ class BudgetControl(models.Model):
             domain = ast.literal_eval(action_plan.get("domain", False))
             new_plan_revision = BudgetPlan.browse(domain[0][2])
             new_plan_revision.action_done()
-            new_budget_control = (
-                new_plan_revision.create_revision_budget_control()
-            )
+            new_budget_control = new_plan_revision.with_context(
+                {"keep_origin": True}
+            ).create_revision_budget_control()
             new_budget_control.action_done()
             return new_budget_control
         # Case control budget control from plan not completed
