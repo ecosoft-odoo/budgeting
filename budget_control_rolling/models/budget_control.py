@@ -10,10 +10,11 @@ class BudgetControl(models.Model):
     amount_rolling = fields.Monetary(
         string="Rolling Amount",
         compute="_compute_amount_rolling",
+        store=True,
         help="Rolling = Released amount - Consumed + Past Plan",
     )
 
-    @api.depends("item_ids")
+    @api.depends("item_ids", "released_amount", "amount_consumed")
     def _compute_amount_rolling(self):
         today = fields.Date.context_today(self)
         first_month_day = today.replace(day=1)
