@@ -20,11 +20,15 @@ class BudgetControl(models.Model):
                 )
                 if all_budget_move:
                     bm_nogroup[key] -= all_budget_move
-                    amount_consumed += sum(bm.mapped("debit"))
+                    amount_consumed += sum(all_budget_move.mapped("debit"))
             item.write({"amount": amount_consumed})
         return bm_nogroup
 
     def _get_consumed_plan(self, date):
+        """
+        Update consumed amount (actual + commit)
+        since first date to previous month
+        """
         self.ensure_one()
         MISReport = kpi = self.env["mis.report.kpi"]
         # Find Budget Move range before current month
