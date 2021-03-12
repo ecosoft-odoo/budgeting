@@ -8,10 +8,6 @@ class BaseBudgetUtils(models.AbstractModel):
     _name = "base.budget.utils"
     _description = "Base function budget utilization"
 
-    def get_amount_commit(self, doc_type="all", domain=None):
-        # Implemention will be in ...
-        return 0.0
-
     def _get_budget_move_commit(self, domain):
         return {}
 

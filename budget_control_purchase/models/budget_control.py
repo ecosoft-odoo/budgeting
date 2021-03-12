@@ -15,11 +15,25 @@ class BudgetControl(models.Model):
 
     @api.depends("item_ids")
     def _compute_amount_purchase(self):
-        PurchaseBudgetMove = self.env["purchase.budget.move"]
-        for rec in self:
-            po_move = PurchaseBudgetMove.search(
-                [("analytic_account_id", "=", rec.analytic_account_id.id)]
+        domain = [
+            (
+                "analytic_account_id",
+                "in",
+                self.mapped("analytic_account_id").ids,
             )
+        ]
+        budget_move = self.get_budget_move(doc_type="purchase", domain=domain)
+        purchase_budget_move = budget_move["purchase_budget_move"]
+        if not purchase_budget_move:
+            self.write({"amount_purchase": 0.0})
+            return
+        for rec in self:
+            po_move = purchase_budget_move.filtered(
+                lambda l: l.analytic_account_id == rec.analytic_account_id
+            )
+            if not po_move:
+                rec.amount_purchase = 0.0
+                continue
             amount_purchase = sum(po_move.mapped("debit")) - sum(
                 po_move.mapped("credit")
             )

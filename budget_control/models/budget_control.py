@@ -176,15 +176,29 @@ class BudgetControl(models.Model):
 
     @api.depends("item_ids")
     def _compute_amount_actual(self):
-        AccountBudgetMove = self.env["account.budget.move"]
+        domain = [
+            (
+                "analytic_account_id",
+                "in",
+                self.mapped("analytic_account_id").ids,
+            ),
+            ("not_affect_budget", "=", False),
+        ]
+        budget_move = self.get_budget_move(doc_type="account", domain=domain)
+        account_budget_move = budget_move["account_budget_move"]
+        if not account_budget_move:
+            self.write({"amount_actual": 0.0})
+            return
         for rec in self:
-            account_move = AccountBudgetMove.search(
-                [
-                    ("analytic_account_id", "=", rec.analytic_account_id.id),
-                    ("not_affect_budget", "=", False),
-                ]
+            account_move = account_budget_move.filtered(
+                lambda l: l.analytic_account_id == rec.analytic_account_id
             )
-            amount_actual = sum(account_move.mapped("debit"))
+            if not account_move:
+                rec.amount_actual = 0.0
+                continue
+            amount_actual = sum(account_move.mapped("debit")) - sum(
+                account_move.mapped("credit")
+            )
             rec.amount_actual = amount_actual or 0.0
 
     @api.model
