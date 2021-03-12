@@ -13,6 +13,8 @@ class BudgetControl(models.Model):
             activity_group = item.activity_group_id.id
             amount_consumed = 0.0
             for key, bm in budget_moves.items():
+                if not bm:
+                    continue
                 all_budget_move = bm.filtered(
                     lambda l: l.activity_id.activity_group_id.id
                     == activity_group
@@ -39,18 +41,7 @@ class BudgetControl(models.Model):
             ("not_affect_budget", "=", False),
             ("date", "<=", date),
         ]
-        account_budget_move = self.get_budget_move(
-            doc_type="account", domain=domain
-        )
-        domain_commit = [
-            ("analytic_account_id", "=", self.analytic_account_id.id),
-            ("date", "<=", date),
-        ]
-        commit_budget_move = self.get_budget_move(
-            doc_type="commit", domain=domain_commit
-        )
-        budget_move = commit_budget_move
-        budget_move["account_budget_move"] = account_budget_move
+        budget_move = self.get_budget_move(doc_type="all", domain=domain)
         # Filter date range to current month
         item_ids = self.item_ids.filtered(lambda l: l.date_from <= date)
         item_ids.write({"amount": 0.0})

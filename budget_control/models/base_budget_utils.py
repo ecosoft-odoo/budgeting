@@ -15,9 +15,31 @@ class BaseBudgetUtils(models.AbstractModel):
     def _get_budget_move_commit(self, domain):
         return {}
 
-    def get_budget_move(self, doc_type="account", domain=None):
+    def get_budget_move(self, doc_type="all", domain=None):
+        """
+        this function will return value dictionary following your installed module
+        - budget_control (account_budget_move)
+        - budget_control_expense (expense_budget_move)
+        - budget_control_advance (advance_budget_move)
+        - budget_control_purchase (purchase_budget_move)
+        - budget_control_purchase_request (purchase_request_budget_move)
+        i.e. return {
+                'account_budget_move': <object>,
+                'expense_budget_move': <object>,
+                'advance_budget_move': <object>,
+                'purchase_budget_move': <object>,
+                'purchase_request_budget_move': <object>,
+            }
+        """
+        budget_move = {}
+        if domain is None:
+            domain = []
+        budget_move_commit = self._get_budget_move_commit(domain)
         if doc_type == "commit":
-            return self._get_budget_move_commit(domain)
+            return budget_move_commit
+        if doc_type == "all":
+            budget_move = budget_move_commit
         AccountBudgetMove = self.env["account.budget.move"]
         account_move = AccountBudgetMove.search(domain)
-        return account_move
+        budget_move["account_budget_move"] = account_move
+        return budget_move

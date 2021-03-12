@@ -40,6 +40,7 @@ class BaseBudgetMove(models.AbstractModel):
         required=True,
         help="Amount in multi currency",
     )
+    not_affect_budget = fields.Boolean(default=False)
     credit = fields.Float(
         readonly=True,
     )

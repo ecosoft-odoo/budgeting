@@ -11,14 +11,12 @@ class BaseBudgetUtils(models.AbstractModel):
         budget_move = super()._get_budget_move_commit(domain)
         PurchaseBudgetMove = self.env["purchase.budget.move"]
         purchase_move = PurchaseBudgetMove.search(domain)
-        if not purchase_move:
-            return budget_move
         budget_move["purchase_budget_move"] = purchase_move
         return budget_move
 
-    def get_budget_move(self, doc_type="account", domain=None):
+    def get_budget_move(self, doc_type="all", domain=None):
         PurchaseBudgetMove = self.env["purchase.budget.move"]
         if doc_type == "purchase":
             purchase_move = PurchaseBudgetMove.search(domain)
-            return purchase_move
+            return {"purchase_budget_move": purchase_move}
         return super().get_budget_move(doc_type, domain)
