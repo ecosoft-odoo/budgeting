@@ -66,6 +66,11 @@ class BudgetPeriod(models.Model):
         help="Budget control sheet in this budget control year, will use this "
         "data range to plan the budget.",
     )
+    include_tax = fields.Boolean(string="Included Tax")
+    analytic_line = fields.One2many(
+        comodel_name="account.analytic.account",
+        inverse_name="budget_period_id",
+    )
 
     @api.model
     def create(self, vals):
@@ -128,6 +133,7 @@ class BudgetPeriod(models.Model):
         self.ensure_one()
         Period = self.env["mis.report.instance.period"]
         periods = {}
+        actual_model = self.env.ref("budget_control.model_account_budget_move")
         budget = Period.create(
             {
                 "name": "Budgeted",
@@ -145,7 +151,8 @@ class BudgetPeriod(models.Model):
                 "name": "Actuals",
                 "report_instance_id": self.report_instance_id.id,
                 "sequence": 90,
-                "source": "actuals",
+                "source": "actuals_alt",
+                "source_aml_model_id": actual_model.id,
                 "mode": "fix",
                 "manual_date_from": self.bm_date_from,
                 "manual_date_to": self.bm_date_to,
@@ -175,7 +182,9 @@ class BudgetPeriod(models.Model):
         )
 
     @api.model
-    def check_budget(self, budget_moves, doc_type="account"):
+    def check_budget(
+        self, budget_moves, doc_type="account", amount_precommit=0.0
+    ):
         """Based in input budget_moves, i.e., account_move_line
         1. Get a valid budget.period (how budget is being controlled)
         2. (1) and budget_moves, determine what account(kpi)+analytic to ctrl
@@ -189,7 +198,10 @@ class BudgetPeriod(models.Model):
             return
         self = self.sudo()
         # Find active budget.period based on budget_moves date
-        date = set(budget_moves.mapped("date"))
+        date_manual = self._context.get("date_manual", False)
+        date = (
+            date_manual and {date_manual} or set(budget_moves.mapped("date"))
+        )
         if len(date) != 1:
             raise ValidationError(_("Budget moves' date not unified"))
         budget_period = self._get_eligible_budget_period(date.pop(), doc_type)
@@ -206,7 +218,9 @@ class BudgetPeriod(models.Model):
         if not kpis:
             return
         # Check budget on each control elements against each kpi/avail(period)
-        warnings = self._check_budget_available(instance, controls, kpis)
+        warnings = self._check_budget_available(
+            instance, controls, kpis, amount_precommit
+        )
         if warnings:
             msg = "\n".join([_("Budget not sufficient,"), "\n".join(warnings)])
             raise UserError(msg)
@@ -294,7 +308,9 @@ class BudgetPeriod(models.Model):
         return value
 
     @api.model
-    def _check_budget_available(self, instance, controls, kpis):
+    def _check_budget_available(
+        self, instance, controls, kpis, amount_precommit=0.0
+    ):
         warnings = []
         Account = self.env["account.account"]
         Analytic = self.env["account.analytic.account"]
@@ -309,7 +325,7 @@ class BudgetPeriod(models.Model):
             kpi = kpis.get(account_id, False)
             if not kpi:
                 continue
-            if len(kpi) != 1:
+            if len(kpi) != 1 and not instance.report_id.is_activity:
                 account = Account.browse(account_id)
                 raise UserError(
                     _(
@@ -325,13 +341,14 @@ class BudgetPeriod(models.Model):
             )
             if budget_period.control_level == "analytic":
                 kpi_lines = {list(kpis.get(x))[0] for x in kpis}
-                amount = self._get_kpis_value(
+                amount_kpis = self._get_kpis_value(
                     kpi_matrix[analytic_id], kpi_lines, period
                 )
             else:
-                amount = self._get_kpi_value(
+                amount_kpis = self._get_kpi_value(
                     kpi_matrix[analytic_id], list(kpi)[0], period
                 )
+            amount = amount_kpis - amount_precommit
             if amount < 0:
                 analytic = Analytic.browse(analytic_id).display_name
                 kpi_name = list(kpi)[0].display_name

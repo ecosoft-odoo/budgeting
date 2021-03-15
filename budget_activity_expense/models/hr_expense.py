@@ -1,4 +1,4 @@
-# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import api, models
 
@@ -16,3 +16,12 @@ class HRExpense(models.Model):
         super()._compute_from_product_id_company_id()
         for expense in self.filtered("activity_id"):
             expense.account_id = expense.activity_id.account_id
+
+    def _get_account_move_line_values(self):
+        move_line_values_by_expense = super()._get_account_move_line_values()
+        for expense in self:
+            activity_dict = {"activity_id": expense.activity_id.id}
+            for ml in move_line_values_by_expense[expense.id]:
+                if ml.get("product_id"):
+                    ml.update(activity_dict)
+        return move_line_values_by_expense

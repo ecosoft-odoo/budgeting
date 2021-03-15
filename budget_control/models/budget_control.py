@@ -1,16 +1,21 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 
 class BudgetControl(models.Model):
     _name = "budget.control"
     _description = "Budget Control"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "base.budget.utils"]
+    _order = "budget_id desc, analytic_account_id"
 
     name = fields.Char(
         required=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     assignee_id = fields.Many2one(
         comodel_name="res.users",
@@ -23,8 +28,9 @@ class BudgetControl(models.Model):
             )
         ],
         tracking=True,
-        states={"done": [("readonly", True)]},
         copy=False,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     budget_id = fields.Many2one(
         comodel_name="mis.budget",
@@ -32,6 +38,8 @@ class BudgetControl(models.Model):
         required=True,
         ondelete="restrict",
         domain=lambda self: self._get_mis_budget_domain(),
+        readonly=True,
+        states={"draft": [("readonly", False)]},
         help="List of mis.budget created by and linked to budget.period",
     )
     date_from = fields.Date(
@@ -46,26 +54,90 @@ class BudgetControl(models.Model):
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
         required=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
         ondelete="restrict",
+    )
+    analytic_group = fields.Many2one(
+        comodel_name="account.analytic.group",
+        string="Analytic Group",
+        related="analytic_account_id.group_id",
+        store=True,
     )
     item_ids = fields.One2many(
         comodel_name="mis.budget.item",
         inverse_name="budget_control_id",
         string="Budget Items",
         copy=False,
+        readonly=True,
+        states={
+            "draft": [("readonly", False)],
+            "released": [("readonly", False)],
+        },
     )
     plan_date_range_type_id = fields.Many2one(
         comodel_name="date.range.type",
         string="Plan Date Range",
         required=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     init_budget_commit = fields.Boolean(
         string="Initial Budget By Commitment",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
         help="If checked, the newly created budget control sheet will has "
         "initial budget equal to current budget commitment of its year.",
     )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        string="Company",
+        default=lambda self: self.env.company,
+        required=True,
+    )
+    currency_id = fields.Many2one(
+        comodel_name="res.currency", related="company_id.currency_id"
+    )
+    allocated_amount = fields.Monetary(
+        help="Initial total amount for plan",
+    )
+    released_amount = fields.Monetary(
+        compute="_compute_allocated_released_amount",
+        store=True,
+        help="Total amount for transfer current",
+    )
+    # Total Amount
+    amount_budget = fields.Monetary(
+        string="Budget",
+        compute="_compute_amount_budget",
+        help="Sum of amount plan",
+    )
+    amount_total_commit = fields.Monetary(
+        string="Total Commitments",
+        compute="_compute_amount_commit",
+        help="Total Commit = Sum of PR / PO / EX / AV commit",
+    )
+    amount_actual = fields.Monetary(
+        string="Actual",
+        compute="_compute_amount_actual",
+        help="Sum of actual amount",
+    )
+    amount_consumed = fields.Monetary(
+        string="Consumed",
+        compute="_compute_amount_budget",
+        help="Consumed = Total Commitments + Actual",
+    )
+    balance = fields.Monetary(
+        compute="_compute_amount_budget",
+        help="Balance = Total Budget - Consumed",
+    )
     state = fields.Selection(
-        [("draft", "Draft"), ("done", "Controlled"), ("cancel", "Cancelled")],
+        [
+            ("draft", "Draft"),
+            ("released", "Released"),
+            ("done", "Controlled"),
+            ("cancel", "Cancelled"),
+        ],
         string="Status",
         readonly=True,
         copy=False,
@@ -81,6 +153,53 @@ class BudgetControl(models.Model):
             "Duplicated analytic account for the same budget!",
         ),
     ]
+
+    @api.depends("allocated_amount")
+    def _compute_allocated_released_amount(self):
+        for rec in self:
+            rec.released_amount = rec.allocated_amount
+
+    def _get_amount_total_commit(self):
+        return 0
+
+    @api.depends("item_ids")
+    def _compute_amount_budget(self):
+        for rec in self:
+            rec.amount_budget = sum(rec.item_ids.mapped("amount"))
+            rec.amount_consumed = rec.amount_total_commit + rec.amount_actual
+            rec.balance = rec.amount_budget - rec.amount_consumed
+
+    @api.depends("item_ids")
+    def _compute_amount_commit(self):
+        for rec in self:
+            rec.amount_total_commit = rec._get_amount_total_commit()
+
+    @api.depends("item_ids")
+    def _compute_amount_actual(self):
+        domain = [
+            (
+                "analytic_account_id",
+                "in",
+                self.mapped("analytic_account_id").ids,
+            ),
+            ("not_affect_budget", "=", False),
+        ]
+        budget_move = self.get_budget_move(doc_type="account", domain=domain)
+        account_budget_move = budget_move["account_budget_move"]
+        if not account_budget_move:
+            self.write({"amount_actual": 0.0})
+            return
+        for rec in self:
+            account_move = account_budget_move.filtered(
+                lambda l: l.analytic_account_id == rec.analytic_account_id
+            )
+            if not account_move:
+                rec.amount_actual = 0.0
+                continue
+            amount_actual = sum(account_move.mapped("debit")) - sum(
+                account_move.mapped("credit")
+            )
+            rec.amount_actual = amount_actual or 0.0
 
     @api.model
     def _get_mis_budget_domain(self):
@@ -122,6 +241,23 @@ class BudgetControl(models.Model):
     def _onchange_init_budget_commit(self):
         self.do_init_budget_commit(self.init_budget_commit)
 
+    def _compare_plan_fund(self, plan_amount, fund_amount):
+        """ Check total amount plan have to equal released amount """
+        amount_compare = (
+            float_compare(
+                plan_amount,
+                fund_amount,
+                precision_rounding=self.currency_id.rounding,
+            )
+            != 0
+        )
+        message = _(
+            "you have to plan total amount is equal {:,.2f} {}".format(
+                fund_amount, self.currency_id.symbol
+            )
+        )
+        return amount_compare, message
+
     @api.model
     def create(self, vals):
         plan = super().create(vals)
@@ -141,22 +277,54 @@ class BudgetControl(models.Model):
             self.prepare_budget_control_matrix()
         return res
 
-    def action_done(self):
-        self.write({"state": "done"})
-
     def action_draft(self):
         self.write({"state": "draft"})
+
+    def action_released(self):
+        self.write({"state": "released"})
+
+    def action_done(self):
+        for rec in self:
+            plan_amount = rec.amount_budget
+            fund_amount = rec.released_amount
+            amount_compare, message = rec._compare_plan_fund(
+                plan_amount, fund_amount
+            )
+            if amount_compare:
+                raise UserError(message)
+        self.write({"state": "done"})
 
     def action_cancel(self):
         self.write({"state": "cancel"})
 
+    def _domain_kpi_expression(self):
+        return [
+            ("kpi_id.report_id", "=", self.budget_id.report_id.id),
+            ("kpi_id.budgetable", "=", True),
+        ]
+
+    def _get_value_items(self, date_range, kpi_expression):
+        self.ensure_one()
+        return {
+            "budget_id": self.budget_id.id,
+            "kpi_expression_id": kpi_expression.id,
+            "date_range_id": date_range.id,
+            "date_from": date_range.date_start,
+            "date_to": date_range.date_end,
+            "analytic_account_id": self.analytic_account_id.id,
+        }
+
     def prepare_budget_control_matrix(self):
         KpiExpression = self.env["mis.report.kpi.expression"]
         DateRange = self.env["date.range"]
+        if self._context.get("plan_manual", False):
+            return
         for plan in self:
-            plan.item_ids.unlink()
+            if not self._context.get("skip_unlink", False):
+                plan.item_ids.unlink()
             if not plan.plan_date_range_type_id:
                 raise UserError(_("Please select range"))
+            domain_kpi = plan._domain_kpi_expression()
             date_ranges = DateRange.search(
                 [
                     ("type_id", "=", plan.plan_date_range_type_id.id),
@@ -164,23 +332,11 @@ class BudgetControl(models.Model):
                     ("date_end", "<=", plan.date_to),
                 ]
             )
-            kpi_expressions = KpiExpression.search(
-                [
-                    ("kpi_id.report_id", "=", plan.budget_id.report_id.id),
-                    ("kpi_id.budgetable", "=", True),
-                ]
-            )
+            kpi_expressions = KpiExpression.search(domain_kpi)
             items = []
             for date_range in date_ranges:
                 for kpi_expression in kpi_expressions:
-                    vals = {
-                        "budget_id": plan.budget_id.id,
-                        "kpi_expression_id": kpi_expression.id,
-                        "date_range_id": date_range.id,
-                        "date_from": date_range.date_start,
-                        "date_to": date_range.date_end,
-                        "analytic_account_id": plan.analytic_account_id.id,
-                    }
+                    vals = plan._get_value_items(date_range, kpi_expression)
                     items += [(0, 0, vals)]
             plan.write({"item_ids": items})
             # Also reset the carry over budget

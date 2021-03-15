@@ -10,12 +10,12 @@ class SourceFundMonitorReport(models.Model):
     _order = "fund_name desc"
 
     fund_name = fields.Char()
-    date_range_id = fields.Many2one(comodel_name="date.range")
     date_from = fields.Date()
     date_to = fields.Date()
     budget_control_id = fields.Many2one(comodel_name="budget.control")
     amount = fields.Float()
     spent = fields.Float()
+    total = fields.Float()
     fund_group_name = fields.Char(string="Fund Group")
 
     @property
@@ -24,15 +24,17 @@ class SourceFundMonitorReport(models.Model):
 
     def _select_source_fund(self):
         return """
-            select sf_line.id, sf_line.date_range_id, sf_line.date_from,
+            select sf_line.id, sf_line.date_from,
             sf_line.date_to, sf_line.budget_control_id, sf_line.amount,
-            sf_line.spent, sf.name as fund_name, sf_group.name as fund_group_name
+            (sf_line.spent * -1) as spent, (sf_line.amount - sf_line.spent) as total,
+            sf.name as fund_name,sf_group.name as fund_group_name
         """
 
     def _from_source_fund(self):
         return """
-            from budget_source_fund_line sf_line
-            join budget_source_fund sf on sf_line.fund_id = sf.id
+            from budget_source_fund_allocation sf_line
+            join budget_source_fund_plan sf_plan on sf_line.allocation_id = sf_plan.id
+            join budget_source_fund sf on sf_plan.fund_id = sf.id
             left join budget_source_fund_group sf_group
             on sf.fund_group_id = sf_group.id
         """

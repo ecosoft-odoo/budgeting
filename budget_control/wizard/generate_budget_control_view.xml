@@ -55,6 +55,7 @@
             </form>
         </field>
     </record>
+
     <record id="action_generate_budget_control" model="ir.actions.act_window">
         <field name="name">Generate Budget Control Sheet</field>
         <field name="res_model">generate.budget.control</field>
@@ -63,4 +64,5 @@
         <field name="binding_view_types">form</field>
         <field name="target">new</field>
     </record>
+
 </odoo>

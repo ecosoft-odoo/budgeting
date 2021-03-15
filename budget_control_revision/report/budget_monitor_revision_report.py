@@ -1,4 +1,4 @@
-# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import fields, models
@@ -36,8 +36,9 @@ class BudgetMonitorRevisionReport(models.Model):
         return "%s" % (self._get_sql())
 
     def _select_budget(self):
-        return """
-            select 1000000000 + mbi.id as id,
+        return [
+            """
+            1000000000 + mbi.id as id,
             mbi.analytic_account_id,
             mbi.date_from as date,  -- approx date
             '1_budget' as amount_type,
@@ -45,6 +46,7 @@ class BudgetMonitorRevisionReport(models.Model):
             bc.name as reference,
             'Version ' || bc.revision_number::char as revision_number
         """
+        ]
 
     def _from_budget(self):
         return """
@@ -61,8 +63,10 @@ class BudgetMonitorRevisionReport(models.Model):
         )
 
     def _get_sql(self):
-        return "{} {} {}".format(
-            self._select_budget(),
+        select_budget_query = self._select_budget()
+        select_budget = ", ".join(sorted(select_budget_query))
+        return "select {} {} {}".format(
+            select_budget,
             self._from_budget(),
             self._where_budget(),
         )

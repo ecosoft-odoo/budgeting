@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_generate_kpi" model="ir.ui.view">
+        <field name="name">Generate KPI</field>
+        <field name="model">generate.kpi</field>
+        <field name="arch" type="xml">
+            <form string="Generate Budget Control Sheet">
+                <group>
+                    <group name="left">
+                        <field name="budget_control_id" />
+                    </group>
+                    <group name="right">
+                        <field name="mis_report_id" />
+                    </group>
+                </group>
+                <notebook>
+                    <page name="kpi" string="KPI's">
+                        <field name="kpi_ids" />
+                    </page>
+                </notebook>
+                <footer>
+                    <button
+                        name="action_generate_plan"
+                        type="object"
+                        string="Generate Plan"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_generate_kpi" model="ir.actions.act_window">
+        <field name="name">Generate KPI</field>
+        <field name="res_model">generate.kpi</field>
+        <field name="view_mode">form</field>
+        <field name="binding_view_types">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

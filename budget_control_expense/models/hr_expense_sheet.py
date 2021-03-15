@@ -21,7 +21,7 @@ class HRExpenseSheet(models.Model):
         - Cancel/Draft document should delete all budget commitment
         """
         res = super()._write(vals)
-        if vals.get("state") in ("post", "cancel", "draft"):
+        if vals.get("state") in ("approve", "post", "cancel", "draft"):
             BudgetControl = self.env["budget.control"]
             expense_line = self.mapped("expense_line_ids")
             analytic_account_ids = expense_line.mapped("analytic_account_id")
@@ -38,13 +38,29 @@ class HRExpenseSheet(models.Model):
                 expense_line.commit_budget()
         return res
 
-    def _check_budget_expense(self):
+    def _check_budget_expense(
+        self, budget_move_ids, doc_type="expense", amount_precommit=0.0
+    ):
+        self.ensure_one()
         BudgetPeriod = self.env["budget.period"]
-        for doc in self:
-            BudgetPeriod.check_budget(doc.budget_move_ids, doc_type="expense")
+        BudgetPeriod.check_budget(
+            budget_move_ids,
+            doc_type=doc_type,
+            amount_precommit=amount_precommit,
+        )
+
+    def approve_expense_sheets(self):
+        res = super().approve_expense_sheets()
+        self.flush()
+        for sheet in self:
+            sheet._check_budget_expense(sheet.budget_move_ids)
+        return res
 
     def action_submit_sheet(self):
         res = super().action_submit_sheet()
         self.flush()
-        self._check_budget_expense()
+        for sheet in self:
+            sheet._check_budget_expense(
+                sheet.expense_line_ids, amount_precommit=sheet.total_amount
+            )
         return res

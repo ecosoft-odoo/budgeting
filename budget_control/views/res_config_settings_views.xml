@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="res_config_settings_view_form_budget" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.budget</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="25" />
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('settings')]" position="inside">
+                <div
+                    class="app_settings_block"
+                    data-string="Budgeting"
+                    string="Budgeting"
+                    data-key="budget_control"
+                >
+                    <h2>Controls</h2>
+                    <div
+                        class="row mt16 o_settings_container"
+                        name="budget_revision_setting_container"
+                    />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_budget_configuration" model="ir.actions.act_window">
+        <field name="name">Settings</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">inline</field>
+        <field name="context">{'module' : 'budget_control', 'bin_size': False}</field>
+    </record>
+
+    <menuitem
+        id="budget_settings_menu"
+        name="Settings"
+        parent="budget_control.budget_config_menu"
+        sequence="0"
+        action="action_budget_configuration"
+        groups="base.group_system"
+    />
+
+</odoo>

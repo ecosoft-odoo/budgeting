@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
+
     <record id="view_budget_transfer_search" model="ir.ui.view">
         <field name="name">view.budget.transfer.search</field>
         <field name="model">budget.transfer</field>
@@ -43,6 +44,7 @@
             </search>
         </field>
     </record>
+
     <record id="view_budget_transfer_tree" model="ir.ui.view">
         <field name="name">view.budget.transfer.tree</field>
         <field name="model">budget.transfer</field>
@@ -51,15 +53,26 @@
                 <field name="name" />
                 <field name="budget_period_id" />
                 <field
+                    name="source_budget_transfer"
+                    widget="many2many_tags"
+                    optional="show"
+                />
+                <field
+                    name="target_budget_transfer"
+                    widget="many2many_tags"
+                    optional="show"
+                />
+                <field
                     name="state"
                     widget="badge"
                     decoration-success="state == 'transfer'"
-                    decoration-info="state == 'draft'"
+                    decoration-info="state in ['draft', 'submit']"
                     optional="show"
                 />
             </tree>
         </field>
     </record>
+
     <record id="view_budget_transfer_form" model="ir.ui.view">
         <field name="name">view.budget.transfer.form</field>
         <field name="model">budget.transfer</field>
@@ -67,15 +80,22 @@
             <form string="Budget Transfer">
                 <header>
                     <button
-                        name="action_transfer"
+                        name="action_submit"
                         states="draft"
+                        string="Submit"
+                        type="object"
+                        class="oe_highlight"
+                    />
+                    <button
+                        name="action_transfer"
+                        states="submit"
                         string="Transfer"
                         type="object"
                         class="oe_highlight"
                     />
                     <button
                         name="action_cancel"
-                        states="draft"
+                        states="draft,submit"
                         string="Cancel"
                         type="object"
                     />
@@ -88,7 +108,7 @@
                     <field
                         name="state"
                         widget="statusbar"
-                        statusbar_visible="draft,transfer"
+                        statusbar_visible="draft,submit,transfer"
                     />
                 </header>
                 <sheet>
@@ -101,10 +121,18 @@
                         </h1>
                     </div>
                     <group>
-                        <group>
+                        <group name="budget_transfer_left">
                             <field name="budget_period_id" />
+                            <field
+                                name="source_budget_transfer"
+                                widget="many2many_tags"
+                            />
+                            <field
+                                name="target_budget_transfer"
+                                widget="many2many_tags"
+                            />
                         </group>
-                        <group>
+                        <group name="budget_transfer_right">
                             <field name="mis_budget_id" />
                         </group>
                     </group>
@@ -113,31 +141,36 @@
                             <field name="transfer_id" invisible="1" />
                             <field name="mis_budget_id" invisible="1" />
                             <field name="source_budget_control_id" />
-                            <field name="source_item_id" />
-                            <field name="source_amount" string="Amount" />
+                            <field name="source_state" optional="show" />
                             <field name="source_amount_available" string="Available" />
                             <field name="target_budget_control_id" />
-                            <field name="target_item_id" />
-                            <field name="target_amount" string="Amount" />
+                            <field name="target_state" optional="show" />
                             <field name="target_amount_available" string="Available" />
                             <field name="amount" />
                         </tree>
                     </field>
                 </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers" />
+                    <field name="message_ids" widget="mail_thread" />
+                </div>
             </form>
         </field>
     </record>
+
     <record id="action_budget_transfer" model="ir.actions.act_window">
         <field name="name">Budget Transfer</field>
         <field name="view_id" ref="view_budget_transfer_tree" />
         <field name="res_model">budget.transfer</field>
         <field name="view_mode">tree,form</field>
     </record>
+
     <menuitem
         id="menu_budget_transfer"
-        parent="budget_control.budget_budget_menu"
+        parent="budget_control.budget_control_menu"
         name="Budget Transfer"
         action="action_budget_transfer"
-        sequence="100"
+        sequence="30"
     />
+
 </odoo>

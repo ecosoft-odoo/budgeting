@@ -42,7 +42,10 @@ class BudgetMoveForward(models.Model):
         string="Move to date",
     )
     state = fields.Selection(
-        [("draft", "Draft"), ("done", "Done")],
+        [
+            ("draft", "Draft"),
+            ("done", "Done"),
+        ],
         string="Status",
         readonly=True,
         copy=False,
@@ -65,6 +68,28 @@ class BudgetMoveForward(models.Model):
         domain_search = [("amount_commit", ">", 0.0)]
         return domain_search
 
+    def _get_domain_unlink(self, model):
+        self.ensure_one()
+        domain_search = [
+            ("forward_id", "=", self.id),
+            ("res_model", "=", model),
+        ]
+        return domain_search
+
+    def _prepare_vals_forward(self, docs, model):
+        self.ensure_one()
+        return [
+            {
+                "forward_id": self.id,
+                "res_model": model,
+                "res_id": doc.id,
+                "document_id": "{},{}".format(model, doc.id),
+                "amount_commit": doc.amount_commit,
+                "date_commit": doc.date_commit,
+            }
+            for doc in docs
+        ]
+
     def get_budget_move_forward(self):
         """Get budget move forward for each new commit document type."""
         Line = self.env["budget.move.forward.line"]
@@ -74,24 +99,12 @@ class BudgetMoveForward(models.Model):
             for model in list(dict(models).keys()):
                 if specific_model and specific_model != model:
                     continue
-                Line.search(
-                    [("forward_id", "=", rec.id), ("res_model", "=", model)]
-                ).unlink()
+                domain_unlink = rec._get_domain_unlink(model)
+                Line.search(domain_unlink).unlink()
                 domain_search = self._get_domain_search(model)
                 docs = self.env[model].search(domain_search)
-                Line.create(
-                    [
-                        {
-                            "forward_id": rec.id,
-                            "res_model": model,
-                            "res_id": doc.id,
-                            "document_id": "{},{}".format(model, doc.id),
-                            "amount_commit": doc.amount_commit,
-                            "date_commit": doc.date_commit,
-                        }
-                        for doc in docs
-                    ]
-                )
+                vals = rec._prepare_vals_forward(docs, model)
+                Line.create(vals)
 
     def action_budget_carry_forward(self):
         Line = self.env["budget.move.forward.line"]

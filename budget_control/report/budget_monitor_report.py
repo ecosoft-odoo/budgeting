@@ -22,6 +22,9 @@ class BudgetMonitorReport(models.Model):
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
     )
+    analytic_group = fields.Many2one(
+        comodel_name="account.analytic.group",
+    )
     date = fields.Date()
     amount = fields.Float()
     amount_type = fields.Selection(
@@ -31,68 +34,74 @@ class BudgetMonitorReport(models.Model):
     account_id = fields.Many2one(
         comodel_name="account.account",
     )
-    kpi_name = fields.Char()
 
     @property
     def _table_query(self):
         return "%s" % (self._get_sql())
 
     def _select_budget(self):
-        return """
-            select 1000000000 + mbi.id as id,
+        return [
+            """
+            1000000000 + mbi.id as id,
             'mis.budget.item,' || mbi.id as res_id,
-            mrk.description as kpi_name,
             mbi.analytic_account_id,
+            bc.analytic_group,
             mbi.date_from as date,  -- approx date
             '1_budget' as amount_type,
             mbi.amount as amount,
             null::integer as account_id,
             bc.name as reference
         """
+        ]
 
     def _from_budget(self):
         return """
             from mis_budget_item mbi
             left outer join budget_control bc on mbi.budget_control_id = bc.id
-            join mis_report_kpi_expression mrke on mbi.kpi_expression_id = mrke.id
-            join mis_report_kpi mrk on mrke.kpi_id = mrk.id
         """
 
     def _where_budget(self):
         return """
-            where mbi.active = true and mbi.state = 'done'
+            -- where mbi.active = true and mbi.state = 'done'
+            where mbi.active = true
         """
 
     def _select_actual(self):
-        return """
-            select 8000000000 + aml.id as id,
-            'account.move.line,' || aml.id as res_id,
-            null::char as kpi_name,
-            aml.analytic_account_id,
-            aml.date as date,
+        return [
+            """
+            8000000000 + a.id as id,
+            'account.move.line,' || a.move_line_id as res_id,
+            a.analytic_account_id,
+            a.analytic_group,
+            a.date as date,
             '8_actual' as amount_type,
-            aml.credit-aml.debit as amount,
-            aml.account_id,
-            am.name as reference
-       """
+            a.credit-a.debit as amount,
+            a.account_id,
+            b.name as reference
+        """
+        ]
 
     def _from_actual(self):
         return """
-            from account_move_line aml
-            left outer join account_move am on aml.move_id = am.id
+            from account_budget_move a
+            left outer join account_move b on a.move_id = b.id
         """
 
     def _where_actual(self):
         return """
-            where am.state = 'posted'
+            where b.state = 'posted' and b.not_affect_budget is null
         """
 
     def _get_sql(self):
-        return "({} {} {}) union ({} {} {})".format(
-            self._select_budget(),
+        select_budget_query = self._select_budget()
+        select_budget = ", ".join(sorted(select_budget_query))
+        select_actual_query = self._select_actual()
+        select_actual = ", ".join(sorted(select_actual_query))
+        return "(select {} {} {}) union (select {} {} {})".format(
+            select_budget,
             self._from_budget(),
             self._where_budget(),
-            self._select_actual(),
+            select_actual,
             self._from_actual(),
             self._where_actual(),
         )

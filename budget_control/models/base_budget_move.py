@@ -25,6 +25,13 @@ class BaseBudgetMove(models.AbstractModel):
         index=True,
         readonly=True,
     )
+    analytic_group = fields.Many2one(
+        comodel_name="account.analytic.group",
+        string="Analytic Group",
+        auto_join=True,
+        index=True,
+        readonly=True,
+    )
     analytic_tag_ids = fields.Many2many(
         comodel_name="account.analytic.tag",
         string="Analytic Tags",
@@ -33,6 +40,7 @@ class BaseBudgetMove(models.AbstractModel):
         required=True,
         help="Amount in multi currency",
     )
+    not_affect_budget = fields.Boolean(default=False)
     credit = fields.Float(
         readonly=True,
     )
@@ -92,6 +100,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         res = {
             "account_id": account.id,
             "analytic_account_id": analytic_account.id,
+            "analytic_group": analytic_account.group_id.id,
             "date": (
                 self._context.get("commit_by_docdate")
                 and doc_date

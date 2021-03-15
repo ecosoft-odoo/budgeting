@@ -14,17 +14,19 @@ class BudgetMonitorReport(models.Model):
     )
 
     def _select_pr_commit(self):
-        return """
-            select 2000000000 + a.id as id,
+        return [
+            """
+            2000000000 + a.id as id,
             'purchase.request.line,' || a.purchase_request_line_id as res_id,
-            null::char as kpi_name,
             a.analytic_account_id,
+            a.analytic_group,
             a.date as date,
             '2_pr_commit' as amount_type,
             a.credit-a.debit as amount,
             a.account_id,
             b.name as reference
        """
+        ]
 
     def _from_pr_commit(self):
         return """
@@ -33,7 +35,9 @@ class BudgetMonitorReport(models.Model):
         """
 
     def _get_sql(self):
-        return super()._get_sql() + "union ({} {})".format(
-            self._select_pr_commit(),
+        select_pr_query = self._select_pr_commit()
+        select_pr = ", ".join(sorted(select_pr_query))
+        return super()._get_sql() + "union (select {} {})".format(
+            select_pr,
             self._from_pr_commit(),
         )

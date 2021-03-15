@@ -1,0 +1,12 @@
+# Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
+
+from odoo import fields, models
+
+
+class HrExpenseAdvanceLine(models.Model):
+    _inherit = "hr.expense.advance.line"
+
+    activity_id = fields.Many2one(
+        comodel_name="budget.activity",
+    )

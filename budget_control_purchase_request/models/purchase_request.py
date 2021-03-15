@@ -18,11 +18,11 @@ class PurchaseRequest(models.Model):
 
     def _write(self, vals):
         """
-        - Commit budget when state changes to To be approved
+        - Commit budget when state changes to approved
         - Cancel/Draft document should delete all budget commitment
         """
         res = super()._write(vals)
-        if vals.get("state") in ("to_approve", "rejected", "draft"):
+        if vals.get("state") in ("approved", "rejected", "draft"):
             BudgetControl = self.env["budget.control"]
             pr_lines = self.mapped("line_ids")
             analytic_account_ids = pr_lines.mapped("analytic_account_id")
@@ -37,13 +37,30 @@ class PurchaseRequest(models.Model):
                 pr_line.commit_budget()
         return res
 
-    def button_to_approve(self):
-        res = super().button_to_approve()
+    def button_approved(self):
+        res = super().button_approved()
         self.flush()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
             BudgetPeriod.check_budget(
                 doc.budget_move_ids, doc_type="purchase_request"
+            )
+        return res
+
+    def button_to_approve(self):
+        """ Pre-Commit Check Budget """
+        res = super().button_to_approve()
+        self.flush()
+        BudgetPeriod = self.env["budget.period"]
+        for doc in self:
+            pr_line = doc.line_ids
+            date_required = set(pr_line.mapped("date_required"))
+            BudgetPeriod.with_context(
+                {"date_manual": date_required.pop()}
+            ).check_budget(
+                doc.line_ids,
+                doc_type="purchase_request",
+                amount_precommit=sum(pr_line.mapped("estimated_cost")),
             )
         return res
 
@@ -75,7 +92,7 @@ class PurchaseRequestLine(models.Model):
     def commit_budget(self, reverse=False, purchase_line_id=False):
         """Create budget commit for each purchase.request.line."""
         self.ensure_one()
-        if self.request_id.state in ("to_approve", "done"):
+        if self.request_id.state in ("approved", "done"):
             account = self._get_pr_line_account()
             analytic_account = self.analytic_account_id
             doc_date = self.request_id.date_start

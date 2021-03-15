@@ -40,9 +40,9 @@ This module add "Activity" element for budget actual (move, move line, analytic 
 Usage
 =====
 
-# Go to Budgeting > Configurations > Budget Activity
-# Create new activity and match with Account > Save
-# On invoice lines, User can select Activity field and it will auto change account to match with Activity
+#. Go to Budgeting > Configurations > Budget Activity
+#. Create new activity and match with Account > Save
+#. On invoice lines, User can select Activity field and it will auto change account to match with Activity
 
 Bug Tracker
 ===========
@@ -65,8 +65,11 @@ Authors
 Contributors
 ~~~~~~~~~~~~
 
-* Kitti Upariphutthiphong <kittiu@ecosoft.co.th>
-* Saran Lim. <saranl@ecosoft.co.th>
+* `Ecosoft <http://ecosoft.co.th>`__:
+    
+    * Kitti Upariphutthiphong <kittiu@ecosoft.co.th>
+    * Saran Lim. <saranl@ecosoft.co.th>
+    * Pimolnat Suntian <pimolnats@ecosoft.co.th>
 
 Maintainers
 ~~~~~~~~~~~

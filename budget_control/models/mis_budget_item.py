@@ -5,6 +5,7 @@ from odoo import api, fields, models
 
 class MisBudgetItem(models.Model):
     _inherit = "mis.budget.item"
+    _order = "date_range_id, kpi_expression_id"
 
     budget_control_id = fields.Many2one(
         comodel_name="budget.control",
@@ -17,7 +18,12 @@ class MisBudgetItem(models.Model):
         store=True,
     )
     state = fields.Selection(
-        [("draft", "Draft"), ("done", "Controlled"), ("cancel", "Cancelled")],
+        [
+            ("draft", "Draft"),
+            ("released", "Released"),
+            ("done", "Controlled"),
+            ("cancel", "Cancelled"),
+        ],
         string="Status",
         compute="_compute_budget_control_state",
         store=True,

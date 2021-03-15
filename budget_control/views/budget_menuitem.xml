@@ -24,6 +24,7 @@
         id="budget_config_menu"
         parent="budget_menu"
         name="Configurations"
+        groups="budget_control.group_budget_control_manager"
         sequence="30"
     />
 </odoo>

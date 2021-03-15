@@ -18,12 +18,9 @@
                     {'invisible': [False]}
                 </attribute>
             </field>
-            <xpath expr="//label[@for='advance']" position="after">
-                <field name="is_clearing" />
-                <label for="is_clearing" />
-            </xpath>
         </field>
     </record>
+
     <record id="view_hr_expense_sheet_form" model="ir.ui.view">
         <field name="name">view.hr.expense.sheet.form</field>
         <field name="model">hr.expense.sheet</field>

@@ -1,4 +1,4 @@
-# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import api, fields, models
 
@@ -18,8 +18,4 @@ class MisBudgetItem(models.Model):
             ):
                 self.is_readonly = False
                 break
-            rec.is_readonly = (
-                (rec.date_from < today or today > rec.date_to)
-                and True
-                or False
-            )
+            rec.is_readonly = rec.date_from <= today and True or False

@@ -1,16 +1,95 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
+import ast
+import re
 from collections import defaultdict
 
 from odoo.models import expression
 from odoo.tools.float_utils import float_is_zero
+from odoo.tools.safe_eval import safe_eval
 
 from odoo.addons.mis_builder.models.accounting_none import AccountingNone
 from odoo.addons.mis_builder.models.aep import AccountingExpressionProcessor
 
+_DOMAIN_START_RE = re.compile(r"\(|(['\"])[!&|]\1")
+
+
+def _is_domain(s):
+    """ Test if a string looks like an Odoo domain """
+    return _DOMAIN_START_RE.match(s)
+
 
 class AccountingExpressionProcessorActivity(AccountingExpressionProcessor):
+    def _parse_match_object(self, mo):
+        """Split a match object corresponding to an accounting variable
+
+        Returns field, mode, account domain, move line domain.
+        """
+        domain_eval_context = {
+            "ref": self.env.ref,
+            "user": self.env.user,
+        }
+        field, mode, account_sel, ml_domain = mo.groups()
+        # handle some legacy modes
+        if not mode:
+            mode = self.MODE_VARIATION
+        elif mode == "s":
+            mode = self.MODE_END
+        # convert account selector to account domain
+        if account_sel.startswith("_"):
+            # legacy bal_NNN%
+            acc_domain = self._account_codes_to_domain(account_sel[1:])
+        else:
+            assert account_sel[0] == "[" and account_sel[-1] == "]"
+            inner_account_sel = account_sel[1:-1].strip()
+            if not inner_account_sel:
+                # empty selector: select all accounts
+                acc_domain = tuple()
+            elif _is_domain(inner_account_sel):
+                # account selector is a domain
+                acc_domain = tuple(safe_eval(account_sel, domain_eval_context))
+            else:
+                # account selector is a list of account codes
+                acc_domain = self._account_codes_to_domain(inner_account_sel)
+        ag_domain = ml_domain.replace("activity_id", "id")
+        ag_domain = ast.literal_eval(ag_domain)
+        acc_domain = (ag_domain[0],) + acc_domain
+        # move line domain
+        if ml_domain:
+            assert ml_domain[0] == "[" and ml_domain[-1] == "]"
+            ml_domain = tuple(safe_eval(ml_domain, domain_eval_context))
+        else:
+            ml_domain = tuple()
+        return field, mode, acc_domain, ml_domain
+
+    def _convert_activity_id(self, key):
+        """ Convert activity_id to id on model budget.activity and return value list """
+        activity_domain = key[0][0]
+        activity = [x for x in activity_domain]
+        activity[0] = "id"
+        return activity
+
+    def done_parsing(self):
+        """ Replace account domains by account ids in map """
+        for key, acc_domains in self._map_account_ids.items():
+            all_account_ids = set()
+            activity = self._convert_activity_id(key)
+            for acc_domain in acc_domains:
+                acc_domain_with_company = expression.AND(
+                    [
+                        acc_domain,
+                        [("company_id", "in", self.companies.ids)],
+                        [tuple(activity)],
+                    ]
+                )
+                account_ids = self._account_model.search(
+                    acc_domain_with_company
+                ).ids
+                self._account_ids_by_acc_domain[acc_domain].update(account_ids)
+                all_account_ids.update(account_ids)
+            self._map_account_ids[key] = list(all_account_ids)
+
     def do_queries(
         self,
         date_from,

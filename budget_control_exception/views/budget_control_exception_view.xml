@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
 <odoo>
+
     <record id="budget_control_view_form" model="ir.ui.view">
         <field name="name">budget.control.view.form</field>
         <field name="model">budget.control</field>
@@ -29,7 +30,7 @@
                 </div>
             </sheet>
             <xpath expr="//group[@name='budget_control_right']" position="inside">
-                <field name="ignore_exception" states="done" />
+                <field name="ignore_exception" invisible="1" />
             </xpath>
             <xpath expr="//field[@name='item_ids']/tree" position="inside">
                 <field name="ignore_exception" invisible="1" />
@@ -42,7 +43,7 @@
         <field name="inherit_id" ref="budget_control.budget_control_view_tree" />
         <field name="arch" type="xml">
             <field name="state" position="after">
-                <field name="main_exception_id" />
+                <field name="main_exception_id" optional="show" />
             </field>
         </field>
     </record>
@@ -62,6 +63,7 @@
             </filter>
         </field>
     </record>
+
     <record id="action_budget_control_test_tree" model="ir.actions.act_window">
         <field name="name">Budget Control Exception Rules</field>
         <field name="res_model">exception.rule</field>

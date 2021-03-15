@@ -10,21 +10,23 @@ class BudgetMonitorReport(models.Model):
         selection_add=[("hr.expense", "Expense")],
     )
     amount_type = fields.Selection(
-        selection_add=[("4_ex_commit", "EX Commit")],
+        selection_add=[("5_ex_commit", "EX Commit")],
     )
 
     def _select_ex_commit(self):
-        return """
-            select 4000000000 + a.id as id,
+        return [
+            """
+            5000000000 + a.id as id,
             'hr.expense,' || a.expense_id as res_id,
-            null::char as kpi_name,
             a.analytic_account_id,
+            a.analytic_group,
             a.date as date,
-            '4_ex_commit' as amount_type,
+            '5_ex_commit' as amount_type,
             a.credit-a.debit as amount,
             a.account_id,
             b.name as reference
        """
+        ]
 
     def _from_ex_commit(self):
         return """
@@ -33,7 +35,9 @@ class BudgetMonitorReport(models.Model):
         """
 
     def _get_sql(self):
-        return super()._get_sql() + "union ({} {})".format(
-            self._select_ex_commit(),
+        select_ex_query = self._select_ex_commit()
+        select_ex = ", ".join(sorted(select_ex_query))
+        return super()._get_sql() + "union (select {} {})".format(
+            select_ex,
             self._from_ex_commit(),
         )

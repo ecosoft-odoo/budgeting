@@ -1,6 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import api, fields, models
+from odoo import fields, models
 
 
 class HRExpenseSheet(models.Model):
@@ -10,9 +10,6 @@ class HRExpenseSheet(models.Model):
         comodel_name="advance.budget.move",
         inverse_name="sheet_id",
     )
-    is_clearing = fields.Boolean(
-        string="Clearing", compute="_compute_clearing", store=True
-    )
 
     def _write(self, vals):
         res = super()._write(vals)
@@ -21,22 +18,15 @@ class HRExpenseSheet(models.Model):
             expense_line.uncommit_expense_budget()
         return res
 
-    @api.depends("expense_line_ids")
-    def _compute_clearing(self):
+    def approve_expense_sheets(self):
+        res = super().approve_expense_sheets()
+        self.flush()
         for sheet in self:
-            sheet.is_clearing = bool(
-                sheet.expense_line_ids.filtered("is_clearing")
-            )
-        return
-
-    def _check_budget_expense(self):
-        if any(not exp.advance for exp in self):
-            return super()._check_budget_expense()
-        BudgetPeriod = self.env["budget.period"]
-        for doc in self:
-            BudgetPeriod.check_budget(
-                doc.advance_budget_move_ids, doc_type="advance"
-            )
+            if sheet.advance:
+                sheet._check_budget_expense(
+                    sheet.advance_budget_move_ids, doc_type="advance"
+                )
+        return res
 
     def recompute_advance_budget_move(self):
         self.mapped("advance_budget_move_ids").unlink()
