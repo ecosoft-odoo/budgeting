@@ -40,7 +40,6 @@ class BaseBudgetMove(models.AbstractModel):
         required=True,
         help="Amount in multi currency",
     )
-    not_affect_budget = fields.Boolean(default=False)
     credit = fields.Float(
         readonly=True,
     )
@@ -59,6 +58,7 @@ class BaseBudgetMove(models.AbstractModel):
 class BudgetDoclineMixin(models.AbstractModel):
     _name = "budget.docline.mixin"
     _description = "Mixin used in each document line model that commit budget"
+    _budget_domain = [("analytic_account_id", "!=", False)]
 
     amount_commit = fields.Float(
         compute="_compute_commit",
@@ -112,3 +112,6 @@ class BudgetDoclineMixin(models.AbstractModel):
             "company_id": company.id,
         }
         return res
+
+    def commit_budget(self):
+        """ All docline.mixin will require implementation """

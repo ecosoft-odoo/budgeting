@@ -42,6 +42,10 @@ class HRExpense(models.Model):
         """Create budget commit for each expense."""
         for expense in self:
             if expense.state in ("approved", "done"):
+                if not self.filtered_domain(
+                    self._budget_domain
+                ):  # With correct dom
+                    return
                 account = expense.account_id
                 analytic_account = expense.analytic_account_id
                 doc_date = expense.date

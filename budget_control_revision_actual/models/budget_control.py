@@ -38,7 +38,6 @@ class BudgetControl(models.Model):
         # Find Budget Move range before current month
         domain = [
             ("analytic_account_id", "=", self.analytic_account_id.id),
-            ("not_affect_budget", "=", False),
             ("date", "<=", date),
         ]
         budget_move = self.get_budget_move(doc_type="all", domain=domain)

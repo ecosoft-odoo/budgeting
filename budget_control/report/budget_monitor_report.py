@@ -89,7 +89,7 @@ class BudgetMonitorReport(models.Model):
 
     def _where_actual(self):
         return """
-            where b.state = 'posted' and b.not_affect_budget is null
+            where b.state = 'posted'
         """
 
     def _get_sql(self):
