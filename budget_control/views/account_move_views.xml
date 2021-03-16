@@ -11,12 +11,6 @@
                     attrs="{'invisible':[('move_type', 'in', ('in_invoice', 'in_receipt', 'in_refund', 'out_invoice', 'out_refund'))]}"
                 />
             </xpath>
-            <xpath
-                expr="//page[@id='aml_tab']/field[@name='line_ids']/tree"
-                position="inside"
-            >
-                <field name="not_affect_budget" optional="hide" />
-            </xpath>
             <xpath expr="/form/sheet/notebook/page[last()]" position="after">
                 <page string="Budget Commitment" name="budget_commit">
                     <div class="oe_read_only oe_right" name="buttons">
@@ -35,7 +29,6 @@
                             <field name="write_date" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
-                            <field name="not_affect_budget" optional="hide" />
                         </tree>
                     </field>
                 </page>

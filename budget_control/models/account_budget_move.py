@@ -10,6 +10,15 @@ class AccountBudgetMove(models.Model):
 
     move_id = fields.Many2one(
         comodel_name="account.move",
+        related="move_line_id.move_id",
+        readonly=True,
+        store=True,
+        index=True,
+        help="Commit budget for this move_id",
     )
-    move_line_id = fields.Many2one(comodel_name="account.move.line")
-    not_affect_budget = fields.Boolean(related="move_id.not_affect_budget")
+    move_line_id = fields.Many2one(
+        comodel_name="account.move.line",
+        readonly=True,
+        index=True,
+        help="Commit budget for this move_line_id",
+    )

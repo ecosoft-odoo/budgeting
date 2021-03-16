@@ -1,7 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import _, fields, models
-from odoo.exceptions import UserError
+from odoo import fields, models
 
 
 class HRExpenseSheet(models.Model):
@@ -22,16 +21,9 @@ class HRExpenseSheet(models.Model):
         """
         res = super()._write(vals)
         if vals.get("state") in ("approve", "post", "cancel", "draft"):
-            BudgetControl = self.env["budget.control"]
             expense_line = self.mapped("expense_line_ids")
-            analytic_account_ids = expense_line.mapped("analytic_account_id")
-            budget_control = BudgetControl.search(
-                [("analytic_account_id", "in", analytic_account_ids.ids)]
-            )
-            if any(
-                state != "done" for state in budget_control.mapped("state")
-            ):
-                raise UserError(_("Analytic Account is not Controlled"))
+            analytics = expense_line.mapped("analytic_account_id")
+            analytics._check_budget_control_status()
             if vals.get("state") == "post":
                 expense_line.uncommit_expense_budget()
             else:

@@ -35,6 +35,7 @@ class HRExpenseSheet(models.Model):
 
     def action_sheet_move_create(self):
         res = super().action_sheet_move_create()
+        # For advance, we want to ensure that account.move is no budget
         for sheet in self.filtered(lambda l: l.advance):
             sheet.account_move_id.write({"not_affect_budget": True})
         return res

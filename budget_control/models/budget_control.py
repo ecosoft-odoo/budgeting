@@ -182,7 +182,6 @@ class BudgetControl(models.Model):
                 "in",
                 self.mapped("analytic_account_id").ids,
             ),
-            ("not_affect_budget", "=", False),
         ]
         budget_move = self.get_budget_move(doc_type="account", domain=domain)
         account_budget_move = budget_move["account_budget_move"]

@@ -7,7 +7,6 @@ class AccountMoveLine(models.Model):
     _name = "account.move.line"
     _inherit = ["account.move.line", "budget.docline.mixin"]
 
-    not_affect_budget = fields.Boolean(related="move_id.not_affect_budget")
     budget_move_ids = fields.One2many(
         comodel_name="account.budget.move",
         inverse_name="move_line_id",
@@ -39,7 +38,14 @@ class AccountMoveLine(models.Model):
     def commit_budget(self, reverse=False):
         """Create budget commit for each move line."""
         self.ensure_one()
-        if self.move_id.state == "posted":
+        if (
+            self.move_id.state == "posted"
+            and not self.move_id.not_affect_budget
+        ):
+            if not self.filtered_domain(
+                self._budget_domain
+            ):  # With correct dom
+                return
             account = self.account_id
             analytic_account = self.analytic_account_id
             doc_date = self._get_date_budget_commitment()
@@ -57,7 +63,6 @@ class AccountMoveLine(models.Model):
             vals.update(
                 {
                     "move_line_id": self.id,
-                    "move_id": self.move_id.id,
                     "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
                 }
             )

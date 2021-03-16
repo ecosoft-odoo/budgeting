@@ -1,7 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import _, fields, models
-from odoo.exceptions import UserError
+from odoo import fields, models
 
 
 class PurchaseRequest(models.Model):
@@ -23,16 +22,9 @@ class PurchaseRequest(models.Model):
         """
         res = super()._write(vals)
         if vals.get("state") in ("approved", "rejected", "draft"):
-            BudgetControl = self.env["budget.control"]
             pr_lines = self.mapped("line_ids")
-            analytic_account_ids = pr_lines.mapped("analytic_account_id")
-            budget_control = BudgetControl.search(
-                [("analytic_account_id", "in", analytic_account_ids.ids)]
-            )
-            if any(
-                state != "done" for state in budget_control.mapped("state")
-            ):
-                raise UserError(_("Analytic Account is not Controlled"))
+            analytics = pr_lines.mapped("analytic_account_id")
+            analytics._check_budget_control_status()
             for pr_line in pr_lines:
                 pr_line.commit_budget()
         return res
@@ -93,6 +85,10 @@ class PurchaseRequestLine(models.Model):
         """Create budget commit for each purchase.request.line."""
         self.ensure_one()
         if self.request_id.state in ("approved", "done"):
+            if not self.filtered_domain(
+                self._budget_domain
+            ):  # With correct dom
+                return
             account = self._get_pr_line_account()
             analytic_account = self.analytic_account_id
             doc_date = self.request_id.date_start
