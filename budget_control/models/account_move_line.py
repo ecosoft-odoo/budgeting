@@ -66,10 +66,11 @@ class AccountMoveLine(models.Model):
                     "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
                 }
             )
-            self.env["account.budget.move"].create(vals)
+            budget_move = self.env["account.budget.move"].create(vals)
             if reverse:  # On reverse, make sure not over returned
                 self.env["budget.period"].check_over_returned_budget(
                     self.move_id
                 )
+            return budget_move
         else:
             self.budget_move_ids.unlink()

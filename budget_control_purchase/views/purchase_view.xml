@@ -7,13 +7,13 @@
         <field name="inherit_id" ref="purchase.purchase_order_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="/form/sheet/notebook/page[@name='products']/field[@name='order_line']/tree/field[@name='account_analytic_id']"
+                expr="//page[@name='products']/field[@name='order_line']/tree/field[@name='account_analytic_id']"
                 position="attributes"
             >
                 <attribute name="optional">show</attribute>
             </xpath>
             <xpath
-                expr="/form/sheet/notebook/page[@name='products']/field[@name='order_line']/tree/field[@name='analytic_tag_ids']"
+                expr="//page[@name='products']/field[@name='order_line']/tree/field[@name='analytic_tag_ids']"
                 position="attributes"
             >
                 <attribute name="optional">show</attribute>
@@ -32,8 +32,11 @@
                         <tree>
                             <field name="purchase_line_id" />
                             <field name="move_id" />
-                            <field name="write_uid" />
-                            <field name="write_date" />
+                            <field name="date" />
+                            <field name="analytic_group" optional="show" />
+                            <field name="analytic_account_id" optional="show" />
+                            <field name="write_uid" optional="show" />
+                            <field name="write_date" optional="show" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
                         </tree>

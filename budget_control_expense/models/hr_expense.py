@@ -40,6 +40,7 @@ class HRExpense(models.Model):
 
     def commit_budget(self, reverse=False):
         """Create budget commit for each expense."""
+        doc_model = self.env["hr.expense"]
         for expense in self:
             if expense.state in ("approved", "done"):
                 if not self.filtered_domain(
@@ -68,15 +69,17 @@ class HRExpense(models.Model):
                         ],
                     }
                 )
-                expense._budget_move_create(vals)
+                budget_move = expense._budget_move_create(vals)
                 if reverse and not expense._context.get(
                     "force_check_reverse", False
                 ):  # On reverse, make sure not over returned
                     self.env["budget.period"].check_over_returned_budget(
                         self.sheet_id
                     )
+                doc_model |= budget_move
             else:
                 expense._budget_move_unlink()
+            return doc_model
 
     def _search_domain_expense(self):
         domain = self.sheet_id.state in ("post", "done") and self.state in (
