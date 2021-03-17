@@ -1,7 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-import datetime
 
 from dateutil.rrule import MONTHLY
 
@@ -13,7 +12,7 @@ class TestMisBudget(SavepointCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.year = datetime.datetime.now().year
+        cls.year = 2000
         RangeType = cls.env["date.range.type"]
         Analytic = cls.env["account.analytic.account"]
         BudgetControl = cls.env["budget.control"]
@@ -139,6 +138,8 @@ class TestMisBudget(SavepointCase):
         invoice = Invoice.create(
             {
                 "partner_id": vendor,
+                "invoice_date": "2000-01-01",
+                "date": "2000-01-01",
                 "move_type": inv_type,
                 "invoice_line_ids": [
                     (
@@ -161,8 +162,6 @@ class TestMisBudget(SavepointCase):
         """If budget.period is set to check budget, KPI1=400.0 allocated
         - First 400.0 will used all budget allocated
         - Second 1.0 will make it exceed"""
-        # Control Budget by Analytic & KPI
-        # Check budget
         self.budget_period.account = True
         bill1 = self._create_invoice(
             "in_invoice",
@@ -170,7 +169,16 @@ class TestMisBudget(SavepointCase):
             self.costcenter1,
             [{"product": self.product_kpi1, "price_unit": 400.0}],
         )  # Equal budget
+        # Check Budget Control Status
+        with self.assertRaises(UserError):
+            bill1.action_post()
+        # Allocate and Controlled
+        self.budget_control.allocated_amount = 2400
+        self.budget_control.action_done()
         bill1.action_post()
+
+        # print("-----------------------", self.budget_control.balance)
+
         # 1.0 amount will exceed the budget, and throw error
         bill2 = self._create_invoice(
             "in_invoice",
