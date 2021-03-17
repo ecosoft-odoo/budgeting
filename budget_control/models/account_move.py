@@ -45,3 +45,13 @@ class AccountMove(models.Model):
         """
         self.ensure_one()
         return ("in_invoice", "out_refund", "entry")
+
+    def action_post(self):
+        res = super().action_post()
+        BudgetPeriod = self.env["budget.period"]
+        move_check_budget = self.filtered(
+            lambda l: l.move_type in self._move_type_budget()
+        )
+        for doc in move_check_budget:
+            BudgetPeriod.check_budget(doc.budget_move_ids)
+        return res
