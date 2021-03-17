@@ -1,6 +1,86 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
 
+    <!-- Budget Activity Tag -->
+
+    <record id="budget_activity_tag_view_tree" model="ir.ui.view">
+        <field name="name">budget.activity.tag.view.tree</field>
+        <field name="model">budget.activity.tag</field>
+        <field name="arch" type="xml">
+            <tree string="Budget Activity Tag">
+                <field name="name" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="active" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="budget_activity_tag_view_search" model="ir.ui.view">
+        <field name="name">budget.activity.tag.view.search</field>
+        <field name="model">budget.activity.tag</field>
+        <field name="priority" eval="15" />
+        <field name="arch" type="xml">
+            <search string="Search Budget Activity Tag">
+                <field
+                    name="name"
+                    string="Budget Activity Tag"
+                    filter_domain="[('name','ilike',self)]"
+                />
+                <filter
+                    name="active"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+                <group string="Group By" name="groupby">
+                    <filter
+                        string="Company"
+                        name="groupby_company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company"
+                    />
+                </group>
+           </search>
+        </field>
+    </record>
+
+    <record id="budget_activity_tag_view_form" model="ir.ui.view">
+        <field name="name">budget.activity.view.form</field>
+        <field name="model">budget.activity.tag</field>
+        <field name="arch" type="xml">
+            <form string="Budget Activity Tag">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
+                    <group>
+                        <group>
+                            <field name="name" />
+                        </group>
+                        <group>
+                            <field name="active" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="budget_activity_tag_action" model="ir.actions.act_window">
+        <field name="name">Budget Activity Tags</field>
+        <field name="view_id" ref="budget_activity_tag_view_tree" />
+        <field name="res_model">budget.activity.tag</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Budget Activity -->
+
     <record id="budget_activity_view_tree" model="ir.ui.view">
         <field name="name">budget.activity.view.tree</field>
         <field name="model">budget.activity</field>
@@ -8,6 +88,12 @@
             <tree string="Budget Activity">
                 <field name="name" />
                 <field name="account_id" />
+                <field
+                    name="tag_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                    groups="budget_activity.group_budget_activity_tag"
+                />
             </tree>
         </field>
     </record>
@@ -60,6 +146,11 @@
                     <group>
                         <group>
                             <field name="account_id" />
+                            <field
+                                name="tag_ids"
+                                widget="many2many_tags"
+                                groups="budget_activity.group_budget_activity_tag"
+                            />
                         </group>
                         <group>
                             <field name="active" />
@@ -81,6 +172,8 @@
         <field name="view_mode">tree,form</field>
     </record>
 
+    <!-- Menu Items -->
+
     <menuitem
         id="budget_activity_menu"
         parent="budget_control.budget_config_menu"
@@ -94,6 +187,15 @@
         name="Budget Activity"
         action="budget_activity_action"
         sequence="20"
+    />
+
+    <menuitem
+        id="budget_budget_activity_tag_menu"
+        parent="budget_activity.budget_activity_menu"
+        name="Budget Activity Tags"
+        action="budget_activity_tag_action"
+        sequence="30"
+        groups="budget_activity.group_budget_activity_tag"
     />
 
 </odoo>
