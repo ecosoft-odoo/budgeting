@@ -81,6 +81,7 @@ class PurchaseOrderLine(models.Model):
     ):
         """Create budget commit for each purchase.order.line."""
         self.ensure_one()
+        ctx = {"commit_by_docdate": True}
         if self.state in ("purchase", "done"):
             if not self.filtered_domain(
                 self._budget_domain
@@ -95,7 +96,7 @@ class PurchaseOrderLine(models.Model):
                 product_qty, doc_date
             )
             currency = self.currency_id
-            vals = self._prepare_budget_commitment(
+            vals = self.with_context(ctx)._prepare_budget_commitment(
                 account,
                 analytic_account,
                 doc_date,

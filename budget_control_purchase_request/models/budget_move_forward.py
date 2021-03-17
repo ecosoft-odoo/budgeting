@@ -13,6 +13,11 @@ class BudgetMoveForward(models.Model):
         domain=[("res_model", "=", "purchase.request.line")],
     )
 
+    def _get_document_number(self, doc, model):
+        if model == "purchase.request.line":
+            return doc.request_id.name
+        return super()._get_document_number(doc, model)
+
     def _get_domain_search(self, model):
         domain_search = super()._get_domain_search(model)
         if model == "purchase.request.line":

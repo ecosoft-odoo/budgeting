@@ -7,6 +7,11 @@ from odoo import models
 class BaseBudgetUtils(models.AbstractModel):
     _inherit = "base.budget.utils"
 
+    def get_analytic_doc(self, obj):
+        if obj._name == "purchase.order.line":
+            return obj.mapped("account_analytic_id")
+        return super().get_analytic_doc(obj)
+
     def _get_budget_move_commit(self, domain):
         budget_move = super()._get_budget_move_commit(domain)
         PurchaseBudgetMove = self.env["purchase.budget.move"]

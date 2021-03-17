@@ -1,19 +1,48 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import models
+from dateutil.relativedelta import relativedelta
+
+from odoo import _, models
+from odoo.exceptions import UserError
 
 
 class BaseBudgetUtils(models.AbstractModel):
     _name = "base.budget.utils"
     _description = "Base function budget utilization"
 
+    def get_analytic_doc(self, obj):
+        return obj.mapped("analytic_account_id")
+
+    def next_year_analytic(self, analytic_id):
+        """ Find next analytic from analytic date to + 1"""
+        dimension_analytic = (
+            analytic_id.department_id or analytic_id.project_id
+        )
+        next_date_range = (
+            analytic_id.budget_period_id.bm_date_to + relativedelta(days=1)
+        )
+        next_analytic = dimension_analytic.analytic_account_ids.filtered(
+            lambda l: l.budget_period_id.bm_date_from == next_date_range
+        )
+        if len(dimension_analytic) > 1:
+            raise UserError(_("Analytic date range overlaps."))
+        elif not next_analytic:
+            raise UserError(
+                _(
+                    "{}, No analytic for the next date {}.".format(
+                        analytic_id.name, next_date_range
+                    )
+                )
+            )
+        return next_analytic
+
     def _get_budget_move_commit(self, domain):
         return {}
 
     def get_budget_move(self, doc_type="all", domain=None):
         """
-        this function will return value dictionary following your installed module
+        This function will return value dictionary following your installed module
         - budget_control (account_budget_move)
         - budget_control_expense (expense_budget_move)
         - budget_control_advance (advance_budget_move)

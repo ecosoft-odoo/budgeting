@@ -6,7 +6,7 @@ from odoo import fields, models
 class BudgetMoveForward(models.Model):
     _name = "budget.move.forward"
     _description = "Budget Move Forward"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "base.budget.utils"]
 
     name = fields.Char(
         required=True,
@@ -76,6 +76,9 @@ class BudgetMoveForward(models.Model):
         ]
         return domain_search
 
+    def _get_document_number(self, doc, model):
+        return False
+
     def _prepare_vals_forward(self, docs, model):
         self.ensure_one()
         return [
@@ -84,6 +87,7 @@ class BudgetMoveForward(models.Model):
                 "res_model": model,
                 "res_id": doc.id,
                 "document_id": "{},{}".format(model, doc.id),
+                "document_number": self._get_document_number(doc, model),
                 "amount_commit": doc.amount_commit,
                 "date_commit": doc.date_commit,
             }
@@ -107,6 +111,25 @@ class BudgetMoveForward(models.Model):
                 Line.create(vals)
 
     def action_budget_carry_forward(self):
+        """
+        Concept carry forward
+            1. Reversed budget move each document line
+            2. Commit new budget move for carry forward and Update it to next analytic
+            3. Updated new budget move to next analytic
+
+        Example
+            Analytic A - Budget Period 2020 - From 01/01/2020 To 31/12/2020
+            Analytic A - Budget Period 2021 - From 01/01/2021 To 31/12/2021
+
+        Table of Purchase Budget Move
+        =====================================================
+        Date       | Analytic Account    | Debit | Credit
+        =====================================================
+        01/03/2020 | [2020] Analytic A   | 100.0 |
+        --------------------Carry Forward--------------------
+        01/03/2020 | [2020] Analytic A   |       | 100.0
+        01/01/2021 | [2021] Analytic A   | 100.0 |
+        """
         Line = self.env["budget.move.forward.line"]
         for rec in self:
             models = Line._fields["res_model"].selection
@@ -117,11 +140,17 @@ class BudgetMoveForward(models.Model):
                 if not doclines:
                     continue
                 # Combine list object
-                doc_model = self.env[model]
                 for docline in doclines:
-                    doc_model |= docline
-                budget_moves = doc_model.mapped("budget_move_ids")
-                budget_moves.write({"date": rec.date_budget_move})
+                    analytic_account_id = rec.get_analytic_doc(docline)
+                    next_analytic = rec.next_year_analytic(analytic_account_id)
+                    docline.commit_budget(reverse=True)
+                    budget_move = docline.commit_budget()
+                    budget_move.write(
+                        {
+                            "analytic_account_id": next_analytic.id,
+                            "date": rec.date_budget_move,
+                        }
+                    )
         self.write({"state": "done"})
 
     def action_cancel(self):
@@ -152,6 +181,7 @@ class BudgetMoveForwardLine(models.Model):
         string="Document",
         required=True,
     )
+    document_number = fields.Char(string="Document Number")
     date_commit = fields.Date(
         string="Date",
         required=True,

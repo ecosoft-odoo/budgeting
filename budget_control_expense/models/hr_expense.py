@@ -40,7 +40,8 @@ class HRExpense(models.Model):
 
     def commit_budget(self, reverse=False):
         """Create budget commit for each expense."""
-        doc_model = self.env["hr.expense"]
+        doc_model = False
+        ctx = {"commit_by_docdate": True}
         for expense in self:
             if expense.state in ("approved", "done"):
                 if not self.filtered_domain(
@@ -52,7 +53,7 @@ class HRExpense(models.Model):
                 doc_date = expense.date
                 amount_currency = expense._check_amount_currency_tax(doc_date)
                 currency = expense.currency_id
-                vals = expense._prepare_budget_commitment(
+                vals = expense.with_context(ctx)._prepare_budget_commitment(
                     account,
                     analytic_account,
                     doc_date,
@@ -76,7 +77,10 @@ class HRExpense(models.Model):
                     self.env["budget.period"].check_over_returned_budget(
                         self.sheet_id
                     )
-                doc_model |= budget_move
+                if not doc_model:
+                    doc_model = budget_move
+                else:
+                    doc_model |= budget_move
             else:
                 expense._budget_move_unlink()
             return doc_model
