@@ -114,6 +114,10 @@ class BudgetPlan(models.Model):
         self.action_create_budget_control()
         return budget_control_active
 
+    def _hook_new_budget_plan(self, new_plan):
+        """ Hooks for do something new plan """
+        return True
+
     def create_revision_budget_control(self):
         """ Crete new revision Budget Control and update to new plan """
         BudgetControl = self.env["budget.control"]
@@ -137,6 +141,7 @@ class BudgetPlan(models.Model):
         res = super().create_revision()
         domain = ast.literal_eval(res.get("domain", False))
         new_plan = self.browse(domain[0][2])
+        self._hook_new_budget_plan(new_plan)
         new_plan_line = new_plan.mapped("plan_line")
         for line in new_plan_line:
             budget_control = line.analytic_account_id.budget_control_id
