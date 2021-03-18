@@ -97,15 +97,19 @@ class BudgetDoclineMixin(models.AbstractModel):
             )
             or amount_currency
         )
+        # By default, commit date is equal to document date
+        # this is correct for normal case, but may require different date
+        # in case of budget that carried to new period/year
+        commit_date = (
+            self._context.get("force_commit_date")
+            or doc_date
+            or fields.Date.context_today(self)
+        )
         res = {
             "account_id": account.id,
             "analytic_account_id": analytic_account.id,
             "analytic_group": analytic_account.group_id.id,
-            "date": (
-                self._context.get("commit_by_docdate")
-                and doc_date
-                or fields.Date.today()
-            ),
+            "date": commit_date,
             "amount_currency": amount_currency,
             "debit": not reverse and amount or 0.0,
             "credit": reverse and amount or 0.0,
@@ -114,4 +118,4 @@ class BudgetDoclineMixin(models.AbstractModel):
         return res
 
     def commit_budget(self):
-        """ All docline.mixin will require implementation """
+        """ All docline.mixin will require own implementation """
