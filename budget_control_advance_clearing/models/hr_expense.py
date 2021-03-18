@@ -14,7 +14,7 @@ class HRExpense(models.Model):
     @api.depends(
         "budget_move_ids", "budget_move_ids.date", "advance_budget_move_ids"
     )
-    def _compute_commit(self):
+    def _compute_amount_commit(self):
         for rec in self:
             if rec.advance_budget_move_ids:
                 advance_id = rec.sheet_id.advance_sheet_id
@@ -23,9 +23,6 @@ class HRExpense(models.Model):
                     debit = sum(rec.advance_budget_move_ids.mapped("debit"))
                     credit = sum(rec.advance_budget_move_ids.mapped("credit"))
                     rec.amount_commit = debit - credit
-                    rec.date_commit = min(
-                        rec.advance_budget_move_ids.mapped("date")
-                    )
                     continue
                 # commit advance previous
                 debit = sum(advance_id.advance_budget_move_ids.mapped("debit"))
@@ -38,11 +35,8 @@ class HRExpense(models.Model):
                 debit = sum(rec.budget_move_ids.mapped("debit"))
                 credit = sum(rec.budget_move_ids.mapped("credit"))
                 rec.amount_commit = debit - credit
-                rec.date_commit = min(
-                    rec.advance_budget_move_ids.mapped("date")
-                )
             else:
-                super()._compute_commit()
+                super()._compute_amount_commit()
 
     def _budget_move_create(self, vals):
         """

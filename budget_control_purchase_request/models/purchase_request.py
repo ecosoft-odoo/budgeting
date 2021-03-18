@@ -60,6 +60,7 @@ class PurchaseRequest(models.Model):
 class PurchaseRequestLine(models.Model):
     _name = "purchase.request.line"
     _inherit = ["purchase.request.line", "budget.docline.mixin"]
+    _doc_date_fields = ["request_id.write_date"]
 
     budget_move_ids = fields.One2many(
         comodel_name="purchase.request.budget.move",
@@ -84,20 +85,15 @@ class PurchaseRequestLine(models.Model):
     def commit_budget(self, reverse=False, purchase_line_id=False):
         """Create budget commit for each purchase.request.line."""
         self.ensure_one()
-        if self.request_id.state in ("approved", "done"):
-            if not self.filtered_domain(
-                self._budget_domain
-            ):  # With correct dom
-                return
+        if self.can_commit() and self.request_id.state in ("approved", "done"):
             account = self._get_pr_line_account()
             analytic_account = self.analytic_account_id
-            doc_date = self.request_id.date_start
             amount_currency = self.estimated_cost
             currency = False  # no currency, amount = amount_currency
             vals = self._prepare_budget_commitment(
                 account,
                 analytic_account,
-                doc_date,
+                self.date_commit,
                 amount_currency,
                 currency,
                 reverse=reverse,
