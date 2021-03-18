@@ -71,7 +71,8 @@ class BudgetPlan(models.Model):
 
     @api.depends("budget_control_ids")
     def _compute_budget_control_related_count(self):
-        self.budget_control_count = len(self.budget_control_ids)
+        for rec in self:
+            rec.budget_control_count = len(rec.budget_control_ids)
 
     def button_open_budget_control(self):
         self.ensure_one()
