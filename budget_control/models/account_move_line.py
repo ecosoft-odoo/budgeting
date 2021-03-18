@@ -38,7 +38,6 @@ class AccountMoveLine(models.Model):
     def commit_budget(self, reverse=False):
         """Create budget commit for each move line."""
         self.ensure_one()
-        ctx = {"commit_by_docdate": True}
         if (
             self.move_id.state == "posted"
             and not self.move_id.not_affect_budget
@@ -52,7 +51,7 @@ class AccountMoveLine(models.Model):
             doc_date = self._get_date_budget_commitment()
             amount_currency = self._check_amount_currency_tax(doc_date)
             currency = self.currency_id
-            vals = self.with_context(ctx)._prepare_budget_commitment(
+            vals = self._prepare_budget_commitment(
                 account,
                 analytic_account,
                 doc_date,

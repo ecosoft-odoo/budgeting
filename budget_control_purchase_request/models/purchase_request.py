@@ -84,7 +84,6 @@ class PurchaseRequestLine(models.Model):
     def commit_budget(self, reverse=False, purchase_line_id=False):
         """Create budget commit for each purchase.request.line."""
         self.ensure_one()
-        ctx = {"commit_by_docdate": True}
         if self.request_id.state in ("approved", "done"):
             if not self.filtered_domain(
                 self._budget_domain
@@ -95,7 +94,7 @@ class PurchaseRequestLine(models.Model):
             doc_date = self.request_id.date_start
             amount_currency = self.estimated_cost
             currency = False  # no currency, amount = amount_currency
-            vals = self.with_context(ctx)._prepare_budget_commitment(
+            vals = self._prepare_budget_commitment(
                 account,
                 analytic_account,
                 doc_date,

@@ -85,3 +85,11 @@ class HRExpense(models.Model):
         domain = super()._search_domain_expense()
         domain = domain and not self.advance
         return domain
+
+    def _prepare_move_values(self):
+        """ For advance, we want to ensure that account.move is no budget """
+        self.ensure_one()
+        move_values = super()._prepare_move_values()
+        if self.advance:
+            move_values["not_affect_budget"] = True
+        return move_values
