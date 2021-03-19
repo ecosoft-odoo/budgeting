@@ -41,7 +41,8 @@ class PurchaseOrder(models.Model):
 class PurchaseOrderLine(models.Model):
     _name = "purchase.order.line"
     _inherit = ["purchase.order.line", "budget.docline.mixin"]
-    _budget_domain = [("account_analytic_id", "!=", False)]
+    _analytic_field = "account_analytic_id"
+    _doc_date_fields = ["order_id.write_date"]
 
     budget_move_ids = fields.One2many(
         comodel_name="purchase.budget.move",
@@ -81,24 +82,19 @@ class PurchaseOrderLine(models.Model):
     ):
         """Create budget commit for each purchase.order.line."""
         self.ensure_one()
-        if self.state in ("purchase", "done"):
-            if not self.filtered_domain(
-                self._budget_domain
-            ):  # With correct dom
-                return
+        if self.can_commit() and self.state in ("purchase", "done"):
             if not product_qty:
                 product_qty = self.product_qty
             account = self._get_po_line_account()
             analytic_account = self.account_analytic_id
-            doc_date = self.order_id.date_order
             amount_currency = self._check_amount_currency_tax(
-                product_qty, doc_date
+                product_qty, self.date_commit
             )
             currency = self.currency_id
             vals = self._prepare_budget_commitment(
                 account,
                 analytic_account,
-                doc_date,
+                self.date_commit,
                 amount_currency,
                 currency,
                 reverse=reverse,
