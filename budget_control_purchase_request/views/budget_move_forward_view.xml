@@ -16,6 +16,7 @@
                             string="List purchase request commitment"
                             icon="fa-refresh"
                             context="{'res_model': 'purchase.request.line'}"
+                            states="draft"
                         />
                     </div>
                     <field

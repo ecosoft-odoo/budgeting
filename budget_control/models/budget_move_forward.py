@@ -79,20 +79,34 @@ class BudgetMoveForward(models.Model):
     def _get_document_number(self, doc, model):
         return False
 
+    def _filter_current_move(self, doc):
+        return doc.budget_move_ids.filtered(
+            lambda l: l.analytic_account_id == doc.analytic_account_id
+        )
+
     def _prepare_vals_forward(self, docs, model):
         self.ensure_one()
-        return [
-            {
-                "forward_id": self.id,
-                "res_model": model,
-                "res_id": doc.id,
-                "document_id": "{},{}".format(model, doc.id),
-                "document_number": self._get_document_number(doc, model),
-                "amount_commit": doc.amount_commit,
-                "date_commit": doc.date_commit,
-            }
-            for doc in docs
-        ]
+        value_dict = []
+        for doc in docs:
+            # Filter out budget move that have been carry forward.
+            current_move = self._filter_current_move(doc)
+            current_commit_move = sum(current_move.mapped("debit")) - sum(
+                current_move.mapped("credit")
+            )
+            if not current_commit_move:
+                continue
+            value_dict.append(
+                {
+                    "forward_id": self.id,
+                    "res_model": model,
+                    "res_id": doc.id,
+                    "document_id": "{},{}".format(model, doc.id),
+                    "document_number": self._get_document_number(doc, model),
+                    "amount_commit": doc.amount_commit,
+                    "date_commit": doc.date_commit,
+                }
+            )
+        return value_dict
 
     def get_budget_move_forward(self):
         """Get budget move forward for each new commit document type."""

@@ -73,6 +73,8 @@ class BudgetDoclineMixin(models.AbstractModel):
     def _compute_commit(self):
         for rec in self:
             if not rec.budget_move_ids:
+                # Case cancel to draft should update amount_commit = 0.0
+                rec.amount_commit = 0.0
                 continue
             debit = sum(rec.budget_move_ids.mapped("debit"))
             credit = sum(rec.budget_move_ids.mapped("credit"))

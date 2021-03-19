@@ -13,6 +13,13 @@ class BudgetMoveForward(models.Model):
         domain=[("res_model", "=", "hr.expense.advance")],
     )
 
+    def _filter_current_move(self, doc):
+        if doc._name == "hr.expense" and self._context.get("advance", False):
+            return doc.advance_budget_move_ids.filtered(
+                lambda l: l.analytic_account_id == doc.analytic_account_id
+            )
+        return super()._filter_current_move(doc)
+
     def _get_document_number(self, doc, model):
         if model == "hr.expense.advance":
             return doc.name

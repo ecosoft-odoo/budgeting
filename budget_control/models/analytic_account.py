@@ -12,6 +12,7 @@ class AccountAnalyticAccount(models.Model):
     budget_control_id = fields.Many2one(
         comodel_name="budget.control",
         readonly=True,
+        copy=False,
     )
 
     def _check_budget_control_status(self):
