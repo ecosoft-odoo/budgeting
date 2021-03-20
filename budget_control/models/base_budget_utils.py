@@ -12,6 +12,11 @@ class BaseBudgetUtils(models.AbstractModel):
     _description = "Base function budget utilization"
 
     def get_analytic_doc(self, obj):
+        """
+        Core odoo purchase used field name account_analytic_id
+        BUT other used field name analytic_account_id.
+        This function will convert name and return <account.analytic.account>
+        """
         return obj.mapped("analytic_account_id")
 
     def next_year_analytic(self, analytic_id):
@@ -37,6 +42,14 @@ class BaseBudgetUtils(models.AbstractModel):
             )
         return next_analytic
 
+    def get_budget_move_ids(self, doc):
+        """
+        This function will return budget_move_ids BUT
+        If you install module budget_control_advance_clearing,
+        it will return advance_budget_move_ids
+        """
+        return doc.mapped("budget_move_ids")
+
     def _get_budget_move_commit(self, domain):
         return {}
 
@@ -45,7 +58,7 @@ class BaseBudgetUtils(models.AbstractModel):
         This function will return value dictionary following your installed module
         - budget_control (account_budget_move)
         - budget_control_expense (expense_budget_move)
-        - budget_control_advance (advance_budget_move)
+        - budget_control_advance_clearing (advance_budget_move)
         - budget_control_purchase (purchase_budget_move)
         - budget_control_purchase_request (purchase_request_budget_move)
         i.e. return {

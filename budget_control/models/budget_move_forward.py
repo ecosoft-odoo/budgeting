@@ -80,8 +80,10 @@ class BudgetMoveForward(models.Model):
         return False
 
     def _filter_current_move(self, doc):
-        return doc.budget_move_ids.filtered(
-            lambda l: l.analytic_account_id == doc.analytic_account_id
+        analytic_account_id = self.get_analytic_doc(doc)
+        budget_move_ids = self.get_budget_move_ids(doc)
+        return budget_move_ids.filtered(
+            lambda l: l.analytic_account_id == analytic_account_id
         )
 
     def _prepare_vals_forward(self, docs, model):

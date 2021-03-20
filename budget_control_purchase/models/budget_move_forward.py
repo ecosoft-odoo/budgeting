@@ -13,13 +13,6 @@ class BudgetMoveForward(models.Model):
         domain=[("res_model", "=", "purchase.order.line")],
     )
 
-    def _filter_current_move(self, doc):
-        if doc._name == "purchase.order.line":
-            return doc.budget_move_ids.filtered(
-                lambda l: l.analytic_account_id == doc.account_analytic_id
-            )
-        return super()._filter_current_move(doc)
-
     def _get_document_number(self, doc, model):
         if model == "purchase.order.line":
             return doc.order_id.name

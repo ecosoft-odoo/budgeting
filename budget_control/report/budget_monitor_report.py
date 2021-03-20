@@ -34,10 +34,25 @@ class BudgetMonitorReport(models.Model):
     account_id = fields.Many2one(
         comodel_name="account.account",
     )
+    date_range_id = fields.Many2one(
+        comodel_name="date.range",
+    )
+    budget_period_id = fields.Many2one(
+        comodel_name="budget.period",
+    )
 
     @property
     def _table_query(self):
-        return "%s" % (self._get_sql())
+        return """
+            select a.*, d.id as date_range_id, p.id as budget_period_id
+            from (%s) a
+            left outer join date_range d
+                on a.date between d.date_start and d.date_end
+            left outer join budget_period p
+                on a.date between p.bm_date_from and p.bm_date_to
+        """ % (
+            self._get_sql()
+        )
 
     def _select_budget(self):
         return [

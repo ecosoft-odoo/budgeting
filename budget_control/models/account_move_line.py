@@ -6,6 +6,7 @@ from odoo import fields, models
 class AccountMoveLine(models.Model):
     _name = "account.move.line"
     _inherit = ["account.move.line", "budget.docline.mixin"]
+    _doc_date_fields = ["move_id.invoice_date", "move_id.date"]
 
     budget_move_ids = fields.One2many(
         comodel_name="account.budget.move",
@@ -31,30 +32,22 @@ class AccountMoveLine(models.Model):
         )
         return amount_currency
 
-    def _get_date_budget_commitment(self):
-        doc_date = self.move_id.invoice_date or self.move_id.date
-        return doc_date
-
     def commit_budget(self, reverse=False):
         """Create budget commit for each move line."""
         self.ensure_one()
         if (
-            self.move_id.state == "posted"
+            self.can_commit()
+            and self.move_id.state == "posted"
             and not self.move_id.not_affect_budget
         ):
-            if not self.filtered_domain(
-                self._budget_domain
-            ):  # With correct dom
-                return
             account = self.account_id
             analytic_account = self.analytic_account_id
-            doc_date = self._get_date_budget_commitment()
-            amount_currency = self._check_amount_currency_tax(doc_date)
+            amount_currency = self._check_amount_currency_tax(self.date_commit)
             currency = self.currency_id
             vals = self._prepare_budget_commitment(
                 account,
                 analytic_account,
-                doc_date,
+                self.date_commit,
                 amount_currency,
                 currency,
                 reverse=reverse,

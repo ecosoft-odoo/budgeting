@@ -7,6 +7,11 @@ from odoo import models
 class BaseBudgetUtils(models.AbstractModel):
     _inherit = "base.budget.utils"
 
+    def get_budget_move_ids(self, doc):
+        if doc._name == "hr.expense" and self._context.get("advance", False):
+            return doc.advance_budget_move_ids
+        return super().get_budget_move_ids(doc)
+
     def _get_budget_move_commit(self, domain):
         budget_move = super()._get_budget_move_commit(domain)
         AdvanceBudgetMove = self.env["advance.budget.move"]
