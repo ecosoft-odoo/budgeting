@@ -6,6 +6,7 @@ from odoo import fields, models
 class HRExpense(models.Model):
     _name = "hr.expense"
     _inherit = ["hr.expense", "budget.docline.mixin"]
+    _doc_date_fields = ["sheet_id.write_date"]
 
     budget_move_ids = fields.One2many(
         comodel_name="expense.budget.move",
@@ -42,20 +43,17 @@ class HRExpense(models.Model):
         """Create budget commit for each expense."""
         doc_model = False
         for expense in self:
-            if expense.state in ("approved", "done"):
-                if not self.filtered_domain(
-                    self._budget_domain
-                ):  # With correct dom
-                    return
+            if expense.can_commit() and expense.state in ("approved", "done"):
                 account = expense.account_id
                 analytic_account = expense.analytic_account_id
-                doc_date = expense.date
-                amount_currency = expense._check_amount_currency_tax(doc_date)
+                amount_currency = expense._check_amount_currency_tax(
+                    self.date_commit
+                )
                 currency = expense.currency_id
                 vals = expense._prepare_budget_commitment(
                     account,
                     analytic_account,
-                    doc_date,
+                    self.date_commit,
                     amount_currency,
                     currency,
                     reverse=reverse,
