@@ -225,3 +225,20 @@ class TestMisBudget(SavepointCase):
             [{"product": self.product_kpi1, "price_unit": 100.0}],
         )
         invoice.action_post()
+
+    def test_04_auto_date_commit(self):
+        """
+        - Error if no _doc_date_fields specified
+        - Budget move's date_commit should follow that specified in _doc_date_fields
+        - If date_commit is not inline with analytic date range, adjust it automatically
+        - Use the auto date_commit to create budget move
+        - On refund use same date_commit to create budget move
+        - On cancel of document (unlink budget moves), date_commit is set to False
+        """
+
+    def test_05_manual_date_commit(self):
+        """
+        - If date_commit is entered manually, use that date commit for budget move
+        - If date_commit is not inline with analytic date range, show error
+        - Once date_commit is set ok, use that date for all the following operation
+        """

@@ -9,7 +9,7 @@ from odoo.tools import float_compare
 class BudgetControl(models.Model):
     _name = "budget.control"
     _description = "Budget Control"
-    _inherit = ["mail.thread", "base.budget.utils"]
+    _inherit = ["mail.thread"]
     _order = "budget_id desc, analytic_account_id"
 
     name = fields.Char(
@@ -110,26 +110,26 @@ class BudgetControl(models.Model):
     # Total Amount
     amount_budget = fields.Monetary(
         string="Budget",
-        compute="_compute_amount_budget",
+        compute="_compute_budget_info",
         help="Sum of amount plan",
-    )
-    amount_total_commit = fields.Monetary(
-        string="Total Commitments",
-        compute="_compute_amount_commit",
-        help="Total Commit = Sum of PR / PO / EX / AV commit",
     )
     amount_actual = fields.Monetary(
         string="Actual",
-        compute="_compute_amount_actual",
+        compute="_compute_budget_info",
         help="Sum of actual amount",
+    )
+    amount_commit = fields.Monetary(
+        string="Total Commitments",
+        compute="_compute_budget_info",
+        help="Total Commit = Sum of PR / PO / EX / AV commit",
     )
     amount_consumed = fields.Monetary(
         string="Consumed",
-        compute="_compute_amount_budget",
+        compute="_compute_budget_info",
         help="Consumed = Total Commitments + Actual",
     )
-    balance = fields.Monetary(
-        compute="_compute_amount_budget",
+    amount_balance = fields.Monetary(
+        compute="_compute_budget_info",
         help="Balance = Total Budget - Consumed",
     )
     state = fields.Selection(
@@ -160,46 +160,21 @@ class BudgetControl(models.Model):
         for rec in self:
             rec.released_amount = rec.allocated_amount
 
-    def _get_amount_total_commit(self):
+    def _get_amount_commit(self):
+        self.ensure_one()
         return 0
 
-    @api.depends("item_ids")
-    def _compute_amount_budget(self):
+    def _compute_budget_info(self):
         for rec in self:
-            rec.amount_budget = sum(rec.item_ids.mapped("amount"))
-            rec.amount_consumed = rec.amount_total_commit + rec.amount_actual
-            rec.balance = rec.amount_budget - rec.amount_consumed
-
-    @api.depends("item_ids")
-    def _compute_amount_commit(self):
-        for rec in self:
-            rec.amount_total_commit = rec._get_amount_total_commit()
-
-    @api.depends("item_ids")
-    def _compute_amount_actual(self):
-        domain = [
-            (
-                "analytic_account_id",
-                "in",
-                self.mapped("analytic_account_id").ids,
-            ),
-        ]
-        budget_move = self.get_budget_move(doc_type="account", domain=domain)
-        account_budget_move = budget_move["account_budget_move"]
-        if not account_budget_move:
-            self.write({"amount_actual": 0.0})
-            return
-        for rec in self:
-            account_move = account_budget_move.filtered(
-                lambda l: l.analytic_account_id == rec.analytic_account_id
+            budget_period = self.env["budget.period"].search(
+                [("mis_budget_id", "=", rec.budget_id.id)]
             )
-            if not account_move:
-                rec.amount_actual = 0.0
-                continue
-            amount_actual = sum(account_move.mapped("debit")) - sum(
-                account_move.mapped("credit")
-            )
-            rec.amount_actual = amount_actual or 0.0
+            analytic_ids = [rec.analytic_account_id.id]
+            info = budget_period.get_budget_info(analytic_ids)
+            for key, value in info.items():
+                rec[key] = value
+            rec.amount_commit = rec._get_amount_commit()
+            rec.amount_consumed = rec.amount_commit + rec.amount_actual
 
     @api.model
     def _get_mis_budget_domain(self):
@@ -347,11 +322,7 @@ class BudgetControl(models.Model):
         budget_period = self.env["budget.period"].search(
             [("mis_budget_id", "=", self.budget_id.id)]
         )
-        ctx = {"mis_report_filters": {}}
-        if self.analytic_account_id:
-            ctx["mis_report_filters"]["analytic_account_id"] = {
-                "value": self.analytic_account_id.id,
-            }
+        ctx = {"filter_analytic_ids": [self.analytic_account_id.id]}
         return budget_period.report_instance_id.with_context(ctx)
 
     def preview(self):

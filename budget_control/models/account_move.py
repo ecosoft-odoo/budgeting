@@ -48,6 +48,7 @@ class AccountMove(models.Model):
 
     def action_post(self):
         res = super().action_post()
+        self.flush()
         BudgetPeriod = self.env["budget.period"]
         move_check_budget = self.filtered(
             lambda l: l.move_type in self._move_type_budget()
