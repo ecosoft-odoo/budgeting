@@ -104,6 +104,7 @@ class BudgetControl(models.Model):
     released_amount = fields.Monetary(
         compute="_compute_allocated_released_amount",
         store=True,
+        readonly=False,
         help="Total amount for transfer current",
     )
     # Total Amount
