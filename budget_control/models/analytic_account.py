@@ -9,8 +9,10 @@ class AccountAnalyticAccount(models.Model):
     _inherit = "account.analytic.account"
 
     budget_period_id = fields.Many2one(comodel_name="budget.period")
-    budget_control_id = fields.Many2one(
+    budget_control_ids = fields.One2many(
+        string="Budget Control(s)",
         comodel_name="budget.control",
+        inverse_name="analytic_account_id",
         readonly=True,
     )
     bm_date_from = fields.Date(

@@ -48,6 +48,12 @@ class BudgetControl(models.Model):
     date_to = fields.Date(
         related="budget_id.date_to",
     )
+    budget_period_id = fields.Many2one(
+        comodel_name="budget.period",
+        compute="_compute_budget_period_id",
+        store=True,
+        help="Budget Period that inline with date from/to",
+    )
     active = fields.Boolean(
         default=True,
     )
@@ -99,9 +105,11 @@ class BudgetControl(models.Model):
         comodel_name="res.currency", related="company_id.currency_id"
     )
     allocated_amount = fields.Monetary(
+        string="Allocated",
         help="Initial total amount for plan",
     )
     released_amount = fields.Monetary(
+        string="Released",
         compute="_compute_allocated_released_amount",
         store=True,
         readonly=False,
@@ -119,7 +127,7 @@ class BudgetControl(models.Model):
         help="Sum of actual amount",
     )
     amount_commit = fields.Monetary(
-        string="Total Commitments",
+        string="Commit",
         compute="_compute_budget_info",
         help="Total Commit = Sum of PR / PO / EX / AV commit",
     )
@@ -129,6 +137,7 @@ class BudgetControl(models.Model):
         help="Consumed = Total Commitments + Actual",
     )
     amount_balance = fields.Monetary(
+        string="Balance",
         compute="_compute_budget_info",
         help="Balance = Total Budget - Consumed",
     )
@@ -154,6 +163,18 @@ class BudgetControl(models.Model):
             "Duplicated analytic account for the same budget!",
         ),
     ]
+
+    @api.depends("date_from", "date_to")
+    def _compute_budget_period_id(self):
+        Period = self.env["budget.period"]
+        for rec in self:
+            period = Period.search(
+                [
+                    ("bm_date_from", "=", rec.date_from),
+                    ("bm_date_to", "=", rec.date_to),
+                ]
+            )
+            rec.budget_period_id = period[:1]
 
     @api.depends("allocated_amount")
     def _compute_allocated_released_amount(self):

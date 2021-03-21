@@ -12,11 +12,6 @@
                     string="Budget Period"
                     context="{'group_by': 'budget_period_id'}"
                 />
-                <filter
-                    name="budget_control"
-                    string="Budget Control"
-                    context="{'group_by': 'budget_control_id'}"
-                />
             </xpath>
         </field>
     </record>
@@ -27,8 +22,10 @@
         <field name="inherit_id" ref="analytic.view_account_analytic_account_list" />
         <field name="arch" type="xml">
             <field name="code" position="after">
-                <field name="budget_period_id" />
-                <field name="budget_control_id" optional="show" />
+                <field name="budget_period_id" optional="show" />
+                <field name="bm_date_from" optional="hide" />
+                <field name="bm_date_to" optional="hide" />
+                <field name="budget_control_ids" optional="show" />
             </field>
         </field>
     </record>
@@ -40,7 +37,9 @@
         <field name="arch" type="xml">
             <field name="code" position="after">
                 <field name="budget_period_id" />
-                <field name="budget_control_id" />
+                <field name="bm_date_from" />
+                <field name="bm_date_to" />
+                <field name="budget_control_ids" widget="many2many_tags" />
             </field>
         </field>
     </record>

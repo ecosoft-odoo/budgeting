@@ -175,6 +175,10 @@
                             <field name="assignee_id" />
                             <field name="date_from" />
                             <field name="date_to" />
+                            <field
+                                name="budget_period_id"
+                                attrs="{'invisible': [('budget_period_id', '=', False)]}"
+                            />
                             <field name="allocated_amount" />
                             <field name="released_amount" />
                         </group>
