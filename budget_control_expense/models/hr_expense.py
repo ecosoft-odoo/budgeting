@@ -67,9 +67,7 @@ class HRExpense(models.Model):
                     }
                 )
                 expense._budget_move_create(vals)
-                if reverse and not expense._context.get(
-                    "force_check_reverse", False
-                ):  # On reverse, make sure not over returned
+                if reverse:  # On reverse, make sure not over returned
                     self.env["budget.period"].check_over_returned_budget(
                         self.sheet_id
                     )

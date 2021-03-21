@@ -6,9 +6,10 @@ from odoo import models
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    def _write(self, vals):
+    # def _write(self, vals):  TODO: using _write() seem not ok for test script
+    def write(self, vals):
         """Uncommit budget for source purchase document."""
-        res = super()._write(vals)
+        res = super().write(vals)
         if vals.get("state") in ("draft", "posted", "cancel"):
             self.mapped("invoice_line_ids").uncommit_purchase_budget()
         return res

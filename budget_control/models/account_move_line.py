@@ -6,7 +6,7 @@ from odoo import fields, models
 class AccountMoveLine(models.Model):
     _name = "account.move.line"
     _inherit = ["account.move.line", "budget.docline.mixin"]
-    _doc_date_fields = ["move_id.invoice_date", "move_id.date"]
+    _doc_date_fields = ["move_id.date"]
 
     budget_move_ids = fields.One2many(
         comodel_name="account.budget.move",

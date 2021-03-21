@@ -29,9 +29,16 @@ class AccountAnalyticAccount(models.Model):
         readonly=False,
         help="Budget commit date must conform with this date",
     )
+    auto_adjust_date_commit = fields.Boolean(
+        string="Auto Adjust Commit Date",
+        help="Date From and Date To is used to determine valid date range of "
+        "this analytic account when using with budgeting system. If this data range "
+        "is setup, but the budget system set date_commit out of this date range "
+        "it it can be adjusted automatically.",
+    )
 
     def _check_budget_control_status(self):
-        """ Throw error when has budget_control, but not in controlled """
+        """ Warning for budget_control on budget_period, but not in controlled """
         budget_controls = self.env["budget.control"].search(
             [("analytic_account_id", "in", self.ids), ("state", "!=", "done")]
         )
@@ -45,3 +52,11 @@ class AccountAnalyticAccount(models.Model):
         for rec in self:
             rec.bm_date_from = rec.budget_period_id.bm_date_from
             rec.bm_date_to = rec.budget_period_id.bm_date_to
+
+    def _auto_adjust_date_commit(self, docline):
+        self.ensure_one()
+        if self.auto_adjust_date_commit:
+            if self.bm_date_from and self.bm_date_from > docline.date_commit:
+                docline.date_commit = self.bm_date_from
+            elif self.bm_date_to and self.bm_date_to < docline.date_commit:
+                docline.date_commit = self.bm_date_to

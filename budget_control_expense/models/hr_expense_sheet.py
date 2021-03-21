@@ -14,16 +14,18 @@ class HRExpenseSheet(models.Model):
     def recompute_budget_move(self):
         self.mapped("expense_line_ids").recompute_budget_move()
 
-    def _write(self, vals):
+    # def _write(self, vals):  TODO: using _write() seem not ok for test script
+    def write(self, vals):
         """
         - UnCommit budget when state post
         - Cancel/Draft document should delete all budget commitment
         """
-        res = super()._write(vals)
+        res = super().write(vals)
         if vals.get("state") in ("approve", "post", "cancel", "draft"):
             expense_line = self.mapped("expense_line_ids")
             analytics = expense_line.mapped("analytic_account_id")
-            analytics._check_budget_control_status()
+            if vals.get("state") == "approve":
+                analytics._check_budget_control_status()
             if vals.get("state") == "post":
                 expense_line.uncommit_expense_budget()
             else:

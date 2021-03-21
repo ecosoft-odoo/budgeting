@@ -21,38 +21,40 @@ class AccountMove(models.Model):
     def recompute_budget_move(self):
         self.mapped("invoice_line_ids").recompute_budget_move()
 
-    def _write(self, vals):
+    # def _write(self, vals):  TODO: using _write() seem not ok for test script
+    def write(self, vals):
         """
         - Commit budget when state changes to actual
         - Cancel/Draft document should delete all budget commitment
         """
-        res = super()._write(vals)
+        res = super().write(vals)
         if vals.get("state") in ("posted", "cancel", "draft"):
             for move in self:
                 invoice_lines = move.mapped("invoice_line_ids")
                 analytics = invoice_lines.mapped("analytic_account_id")
-                if not move.not_affect_budget:
+                if (
+                    vals.get("state") == "posted"
+                    and not move.not_affect_budget
+                    and move._filtered_move_check_budget()
+                ):
                     analytics._check_budget_control_status()
                 for line in invoice_lines:
                     line.commit_budget()
         return res
 
-    def _move_type_budget(self):
+    def _filtered_move_check_budget(self):
         """For hooks, default check budget following
         - Vedor Bills
         - Customer Refund
         - Journal Entries
         """
-        self.ensure_one()
-        return ("in_invoice", "out_refund", "entry")
+        move_types = ["in_invoice", "out_refund", "entry"]
+        return self.filtered_domain([("move_type", "in", move_types)])
 
     def action_post(self):
         res = super().action_post()
         self.flush()
         BudgetPeriod = self.env["budget.period"]
-        move_check_budget = self.filtered(
-            lambda l: l.move_type in self._move_type_budget()
-        )
-        for doc in move_check_budget:
-            BudgetPeriod.check_budget(doc.budget_move_ids)
+        for move in self._filtered_move_check_budget():
+            BudgetPeriod.check_budget(move.budget_move_ids)
         return res

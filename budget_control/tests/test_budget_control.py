@@ -1,244 +1,243 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+from datetime import datetime
 
-
-from dateutil.rrule import MONTHLY
+from freezegun import freeze_time
 
 from odoo.exceptions import UserError
-from odoo.tests.common import SavepointCase
+from odoo.tests import tagged
+
+from .common import BudgetControlCommon
 
 
-class TestMisBudget(SavepointCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.year = 2000
-        RangeType = cls.env["date.range.type"]
-        Analytic = cls.env["account.analytic.account"]
-        BudgetControl = cls.env["budget.control"]
-        # Create quarterly date range for current year
-        cls.date_range_type = RangeType.create({"name": "TestQuarter"})
-        cls._create_date_range_quarter(cls)
-        # Create budget kpi
-        cls.report = cls._create_mis_report_kpi(cls)
-        # Create budget.period for current year
-        cls.budget_period = cls._create_budget_period_fy(
-            cls, cls.report.id, cls.date_range_type.id
-        )
-        # Create budget.control for CostCenter1,
-        #  by selected budget_id and date range (by quarter)
-        cls.costcenter1 = Analytic.create({"name": "CostCenter1"})
-        cls.budget_control = BudgetControl.create(
-            {
-                "name": "CostCenter1/%s" % cls.year,
-                "budget_id": cls.budget_period.mis_budget_id.id,
-                "analytic_account_id": cls.costcenter1.id,
-                "plan_date_range_type_id": cls.date_range_type.id,
-            }
-        )
-        # Test item created for 3 kpi x 4 quarters = 12 budget items
-        assert len(cls.budget_control.item_ids) == 12
-        # Assign budget.control amount: KPI1 = 100x4=400, KPI2=800, KPI3=1,200
-        cls.budget_control.item_ids.filtered(
-            lambda l: l.kpi_expression_id == cls.kpi1.expression_ids[0]
-        ).write({"amount": 100})
-        cls.budget_control.item_ids.filtered(
-            lambda l: l.kpi_expression_id == cls.kpi2.expression_ids[0]
-        ).write({"amount": 200})
-        cls.budget_control.item_ids.filtered(
-            lambda l: l.kpi_expression_id == cls.kpi3.expression_ids[0]
-        ).write({"amount": 300})
-        # Assign product to purchase using KPI1, KPI2, KPI3 account codes
-        cls.product_kpi1 = cls.env.ref("product.product_product_6")
-        cls.product_kpi1.property_account_expense_id = cls.account_kpi1
-        cls.product_kpi2 = cls.env.ref("product.product_product_7")
-        cls.product_kpi2.property_account_expense_id = cls.account_kpi2
-        cls.product_kpi3 = cls.env.ref("product.product_product_8")
-        cls.product_kpi3.property_account_expense_id = cls.account_kpi3
-        # Vendor
-        cls.vendor = cls.env.ref("base.res_partner_12")
-
-    def _create_date_range_quarter(self):
-        Generator = self.env["date.range.generator"]
-        generator = Generator.create(
-            {
-                "date_start": "%s-01-01" % self.year,
-                "name_prefix": "%s/Test/Q-" % self.year,
-                "type_id": self.date_range_type.id,
-                "duration_count": 3,
-                "unit_of_time": str(MONTHLY),
-                "count": 4,
-            }
-        )
-        generator.action_apply()
-
-    def _create_mis_report_kpi(self):
-        Account = self.env["account.account"]
-        type_exp = self.env.ref("account.data_account_type_expenses").id
-        self.account_kpi1 = Account.create(
-            {"name": "KPI1", "code": "KPI1", "user_type_id": type_exp}
-        )
-        self.account_kpi2 = Account.create(
-            {"name": "KPI2", "code": "KPI2", "user_type_id": type_exp}
-        )
-        self.account_kpi3 = Account.create(
-            {"name": "KPI3", "code": "KPI3", "user_type_id": type_exp}
-        )
-        # create report
-        report = self.env["mis.report"].create(
-            dict(
-                name="Test KPI",
-            )
-        )
-        self.kpi1 = self.env["mis.report.kpi"].create(
-            dict(
-                report_id=report.id,
-                name="kpi1",
-                budgetable=True,
-                description="kpi 1",
-                expression="balp[KPI1]",
-            )
-        )
-        self.kpi2 = self.env["mis.report.kpi"].create(
-            dict(
-                report_id=report.id,
-                name="kpi2",
-                budgetable=True,
-                description="kpi 2",
-                expression="balp[KPI2]",
-            )
-        )
-        self.kpi3 = self.env["mis.report.kpi"].create(
-            dict(
-                report_id=report.id,
-                name="kpi3",
-                budgetable=True,
-                description="kpi 3",
-                expression="balp[KPI3]",
-            )
-        )
-        return report
-
-    def _create_budget_period_fy(self, report_id, date_range_type_id):
-        BudgetPeriod = self.env["budget.period"]
-        budget_period = BudgetPeriod.create(
-            {
-                "name": "Budget for FY%s" % self.year,
-                "report_id": report_id,
-                "bm_date_from": "%s-01-01" % self.year,
-                "bm_date_to": "%s-12-31" % self.year,
-                "plan_date_range_type_id": date_range_type_id,
-                "control_level": "analytic_kpi",
-            }
-        )
-        return budget_period
-
-    def _create_invoice(self, inv_type, vendor, analytic, invoice_lines):
-        Invoice = self.env["account.move"]
-        invoice = Invoice.create(
-            {
-                "partner_id": vendor,
-                "invoice_date": "2000-01-01",
-                "date": "2000-01-01",
-                "move_type": inv_type,
-                "invoice_line_ids": [
-                    (
-                        0,
-                        0,
-                        {
-                            "product_id": line.get("product"),
-                            "price_unit": line.get("price_unit"),
-                            "quantity": 1,
-                            "analytic_account_id": analytic,
-                        },
-                    )
-                    for line in invoice_lines
-                ],
-            }
-        )
-        return invoice
-
-    def test_01_vendor_blll_budget_check(self):
-        """If budget.period is set to check budget, KPI1=400.0 allocated
-        - First 400.0 will used all budget allocated
-        - Second 1.0 will make it exceed"""
+@tagged("post_install", "-at_install")
+class TestBudgetControl(BudgetControlCommon):
+    @freeze_time("2001-02-01")
+    def test_01_no_budget_control_check(self):
+        """Invoice with analytic that has no budget_control candidate,
+        - If use KPIs not in control, no check in all case
+        - Else if use a valid KPI
+            - If control_all_analytic_accounts is checked -> Lock
+            - If analytic in control_analytic_account_ids -> Lock
+            - Else -> No Lock
+        """
         self.budget_period.account = True
-        bill1 = self._create_invoice(
-            "in_invoice",
-            self.vendor,
-            self.costcenter1,
-            [{"product": self.product_kpi1, "price_unit": 400.0}],
-        )  # Equal budget
-        # Check Budget Control Status
-        with self.assertRaises(UserError):
-            bill1.action_post()
-        # Allocate and Controlled
-        self.budget_control.allocated_amount = 2400
-        self.budget_control.action_done()
+        # KPI not in control, allow posting
+        bill1 = self._create_simple_bill(
+            self.costcenterX, self.account_kpiX, 100000
+        )
         bill1.action_post()
-
-        # print("-----------------------", self.budget_control.balance)
-
-        # 1.0 amount will exceed the budget, and throw error
-        bill2 = self._create_invoice(
-            "in_invoice",
-            self.vendor,
-            self.costcenter1,
-            [{"product": self.product_kpi1, "price_unit": 1.0}],
+        self.assertTrue(bill1.budget_move_ids)
+        # Valid KPI + control_all_analytic_accounts is checked
+        self.budget_period.control_all_analytic_accounts = True
+        bill2 = self._create_simple_bill(
+            self.costcenterX, self.account_kpi1, 100000
         )
         with self.assertRaises(UserError):
             bill2.action_post()
+        bill2.button_draft()
+        # Valid KPI + analytic in control_analytic_account_ids
+        self.budget_period.control_analytic_account_ids = self.costcenterX
+        bill3 = self._create_simple_bill(
+            self.costcenterX, self.account_kpi1, 100000
+        )
+        with self.assertRaises(UserError):
+            bill3.action_post()
+        bill3.button_draft()
+        # Else, even valid KPI
+        self.budget_period.control_all_analytic_accounts = False
+        self.budget_period.control_analytic_account_ids = False
+        bill4 = self._create_simple_bill(
+            self.costcenterX, self.account_kpi1, 100000
+        )
+        bill4.action_post()
+        self.assertTrue(bill1.budget_move_ids)
 
-        # Control Budget by Analytic, It should used budget allocated
+    @freeze_time("2001-02-01")
+    def test_02_budget_control_not_confirmed(self):
+        """
+        - If budget_control for an analytic exists but not confirmed,
+          invoice raise warning
+        - If budget_control for is not set allocated amount,
+          invoice raise warning
+        """
+        self.budget_period.account = True
+        bill1 = self._create_simple_bill(
+            self.costcenter1, self.account_kpi1, 400
+        )
+        # Now, budget_control is not yet set to Done, raise error when post invoice
+        with self.assertRaises(UserError):
+            bill1.action_post()
+        self.assertEqual(bill1.state, "posted")
+        bill1.button_draft()
+        self.assertEqual(bill1.state, "draft")
+        self.assertFalse(bill1.budget_move_ids)
+        # As budget_control has not set allocated_amount, raise error when set Done
+        with self.assertRaises(UserError):
+            self.budget_control.action_done()
+        # Allocate and Done
+        self.budget_control.allocated_amount = 2400
+        self.budget_control.action_done()
+        self.assertEqual(self.budget_control.released_amount, 2400)
+        self.assertEqual(self.budget_control.state, "done")
+        # Post again
+        bill1.action_post()
+        self.assertEqual(bill1.state, "posted")
+
+    @freeze_time("2001-02-01")
+    def test_03_control_level_analytic_kpi(self):
+        """
+        Budget Period set control_level to "analytic_kpi", check at KPI level
+        If amount exceed 400, lock budget
+        """
+        self.budget_period.account = True
+        self.budget_period.control_level = "analytic_kpi"
+        # Budget Controlled
+        self.budget_control.allocated_amount = 2400
+        self.budget_control.action_done()
+        # Test with amount = 401
+        bill1 = self._create_simple_bill(
+            self.costcenter1, self.account_kpi1, 401
+        )
+        with self.assertRaises(UserError):
+            bill1.action_post()
+
+    @freeze_time("2001-02-01")
+    def test_04_control_level_analytic(self):
+        """
+        Budget Period set control_level to "analytic", check at Analytic level
+        If amount exceed 400, not lock budget and still has balance after that
+        """
+        self.budget_period.account = True
         self.budget_period.control_level = "analytic"
-        bill2.action_post()
+        # Budget Controlled
+        self.budget_control.allocated_amount = 2400
+        self.budget_control.action_done()
+        # Test with amount = 2000
+        bill1 = self._create_simple_bill(
+            self.costcenter1, self.account_kpi1, 2000
+        )
+        bill1.action_post()
+        self.assertEqual(bill1.state, "posted")
+        self.assertTrue(self.budget_control.amount_balance)
 
-    def test_02_vendor_blll_no_budget_check(self):
-        """If budget.period is not set to check budget, no budget check"""
+    @freeze_time("2001-02-01")
+    def test_05_no_account_budget_check(self):
+        """If budget.period is not set to check budget, no budget check in all cases"""
         # No budget check
         self.budget_period.account = False
-        bill1 = self._create_invoice(
-            "in_invoice",
-            self.vendor,
-            self.costcenter1,
-            [{"product": self.product_kpi1, "price_unit": 100000.0}],
-        )  # big amount
+        # Budget Controlled
+        self.budget_control.allocated_amount = 2400
+        self.budget_control.action_done()
+        # Create big amount invoice transaction > 2400
+        bill1 = self._create_simple_bill(
+            self.costcenter1, self.account_kpi1, 100000
+        )
         bill1.action_post()
 
-    def test_03_refund_budget_check(self):
+    @freeze_time("2001-02-01")
+    def test_06_refund_no_budget_check(self):
         """For refund, always not checking"""
         # First, make budget actual to exceed budget first
         self.budget_period.account = False  # No budget check first
-        bill1 = self._create_invoice(
-            "in_invoice",
-            self.vendor,
-            self.costcenter1,
-            [{"product": self.product_kpi1, "price_unit": 100000.0}],
-        )  # big amount
+        self.budget_control.allocated_amount = 2400
+        self.budget_control.action_done()
+        self.assertEqual(self.budget_control.amount_balance, 2400)
+        bill1 = self._create_simple_bill(
+            self.costcenter1, self.account_kpi1, 100000
+        )
         bill1.action_post()
+        self.assertEqual(self.budget_control.amount_balance, -97600)
         # Check budget, for in_refund, force no budget check
         self.budget_period.account = True
+        self.budget_control.action_draft()
         invoice = self._create_invoice(
             "in_refund",
             self.vendor,
+            datetime.today(),
             self.costcenter1,
-            [{"product": self.product_kpi1, "price_unit": 100.0}],
+            [{"account": self.account_kpi1, "price_unit": 100}],
         )
         invoice.action_post()
+        self.assertEqual(self.budget_control.amount_balance, -97500)
 
-    def test_04_auto_date_commit(self):
+    @freeze_time("2001-02-01")
+    def test_07_auto_date_commit(self):
         """
-        - Error if no _doc_date_fields specified
         - Budget move's date_commit should follow that specified in _doc_date_fields
         - If date_commit is not inline with analytic date range, adjust it automatically
         - Use the auto date_commit to create budget move
-        - On refund use same date_commit to create budget move
         - On cancel of document (unlink budget moves), date_commit is set to False
         """
+        self.budget_period.account = False
+        # First setup self.costcenterX valid date range and auto adjust
+        self.costcenterX.bm_date_from = "2001-01-01"
+        self.costcenterX.bm_date_to = "2001-12-31"
+        self.costcenterX.auto_adjust_date_commit = True
+        # date_commit should follow that in _doc_date_fields
+        bill1 = self._create_simple_bill(
+            self.costcenterX, self.account_kpiX, 10
+        )
+        self.assertIn(
+            "move_id.date",
+            self.env["account.move.line"]._doc_date_fields,
+        )
+        bill1.invoice_date = "2001-05-05"
+        bill1.date = "2001-05-05"
+        bill1.action_post()
+        self.assertEqual(
+            bill1.invoice_date, bill1.budget_move_ids.mapped("date")[0]
+        )
+        # If date is out of range, adjust automatically, to analytic date range
+        bill2 = self._create_simple_bill(
+            self.costcenterX, self.account_kpiX, 10
+        )
+        self.assertIn(
+            "move_id.date",
+            self.env["account.move.line"]._doc_date_fields,
+        )
+        bill2.invoice_date = "2002-05-05"
+        bill2.date = "2002-05-05"
+        bill2.action_post()
+        self.assertEqual(
+            self.costcenterX.bm_date_to,
+            bill2.budget_move_ids.mapped("date")[0],
+        )
+        # On cancel of document, date_commit = False
+        bill2.button_draft()
+        self.assertFalse(bill2.invoice_line_ids.mapped("date_commit")[0])
 
-    def test_05_manual_date_commit(self):
+    def test_08_manual_date_commit_check(self):
         """
-        - If date_commit is entered manually, use that date commit for budget move
         - If date_commit is not inline with analytic date range, show error
-        - Once date_commit is set ok, use that date for all the following operation
         """
+        self.budget_period.account = False
+        # First setup self.costcenterX valid date range and auto adjust
+        self.costcenterX.bm_date_from = "2001-01-01"
+        self.costcenterX.bm_date_to = "2001-12-31"
+        self.costcenterX.auto_adjust_date_commit = True
+        # Ma
+        bill1 = self._create_simple_bill(
+            self.costcenterX, self.account_kpiX, 10
+        )
+        bill1.invoice_date = "2001-05-05"
+        bill1.date = "2001-05-05"
+        # Use manual date_commit = "2002-10-10" which is not in range.
+        bill1.invoice_line_ids[0].date_commit = "2002-10-10"
+        with self.assertRaises(UserError):
+            bill1.action_post()
+
+    @freeze_time("2001-02-01")
+    def test_09_force_no_budget_checkt(self):
+        """
+        By passing context["force_no_budget_check"] = True, no check in all case
+        """
+        self.budget_period.account = True
+        # Budget Controlled
+        self.budget_control.allocated_amount = 2400
+        self.budget_control.action_done()
+        # Test with bit amount
+        bill1 = self._create_simple_bill(
+            self.costcenter1, self.account_kpi1, 100000
+        )
+        bill1.with_context(force_no_budget_check=True).action_post()

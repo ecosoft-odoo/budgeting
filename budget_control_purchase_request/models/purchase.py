@@ -6,9 +6,10 @@ from odoo import models
 class PurchaseOrder(models.Model):
     _inherit = "purchase.order"
 
-    def _write(self, vals):
+    # def _write(self, vals):  TODO: using _write() seem not ok for test script
+    def write(self, vals):
         """Uncommit budget for source purchase request document."""
-        res = super()._write(vals)
+        res = super().write(vals)
         if vals.get("state") in ("purchase", "cancel"):
             self.mapped("order_line").uncommit_purchase_request_budget()
         return res

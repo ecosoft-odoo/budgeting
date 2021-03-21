@@ -11,8 +11,9 @@ class HRExpenseSheet(models.Model):
         inverse_name="sheet_id",
     )
 
-    def _write(self, vals):
-        res = super()._write(vals)
+    # def _write(self, vals):  TODO: using _write() seem not ok for test script
+    def write(self, vals):
+        res = super().write(vals)
         expense_line = self.mapped("expense_line_ids")
         if vals.get("state") == "done" and vals.get("advance_sheet_residual"):
             expense_line.uncommit_expense_budget()
