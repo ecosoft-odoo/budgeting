@@ -9,8 +9,10 @@
     "website": "https://github.com/OCA/account-budgeting",
     "depends": ["budget_control"],
     "data": [
+        "security/budget_activity_security.xml",
         "security/ir.model.access.csv",
         "report/budget_monitor_report_view.xml",
+        "views/res_config_settings_views.xml",
         "views/account_move_views.xml",
         "views/budget_activity_view.xml",
     ],
