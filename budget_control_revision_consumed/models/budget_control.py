@@ -7,7 +7,7 @@ from odoo import fields, models
 class BudgetControl(models.Model):
     _inherit = "budget.control"
 
-    def _update_actual_value(self, item_ids, budget_moves):
+    def _update_consumed_value(self, item_ids, budget_moves):
         bm_nogroup = budget_moves.copy()
         for item in item_ids:
             activity_group = item.activity_group_id.id
@@ -44,7 +44,7 @@ class BudgetControl(models.Model):
         # Filter date range to current month
         item_ids = self.item_ids.filtered(lambda l: l.date_from <= date)
         item_ids.write({"amount": 0.0})
-        bm_nogroup = self._update_actual_value(item_ids, budget_move)
+        bm_nogroup = self._update_consumed_value(item_ids, budget_move)
         # Case used activity group other plan
         for key, bm in bm_nogroup.items():
             if bm and bm != budget_move[key]:
@@ -61,10 +61,10 @@ class BudgetControl(models.Model):
                 lambda l: l.date_from <= date
                 and l.activity_group_id in kpi.mapped("budget_activity_group")
             )
-            bm_nogroup = self._update_actual_value(item_new_ids, budget_move)
+            bm_nogroup = self._update_consumed_value(item_new_ids, budget_move)
         return bm_nogroup
 
-    def action_update_actual_plan(self):
+    def action_update_consumed_plan(self):
         self.ensure_one()
         today = fields.Date.context_today(self)
         date = self._context.get("manual_date", today)
