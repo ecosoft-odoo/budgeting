@@ -15,3 +15,7 @@ class BudgetControl(models.Model):
         readonly=True,
         help="Total amount from budget plan before revision",
     )
+    released_amount = fields.Monetary(
+        readonly=True,
+        help="Released Amount compute from budget plan.",
+    )

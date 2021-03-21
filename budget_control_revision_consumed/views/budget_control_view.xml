@@ -8,9 +8,9 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='items']/div[@name='buttons']" position="inside">
                 <button
-                    name="action_update_actual_plan"
+                    name="action_update_consumed_plan"
                     class="oe_highlight"
-                    string="Update Actual Plan"
+                    string="Update Consumed Plan"
                     type="object"
                     states="draft,released,done"
                     groups="budget_control.group_budget_control_manager"
