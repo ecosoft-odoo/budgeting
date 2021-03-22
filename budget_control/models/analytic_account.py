@@ -37,11 +37,15 @@ class AccountAnalyticAccount(models.Model):
         "it it can be adjusted automatically.",
     )
 
-    def _check_budget_control_status(self):
+    def _check_budget_control_status(self, budget_period_id=False):
         """ Warning for budget_control on budget_period, but not in controlled """
-        budget_controls = self.env["budget.control"].search(
-            [("analytic_account_id", "in", self.ids), ("state", "!=", "done")]
-        )
+        domain = [
+            ("analytic_account_id", "in", self.ids),
+            ("state", "!=", "done"),
+        ]
+        if budget_period_id:
+            domain.append(("budget_period_id", "=", budget_period_id))
+        budget_controls = self.env["budget.control"].search(domain)
         if budget_controls:
             names = budget_controls.mapped("analytic_account_id.display_name")
             raise UserError(_("Budget not controlled: %s") % ", ".join(names))

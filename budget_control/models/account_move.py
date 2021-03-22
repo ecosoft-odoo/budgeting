@@ -31,13 +31,6 @@ class AccountMove(models.Model):
         if vals.get("state") in ("posted", "cancel", "draft"):
             for move in self:
                 invoice_lines = move.mapped("invoice_line_ids")
-                analytics = invoice_lines.mapped("analytic_account_id")
-                if (
-                    vals.get("state") == "posted"
-                    and not move.not_affect_budget
-                    and move._filtered_move_check_budget()
-                ):
-                    analytics._check_budget_control_status()
                 for line in invoice_lines:
                     line.commit_budget()
         return res

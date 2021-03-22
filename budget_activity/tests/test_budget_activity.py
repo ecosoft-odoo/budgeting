@@ -20,8 +20,9 @@ class TestBudgetControl(BudgetActivityCommon):
         - User can always change account code afterwards
         - Posting invoice, will create budget move with activity
         """
+        self.budget_period.account = False
         invoice = self._create_simple_bill(
-            self.costcenterX, self.account_kpi1, 100
+            self.costcenter1, self.account_kpi1, 10
         )
         # Change to product2, account should change to account_kpi2
         with Form(invoice) as invoice_form:

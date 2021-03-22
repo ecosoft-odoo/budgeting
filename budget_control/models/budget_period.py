@@ -213,6 +213,12 @@ class BudgetPeriod(models.Model):
         controls = self._prepare_controls(budget_period, budget_moves)
         if not controls:
             return
+        # The budget_control of these analytics must active
+        analytic_ids = [x[0] for x in list(controls)]
+        analytics = self.env["account.analytic.account"].browse(analytic_ids)
+        analytics._check_budget_control_status(
+            budget_period_id=budget_period.id
+        )
         # Prepare kpis by account_id
         instance = budget_period.report_instance_id
         company = self.env.user.company_id

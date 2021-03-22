@@ -24,9 +24,6 @@ class PurchaseRequest(models.Model):
         res = super().write(vals)
         if vals.get("state") in ("approved", "rejected", "draft"):
             pr_lines = self.mapped("line_ids")
-            analytics = pr_lines.mapped("analytic_account_id")
-            if vals.get("state") == "approved":
-                analytics._check_budget_control_status()
             for pr_line in pr_lines:
                 pr_line.commit_budget()
         return res

@@ -14,6 +14,9 @@ class BaseBudgetMove(models.AbstractModel):
         required=True,
         index=True,
     )
+    product_id = fields.Many2one(
+        comodel_name="product.product",
+    )
     account_id = fields.Many2one(
         comodel_name="account.account",
         string="Account",
@@ -74,9 +77,6 @@ class BudgetDoclineMixin(models.AbstractModel):
         store=True,
         copy=False,
         readonly=False,  # Allow manual entry of this field
-    )
-    product_id = fields.Many2one(
-        comodel_name="product.product",
     )
 
     @api.depends("budget_move_ids", "budget_move_ids.date")

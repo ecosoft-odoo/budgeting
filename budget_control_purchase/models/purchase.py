@@ -24,9 +24,6 @@ class PurchaseOrder(models.Model):
         res = super().write(vals)
         if vals.get("state") in ("purchase", "cancel", "draft"):
             purchase_line = self.mapped("order_line")
-            analytics = purchase_line.mapped("account_analytic_id")
-            if vals.get("state") == "purchase":
-                analytics._check_budget_control_status()
             for purchase_line in self.mapped("order_line"):
                 purchase_line.commit_budget()
         return res

@@ -23,9 +23,6 @@ class HRExpenseSheet(models.Model):
         res = super().write(vals)
         if vals.get("state") in ("approve", "post", "cancel", "draft"):
             expense_line = self.mapped("expense_line_ids")
-            analytics = expense_line.mapped("analytic_account_id")
-            if vals.get("state") == "approve":
-                analytics._check_budget_control_status()
             if vals.get("state") == "post":
                 expense_line.uncommit_expense_budget()
             else:
