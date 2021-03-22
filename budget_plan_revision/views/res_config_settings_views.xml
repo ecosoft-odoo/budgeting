@@ -19,10 +19,10 @@
                         id="budget_revision_keep_plan"
                     >
                         <div class="o_setting_left_pane">
-                            <field name="keep_origin_plan" />
+                            <field name="group_keep_origin_plan" />
                         </div>
                         <div class="o_setting_right_pane">
-                            <label for="keep_origin_plan" />
+                            <label for="group_keep_origin_plan" />
                             <div class="text-muted">
                                 Automatic archiving of original plan.
                             </div>

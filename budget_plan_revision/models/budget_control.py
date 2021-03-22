@@ -71,7 +71,7 @@ class BudgetControl(models.Model):
         res = super().action_done()
         origin_budget = self.filtered(lambda l: l.revision_number == 0)
         keep_origin_plan = self.env.user.has_group(
-            "budget_plan_revision.keep_origin_plan"
+            "budget_plan_revision.group_keep_origin_plan"
         )
         if keep_origin_plan and origin_budget:
             new_budget_control = self._keep_origin_plan(origin_budget)
