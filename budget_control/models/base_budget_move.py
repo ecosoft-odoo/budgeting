@@ -75,6 +75,9 @@ class BudgetDoclineMixin(models.AbstractModel):
         copy=False,
         readonly=False,  # Allow manual entry of this field
     )
+    product_id = fields.Many2one(
+        comodel_name="product.product",
+    )
 
     @api.depends("budget_move_ids", "budget_move_ids.date")
     def _compute_commit(self):
@@ -149,6 +152,7 @@ class BudgetDoclineMixin(models.AbstractModel):
             or fields.Date.context_today(self)
         )
         res = {
+            "product_id": self.product_id.id,
             "account_id": account.id,
             "analytic_account_id": analytic_account.id,
             "analytic_group": analytic_account.group_id.id,

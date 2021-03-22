@@ -21,6 +21,35 @@ class BudgetControlCommon(SavepointCase):
         # Create quarterly date range for current year
         cls.date_range_type = RangeType.create({"name": "TestQuarter"})
         cls._create_date_range_quarter(cls)
+        # Setup some required entity
+        Account = cls.env["account.account"]
+        type_exp = cls.env.ref("account.data_account_type_expenses").id
+        cls.account_kpi1 = Account.create(
+            {"name": "KPI1", "code": "KPI1", "user_type_id": type_exp}
+        )
+        cls.account_kpi2 = Account.create(
+            {"name": "KPI2", "code": "KPI2", "user_type_id": type_exp}
+        )
+        cls.account_kpi3 = Account.create(
+            {"name": "KPI3", "code": "KPI3", "user_type_id": type_exp}
+        )
+        # Create an extra account, but not in control
+        cls.account_kpiX = Account.create(
+            {"name": "KPIX", "code": "KPIX", "user_type_id": type_exp}
+        )
+        Product = cls.env["product.product"]
+        cls.product1 = Product.create(
+            {
+                "name": "Product 1",
+                "property_account_expense_id": cls.account_kpi1.id,
+            }
+        )
+        cls.product2 = Product.create(
+            {
+                "name": "Product 2",
+                "property_account_expense_id": cls.account_kpi2.id,
+            }
+        )
         # Create budget kpis
         cls.report = cls._create_mis_report_kpi(cls)
         # Create budget.period for current year
@@ -69,21 +98,6 @@ class BudgetControlCommon(SavepointCase):
         generator.action_apply()
 
     def _create_mis_report_kpi(self):
-        Account = self.env["account.account"]
-        type_exp = self.env.ref("account.data_account_type_expenses").id
-        self.account_kpi1 = Account.create(
-            {"name": "KPI1", "code": "KPI1", "user_type_id": type_exp}
-        )
-        self.account_kpi2 = Account.create(
-            {"name": "KPI2", "code": "KPI2", "user_type_id": type_exp}
-        )
-        self.account_kpi3 = Account.create(
-            {"name": "KPI3", "code": "KPI3", "user_type_id": type_exp}
-        )
-        # Create an extra account, but not in control
-        self.account_kpiX = Account.create(
-            {"name": "KPIX", "code": "KPIX", "user_type_id": type_exp}
-        )
         # create report
         report = self.env["mis.report"].create(
             dict(
