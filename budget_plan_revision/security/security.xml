@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <record id="keep_origin_plan" model="res.groups">
+    <record id="group_keep_origin_plan" model="res.groups">
         <field name="name">Keep origin plan</field>
         <field name="category_id" ref="base.module_category_hidden" />
     </record>
