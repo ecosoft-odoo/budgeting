@@ -216,7 +216,7 @@ class TestBudgetControl(BudgetControlCommon):
         self.costcenterX.bm_date_from = "2001-01-01"
         self.costcenterX.bm_date_to = "2001-12-31"
         self.costcenterX.auto_adjust_date_commit = True
-        # Ma
+        # Manual Date Commit
         bill1 = self._create_simple_bill(
             self.costcenterX, self.account_kpiX, 10
         )
@@ -241,3 +241,28 @@ class TestBudgetControl(BudgetControlCommon):
             self.costcenter1, self.account_kpi1, 100000
         )
         bill1.with_context(force_no_budget_check=True).action_post()
+
+    def test_10_recompute_budget_move_date_commit(self):
+        """
+        - Date budget commit should be the same after recompute
+        """
+        self.budget_period.account = False
+        self.costcenterX.auto_adjust_date_commit = True
+        # Ma
+        bill1 = self._create_simple_bill(
+            self.costcenterX, self.account_kpiX, 10
+        )
+        bill1.invoice_date = "2002-10-10"
+        bill1.date = "2002-10-10"
+        # Use manual date_commit = "2002-10-10" which is not in range.
+        bill1.invoice_line_ids[0].date_commit = "2002-10-10"
+        bill1.action_post()
+        self.assertEqual(
+            bill1.budget_move_ids[0].date,
+            bill1.invoice_line_ids[0].date_commit,
+        )
+        bill1.recompute_budget_move()
+        self.assertEqual(
+            bill1.budget_move_ids[0].date,
+            bill1.invoice_line_ids[0].date_commit,
+        )
