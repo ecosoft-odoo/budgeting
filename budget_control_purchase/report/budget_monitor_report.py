@@ -22,6 +22,7 @@ class BudgetMonitorReport(models.Model):
         #         a.date as date,
         #         '3_po_commit' as amount_type,
         #         a.credit-a.debit as amount,
+        #         a.product_id,
         #         a.account_id,
         #         b.name as reference
         #    """
@@ -34,6 +35,7 @@ class BudgetMonitorReport(models.Model):
             a.date as date,
             '3_po_commit' as amount_type,
             a.credit-a.debit as amount,
+            a.product_id,
             a.account_id,
             b.name as reference
        """

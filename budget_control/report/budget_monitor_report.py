@@ -31,6 +31,9 @@ class BudgetMonitorReport(models.Model):
         selection=[("1_budget", "Budget"), ("8_actual", "Actual")],
         string="Type",
     )
+    product_id = fields.Many2one(
+        comodel_name="product.product",
+    )
     account_id = fields.Many2one(
         comodel_name="account.account",
     )
@@ -64,6 +67,7 @@ class BudgetMonitorReport(models.Model):
             mbi.date_from as date,  -- approx date
             '1_budget' as amount_type,
             mbi.amount as amount,
+            null::integer as product_id,
             null::integer as account_id,
             bc.name as reference
         """
@@ -91,6 +95,7 @@ class BudgetMonitorReport(models.Model):
             a.date as date,
             '8_actual' as amount_type,
             a.credit-a.debit as amount,
+            a.product_id,
             a.account_id,
             b.name as reference
         """

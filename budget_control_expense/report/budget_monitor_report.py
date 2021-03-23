@@ -23,6 +23,7 @@ class BudgetMonitorReport(models.Model):
             a.date as date,
             '5_ex_commit' as amount_type,
             a.credit-a.debit as amount,
+            a.product_id,
             a.account_id,
             b.name as reference
        """
