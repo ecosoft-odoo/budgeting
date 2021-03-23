@@ -18,6 +18,13 @@ class BudgetActivityTag(models.Model):
         default=True,
         help="Set active to false to hide the Budget Activity Tag without removing it.",
     )
+    _sql_constraints = [
+        (
+            "name_company_unique",
+            "unique(name, company_id)",
+            "This tag name is already used!",
+        )
+    ]
 
 
 class BudgetActivity(models.Model):

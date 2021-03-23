@@ -124,9 +124,6 @@ class GenerateBudgetControl(models.TransientModel):
         new_analytic = self.analytic_account_ids - existing_analytics
         vals = self._prepare_budget_control_sheet(new_analytic)
         budget_controls = self._create_budget_controls(vals)
-        # Update budget control in analytic
-        for bc in budget_controls:
-            bc.analytic_account_id.write({"budget_control_id": bc.id})
         budget_controls = self._hook_budget_controls(budget_controls)
         budget_controls.do_init_budget_commit(self.init_budget_commit)
         # Return result

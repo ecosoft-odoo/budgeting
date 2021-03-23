@@ -1,5 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+from operator import itemgetter
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import float_compare
@@ -211,6 +213,12 @@ class BudgetPeriod(models.Model):
         controls = self._prepare_controls(budget_period, budget_moves)
         if not controls:
             return
+        # The budget_control of these analytics must active
+        analytic_ids = [x[0] for x in list(controls)]
+        analytics = self.env["account.analytic.account"].browse(analytic_ids)
+        analytics._check_budget_control_status(
+            budget_period_id=budget_period.id
+        )
         # Prepare kpis by account_id
         instance = budget_period.report_instance_id
         company = self.env.user.company_id
@@ -274,20 +282,20 @@ class BudgetPeriod(models.Model):
         matrix = {}
         for analytic_id in analytic_ids:
             if not matrix.get(analytic_id):
-                analytic_filter = {
-                    "analytic_account_id": {
-                        "value": analytic_id,
-                        "operator": "=",
-                    }
-                }
-                ctx = {"mis_report_filters": analytic_filter}
-                matrix[analytic_id] = instance.with_context(
-                    ctx
-                )._compute_matrix()
+                ctx = {"filter_analytic_ids": [analytic_id]}
+                kpi_matrix = instance.with_context(ctx)._compute_matrix()
+                matrix[analytic_id] = kpi_matrix
         return matrix
 
     @api.model
+    def _prepare_matrix_all_analytics(self, instance, analytic_ids):
+        """Return resulting matrix of all analytic combined."""
+        ctx = {"filter_analytic_ids": analytic_ids}
+        return instance.with_context(ctx)._compute_matrix()
+
+    @api.model
     def _get_kpi_value(self, kpi_matrix, kpi, period):
+        period.ensure_one()
         for row in kpi_matrix.iter_rows():
             if row.kpi == kpi:
                 for cell in row.iter_cells():
@@ -297,6 +305,7 @@ class BudgetPeriod(models.Model):
 
     @api.model
     def _get_kpis_value(self, kpi_matrix, kpi_lines, period):
+        period.ensure_one()
         value = 0.0
         details_kpi = False
         for row in kpi_matrix.iter_rows():
@@ -319,8 +328,9 @@ class BudgetPeriod(models.Model):
         analytic_ids = [x[0] for x in list(controls)]
         kpi_matrix = self._prepare_matrix_by_analytic(instance, analytic_ids)
         # Find period that determine budget amount available (sumcol)
-        period = instance.period_ids.filtered(lambda l: l.source == "sumcol")
-        period.ensure_one()  # Test to ensure one
+        period = instance.period_ids.filtered_domain(
+            [("source", "=", "sumcol")]
+        )
         for analytic_id, account_id in controls:
             kpi = kpis.get(account_id, False)
             if not kpi:
@@ -413,3 +423,53 @@ class BudgetPeriod(models.Model):
     def budget_export_xls(self):
         # Redirect to report_instance_id
         return self.report_instance_id.export_xls()
+
+    def get_budget_info(self, analytic_ids):
+        """Get budget overview by analytics, return as dict, i.e.,
+        budget_info = {
+            "amount_budget": 100,
+            "amount_actual": 70,
+            "amount_balance": 30
+        }
+        Note: based on installed modules
+        """
+        self.ensure_one()
+        budget_info = {}
+        company = self.env.user.company_id
+        instance = self.report_instance_id
+        kpis = instance.report_id.get_kpis_by_account_id(company)
+        kpi_lines = {list(kpis.get(x))[0] for x in kpis}
+        kpi_matrix = self._prepare_matrix_all_analytics(instance, analytic_ids)
+        self._compute_budget_info(
+            kpi_matrix=kpi_matrix, kpi_lines=kpi_lines, budget_info=budget_info
+        )
+        return budget_info
+
+    def _set_budget_info_amount(self, source, domain, kwargs):
+        self.ensure_one()
+        kpi_matrix, kpi_lines, budget_info = itemgetter(
+            "kpi_matrix", "kpi_lines", "budget_info"
+        )(kwargs)
+        period = self.period_ids.filtered_domain(domain)
+        if not period:
+            budget_info[source] = 0
+            return
+        amount = self.env["budget.period"]._get_kpis_value(
+            kpi_matrix, kpi_lines, period
+        )
+        budget_info[source] = amount
+
+    def _compute_budget_info(self, **kwargs):
+        """ Add more data info budget_info, based on installed modules """
+        self.ensure_one()
+        self._set_budget_info_amount(
+            "amount_budget", [("source", "=", "mis_budget")], kwargs
+        )
+        self._set_budget_info_amount(
+            "amount_actual",
+            [("source_aml_model_id.model", "=", "account.budget.move")],
+            kwargs,
+        )
+        self._set_budget_info_amount(
+            "amount_balance", [("source", "=", "sumcol")], kwargs
+        )

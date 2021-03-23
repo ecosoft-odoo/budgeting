@@ -33,3 +33,12 @@ class BudgetPeriod(models.Model):
             )
             periods.update({advance: "-"})
         return periods
+
+    def _compute_budget_info(self, **kwargs):
+        """ Add more data info budget_info, based on installed modules """
+        super()._compute_budget_info(**kwargs)
+        self._set_budget_info_amount(
+            "amount_advance",
+            [("source_aml_model_id.model", "=", "advance.budget.move")],
+            kwargs,
+        )

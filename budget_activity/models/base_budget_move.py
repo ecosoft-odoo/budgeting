@@ -40,11 +40,9 @@ class BudgetDoclineMixin(models.AbstractModel):
             reverse=reverse,
         )
         res["activity_id"] = self.activity_id.id
-        # Only if docline has activity and not product, change account code
-        if (
-            "activity_id" in self
-            and self["activity_id"]
-            and not self.product_id
-        ):
+        # For case object without account_id (PR/PO), normally account is from
+        # product, it should now changed to follow activity.
+        # But if account_id is part of object (INV), use whatever is passed-in.
+        if "account_id" not in self:
             res["account_id"] = self["activity_id"].account_id.id
         return res

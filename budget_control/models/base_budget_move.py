@@ -14,6 +14,9 @@ class BaseBudgetMove(models.AbstractModel):
         required=True,
         index=True,
     )
+    product_id = fields.Many2one(
+        comodel_name="product.product",
+    )
     account_id = fields.Many2one(
         comodel_name="account.account",
         string="Account",
@@ -100,9 +103,11 @@ class BudgetDoclineMixin(models.AbstractModel):
             return
         if not self._doc_date_fields:
             raise ValidationError(_("'_doc_date_fields' is not set!"))
-        if not docline[self._analytic_field]:
+        analytic = docline[self._analytic_field]
+        if not analytic:
             docline.date_commit = False
             return
+        # Get dates following _doc_date_fields
         dates = [
             docline.mapped(f)[0]
             for f in self._doc_date_fields
@@ -118,13 +123,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         else:
             docline.date_commit = False
         # If the date_commit is not in analytic date range, use possible date.
-        # Note: another option is to have use choose manually.
-        date_from = docline[self._analytic_field].bm_date_from
-        date_to = docline[self._analytic_field].bm_date_to
-        if date_from and date_from > docline.date_commit:
-            docline.date_commit = date_from
-        elif date_to and date_to < docline.date_commit:
-            docline.date_commit = date_to
+        analytic._auto_adjust_date_commit(docline)
 
     def _prepare_budget_commitment(
         self,
@@ -153,15 +152,18 @@ class BudgetDoclineMixin(models.AbstractModel):
             or fields.Date.context_today(self)
         )
         res = {
+            "product_id": self.product_id.id,
             "account_id": account.id,
             "analytic_account_id": analytic_account.id,
             "analytic_group": analytic_account.group_id.id,
             "date": commit_date,
             "amount_currency": amount_currency,
-            "debit": not reverse and amount or 0.0,
-            "credit": reverse and amount or 0.0,
+            "debit": not reverse and amount or 0,
+            "credit": reverse and amount or 0,
             "company_id": company.id,
         }
+        if sum([res["debit"], res["credit"]]) < 0:
+            res["debit"], res["credit"] = abs(res["credit"]), abs(res["debit"])
         return res
 
     def commit_budget(self):
@@ -174,24 +176,28 @@ class BudgetDoclineMixin(models.AbstractModel):
         self.ensure_one()
         dom = [(f, "!=", False) for f in self._required_fields_to_commit()]
         docline = self.filtered_domain(dom)
+        if not docline:
+            return False
         docline._set_date_commit()
         docline._check_date_commit()  # Testing only, can be removed when stable.
-        return docline and True or False
+        return True
 
     def _check_date_commit(self):
         """ Commit date must inline with analytic account """
         self.ensure_one()
         docline = self
-        if docline[self._analytic_field]:
+        analytic = docline[self._analytic_field]
+        if analytic:
             if not docline.date_commit:
                 raise UserError(_("No budget commitment date"))
-            date_from = docline[self._analytic_field].bm_date_from
-            date_to = docline[self._analytic_field].bm_date_to
+            date_from = analytic.bm_date_from
+            date_to = analytic.bm_date_to
             if (date_from and date_from > docline.date_commit) or (
                 date_to and date_to < docline.date_commit
             ):
                 raise UserError(
-                    _("Budget commitment date is not in analytic date range")
+                    _("Budget date commit is not within date range of - %s")
+                    % analytic.display_name
                 )
         else:
             if docline.date_commit:

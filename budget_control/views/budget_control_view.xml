@@ -12,10 +12,10 @@
                 <field name="analytic_group" optional="show" />
                 <field name="assignee_id" optional="show" />
                 <field name="amount_budget" optional="show" />
-                <field name="amount_total_commit" optional="show" />
+                <field name="amount_commit" optional="show" />
                 <field name="amount_actual" optional="hide" />
                 <field name="amount_consumed" optional="show" />
-                <field name="balance" optional="show" />
+                <field name="amount_balance" optional="show" />
                 <field name="allocated_amount" optional="show" />
                 <field name="released_amount" optional="show" />
                 <field
@@ -175,6 +175,10 @@
                             <field name="assignee_id" />
                             <field name="date_from" />
                             <field name="date_to" />
+                            <field
+                                name="budget_period_id"
+                                attrs="{'invisible': [('budget_period_id', '=', False)]}"
+                            />
                             <field name="allocated_amount" />
                             <field name="released_amount" />
                         </group>
@@ -219,7 +223,7 @@
                                     class="oe_subtotal_footer_separator"
                                 />
                                 <field
-                                    name="amount_total_commit"
+                                    name="amount_commit"
                                     class="oe_subtotal_footer_separator"
                                 />
                                 <field name="amount_actual" />
@@ -230,10 +234,10 @@
                                 <div
                                     class="oe_subtotal_footer_separator oe_inline o_td_label"
                                 >
-                                    <label for="balance" />
+                                    <label for="amount_balance" />
                                 </div>
                                 <field
-                                    name="balance"
+                                    name="amount_balance"
                                     nolabel="1"
                                     class="oe_subtotal_footer_separator"
                                 />

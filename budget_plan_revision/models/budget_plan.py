@@ -137,6 +137,7 @@ class BudgetPlan(models.Model):
 
     def create_revision(self):
         """ Update amount from old budget control to new plan line """
+        # TODO: this function should be multi???
         self._check_state_budget_control()
         res = super().create_revision()
         domain = ast.literal_eval(res.get("domain", False))
@@ -144,7 +145,11 @@ class BudgetPlan(models.Model):
         self._hook_new_budget_plan(new_plan)
         new_plan_line = new_plan.mapped("plan_line")
         for line in new_plan_line:
-            budget_control = line.analytic_account_id.budget_control_id
+            budget_controls = line.analytic_account_id.budget_control_ids
+            # Use budget_control for this period.
+            budget_control = budget_controls.filtered_domain(
+                [("budget_period_id", "=", self.budget_period_id.id)]
+            )
             allocated_amount = budget_control.allocated_amount
             released_amount = budget_control.released_amount
             if budget_control.current_revision_id:

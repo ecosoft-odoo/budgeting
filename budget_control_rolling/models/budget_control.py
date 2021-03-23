@@ -39,7 +39,7 @@ class BudgetControl(models.Model):
             != 0
         )
         message = _(
-            "you have to plan total amount is equal {:,.2f} {}".format(
+            "Planning amount should equal to the released amount {:,.2f} {}".format(
                 fund_amount, self.currency_id.symbol
             )
         )

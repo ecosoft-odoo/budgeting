@@ -15,16 +15,15 @@ class PurchaseRequest(models.Model):
     def recompute_budget_move(self):
         self.mapped("line_ids").recompute_budget_move()
 
-    def _write(self, vals):
+    # def _write(self, vals):  TODO: using _write() seem not ok for test script
+    def write(self, vals):
         """
         - Commit budget when state changes to approved
         - Cancel/Draft document should delete all budget commitment
         """
-        res = super()._write(vals)
+        res = super().write(vals)
         if vals.get("state") in ("approved", "rejected", "draft"):
             pr_lines = self.mapped("line_ids")
-            analytics = pr_lines.mapped("analytic_account_id")
-            analytics._check_budget_control_status()
             for pr_line in pr_lines:
                 pr_line.commit_budget()
         return res
