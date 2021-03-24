@@ -13,20 +13,17 @@ class BudgetMoveForward(models.Model):
         domain=[("res_model", "=", "hr.expense.advance")],
     )
 
+    def _get_document_number(self, doc):
+        if doc._name == "hr.expense.advance":
+            return doc.name
+        return super()._get_document_number(doc)
+
     def _prepare_vals_forward(self, docs, model):
+        value_dict = super()._prepare_vals_forward(docs, model)
         if model == "hr.expense" and self._context.get("advance", False):
-            return [
-                {
-                    "forward_id": self.id,
-                    "res_model": "hr.expense.advance",
-                    "res_id": doc.id,
-                    "document_id": "{},{}".format(model, doc.id),
-                    "amount_commit": doc.amount_commit,
-                    "date_commit": doc.date_commit,
-                }
-                for doc in docs
-            ]
-        return super()._prepare_vals_forward(docs, model)
+            for val in value_dict:
+                val["res_model"] = "hr.expense.advance"
+        return value_dict
 
     def _get_domain_unlink(self, model):
         if model == "hr.expense" and self._context.get("advance", False):

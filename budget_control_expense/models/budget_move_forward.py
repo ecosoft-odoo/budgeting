@@ -13,6 +13,11 @@ class BudgetMoveForward(models.Model):
         domain=[("res_model", "=", "hr.expense")],
     )
 
+    def _get_document_number(self, doc):
+        if doc._name == "hr.expense":
+            return doc.name
+        return super()._get_document_number(doc)
+
     def _get_domain_search(self, model):
         """ Filter Purchase used analytic account"""
         domain_search = super()._get_domain_search(model)

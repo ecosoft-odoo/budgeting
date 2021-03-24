@@ -79,6 +79,12 @@ class BudgetDoclineMixin(models.AbstractModel):
         readonly=False,  # Allow manual entry of this field
     )
 
+    def _filter_current_move(self, analytic):
+        self.ensure_one()
+        return self.budget_move_ids.filtered(
+            lambda l: l.analytic_account_id == analytic
+        )
+
     @api.depends("budget_move_ids", "budget_move_ids.date")
     def _compute_commit(self):
         """

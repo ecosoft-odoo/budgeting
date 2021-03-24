@@ -1,6 +1,8 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from dateutil.relativedelta import relativedelta
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
@@ -36,6 +38,26 @@ class AccountAnalyticAccount(models.Model):
         "is setup, but the budget system set date_commit out of this date range "
         "it it can be adjusted automatically.",
     )
+
+    def next_year_analytic(self):
+        """ Find next analytic from analytic date_to + 1 """
+        next_analytics = self.env["account.analytic.account"]
+        for rec in self:
+            dimension_analytic = rec.department_id or rec.project_id
+            next_date_range = rec.bm_date_to + relativedelta(days=1)
+            next_analytic = dimension_analytic.analytic_account_ids.filtered(
+                lambda l: l.bm_date_from == next_date_range
+            )
+            if not next_analytic:
+                raise UserError(
+                    _(
+                        "{}, No analytic for the next date {}.".format(
+                            rec.display_name, next_date_range
+                        )
+                    )
+                )
+            next_analytics |= next_analytic
+        return next_analytics
 
     def _check_budget_control_status(self, budget_period_id=False):
         """ Warning for budget_control on budget_period, but not in controlled """

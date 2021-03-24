@@ -8,14 +8,15 @@
         <field name="priority">30</field>
         <field name="arch" type="xml">
             <notebook position="inside">
-                <page string="Advance Clearing">
+                <page string="Advance">
                     <div class="oe_read_only oe_right" name="buttons">
                         <button
                             type="object"
                             name="get_budget_move_forward"
-                            string="List advance/clearing commitment"
+                            string="List advance commitment"
                             icon="fa-refresh"
                             context="{'res_model': 'hr.expense', 'advance': 1}"
+                            states="draft"
                         />
                     </div>
                     <field

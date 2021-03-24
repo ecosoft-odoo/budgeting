@@ -18,9 +18,12 @@
                     </div>
                     <field name="budget_move_ids" readonly="1">
                         <tree>
-                            <field name="expense_id" />
-                            <field name="write_uid" />
-                            <field name="write_date" />
+                            <field name="expense_id" optional="show" />
+                            <field name="date" />
+                            <field name="analytic_group" optional="show" />
+                            <field name="analytic_account_id" optional="show" />
+                            <field name="write_uid" optional="show" />
+                            <field name="write_date" optional="show" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
                         </tree>
