@@ -19,26 +19,25 @@ class BudgetMonitorReport(models.Model):
         from_budget_query = "\n".join(
             [
                 from_budget_query,
-                "join mis_report_kpi_expression mrke \
-                    on mbi.kpi_expression_id = mrke.id",
+                "join mis_report_kpi_expression mrke on "
+                "mbi.kpi_expression_id = mrke.id",
                 "join mis_report_kpi mrk on mrke.kpi_id = mrk.id",
             ]
         )
         return from_budget_query
 
-    # Actual
-    def _select_actual(self):
-        select_actual_query = super()._select_actual()
-        select_actual_query.append("ba.name as activity")
-        return select_actual_query
+    # All consumed
+    def _select_statement(self, amount_type):
+        select_statement = super()._select_statement(amount_type)
+        select_statement.append("ba.name as activity")
+        return select_statement
 
-    def _from_actual(self):
-        from_actual_query = super()._from_actual()
-        from_actual_query = "\n".join(
+    def _from_statement(self, amount_type):
+        from_statment = super()._from_statement(amount_type)
+        return "\n".join(
             [
-                from_actual_query,
-                "left outer join budget_activity ba \
-                    on a.activity_id = ba.id",
+                from_statment,
+                "left outer join budget_activity ba "
+                "on a.activity_id = ba.id",
             ]
         )
-        return from_actual_query

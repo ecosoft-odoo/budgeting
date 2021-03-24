@@ -14,19 +14,18 @@ class BudgetMonitorReport(models.Model):
         select_budget_query.append("mrk.description as activity_group")
         return select_budget_query
 
-    # Actual
-    def _select_actual(self):
-        select_actual_query = super()._select_actual()
-        select_actual_query.append("bag.name as activity_group")
-        return select_actual_query
+    # All consumed
+    def _select_statement(self, amount_type):
+        select_statement = super()._select_statement(amount_type)
+        select_statement.append("bag.name as activity_group")
+        return select_statement
 
-    def _from_actual(self):
-        from_actual_query = super()._from_actual()
-        from_actual_query = "\n".join(
+    def _from_statement(self, amount_type):
+        from_statment = super()._from_statement(amount_type)
+        return "\n".join(
             [
-                from_actual_query,
-                "left outer join budget_activity_group bag \
-                    on ba.activity_group_id = bag.id",
+                from_statment,
+                "left outer join budget_activity_group bag "
+                "on ba.activity_group_id = bag.id",
             ]
         )
-        return from_actual_query
