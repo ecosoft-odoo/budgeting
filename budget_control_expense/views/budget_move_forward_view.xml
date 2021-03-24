@@ -16,6 +16,7 @@
                             string="List expense commitment"
                             icon="fa-refresh"
                             context="{'res_model': 'hr.expense'}"
+                            states="draft"
                         />
                     </div>
                     <field

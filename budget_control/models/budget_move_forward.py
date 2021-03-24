@@ -65,6 +65,7 @@ class BudgetMoveForward(models.Model):
     ]
 
     def _get_domain_search(self, model):
+        self.ensure_one()
         domain_search = [("amount_commit", ">", 0.0)]
         return domain_search
 
@@ -76,19 +77,33 @@ class BudgetMoveForward(models.Model):
         ]
         return domain_search
 
+    def _get_document_number(self, doc):
+        return False
+
     def _prepare_vals_forward(self, docs, model):
         self.ensure_one()
-        return [
-            {
-                "forward_id": self.id,
-                "res_model": model,
-                "res_id": doc.id,
-                "document_id": "{},{}".format(model, doc.id),
-                "amount_commit": doc.amount_commit,
-                "date_commit": doc.date_commit,
-            }
-            for doc in docs
-        ]
+        value_dict = []
+        for doc in docs:
+            # Filter out budget move that have been carry forward.
+            analytic = doc[doc._analytic_field]
+            current_move = doc._filter_current_move(analytic)
+            current_commit_move = sum(current_move.mapped("debit")) - sum(
+                current_move.mapped("credit")
+            )
+            if not current_commit_move:
+                continue
+            value_dict.append(
+                {
+                    "forward_id": self.id,
+                    "res_model": model,
+                    "res_id": doc.id,
+                    "document_id": "{},{}".format(model, doc.id),
+                    "document_number": self._get_document_number(doc),
+                    "amount_commit": doc.amount_commit,
+                    "date_commit": doc.date_commit,
+                }
+            )
+        return value_dict
 
     def get_budget_move_forward(self):
         """Get budget move forward for each new commit document type."""
@@ -101,12 +116,29 @@ class BudgetMoveForward(models.Model):
                     continue
                 domain_unlink = rec._get_domain_unlink(model)
                 Line.search(domain_unlink).unlink()
-                domain_search = self._get_domain_search(model)
+                domain_search = rec._get_domain_search(model)
                 docs = self.env[model].search(domain_search)
                 vals = rec._prepare_vals_forward(docs, model)
                 Line.create(vals)
 
     def action_budget_carry_forward(self):
+        """
+        Concept carry forward
+            1. Reversed budget move each document line
+            2. Commit new budget move for carry forward and Update it to next analytic
+            3. Updated new budget move to next analytic
+        Example
+            Analytic A - Budget Period 2020 - From 01/01/2020 To 31/12/2020
+            Analytic A - Budget Period 2021 - From 01/01/2021 To 31/12/2021
+        Table of Purchase Budget Move
+        =====================================================
+        Date       | Analytic Account    | Debit | Credit
+        =====================================================
+        01/03/2020 | [2020] Analytic A   | 100.0 |
+        --------------------Carry Forward--------------------
+        01/03/2020 | [2020] Analytic A   |       | 100.0
+        01/01/2021 | [2021] Analytic A   | 100.0 |
+        """
         Line = self.env["budget.move.forward.line"]
         for rec in self:
             models = Line._fields["res_model"].selection
@@ -116,12 +148,17 @@ class BudgetMoveForward(models.Model):
                 ).mapped("document_id")
                 if not doclines:
                     continue
-                # Combine list object
-                doc_model = self.env[model]
                 for docline in doclines:
-                    doc_model |= docline
-                budget_moves = doc_model.mapped("budget_move_ids")
-                budget_moves.write({"date": rec.date_budget_move})
+                    analytic = docline[docline._analytic_field]
+                    next_analytic = analytic.next_year_analytic()
+                    docline.commit_budget(reverse=True)
+                    budget_move = docline.commit_budget()
+                    budget_move.write(
+                        {
+                            "analytic_account_id": next_analytic.id,
+                            "date": rec.date_budget_move,
+                        }
+                    )
         self.write({"state": "done"})
 
     def action_cancel(self):
@@ -152,6 +189,7 @@ class BudgetMoveForwardLine(models.Model):
         string="Document",
         required=True,
     )
+    document_number = fields.Char(string="Document Number")
     date_commit = fields.Date(
         string="Date",
         required=True,

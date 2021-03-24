@@ -13,7 +13,7 @@ class BaseDisplayName(models.AbstractModel):
     def name_get(self):
         res = []
         for rec in self:
-            field_display = [rec[field] for field in self._field_display]
+            field_display = [rec[field] for field in rec._field_display]
             display_name = rec._get_display(field_display)
             if not display_name:
                 display_name = rec.name

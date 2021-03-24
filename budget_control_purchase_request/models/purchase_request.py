@@ -104,10 +104,11 @@ class PurchaseRequestLine(models.Model):
                     "purchase_line_id": purchase_line_id,
                 }
             )
-            self.env["purchase.request.budget.move"].create(vals)
+            budget_move = self.env["purchase.request.budget.move"].create(vals)
             if reverse:  # On reverse, make sure not over returned
                 self.env["budget.period"].check_over_returned_budget(
                     self.request_id
                 )
+            return budget_move
         else:
             self.budget_move_ids.unlink()

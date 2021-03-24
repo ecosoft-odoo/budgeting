@@ -25,7 +25,11 @@
                 <field name="budget_period_id" optional="show" />
                 <field name="bm_date_from" optional="hide" />
                 <field name="bm_date_to" optional="hide" />
-                <field name="budget_control_ids" optional="show" />
+                <field
+                    name="budget_control_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                />
             </field>
         </field>
     </record>

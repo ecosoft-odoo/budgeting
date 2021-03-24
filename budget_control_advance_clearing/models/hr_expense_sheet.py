@@ -33,10 +33,3 @@ class HRExpenseSheet(models.Model):
         self.mapped("advance_budget_move_ids").unlink()
         self.commit_budget()
         self.uncommit_expense_budget()
-
-    def action_sheet_move_create(self):
-        res = super().action_sheet_move_create()
-        # For advance, we want to ensure that account.move is no budget
-        for sheet in self.filtered(lambda l: l.advance):
-            sheet.account_move_id.write({"not_affect_budget": True})
-        return res
