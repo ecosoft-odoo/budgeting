@@ -6,16 +6,6 @@ from odoo import models
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
-    def _get_date_budget_commitment(self):
-        model = self._context.get("active_model", False)
-        move_type = self._context.get("default_move_type", False)
-        if model == "hr.expense" and not move_type:
-            expense = self.env[model].browse(
-                self._context.get("active_id", [])
-            )
-            return expense.date
-        return super()._get_date_budget_commitment()
-
     def _check_amount_currency_tax(self, date, doc_type="account"):
         self.ensure_one()
         amount_currency = super()._check_amount_currency_tax(date, doc_type)

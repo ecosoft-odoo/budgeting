@@ -64,4 +64,5 @@ class MisReportKpi(models.Model):
                     kpi._filter_balance_mis(activity_ids),
                 )
                 # Update expression_ids for display realtime
+                # TODO: please check follwoing logic again.
                 kpi._inverse_expression()
