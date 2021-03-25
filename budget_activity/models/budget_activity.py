@@ -29,7 +29,7 @@ class BudgetActivityTag(models.Model):
 
 class BudgetActivity(models.Model):
     _name = "budget.activity"
-    _description = "Activity"
+    _description = "Budget Activity"
 
     name = fields.Char(
         required=True,

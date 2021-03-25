@@ -47,4 +47,42 @@
             </field>
         </field>
     </record>
+
+    <!-- Show Analytic Accounting on Budgeting-->
+
+    <menuitem
+        id="budget_menu_analytic_accounting"
+        name="Analytic Accounting"
+        parent="budget_control.budget_config_menu"
+        sequence="10"
+        groups="analytic.group_analytic_accounting,analytic.group_analytic_tags"
+    />
+
+    <menuitem
+        id="budget_menu_analytic_account"
+        name="Analytic Accounts"
+        parent="budget_control.budget_menu_analytic_accounting"
+        sequence="1"
+        action="analytic.action_account_analytic_account_form"
+        groups="analytic.group_analytic_accounting"
+    />
+
+    <menuitem
+        id="budget_menu_analytic_account_group"
+        name="Analytic Account Groups"
+        parent="budget_control.budget_menu_analytic_accounting"
+        sequence="2"
+        action="analytic.account_analytic_group_action"
+        groups="analytic.group_analytic_accounting"
+    />
+
+    <menuitem
+        id="budget_menu_analytic_account_tag"
+        name="Analytic Account Tags"
+        parent="budget_control.budget_menu_analytic_accounting"
+        sequence="3"
+        action="analytic.account_analytic_tag_action"
+        groups="analytic.group_analytic_tags"
+    />
+
 </odoo>
