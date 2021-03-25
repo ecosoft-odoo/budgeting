@@ -14,8 +14,8 @@ class BudgetMonitorReport(models.Model):
         select_budget_query.append("bc.operating_unit_id")
         return select_budget_query
 
-    # Actual
-    def _select_actual(self):
-        select_actual_query = super()._select_actual()
-        select_actual_query.append("b.operating_unit_id")
-        return select_actual_query
+    # All consumed
+    def _select_statement(self, amount_type):
+        select_statement = super()._select_statement(amount_type)
+        select_statement.append("b.operating_unit_id")
+        return select_statement
