@@ -214,7 +214,7 @@ class BudgetPeriod(models.Model):
         if not controls:
             return
         # The budget_control of these analytics must active
-        analytic_ids = [x[0] for x in list(controls)]
+        analytic_ids = [x["analytic_id"] for x in controls]
         analytics = self.env["account.analytic.account"].browse(analytic_ids)
         analytics._check_budget_control_status(
             budget_period_id=budget_period.id
@@ -222,7 +222,7 @@ class BudgetPeriod(models.Model):
         # Prepare kpis by account_id
         instance = budget_period.report_instance_id
         company = self.env.user.company_id
-        kpis = instance.report_id.get_kpis_by_account_id(company)
+        kpis = instance.report_id.get_kpis(company)
         if not kpis:
             return
         # Check budget on each control elements against each kpi/avail(period)
@@ -274,7 +274,8 @@ class BudgetPeriod(models.Model):
             else:  # Only analtyic in control
                 if i.analytic_account_id in control_analytics and i.account_id:
                     controls.add((i.analytic_account_id.id, i.account_id.id))
-        return controls
+        # Convert to list of dict, for readibility
+        return [{"analytic_id": x[0], "account_id": x[1]} for x in controls]
 
     @api.model
     def _prepare_matrix_by_analytic(self, instance, analytic_ids):
@@ -317,35 +318,44 @@ class BudgetPeriod(models.Model):
         return value
 
     @api.model
+    def _get_kpi_by_key(self, instance, kpis, control):
+        """
+        By default, control key is account_id as it can be used to get KPI
+        In future, this can be other key, i.e., activity_id based on installed module
+        """
+        account_id = control["account_id"]
+        kpi = kpis.get(account_id, False)
+        if kpi and len(kpi) != 1:
+            account = self.env["account.account"].browse(account_id)
+            raise UserError(
+                _(
+                    "KPI Template '%s' has more than one KPI being "
+                    "refereced by same account code %s"
+                )
+                % (instance.report_id.name, account.code)
+            )
+        return kpi
+
+    @api.model
     def _check_budget_available(
         self, instance, controls, kpis, amount_precommit=0.0
     ):
         warnings = []
-        Account = self.env["account.account"]
         Analytic = self.env["account.analytic.account"]
         BudgetPeriod = self.env["budget.period"]
         # Prepare result matrix for all analytic_id to be tested
-        analytic_ids = [x[0] for x in list(controls)]
+        analytic_ids = [x["analytic_id"] for x in controls]
         kpi_matrix = self._prepare_matrix_by_analytic(instance, analytic_ids)
         # Find period that determine budget amount available (sumcol)
         period = instance.period_ids.filtered_domain(
             [("source", "=", "sumcol")]
         )
-        for analytic_id, account_id in controls:
-            kpi = kpis.get(account_id, False)
+        for control in controls:
+            analytic_id = control["analytic_id"]
+            kpi = self._get_kpi_by_key(instance, kpis, control)
             if not kpi:
                 continue
-            if len(kpi) != 1 and not instance.report_id.is_activity:
-                account = Account.browse(account_id)
-                raise UserError(
-                    _(
-                        'KPI Template "%s" has more than one KPI being '
-                        "refereced by same account code %s"
-                    )
-                    % (instance.report_id.name, account.code)
-                )
-
-            # Checl Level of Control in Budget
+            # Check control_level in Budget, aka, analtyic, analytic_kpi
             budget_period = BudgetPeriod.search(
                 [("report_instance_id", "=", instance.id)]
             )
@@ -437,7 +447,7 @@ class BudgetPeriod(models.Model):
         budget_info = {}
         company = self.env.user.company_id
         instance = self.report_instance_id
-        kpis = instance.report_id.get_kpis_by_account_id(company)
+        kpis = instance.report_id.get_kpis(company)
         kpi_lines = {list(kpis.get(x))[0] for x in kpis}
         kpi_matrix = self._prepare_matrix_all_analytics(instance, analytic_ids)
         self._compute_budget_info(
