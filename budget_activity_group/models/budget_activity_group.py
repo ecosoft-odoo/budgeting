@@ -5,7 +5,7 @@ from odoo import fields, models
 
 class BudgetActivityGroup(models.Model):
     _name = "budget.activity.group"
-    _description = "Activity Group"
+    _description = "Budget Activity Group"
 
     name = fields.Char(
         required=True,
