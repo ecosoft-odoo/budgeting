@@ -1,7 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, models
+from odoo import _, api, models
 
 
 class AccountAnalyticAccount(models.Model):
@@ -28,3 +28,18 @@ class AccountAnalyticAccount(models.Model):
                 }
             res.append((analytic.id, name))
         return res
+
+    @api.model
+    def name_search(self, name, args=None, operator="ilike", limit=100):
+        args = args or []
+        domain = []
+        if name:
+            domain = [
+                "|",
+                "|",
+                ("code", operator, name),
+                ("budget_period_id", operator, name),
+                ("name", operator, name),
+            ]
+        invoices = self.search(domain + args, limit=limit)
+        return invoices.name_get()
