@@ -9,22 +9,22 @@
         />
         <field name="arch" type="xml">
             <xpath expr="//div[@data-key='budget_control']" position="inside">
-                <h2>Revision</h2>
+                <h2>Budget Plan</h2>
                 <div
                     class="row mt16 o_settings_container"
                     name="budget_revision_setting_container"
                 >
                     <div
                         class="col-12 col-lg-6 o_setting_box"
-                        id="budget_revision_keep_plan"
+                        id="enable_revision_number_plan"
                     >
                         <div class="o_setting_left_pane">
-                            <field name="group_keep_origin_plan" />
+                            <field name="group_enable_revision" />
                         </div>
                         <div class="o_setting_right_pane">
-                            <label for="group_keep_origin_plan" />
+                            <label for="group_enable_revision" />
                             <div class="text-muted">
-                                Automatic archiving of original plan.
+                                Enable user edit revision number on Budget Plan.
                             </div>
                         </div>
                     </div>
