@@ -185,7 +185,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         if not docline:
             return False
         docline._set_date_commit()
-        docline._check_date_commit()  # Testing only, can be removed when stable.
+        docline._check_date_commit()  # Testing only, can be removed when stable
         return True
 
     def _check_date_commit(self):

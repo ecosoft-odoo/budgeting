@@ -13,6 +13,9 @@ class AccountMoveLine(models.Model):
         inverse_name="move_line_id",
         string="Account Budget Moves",
     )
+    not_affect_budget = fields.Boolean(
+        related="move_id.not_affect_budget",
+    )
 
     def recompute_budget_move(self):
         for invoice_line in self:
@@ -23,7 +26,7 @@ class AccountMoveLine(models.Model):
     def _check_amount_currency_tax(self, date, doc_type="account"):
         self.ensure_one()
         budget_period = self.env["budget.period"]._get_eligible_budget_period(
-            date, doc_type
+            date, doc_type=doc_type
         )
         amount_currency = (
             budget_period.include_tax
@@ -38,7 +41,7 @@ class AccountMoveLine(models.Model):
         if (
             self.can_commit()
             and self.move_id.state == "posted"
-            and not self.move_id.not_affect_budget
+            and not self.not_affect_budget
         ):
             account = self.account_id
             analytic_account = self.analytic_account_id

@@ -30,18 +30,26 @@ class BudgetPeriod(models.Model):
         return super()._prepare_controls(budget_period, budget_moves)
 
     @api.model
-    def _get_kpi_by_key(self, instance, kpis, control):
+    def _get_kpi_by_control_key(self, instance, kpis, control):
         if instance.report_id.is_activity:
             activity_id = control["activity_id"]
             kpi = kpis.get(activity_id, False)
-            if kpi and len(kpi) != 1:
-                activity = self.env["budget.activity"].browse(activity_id)
+            if len(kpi) == 1:
+                return kpi
+            # Invalid KPI
+            activity = self.env["budget.activity"].browse(activity_id)
+            if not kpi:
+                raise UserError(
+                    _("Chosen activity %s is not valid for budgeting")
+                    % activity.display_name
+                )
+            else:
                 raise UserError(
                     _(
                         "KPI Template '%s' has more than one KPI being "
                         "refereced by same activity %s"
                     )
-                    % (instance.report_id.name, activity.code)
+                    % (instance.report_id.name, activity.display_name)
                 )
             return kpi
-        return super()._get_kpi_by_key(instance, kpis, control)
+        return super()._get_kpi_by_control_key(instance, kpis, control)

@@ -15,31 +15,31 @@ class TestBudgetControl(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def test_01_no_budget_control_check(self):
         """Invoice with analytic that has no budget_control candidate,
-        - If use KPIs not in control, no check in all case
-        - Else if use a valid KPI
-            - If control_all_analytic_accounts is checked -> Lock
-            - If analytic in control_analytic_account_ids -> Lock
-            - Else -> No Lock
+        - If use KPI not in control -> lock
+        - If control_all_analytic_accounts is checked -> Lock
+        - If analytic in control_analytic_account_ids -> Lock
+        - Else -> No Lock
         """
         self.budget_period.account = True
-        # KPI not in control, allow posting
+        # KPI not in control -> lock
         bill1 = self._create_simple_bill(
-            self.costcenterX, self.account_kpiX, 100000
+            self.costcenter1, self.account_kpiX, 100
         )
-        bill1.action_post()
-        self.assertTrue(bill1.budget_move_ids)
+        with self.assertRaises(UserError):
+            bill1.action_post()
+        bill1.button_draft()
         # Valid KPI + control_all_analytic_accounts is checked
         self.budget_period.control_all_analytic_accounts = True
         bill2 = self._create_simple_bill(
-            self.costcenterX, self.account_kpi1, 100000
+            self.costcenter1, self.account_kpi1, 100000
         )
         with self.assertRaises(UserError):
             bill2.action_post()
         bill2.button_draft()
         # Valid KPI + analytic in control_analytic_account_ids
-        self.budget_period.control_analytic_account_ids = self.costcenterX
+        self.budget_period.control_analytic_account_ids = self.costcenter1
         bill3 = self._create_simple_bill(
-            self.costcenterX, self.account_kpi1, 100000
+            self.costcenter1, self.account_kpi1, 100000
         )
         with self.assertRaises(UserError):
             bill3.action_post()
@@ -48,10 +48,10 @@ class TestBudgetControl(BudgetControlCommon):
         self.budget_period.control_all_analytic_accounts = False
         self.budget_period.control_analytic_account_ids = False
         bill4 = self._create_simple_bill(
-            self.costcenterX, self.account_kpi1, 100000
+            self.costcenter1, self.account_kpi1, 100000
         )
         bill4.action_post()
-        self.assertTrue(bill1.budget_move_ids)
+        self.assertTrue(bill4.budget_move_ids)
 
     @freeze_time("2001-02-01")
     def test_02_budget_control_not_confirmed(self):

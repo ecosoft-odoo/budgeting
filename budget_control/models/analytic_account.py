@@ -61,15 +61,22 @@ class AccountAnalyticAccount(models.Model):
 
     def _check_budget_control_status(self, budget_period_id=False):
         """ Warning for budget_control on budget_period, but not in controlled """
-        domain = [
-            ("analytic_account_id", "in", self.ids),
-            ("state", "!=", "done"),
-        ]
+        domain = [("analytic_account_id", "in", self.ids)]
         if budget_period_id:
             domain.append(("budget_period_id", "=", budget_period_id))
         budget_controls = self.env["budget.control"].search(domain)
-        if budget_controls:
-            names = budget_controls.mapped("analytic_account_id.display_name")
+        if not budget_controls:
+            names = self.mapped("display_name")
+            raise UserError(
+                _("No budget control sheet: %s") % ", ".join(names)
+            )
+        budget_not_controlled = budget_controls.filtered_domain(
+            [("state", "!=", "done")]
+        )
+        if budget_not_controlled:
+            names = budget_not_controlled.mapped(
+                "analytic_account_id.display_name"
+            )
             raise UserError(_("Budget not controlled: %s") % ", ".join(names))
 
     @api.depends("budget_period_id")

@@ -18,6 +18,7 @@ class BudgetPeriod(models.Model):
         readonly=False,
         ondelete="restrict",
         required=True,
+        index=True,
         help="Automatically created report instance for this budget period",
     )
     mis_budget_id = fields.Many2one(
@@ -25,6 +26,7 @@ class BudgetPeriod(models.Model):
         string="MIS Budget",
         readonly=True,
         ondelete="restrict",
+        index=True,
         help="Automatically created mis budget",
     )
     bm_date_from = fields.Date(
@@ -206,7 +208,9 @@ class BudgetPeriod(models.Model):
         )
         if len(date) != 1:
             raise ValidationError(_("Budget moves' date not unified"))
-        budget_period = self._get_eligible_budget_period(date.pop(), doc_type)
+        budget_period = self._get_eligible_budget_period(
+            date.pop(), doc_type=doc_type
+        )
         if not budget_period:
             return
         # Find combination of account(kpi) + analytic(i.e.,project) to control
@@ -223,8 +227,6 @@ class BudgetPeriod(models.Model):
         instance = budget_period.report_instance_id
         company = self.env.user.company_id
         kpis = instance.report_id.get_kpis(company)
-        if not kpis:
-            return
         # Check budget on each control elements against each kpi/avail(period)
         warnings = self._check_budget_available(
             instance, controls, kpis, amount_precommit
@@ -248,7 +250,7 @@ class BudgetPeriod(models.Model):
             )
 
     @api.model
-    def _get_eligible_budget_period(self, date, doc_type):
+    def _get_eligible_budget_period(self, date, doc_type=False):
         BudgetPeriod = self.env["budget.period"]
         budget_period = BudgetPeriod.search(
             [("bm_date_from", "<=", date), ("bm_date_to", ">=", date)]
@@ -261,7 +263,10 @@ class BudgetPeriod(models.Model):
                 )
                 % date
             )
-        return budget_period.filtered(doc_type)  # Only if to control
+        if doc_type:
+            return budget_period.filtered(doc_type)  # Only if to control
+        else:
+            return budget_period
 
     @api.model
     def _prepare_controls(self, budget_period, budget_moves):
@@ -318,21 +323,29 @@ class BudgetPeriod(models.Model):
         return value
 
     @api.model
-    def _get_kpi_by_key(self, instance, kpis, control):
+    def _get_kpi_by_control_key(self, instance, kpis, control):
         """
         By default, control key is account_id as it can be used to get KPI
         In future, this can be other key, i.e., activity_id based on installed module
         """
         account_id = control["account_id"]
-        kpi = kpis.get(account_id, False)
-        if kpi and len(kpi) != 1:
-            account = self.env["account.account"].browse(account_id)
+        kpi = kpis.get(account_id, [])
+        if len(kpi) == 1:
+            return kpi
+        # Invalid KPI
+        account = self.env["account.account"].browse(account_id)
+        if not kpi:
+            raise UserError(
+                _("Chosen account code %s is not valid for budgeting")
+                % account.display_name
+            )
+        else:
             raise UserError(
                 _(
                     "KPI Template '%s' has more than one KPI being "
                     "refereced by same account code %s"
                 )
-                % (instance.report_id.name, account.code)
+                % (instance.report_id.name, account.display_name)
             )
         return kpi
 
@@ -340,6 +353,10 @@ class BudgetPeriod(models.Model):
     def _check_budget_available(
         self, instance, controls, kpis, amount_precommit=0.0
     ):
+        """
+        This function is a CORE function, please modify carefully
+        Author: Kitti U.
+        """
         warnings = []
         Analytic = self.env["account.analytic.account"]
         BudgetPeriod = self.env["budget.period"]
@@ -352,9 +369,8 @@ class BudgetPeriod(models.Model):
         )
         for control in controls:
             analytic_id = control["analytic_id"]
-            kpi = self._get_kpi_by_key(instance, kpis, control)
-            if not kpi:
-                continue
+            # Get kpi to check budget, for case control_level = analytic_kpi
+            kpi = self._get_kpi_by_control_key(instance, kpis, control)
             # Check control_level in Budget, aka, analtyic, analytic_kpi
             budget_period = BudgetPeriod.search(
                 [("report_instance_id", "=", instance.id)]
@@ -368,15 +384,24 @@ class BudgetPeriod(models.Model):
                 amount_kpis = self._get_kpi_value(
                     kpi_matrix[analytic_id], list(kpi)[0], period
                 )
+            # Final amount
             amount = amount_kpis - amount_precommit
+            # Show warning if budget not enough
             if amount < 0:
                 analytic = Analytic.browse(analytic_id).display_name
-                kpi_name = list(kpi)[0].display_name
-                warnings.append(
-                    _("{0} on {1}, will result in {2:,.2f}").format(
-                        kpi_name, analytic, amount
+                if budget_period.control_level == "analytic":
+                    warnings.append(
+                        _("{0}, will result in {1:,.2f}").format(
+                            analytic, amount
+                        )
                     )
-                )
+                else:
+                    kpi_name = list(kpi)[0].display_name
+                    warnings.append(
+                        _("{0} on {1}, will result in {2:,.2f}").format(
+                            kpi_name, analytic, amount
+                        )
+                    )
         return warnings
 
     def get_report_amount(

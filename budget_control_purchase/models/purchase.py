@@ -23,7 +23,6 @@ class PurchaseOrder(models.Model):
         """
         res = super().write(vals)
         if vals.get("state") in ("purchase", "cancel", "draft"):
-            purchase_line = self.mapped("order_line")
             for purchase_line in self.mapped("order_line"):
                 purchase_line.commit_budget()
         return res
@@ -69,7 +68,7 @@ class PurchaseOrderLine(models.Model):
     ):
         self.ensure_one()
         budget_period = self.env["budget.period"]._get_eligible_budget_period(
-            date, doc_type
+            date, doc_type=doc_type
         )
         amount_currency = product_qty * self.price_unit
         if budget_period.include_tax:

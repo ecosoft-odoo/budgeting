@@ -16,21 +16,15 @@ class HRExpense(models.Model):
     def recompute_budget_move(self):
         self.mapped("budget_move_ids").unlink()
         self.commit_budget()
-        self.uncommit_expense_budget()
-
-    def _budget_move_create(self, vals):
-        self.ensure_one()
-        budget_move = self.env["expense.budget.move"].create(vals)
-        return budget_move
-
-    def _budget_move_unlink(self):
-        self.ensure_one()
-        self.budget_move_ids.unlink()
+        move_lines = self.env["account.move.line"].search(
+            [("expense_id", "in", self.ids)]
+        )
+        move_lines.uncommit_expense_budget()
 
     def _check_amount_currency_tax(self, date, doc_type="expense"):
         self.ensure_one()
         budget_period = self.env["budget.period"]._get_eligible_budget_period(
-            date, doc_type
+            date, doc_type=doc_type
         )
         amount_currency = (
             budget_period.include_tax
@@ -39,9 +33,8 @@ class HRExpense(models.Model):
         )
         return amount_currency
 
-    def commit_budget(self, reverse=False):
+    def commit_budget(self, reverse=False, move_line_id=False):
         """Create budget commit for each expense."""
-        doc_model = False
         for expense in self:
             if expense.can_commit() and expense.state in ("approved", "done"):
                 account = expense.account_id
@@ -65,31 +58,21 @@ class HRExpense(models.Model):
                         "analytic_tag_ids": [
                             (6, 0, expense.analytic_tag_ids.ids)
                         ],
+                        "move_line_id": move_line_id,
                     }
                 )
-                budget_move = expense._budget_move_create(vals)
+                budget_move = self.env["expense.budget.move"].create(vals)
                 if reverse:  # On reverse, make sure not over returned
                     self.env["budget.period"].check_over_returned_budget(
                         self.sheet_id
                     )
-                if not doc_model:
-                    doc_model = budget_move
-                else:
-                    doc_model |= budget_move
+                return budget_move
             else:
-                expense._budget_move_unlink()
-            return doc_model
+                expense.budget_move_ids.unlink()
 
-    def _search_domain_expense(self):
-        domain = self.sheet_id.state in ("post", "done") and self.state in (
-            "approved",
-            "done",
-        )
-        return domain
-
-    def uncommit_expense_budget(self):
-        """For vendor bill in valid state, do uncommit for related expense."""
-        for expense in self:
-            domain = expense._search_domain_expense()
-            if domain:
-                expense.commit_budget(reverse=True)
+    # def uncommit_expense_budget(self):
+    #     """For vendor bill in valid state, do uncommit for related expense."""
+    #     for expense in self:
+    #         if expense.sheet_id.state in ('post', 'done') and \
+    #                 expense.state in ('approved', 'done'):
+    #             expense.commit_budget(reverse=True, move_line_id=)
