@@ -1,9 +1,8 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
+from collections import defaultdict
 
-from odoo import api, fields, models
-
-from .aep import AccountingExpressionProcessorActivity as AEPA
+from odoo import fields, models
 
 
 class MisReport(models.Model):
@@ -13,22 +12,20 @@ class MisReport(models.Model):
         help="if check, Expression will compute Activity instead Account"
     )
 
-    @api.depends("move_lines_source")
-    def _compute_account_model(self):
-        super()._compute_account_model()
-        for record in self:
-            if record.is_activity:
-                record.account_model = "budget.activity"
-
-    def _prepare_aep(self, companies, currency=None):
+    def get_kpis(self, company):
         self.ensure_one()
         if self.is_activity:
-            aep = AEPA(companies, currency, self.account_model)
-            for kpi in self.all_kpi_ids:
-                for expression in kpi.expression_ids:
-                    if expression.name:
-                        aep.parse_expr(expression.name)
-            aep.done_parsing()
-        else:
-            aep = super()._prepare_aep(companies, currency)
-        return aep
+            return self.get_kpis_by_activity_id(company)
+        return super().get_kpis(company)
+
+    def get_kpis_by_activity_id(self, company):
+        """ Return { activity_id: set(kpi) } """
+        res = defaultdict(set)
+        for kpi in self.kpi_ids:
+            for expression in kpi.expression_ids:
+                if not expression.name:
+                    continue
+                activity_ids = kpi.budget_activity_group.activity_ids.ids
+                for activity_id in activity_ids:
+                    res[activity_id].add(kpi)
+        return res
