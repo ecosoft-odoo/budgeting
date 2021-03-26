@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <record id="group_keep_origin_plan" model="res.groups">
-        <field name="name">Keep origin plan</field>
+    <record id="group_enable_revision" model="res.groups">
+        <field name="name">Enable Revision Number</field>
         <field name="category_id" ref="base.module_category_hidden" />
     </record>
 </odoo>

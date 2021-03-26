@@ -7,7 +7,7 @@ from odoo import fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
-    group_keep_origin_plan = fields.Boolean(
-        string="Keep origin plan",
-        implied_group="budget_plan_revision.group_keep_origin_plan",
+    group_enable_revision = fields.Boolean(
+        string="Enable Revision Number",
+        implied_group="budget_plan_revision.group_enable_revision",
     )

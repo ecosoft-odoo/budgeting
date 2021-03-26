@@ -43,7 +43,11 @@
                 />
             </xpath>
             <xpath expr="//group[@name='budget_plan_right']" position="inside">
-                <field name="revision_number" />
+                <field name="enable_revision_number" invisible="1" />
+                <field
+                    name="revision_number"
+                    attrs="{'readonly': [('enable_revision_number', '=', False)]}"
+                />
             </xpath>
             <xpath
                 expr="//page[@name='plan_line']/field[@name='plan_line']/tree/field[@name='released_amount']"
