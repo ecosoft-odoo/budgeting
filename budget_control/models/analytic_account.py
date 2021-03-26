@@ -65,10 +65,15 @@ class AccountAnalyticAccount(models.Model):
         if budget_period_id:
             domain.append(("budget_period_id", "=", budget_period_id))
         budget_controls = self.env["budget.control"].search(domain)
-        if not budget_controls:
-            names = self.mapped("display_name")
+        # Find analytics has no budget_contol
+        bc_analytic_ids = budget_controls.mapped("analytic_account_id").ids
+        no_bc_analytic_ids = list(set(self.ids) - set(bc_analytic_ids))
+        if no_bc_analytic_ids:
+            no_bc_analytics = self.browse(no_bc_analytic_ids)
+            names = no_bc_analytics.mapped("display_name")
             raise UserError(
-                _("No budget control sheet: %s") % ", ".join(names)
+                _("Following analytics has no budget control " "sheet:\n%s")
+                % ", ".join(names)
             )
         budget_not_controlled = budget_controls.filtered_domain(
             [("state", "!=", "done")]
@@ -77,7 +82,13 @@ class AccountAnalyticAccount(models.Model):
             names = budget_not_controlled.mapped(
                 "analytic_account_id.display_name"
             )
-            raise UserError(_("Budget not controlled: %s") % ", ".join(names))
+            raise UserError(
+                _(
+                    "Budget control sheet for following analytics are not in "
+                    "control:\n%s"
+                )
+                % ", ".join(names)
+            )
 
     @api.depends("budget_period_id")
     def _compute_bm_date(self):

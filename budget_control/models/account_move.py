@@ -21,7 +21,6 @@ class AccountMove(models.Model):
     def recompute_budget_move(self):
         self.mapped("invoice_line_ids").recompute_budget_move()
 
-    # def _write(self, vals):  TODO: using _write() seem not ok for test script
     def write(self, vals):
         """
         - Commit budget when state changes to actual
@@ -49,5 +48,5 @@ class AccountMove(models.Model):
         self.flush()
         BudgetPeriod = self.env["budget.period"]
         for move in self._filtered_move_check_budget():
-            BudgetPeriod.check_budget(move.budget_move_ids)
+            BudgetPeriod.check_budget(move.line_ids)
         return res

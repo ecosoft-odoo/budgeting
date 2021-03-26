@@ -1,21 +1,27 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class AccountMoveLine(models.Model):
     _name = "account.move.line"
     _inherit = ["account.move.line", "budget.docline.mixin"]
-    _doc_date_fields = ["move_id.date"]
+    _budget_date_commit_fields = ["move_id.date"]
 
+    can_commit = fields.Boolean(
+        compute="_compute_can_commit",
+    )
     budget_move_ids = fields.One2many(
         comodel_name="account.budget.move",
         inverse_name="move_line_id",
         string="Account Budget Moves",
     )
-    not_affect_budget = fields.Boolean(
-        related="move_id.not_affect_budget",
-    )
+
+    @api.depends()
+    def _compute_can_commit(self):
+        super()._compute_can_commit()
+        no_budget_moves = self.mapped("move_id").filtered("not_affect_budget")
+        no_budget_moves.mapped("line_ids").update({"can_commit": False})
 
     def recompute_budget_move(self):
         for invoice_line in self:
@@ -35,14 +41,10 @@ class AccountMoveLine(models.Model):
         )
         return amount_currency
 
-    def commit_budget(self, reverse=False):
+    def commit_budget(self, reverse=False, **kwargs):
         """Create budget commit for each move line."""
-        self.ensure_one()
-        if (
-            self.can_commit()
-            and self.move_id.state == "posted"
-            and not self.not_affect_budget
-        ):
+        self.prepare_commit()
+        if self.can_commit and self.move_id.state == "posted":
             account = self.account_id
             analytic_account = self.analytic_account_id
             amount_currency = self._check_amount_currency_tax(self.date_commit)
@@ -62,6 +64,9 @@ class AccountMoveLine(models.Model):
                     "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
                 }
             )
+            # Assign kwargs where value is not False
+            vals.update({k: v for k, v in kwargs.items() if v})
+            # Create budget move
             budget_move = self.env["account.budget.move"].create(vals)
             if reverse:  # On reverse, make sure not over returned
                 self.env["budget.period"].check_over_returned_budget(

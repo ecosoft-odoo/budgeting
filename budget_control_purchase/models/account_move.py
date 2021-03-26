@@ -6,7 +6,6 @@ from odoo import models
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    # def _write(self, vals):  TODO: using _write() seem not ok for test script
     def write(self, vals):
         """Uncommit budget for source purchase document."""
         res = super().write(vals)

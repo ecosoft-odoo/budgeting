@@ -23,11 +23,12 @@
                         <tree>
                             <field name="name" />
                             <field name="analytic_group" optional="hide" />
-                            <field name="amount_budget" />
-                            <field name="released_amount" />
-                            <field name="amount_commit" />
-                            <field name="amount_consumed" />
-                            <field name="amount_balance" />
+                            <field name="amount_budget" optional="show" sum="Total" />
+                            <field name="released_amount" optional="hide" sum="Total" />
+                            <field name="amount_commit" optional="hide" sum="Total" />
+                            <field name="amount_actual" optional="hide" sum="Total" />
+                            <field name="amount_consumed" optional="show" sum="Total" />
+                            <field name="amount_balance" optional="show" sum="Total" />
                             <field
                                 name="state"
                                 widget="badge"

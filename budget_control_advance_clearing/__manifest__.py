@@ -8,7 +8,6 @@
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
     "depends": [
-        "budget_control",
         "budget_control_expense",
         "hr_expense_advance_clearing",
     ],

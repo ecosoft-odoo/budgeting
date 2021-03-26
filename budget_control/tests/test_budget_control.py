@@ -164,7 +164,7 @@ class TestBudgetControl(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def test_07_auto_date_commit(self):
         """
-        - Budget move's date_commit should follow that specified in _doc_date_fields
+        - Budget move's date_commit should follow that in _budget_date_commit_fields
         - If date_commit is not inline with analytic date range, adjust it automatically
         - Use the auto date_commit to create budget move
         - On cancel of document (unlink budget moves), date_commit is set to False
@@ -174,13 +174,13 @@ class TestBudgetControl(BudgetControlCommon):
         self.costcenterX.bm_date_from = "2001-01-01"
         self.costcenterX.bm_date_to = "2001-12-31"
         self.costcenterX.auto_adjust_date_commit = True
-        # date_commit should follow that in _doc_date_fields
+        # date_commit should follow that in _budget_date_commit_fields
         bill1 = self._create_simple_bill(
             self.costcenterX, self.account_kpiX, 10
         )
         self.assertIn(
             "move_id.date",
-            self.env["account.move.line"]._doc_date_fields,
+            self.env["account.move.line"]._budget_date_commit_fields,
         )
         bill1.invoice_date = "2001-05-05"
         bill1.date = "2001-05-05"
@@ -194,7 +194,7 @@ class TestBudgetControl(BudgetControlCommon):
         )
         self.assertIn(
             "move_id.date",
-            self.env["account.move.line"]._doc_date_fields,
+            self.env["account.move.line"]._budget_date_commit_fields,
         )
         bill2.invoice_date = "2002-05-05"
         bill2.date = "2002-05-05"

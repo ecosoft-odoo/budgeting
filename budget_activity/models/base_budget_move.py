@@ -36,7 +36,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         self,
         account,
         analytic_account,
-        doc_date,
+        date_commit,
         amount_currency,
         currency,
         reverse=False,
@@ -44,7 +44,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         res = super()._prepare_budget_commitment(
             account,
             analytic_account,
-            doc_date,
+            date_commit,
             amount_currency,
             currency,
             reverse=reverse,

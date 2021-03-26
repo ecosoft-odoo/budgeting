@@ -28,17 +28,18 @@
         <field name="arch" type="xml">
             <xpath expr="/form/sheet/notebook/page[last()]" position="after">
                 <page string="Advance Budget Commitment" name="advance_budget_commit">
-                    <div class="oe_read_only oe_right" name="buttons">
+                    <!-- <div class="oe_read_only oe_right" name="buttons">
                         <button
                             type="object"
                             name="recompute_advance_budget_move"
                             string="Recompute"
                             icon="fa-refresh"
                         />
-                    </div>
+                    </div> -->
                     <field name="advance_budget_move_ids" readonly="1">
                         <tree>
                             <field name="expense_id" optional="show" />
+                            <field name="move_id" />
                             <field name="date" />
                             <field name="analytic_group" optional="show" />
                             <field name="analytic_account_id" optional="show" />

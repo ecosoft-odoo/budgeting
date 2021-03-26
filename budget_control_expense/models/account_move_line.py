@@ -2,13 +2,16 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import models
 
+# from odoo.addons.budget_control.tools import filtered_can_commit
+
 
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
     def uncommit_expense_budget(self):
         """For vendor bill in valid state, do uncommit for related expense."""
-        for ml in self:
+        Expense = self.env["hr.expense"]
+        for ml in self.filtered("can_commit"):
             inv_state = ml.move_id.state
             move_type = ml.move_id.move_type
             if move_type in ("entry"):
@@ -19,7 +22,7 @@ class AccountMoveLine(models.Model):
                         continue
                     expense.commit_budget(reverse=True, move_line_id=ml.id)
                 else:  # Cancel or draft, not commitment line
-                    self.env["expense.budget.move"].search(
+                    self.env[Expense._budget_model()].search(
                         [("move_line_id", "=", ml.id)]
                     ).unlink()
 

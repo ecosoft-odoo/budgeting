@@ -85,7 +85,7 @@ class BudgetMoveForward(models.Model):
         value_dict = []
         for doc in docs:
             # Filter out budget move that have been carry forward.
-            analytic = doc[doc._analytic_field]
+            analytic = doc[doc._budget_analytic_field]
             current_move = doc._filter_current_move(analytic)
             current_commit_move = sum(current_move.mapped("debit")) - sum(
                 current_move.mapped("credit")
@@ -149,7 +149,7 @@ class BudgetMoveForward(models.Model):
                 if not doclines:
                     continue
                 for docline in doclines:
-                    analytic = docline[docline._analytic_field]
+                    analytic = docline[docline._budget_analytic_field]
                     next_analytic = analytic.next_year_analytic()
                     docline.commit_budget(reverse=True)
                     budget_move = docline.commit_budget()

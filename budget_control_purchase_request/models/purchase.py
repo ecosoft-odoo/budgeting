@@ -6,7 +6,6 @@ from odoo import models
 class PurchaseOrder(models.Model):
     _inherit = "purchase.order"
 
-    # def _write(self, vals):  TODO: using _write() seem not ok for test script
     def write(self, vals):
         """Uncommit budget for source purchase request document."""
         res = super().write(vals)
@@ -20,7 +19,7 @@ class PurchaseOrderLine(models.Model):
 
     def uncommit_purchase_request_budget(self):
         """For purchase in valid state, do uncommit for related PR."""
-        for po_line in self:
+        for po_line in self.filtered("can_commit"):
             po_state = po_line.order_id.state
             if po_state in ("purchase", "done"):
                 for pr_line in po_line.purchase_request_lines:
