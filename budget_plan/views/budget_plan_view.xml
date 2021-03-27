@@ -25,6 +25,11 @@
                 />
                 <separator />
                 <filter
+                    name="current_period"
+                    string="Current Period"
+                    domain="[('date_to', '&gt;=', context_today().strftime('%Y-%m-%d')), ('date_from', '&lt;=', context_today().strftime('%Y-%m-%d'))]"
+                />
+                <filter
                     name="archived"
                     string="Archived"
                     domain="[('active', '=', False)]"
@@ -129,6 +134,8 @@
                     <group>
                         <group name="budget_plan_left">
                             <field name="budget_period_id" />
+                            <field name="date_from" />
+                            <field name="date_to" />
                             <field name="total_amount" />
                         </group>
                         <group name="budget_plan_right">
@@ -167,7 +174,7 @@
                                         sum="Total Released"
                                     />
                                     <field name="amount" sum="Total Amount" />
-                                    <field name="spent" sum="Total Spent" />
+                                    <field name="spent_amount" sum="Total Spent" />
                                     <field name="active" optional="show" />
                                 </tree>
                             </field>
@@ -199,6 +206,9 @@
         <field name="name">Budget Plan</field>
         <field name="res_model">budget.plan</field>
         <field name="view_mode">tree,form</field>
+        <field
+            name="context"
+        >{'active_test': False, 'search_default_current_period': 1}</field>
     </record>
 
     <menuitem
