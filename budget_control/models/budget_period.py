@@ -417,7 +417,7 @@ class BudgetPeriod(models.Model):
                             kpi_name, analytic_name, fomatted_balance
                         )
                     )
-        return warnings
+        return list(set(warnings))
 
     @api.model
     def _get_amount_balance_currency(

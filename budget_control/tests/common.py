@@ -3,21 +3,21 @@
 from datetime import datetime
 
 from dateutil.rrule import MONTHLY
-from freezegun import freeze_time
 
 from odoo.tests.common import Form, SavepointCase
 
 
 class BudgetControlCommon(SavepointCase):
     @classmethod
-    @freeze_time("2001-02-01")
     def setUpClass(cls):
         super().setUpClass()
         cls.year = datetime.now().year
         RangeType = cls.env["date.range.type"]
-        Analytic = cls.env["account.analytic.account"]
-        BudgetControl = cls.env["budget.control"]
+        cls.Analytic = cls.env["account.analytic.account"]
+        cls.BudgetControl = cls.env["budget.control"]
         Partner = cls.env["res.partner"]
+        # Vendor
+        cls.vendor = Partner.create({"name": "Sample Vendor"})
         # Create quarterly date range for current year
         cls.date_range_type = RangeType.create({"name": "TestQuarter"})
         cls._create_date_range_quarter(cls)
@@ -58,30 +58,8 @@ class BudgetControlCommon(SavepointCase):
         )
         # Create budget.control for CostCenter1,
         #  by selected budget_id and date range (by quarter)
-        cls.costcenter1 = Analytic.create({"name": "CostCenter1"})
-        cls.costcenterX = Analytic.create({"name": "CostCenterX"})
-        cls.budget_control = BudgetControl.create(
-            {
-                "name": "CostCenter1/%s" % cls.year,
-                "budget_id": cls.budget_period.mis_budget_id.id,
-                "analytic_account_id": cls.costcenter1.id,
-                "plan_date_range_type_id": cls.date_range_type.id,
-            }
-        )
-        # Test item created for 3 kpi x 4 quarters = 12 budget items
-        assert len(cls.budget_control.item_ids) == 12
-        # Assign budget.control amount: KPI1 = 100x4=400, KPI2=800, KPI3=1,200
-        cls.budget_control.item_ids.filtered(
-            lambda x: x.kpi_expression_id == cls.kpi1.expression_ids[0]
-        ).write({"amount": 100})
-        cls.budget_control.item_ids.filtered(
-            lambda x: x.kpi_expression_id == cls.kpi2.expression_ids[0]
-        ).write({"amount": 200})
-        cls.budget_control.item_ids.filtered(
-            lambda x: x.kpi_expression_id == cls.kpi3.expression_ids[0]
-        ).write({"amount": 300})
-        # Vendor
-        cls.vendor = Partner.create({"name": "Sample Vendor"})
+        cls.costcenter1 = cls.Analytic.create({"name": "CostCenter1"})
+        cls.costcenterX = cls.Analytic.create({"name": "CostCenterX"})
 
     def _create_date_range_quarter(self):
         Generator = self.env["date.range.generator"]
