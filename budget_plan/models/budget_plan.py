@@ -22,6 +22,8 @@ class BudgetPlan(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
+    date_from = fields.Date(related="budget_period_id.bm_date_from")
+    date_to = fields.Date(related="budget_period_id.bm_date_to")
     budget_control_ids = fields.One2many(
         comodel_name="budget.control",
         inverse_name="plan_id",
@@ -179,7 +181,7 @@ class BudgetPlanLine(models.Model):
         compute="_compute_released_amount", store=True, readonly=True
     )
     amount = fields.Float()
-    spent = fields.Float(readonly=True)
+    spent_amount = fields.Float(readonly=True)
     active = fields.Boolean(default=True)
 
     @api.depends("plan_id.budget_control_ids.released_amount")
