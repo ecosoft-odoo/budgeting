@@ -23,4 +23,12 @@ class ExpenseBudgetMove(models.Model):
     )
     move_id = fields.Many2one(
         comodel_name="account.move",
+        related="move_line_id.move_id",
+        store=True,
+    )
+    move_line_id = fields.Many2one(
+        comodel_name="account.move.line",
+        readonly=True,
+        index=True,
+        help="Uncommit budget from this move_line_id",
     )

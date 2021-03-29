@@ -7,8 +7,8 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     def write(self, vals):
-        """Uncommit budget for source purchase document."""
+        """Uncommit budget for source expense document."""
         res = super().write(vals)
         if vals.get("state") in ("draft", "posted", "cancel"):
-            self.mapped("invoice_line_ids").uncommit_purchase_budget()
+            self.mapped("line_ids").uncommit_expense_budget()
         return res

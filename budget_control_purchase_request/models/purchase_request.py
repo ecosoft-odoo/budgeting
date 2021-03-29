@@ -15,7 +15,6 @@ class PurchaseRequest(models.Model):
     def recompute_budget_move(self):
         self.mapped("line_ids").recompute_budget_move()
 
-    # def _write(self, vals):  TODO: using _write() seem not ok for test script
     def write(self, vals):
         """
         - Commit budget when state changes to approved
@@ -34,7 +33,7 @@ class PurchaseRequest(models.Model):
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
             BudgetPeriod.check_budget(
-                doc.budget_move_ids, doc_type="purchase_request"
+                doc.line_ids, doc_type="purchase_request"
             )
         return res
 
@@ -44,14 +43,12 @@ class PurchaseRequest(models.Model):
         self.flush()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
-            pr_line = doc.line_ids
-            date_required = set(pr_line.mapped("date_required"))
             BudgetPeriod.with_context(
-                {"date_manual": date_required.pop()}
+                {"date_manual": max(doc.line_ids.mapped("date_required"))}
             ).check_budget(
                 doc.line_ids,
                 doc_type="purchase_request",
-                amount_precommit=sum(pr_line.mapped("estimated_cost")),
+                amount_precommit=sum(doc.line_ids.mapped("estimated_cost")),
             )
         return res
 
@@ -59,13 +56,21 @@ class PurchaseRequest(models.Model):
 class PurchaseRequestLine(models.Model):
     _name = "purchase.request.line"
     _inherit = ["purchase.request.line", "budget.docline.mixin"]
-    _doc_date_fields = ["request_id.write_date"]
+    _budget_date_commit_fields = ["request_id.write_date"]
 
     budget_move_ids = fields.One2many(
         comodel_name="purchase.request.budget.move",
         inverse_name="purchase_request_line_id",
         string="Purchase Request Budget Moves",
     )
+    account_id = fields.Many2one(
+        comodel_name="account.account",
+        compute="_compute_account_id",
+    )
+
+    def _compute_account_id(self):
+        for rec in self:
+            rec.account_id = rec._get_pr_line_account()
 
     def recompute_budget_move(self):
         for pr_line in self:
@@ -81,11 +86,11 @@ class PurchaseRequestLine(models.Model):
         ]
         return account
 
-    def commit_budget(self, reverse=False, purchase_line_id=False):
+    def commit_budget(self, reverse=False, **kwargs):
         """Create budget commit for each purchase.request.line."""
-        self.ensure_one()
-        if self.can_commit() and self.request_id.state in ("approved", "done"):
-            account = self._get_pr_line_account()
+        self.prepare_commit()
+        if self.can_commit and self.request_id.state in ("approved", "done"):
+            account = self.account_id
             analytic_account = self.analytic_account_id
             amount_currency = self.estimated_cost
             currency = False  # no currency, amount = amount_currency
@@ -101,9 +106,11 @@ class PurchaseRequestLine(models.Model):
             vals.update(
                 {
                     "purchase_request_line_id": self.id,
-                    "purchase_line_id": purchase_line_id,
                 }
             )
+            # Assign kwargs where value is not False
+            vals.update({k: v for k, v in kwargs.items() if v})
+            # Create budget move
             budget_move = self.env["purchase.request.budget.move"].create(vals)
             if reverse:  # On reverse, make sure not over returned
                 self.env["budget.period"].check_over_returned_budget(

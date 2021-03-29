@@ -15,7 +15,6 @@ class PurchaseOrder(models.Model):
     def recompute_budget_move(self):
         self.mapped("order_line").recompute_budget_move()
 
-    # def _write(self, vals):  TODO: using _write() seem not ok for test script
     def write(self, vals):
         """
         - Commit budget when state changes to purchase
@@ -23,7 +22,6 @@ class PurchaseOrder(models.Model):
         """
         res = super().write(vals)
         if vals.get("state") in ("purchase", "cancel", "draft"):
-            purchase_line = self.mapped("order_line")
             for purchase_line in self.mapped("order_line"):
                 purchase_line.commit_budget()
         return res
@@ -33,21 +31,29 @@ class PurchaseOrder(models.Model):
         self.flush()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
-            BudgetPeriod.check_budget(doc.budget_move_ids, doc_type="purchase")
+            BudgetPeriod.check_budget(doc.order_line, doc_type="purchase")
         return res
 
 
 class PurchaseOrderLine(models.Model):
     _name = "purchase.order.line"
     _inherit = ["purchase.order.line", "budget.docline.mixin"]
-    _analytic_field = "account_analytic_id"
-    _doc_date_fields = ["order_id.write_date"]
+    _budget_analytic_field = "account_analytic_id"
+    _budget_date_commit_fields = ["order_id.write_date"]
 
     budget_move_ids = fields.One2many(
         comodel_name="purchase.budget.move",
         inverse_name="purchase_line_id",
         string="Purchase Budget Moves",
     )
+    account_id = fields.Many2one(
+        comodel_name="account.account",
+        compute="_compute_account_id",
+    )
+
+    def _compute_account_id(self):
+        for rec in self:
+            rec.account_id = rec._get_po_line_account()
 
     def recompute_budget_move(self):
         for purchase_line in self:
@@ -69,22 +75,20 @@ class PurchaseOrderLine(models.Model):
     ):
         self.ensure_one()
         budget_period = self.env["budget.period"]._get_eligible_budget_period(
-            date, doc_type
+            date, doc_type=doc_type
         )
         amount_currency = product_qty * self.price_unit
         if budget_period.include_tax:
             amount_currency += product_qty * self.price_tax / self.product_qty
         return amount_currency
 
-    def commit_budget(
-        self, product_qty=False, reverse=False, move_line_id=False
-    ):
+    def commit_budget(self, product_qty=False, reverse=False, **kwargs):
         """Create budget commit for each purchase.order.line."""
-        self.ensure_one()
-        if self.can_commit() and self.state in ("purchase", "done"):
+        self.prepare_commit()
+        if self.can_commit and self.state in ("purchase", "done"):
             if not product_qty:
                 product_qty = self.product_qty
-            account = self._get_po_line_account()
+            account = self.account_id
             analytic_account = self.account_analytic_id
             amount_currency = self._check_amount_currency_tax(
                 product_qty, self.date_commit
@@ -103,9 +107,11 @@ class PurchaseOrderLine(models.Model):
                 {
                     "purchase_line_id": self.id,
                     "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
-                    "move_line_id": move_line_id,
                 }
             )
+            # Assign kwargs where value is not False
+            vals.update({k: v for k, v in kwargs.items() if v})
+            # Create budget move
             budget_move = self.env["purchase.budget.move"].create(vals)
             if reverse:  # On reverse, make sure not over returned
                 self.env["budget.period"].check_over_returned_budget(

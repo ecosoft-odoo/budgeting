@@ -64,9 +64,16 @@ class BaseBudgetMove(models.AbstractModel):
 class BudgetDoclineMixin(models.AbstractModel):
     _name = "budget.docline.mixin"
     _description = "Mixin used in each document line model that commit budget"
-    _analytic_field = "analytic_account_id"
-    _doc_date_fields = []  # Date used for budget commitment
+    # Budget related variables
+    _budget_analytic_field = "analytic_account_id"
+    _budget_date_commit_fields = []  # Date used for budget commitment
+    _budget_move_model = False  # account.budget.move
+    _budget_move_field = "budget_move_ids"
 
+    can_commit = fields.Boolean(
+        compute="_compute_can_commit",
+        help="If checked, do not create budget moves from this line",
+    )
     amount_commit = fields.Float(
         compute="_compute_commit",
         copy=False,
@@ -78,6 +85,14 @@ class BudgetDoclineMixin(models.AbstractModel):
         copy=False,
         readonly=False,  # Allow manual entry of this field
     )
+
+    @api.depends()
+    def _compute_can_commit(self):
+        """ Test that this document eligible for budget commit """
+        dom = [(f, "!=", False) for f in self._required_fields_to_commit()]
+        records = self.filtered_domain(dom)
+        records.update({"can_commit": True})
+        (self - records).update({"can_commit": False})
 
     def _filter_current_move(self, analytic):
         self.ensure_one()
@@ -107,16 +122,18 @@ class BudgetDoclineMixin(models.AbstractModel):
         docline = self
         if docline.date_commit:
             return
-        if not self._doc_date_fields:
-            raise ValidationError(_("'_doc_date_fields' is not set!"))
-        analytic = docline[self._analytic_field]
+        if not self._budget_date_commit_fields:
+            raise ValidationError(
+                _("'_budget_date_commit_fields' is not set!")
+            )
+        analytic = docline[self._budget_analytic_field]
         if not analytic:
             docline.date_commit = False
             return
-        # Get dates following _doc_date_fields
+        # Get dates following _budget_date_commit_fields
         dates = [
             docline.mapped(f)[0]
-            for f in self._doc_date_fields
+            for f in self._budget_date_commit_fields
             if docline.mapped(f)[0]
         ]
         if dates:
@@ -135,7 +152,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         self,
         account,
         analytic_account,
-        doc_date,
+        date_commit,
         amount_currency,
         currency,
         reverse=False,
@@ -145,16 +162,16 @@ class BudgetDoclineMixin(models.AbstractModel):
         amount = (
             currency
             and currency._convert(
-                amount_currency, company.currency_id, company, doc_date
+                amount_currency, company.currency_id, company, date_commit
             )
             or amount_currency
         )
         # By default, commit date is equal to document date
         # this is correct for normal case, but may require different date
         # in case of budget that carried to new period/year
-        commit_date = (
-            self._context.get("force_commit_date")
-            or doc_date
+        date_commit = (
+            self._context.get("force_date_commit")
+            or date_commit
             or fields.Date.context_today(self)
         )
         res = {
@@ -162,7 +179,7 @@ class BudgetDoclineMixin(models.AbstractModel):
             "account_id": account.id,
             "analytic_account_id": analytic_account.id,
             "analytic_group": analytic_account.group_id.id,
-            "date": commit_date,
+            "date": date_commit,
             "amount_currency": amount_currency,
             "debit": not reverse and amount or 0,
             "credit": reverse and amount or 0,
@@ -172,27 +189,22 @@ class BudgetDoclineMixin(models.AbstractModel):
             res["debit"], res["credit"] = abs(res["credit"]), abs(res["debit"])
         return res
 
-    def commit_budget(self):
+    def commit_budget(self, reverse=False, **kwargs):
         pass
 
     def _required_fields_to_commit(self):
-        return [self._analytic_field]
+        return [self._budget_analytic_field]
 
-    def can_commit(self):
+    def prepare_commit(self):
         self.ensure_one()
-        dom = [(f, "!=", False) for f in self._required_fields_to_commit()]
-        docline = self.filtered_domain(dom)
-        if not docline:
-            return False
-        docline._set_date_commit()
-        docline._check_date_commit()  # Testing only, can be removed when stable.
-        return True
+        self._set_date_commit()
+        self._check_date_commit()  # Testing only, can be removed when stable
 
     def _check_date_commit(self):
         """ Commit date must inline with analytic account """
         self.ensure_one()
         docline = self
-        analytic = docline[self._analytic_field]
+        analytic = docline[self._budget_analytic_field]
         if analytic:
             if not docline.date_commit:
                 raise UserError(_("No budget commitment date"))

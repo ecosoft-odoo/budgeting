@@ -1,7 +1,49 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import api, fields, models
-from odoo.tools import float_compare
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+
+
+class HRExpenseSheet(models.Model):
+    _inherit = "hr.expense.sheet"
+
+    advance_budget_move_ids = fields.One2many(
+        comodel_name="advance.budget.move",
+        inverse_name="sheet_id",
+    )
+
+    @api.constrains(
+        "advance_sheet_id",
+        "expense_line_ids",
+        "expense_line_ids.analytic_account_id",
+    )
+    def _check_analtyic_advance(self):
+        """ To clear advance, analytic must equal to the clear advance's """
+        clear_advances = self.filtered("advance_sheet_id")
+        for sheet in clear_advances:
+            advance = sheet.advance_sheet_id
+            adv_analytic = advance.expense_line_ids.mapped(
+                "analytic_account_id"
+            )
+            adv_analytic.ensure_one()
+            if (
+                sheet.expense_line_ids.mapped("analytic_account_id")
+                != adv_analytic
+            ):
+                raise UserError(
+                    _(
+                        "All selected analytic must equal to its clearing advance: %s"
+                    )
+                    % adv_analytic.display_name
+                )
+
+    def write(self, vals):
+        """ Clearing for its Advance """
+        res = super().write(vals)
+        if vals.get("state") in ("approve", "cancel"):
+            clearings = self.filtered("advance_sheet_id")
+            clearings.mapped("expense_line_ids").uncommit_advance_budget()
+        return res
 
 
 class HRExpense(models.Model):
@@ -12,118 +54,48 @@ class HRExpense(models.Model):
         inverse_name="expense_id",
     )
 
-    def _filter_current_move(self, analytic):
-        self.ensure_one()
-        if self._context.get("advance", False):
-            return self.advance_budget_move_ids.filtered(
-                lambda l: l.analytic_account_id == analytic
+    def _get_account_move_by_sheet(self):
+        # When advance create move, do set not_affect_budget = True
+        move_grouped_by_sheet = super()._get_account_move_by_sheet()
+        for sheet in self.mapped("sheet_id").filtered("advance"):
+            move_grouped_by_sheet[sheet.id].not_affect_budget = True
+        return move_grouped_by_sheet
+
+    def recompute_budget_move(self):
+        # Expenses
+        expenses = self.filtered(lambda l: not l.advance)
+        super(HRExpense, expenses).recompute_budget_move()
+        # Advances
+        advances = self.filtered(lambda l: l.advance).with_context(
+            alt_budget_move_model="advance.budget.move",
+            alt_budget_move_field="advance_budget_move_ids",
+        )
+        super(HRExpense, advances).recompute_budget_move()
+
+    def commit_budget(self, reverse=False, **kwargs):
+        if self.advance:
+            self = self.with_context(
+                alt_budget_move_model="advance.budget.move",
+                alt_budget_move_field="advance_budget_move_ids",
             )
-        return super()._filter_current_move(analytic)
+        return super().commit_budget(reverse=reverse, **kwargs)
 
-    @api.depends(
-        "budget_move_ids", "budget_move_ids.date", "advance_budget_move_ids"
-    )
-    def _compute_commit(self):
-        """
-        Step to compute amount_commit and date_commit with case advance:
-            1. Create advance > Approved
-            2. Create Clearing > Approved
-            3. Post Journal Entries
-        Example advance clearing 100.0
-        ==============================
-        Advance | Clearing  | Actual
-        ==============================
-        100.0   | 0.0       | 0.0       ----> (1)
-        0.0     | 100.0     | 0.0       ----> (2)
-        0.0     | 0.0       | 100.0     ----> (3)
-        ------------------------------
-        """
-        rounding = self.env.user.company_id.currency_id.rounding
-        for rec in self:
-            if rec.advance_budget_move_ids:
-                advance_id = rec.sheet_id.advance_sheet_id
-                # advance
-                if not advance_id:
-                    debit = sum(rec.advance_budget_move_ids.mapped("debit"))
-                    credit = sum(rec.advance_budget_move_ids.mapped("credit"))
-                    rec.amount_commit = debit - credit
-                    rec.date_commit = (
-                        min(rec.advance_budget_move_ids.mapped("date"))
-                        or False
+    def uncommit_advance_budget(self):
+        """For clearing in valid state, do uncommit for related Advance."""
+        for clearing in self.filtered("can_commit"):
+            cl_state = clearing.sheet_id.state
+            if cl_state in ("approve", "done"):
+                # !!! There is no direct reference between advance and c    learing !!!
+                # for advance in clearing.advance_line_ids:
+                # There is only 1 line of advance, but we want write this same as others
+                for (
+                    advance
+                ) in clearing.sheet_id.advance_sheet_id.expense_line_ids:
+                    advance.commit_budget(
+                        reverse=True, clearing_id=clearing.id
                     )
-                    continue
-                # commit clearing
-                debit = sum(rec.budget_move_ids.mapped("debit"))
-                credit = sum(rec.budget_move_ids.mapped("credit"))
-                rec.amount_commit = debit - credit
-                if (
-                    float_compare(
-                        rec.amount_commit, 0.0, precision_rounding=rounding
-                    )
-                    != 0
-                ):
-                    # commit advance previous
-                    debit = sum(
-                        advance_id.advance_budget_move_ids.mapped("debit")
-                    )
-                    credit = sum(
-                        advance_id.advance_budget_move_ids.mapped("credit")
-                    )
-                    total_clearing = debit - credit
-                    advance_id.expense_line_ids.amount_commit -= total_clearing
-                if rec.budget_move_ids:
-                    rec.date_commit = min(rec.budget_move_ids.mapped("date"))
-                else:
-                    rec.date_commit = False
             else:
-                super()._compute_commit()
-
-    def _budget_move_create(self, vals):
-        """
-        Case Expense
-        - Increase expense on expense
-        Case Advance
-        - Increase advance on employee advance
-        Case Clearing
-        - Decrease advance on origin employee advance
-        - Increase expense on expense
-        """
-        self.ensure_one()
-        new_vals = vals.copy()
-        sheet_advance = self.sheet_id.advance_sheet_id  # clearing
-        if not self.advance and not sheet_advance:
-            return super()._budget_move_create(vals)
-        if self.advance:
-            budget_move = self.env["advance.budget.move"].create(new_vals)
-            return budget_move
-        budget_move = False
-        expense_advance = sheet_advance.expense_line_ids
-        if expense_advance and new_vals["debit"]:
-            new_vals["credit"] = new_vals["debit"]
-            new_vals["debit"] = 0.0
-            new_vals["activity_id"] = expense_advance.activity_id.id
-            budget_move = self.env["advance.budget.move"].create(new_vals)
-        super()._budget_move_create(vals)
-        return budget_move
-
-    def _budget_move_unlink(self):
-        self.ensure_one()
-        sheet_advance = self.sheet_id.advance_sheet_id  # clearing
-        if not self.advance and not sheet_advance:
-            return super()._budget_move_unlink()
-        if sheet_advance:
-            super()._budget_move_unlink()
-        return self.advance_budget_move_ids.unlink()
-
-    def _search_domain_expense(self):
-        domain = super()._search_domain_expense()
-        domain = domain and not self.advance
-        return domain
-
-    def _prepare_move_values(self):
-        """ For advance, we want to ensure that account.move is no budget """
-        self.ensure_one()
-        move_values = super()._prepare_move_values()
-        if self.advance:
-            move_values["not_affect_budget"] = True
-        return move_values
+                # Cancel or draft, not commitment line
+                self.env["advance.budget.move"].search(
+                    [("clearing_id", "=", clearing.id)]
+                ).unlink()

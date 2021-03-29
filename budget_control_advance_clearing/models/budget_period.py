@@ -1,6 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class BudgetPeriod(models.Model):
@@ -41,4 +41,19 @@ class BudgetPeriod(models.Model):
             "amount_advance",
             [("source_aml_model_id.model", "=", "advance.budget.move")],
             kwargs,
+        )
+
+    @api.model
+    def check_budget(self, doclines, doc_type="account", amount_precommit=0.0):
+        if doclines._name == "hr.expense":
+            sheet = doclines.mapped("sheet_id")
+            sheet.ensure_one()
+            if sheet.advance:
+                doc_type = "advance"
+                self = self.with_context(
+                    alt_budget_move_model="advance.budget.move",
+                    alt_budget_move_field="advance_budget_move_ids",
+                )
+        return super().check_budget(
+            doclines, doc_type=doc_type, amount_precommit=amount_precommit
         )

@@ -3,34 +3,84 @@
 from odoo import fields, models
 
 
+class HRExpenseSheet(models.Model):
+    _inherit = "hr.expense.sheet"
+
+    budget_move_ids = fields.One2many(
+        comodel_name="expense.budget.move",
+        inverse_name="sheet_id",
+    )
+
+    def recompute_budget_move(self):
+        self.mapped("expense_line_ids").recompute_budget_move()
+
+    def write(self, vals):
+        """
+        - UnCommit budget when state post
+        - Cancel/Draft document should delete all budget commitment
+        """
+        res = super().write(vals)
+        if vals.get("state") in ("approve", "cancel", "draft"):
+            for expense in self.mapped("expense_line_ids"):
+                expense.commit_budget()
+        return res
+
+    def approve_expense_sheets(self):
+        res = super().approve_expense_sheets()
+        self.flush()
+        BudgetPeriod = self.env["budget.period"]
+        for doc in self:
+            BudgetPeriod.check_budget(doc.expense_line_ids, doc_type="expense")
+        return res
+
+    def action_submit_sheet(self):
+        res = super().action_submit_sheet()
+        self.flush()
+        BudgetPeriod = self.env["budget.period"]
+        for doc in self:
+            BudgetPeriod.with_context(
+                date_manual=max(doc.expense_line_ids.mapped("date"))
+            ).check_budget(
+                doc.expense_line_ids,
+                doc_type="expense",
+                amount_precommit=doc.total_amount,
+            )
+        return res
+
+
 class HRExpense(models.Model):
     _name = "hr.expense"
     _inherit = ["hr.expense", "budget.docline.mixin"]
-    _doc_date_fields = ["sheet_id.write_date"]
+    _budget_date_commit_fields = ["sheet_id.write_date"]
 
     budget_move_ids = fields.One2many(
         comodel_name="expense.budget.move",
         inverse_name="expense_id",
     )
 
+    def _budget_model(self):
+        return (
+            self.env.context.get("alt_budget_move_model")
+            or "expense.budget.move"
+        )
+
+    def _budget_field(self):
+        return (
+            self.env.context.get("alt_budget_move_field") or "budget_move_ids"
+        )
+
     def recompute_budget_move(self):
-        self.mapped("budget_move_ids").unlink()
-        self.commit_budget()
-        self.uncommit_expense_budget()
-
-    def _budget_move_create(self, vals):
-        self.ensure_one()
-        budget_move = self.env["expense.budget.move"].create(vals)
-        return budget_move
-
-    def _budget_move_unlink(self):
-        self.ensure_one()
-        self.budget_move_ids.unlink()
+        MoveLine = self.env["account.move.line"]
+        for expense in self:
+            expense[self._budget_field()].unlink()
+            expense.commit_budget()
+            move_lines = MoveLine.search([("expense_id", "in", expense.ids)])
+            move_lines.uncommit_expense_budget()
 
     def _check_amount_currency_tax(self, date, doc_type="expense"):
         self.ensure_one()
         budget_period = self.env["budget.period"]._get_eligible_budget_period(
-            date, doc_type
+            date, doc_type=doc_type
         )
         amount_currency = (
             budget_period.include_tax
@@ -39,57 +89,37 @@ class HRExpense(models.Model):
         )
         return amount_currency
 
-    def commit_budget(self, reverse=False):
+    def commit_budget(self, reverse=False, **kwargs):
         """Create budget commit for each expense."""
-        doc_model = False
-        for expense in self:
-            if expense.can_commit() and expense.state in ("approved", "done"):
-                account = expense.account_id
-                analytic_account = expense.analytic_account_id
-                amount_currency = expense._check_amount_currency_tax(
-                    self.date_commit
+        self.prepare_commit()
+        if self.can_commit and self.state in ("approved", "done"):
+            account = self.account_id
+            analytic_account = self.analytic_account_id
+            amount_currency = self._check_amount_currency_tax(self.date_commit)
+            currency = self.currency_id
+            vals = self._prepare_budget_commitment(
+                account,
+                analytic_account,
+                self.date_commit,
+                amount_currency,
+                currency,
+                reverse=reverse,
+            )
+            # Document specific vals
+            vals.update(
+                {
+                    "expense_id": self.id,
+                    "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
+                }
+            )
+            # Assign kwargs where value is not False
+            vals.update({k: v for k, v in kwargs.items() if v})
+            # Create budget move
+            budget_move = self.env[self._budget_model()].create(vals)
+            if reverse:  # On reverse, make sure not over returned
+                self.env["budget.period"].check_over_returned_budget(
+                    self.sheet_id
                 )
-                currency = expense.currency_id
-                vals = expense._prepare_budget_commitment(
-                    account,
-                    analytic_account,
-                    self.date_commit,
-                    amount_currency,
-                    currency,
-                    reverse=reverse,
-                )
-                # Document specific vals
-                vals.update(
-                    {
-                        "expense_id": expense.id,
-                        "analytic_tag_ids": [
-                            (6, 0, expense.analytic_tag_ids.ids)
-                        ],
-                    }
-                )
-                budget_move = expense._budget_move_create(vals)
-                if reverse:  # On reverse, make sure not over returned
-                    self.env["budget.period"].check_over_returned_budget(
-                        self.sheet_id
-                    )
-                if not doc_model:
-                    doc_model = budget_move
-                else:
-                    doc_model |= budget_move
-            else:
-                expense._budget_move_unlink()
-            return doc_model
-
-    def _search_domain_expense(self):
-        domain = self.sheet_id.state in ("post", "done") and self.state in (
-            "approved",
-            "done",
-        )
-        return domain
-
-    def uncommit_expense_budget(self):
-        """For vendor bill in valid state, do uncommit for related expense."""
-        for expense in self:
-            domain = expense._search_domain_expense()
-            if domain:
-                expense.commit_budget(reverse=True)
+            return budget_move
+        else:
+            self[self._budget_field()].unlink()
