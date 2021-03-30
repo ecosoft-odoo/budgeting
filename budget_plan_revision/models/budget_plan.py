@@ -17,6 +17,9 @@ class BudgetPlan(models.Model):
     old_revision_ids = fields.One2many(
         comodel_name="budget.plan",
     )
+    init_revision = fields.Boolean(
+        string="Initial Version", default=True, readonly=True
+    )
     revision_number = fields.Integer()
     enable_revision_number = fields.Boolean(
         compute="_compute_group_revision_number"
@@ -68,6 +71,12 @@ class BudgetPlan(models.Model):
             rec.action_create_budget_control()
         return True
 
+    def action_create_budget_control(self):
+        res = super().action_create_budget_control()
+        self.ensure_one()
+        self.init_revision = False
+        return res
+
     def create_revision(self):
         """ Update amount from old budget control to new plan line """
         # TODO: this function should be multi???
@@ -81,7 +90,10 @@ class BudgetPlan(models.Model):
             budget_controls = line.analytic_account_id.budget_control_ids
             # Use budget_control for this period.
             budget_control = budget_controls.filtered_domain(
-                [("budget_period_id", "=", self.budget_period_id.id)]
+                [
+                    ("budget_period_id", "=", self.budget_period_id.id),
+                    ("active", "=", True),
+                ]
             )
             allocated_amount = budget_control.allocated_amount
             released_amount = budget_control.released_amount
@@ -99,6 +111,7 @@ class BudgetPlan(models.Model):
                     "amount": released_amount,
                 }
             )
+        new_plan.action_update_spent_amount()
         return res
 
 

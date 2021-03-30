@@ -20,7 +20,7 @@
             <button name="action_create_budget_control" position="attributes">
                 <attribute
                     name="attrs"
-                >{'invisible': ['|', '|', ('budget_control_count', '!=', 0), ('state', '!=', 'done'), ('revision_number', '!=', 0)]}</attribute>
+                >{'invisible': ['|', '|', ('budget_control_count', '!=', 0), ('state', '!=', 'done'), ('init_revision', '!=', True)]}</attribute>
             </button>
             <xpath
                 expr="//header/button[@name='action_create_budget_control']"
@@ -39,11 +39,12 @@
                     class="oe_highlight"
                     string="Update Budget Control"
                     type="object"
-                    attrs="{'invisible': ['|', '|', ('revision_number', '=', 0), ('budget_control_count', '!=', 0), ('state', '!=', 'done')]}"
+                    attrs="{'invisible': ['|', '|', ('init_revision', '=', True), ('budget_control_count', '!=', 0), ('state', '!=', 'done')]}"
                 />
             </xpath>
             <xpath expr="//group[@name='budget_plan_right']" position="inside">
                 <field name="enable_revision_number" invisible="1" />
+                <field name="init_revision" />
                 <field
                     name="revision_number"
                     attrs="{'readonly': [('enable_revision_number', '=', False)]}"

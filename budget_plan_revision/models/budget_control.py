@@ -7,6 +7,19 @@ from odoo import models
 class BudgetControl(models.Model):
     _inherit = "budget.control"
 
+    _sql_constraints = [
+        (
+            "name_uniq",
+            "UNIQUE(name, revision_number, active)",
+            "Name must be unique!",
+        ),
+        (
+            "budget_control_uniq",
+            "UNIQUE(budget_id, analytic_account_id, revision_number, active)",
+            "Duplicated analytic account for the same budget!",
+        ),
+    ]
+
     def _domain_kpi_expression(self):
         """ Update kpi_ids, case budget plan revision """
         kpi_ids = self._context.get("kpi_ids", False)

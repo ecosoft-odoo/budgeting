@@ -160,6 +160,13 @@
                                     type="object"
                                     states="draft"
                                 />
+                                <button
+                                    name="action_update_spent_amount"
+                                    string="Update Spent"
+                                    icon="fa-refresh"
+                                    type="object"
+                                    states="draft,done"
+                                />
                             </div>
                             <field name="plan_line">
                                 <tree editable="bottom">
