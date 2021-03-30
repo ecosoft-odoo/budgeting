@@ -7,12 +7,13 @@ from odoo.exceptions import UserError
 class BudgetPeriod(models.Model):
     _inherit = "budget.period"
 
-    def _prepare_controls_activity(self, budget_period, budget_moves):
+    def _prepare_controls_activity(self, budget_period, doclines):
         controls = set()
         control_analytics = budget_period.control_analytic_account_ids
-        for i in budget_moves:
+        _analytic_field = doclines._budget_analytic_field
+        for i in doclines:
             if budget_period.control_all_analytic_accounts:
-                if i.analytic_account_id and i.activity_id:
+                if i[_analytic_field] and i.activity_id:
                     controls.add((i.analytic_account_id.id, i.activity_id.id))
             else:  # Only analtyic in control
                 if (
@@ -24,10 +25,10 @@ class BudgetPeriod(models.Model):
         return [{"analytic_id": x[0], "activity_id": x[1]} for x in controls]
 
     @api.model
-    def _prepare_controls(self, budget_period, budget_moves):
+    def _prepare_controls(self, budget_period, doclines):
         if budget_period.report_id.is_activity:
-            return self._prepare_controls_activity(budget_period, budget_moves)
-        return super()._prepare_controls(budget_period, budget_moves)
+            return self._prepare_controls_activity(budget_period, doclines)
+        return super()._prepare_controls(budget_period, doclines)
 
     @api.model
     def _get_kpi_by_control_key(self, instance, kpis, control):
