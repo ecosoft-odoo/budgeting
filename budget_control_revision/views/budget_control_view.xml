@@ -45,7 +45,10 @@
                     context="{'active_model': 'budget.control'}"
                 />
             </xpath>
-            <xpath expr="//group[@name='budget_control_right']" position="inside">
+            <xpath
+                expr="//group[@name='budget_control_right']/field[@name='budget_period_id']"
+                position="before"
+            >
                 <field name="revision_number" />
             </xpath>
             <xpath expr="//notebook" position="inside">

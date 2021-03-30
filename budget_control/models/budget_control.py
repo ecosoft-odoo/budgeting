@@ -78,7 +78,7 @@ class BudgetControl(models.Model):
         readonly=True,
         states={
             "draft": [("readonly", False)],
-            "released": [("readonly", False)],
+            "submit": [("readonly", False)],
         },
     )
     plan_date_range_type_id = fields.Many2one(
@@ -144,7 +144,7 @@ class BudgetControl(models.Model):
     state = fields.Selection(
         [
             ("draft", "Draft"),
-            ("released", "Released"),
+            ("submit", "Submitted"),
             ("done", "Controlled"),
             ("cancel", "Cancelled"),
         ],
@@ -163,6 +163,16 @@ class BudgetControl(models.Model):
             "Duplicated analytic account for the same budget!",
         ),
     ]
+
+    def action_confirm_state(self):
+        return {
+            "name": _("Confirmation"),
+            "type": "ir.actions.act_window",
+            "res_model": "budget.state.confirmation",
+            "view_mode": "form",
+            "target": "new",
+            "context": self._context,
+        }
 
     @api.depends("date_from", "date_to")
     def _compute_budget_period_id(self):
@@ -186,8 +196,9 @@ class BudgetControl(models.Model):
         return 0
 
     def _compute_budget_info(self):
+        BudgetPeriod = self.env["budget.period"]
         for rec in self:
-            budget_period = self.env["budget.period"].search(
+            budget_period = BudgetPeriod.search(
                 [("mis_budget_id", "=", rec.budget_id.id)]
             )
             analytic_ids = [rec.analytic_account_id.id]
@@ -276,8 +287,8 @@ class BudgetControl(models.Model):
     def action_draft(self):
         self.write({"state": "draft"})
 
-    def action_released(self):
-        self.write({"state": "released"})
+    def action_submit(self):
+        self.write({"state": "submit"})
 
     def action_done(self):
         for rec in self:

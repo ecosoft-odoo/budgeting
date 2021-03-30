@@ -33,7 +33,7 @@
                                 name="state"
                                 widget="badge"
                                 decoration-success="state == 'done'"
-                                decoration-info="state in ['draft', 'released']"
+                                decoration-info="state in ['draft', 'submit']"
                             />
                         </tree>
                     </field>

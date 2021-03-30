@@ -111,7 +111,7 @@ class BudgetPlan(models.Model):
                     "amount": released_amount,
                 }
             )
-        new_plan.action_update_spent_amount()
+        new_plan.action_update_amount_consumed()
         return res
 
 
