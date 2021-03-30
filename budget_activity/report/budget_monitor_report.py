@@ -11,33 +11,24 @@ class BudgetMonitorReport(models.Model):
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query.append("null::char as activity")
+        if not self._context.get("skip_activity"):
+            select_budget_query.append("null::char as activity")
         return select_budget_query
-
-    def _from_budget(self):
-        from_budget_query = super()._from_budget()
-        from_budget_query = "\n".join(
-            [
-                from_budget_query,
-                "join mis_report_kpi_expression mrke on "
-                "mbi.kpi_expression_id = mrke.id",
-                "join mis_report_kpi mrk on mrke.kpi_id = mrk.id",
-            ]
-        )
-        return from_budget_query
 
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)
-        select_statement.append("ba.name as activity")
+        if not self._context.get("skip_activity"):
+            select_statement.append("ba.name as activity")
         return select_statement
 
     def _from_statement(self, amount_type):
         from_statment = super()._from_statement(amount_type)
-        return "\n".join(
+        from_statment = "\n".join(
             [
                 from_statment,
                 "left outer join budget_activity ba "
                 "on a.activity_id = ba.id",
             ]
         )
+        return from_statment
