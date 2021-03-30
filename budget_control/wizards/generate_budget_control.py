@@ -149,6 +149,6 @@ class GenerateBudgetControl(models.TransientModel):
     def action_view_budget_control(self):
         self.ensure_one()
         action = self.env.ref("budget_control.budget_control_action")
-        result = action.read()[0]
+        result = action.sudo().read()[0]
         result["domain"] = [("id", "in", self.result_budget_control_ids.ids)]
         return result

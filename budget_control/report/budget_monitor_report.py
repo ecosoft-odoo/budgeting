@@ -159,9 +159,9 @@ class BudgetMonitorReport(models.Model):
 
     def _get_sql(self):
         select_budget_query = self._select_budget()
-        select_budget = ", ".join(select_budget_query)
+        select_budget = ", ".join(sorted(select_budget_query))
         select_actual_query = self._select_statement("8_actual")
-        select_actual = ", ".join(select_actual_query)
+        select_actual = ", ".join(sorted(select_actual_query))
         return "(select {} {} {}) union (select {} {} {})".format(
             select_budget,
             self._from_budget(),

@@ -76,6 +76,12 @@ class BudgetPlan(models.Model):
         for rec in self:
             rec.budget_control_count = len(rec.budget_control_ids)
 
+    def action_update_spent_amount(self):
+        for rec in self:
+            for line in rec.plan_line:
+                budget_control = line.analytic_account_id.budget_control_ids
+                line.spent_amount = sum(budget_control.mapped("amount_commit"))
+
     def button_open_budget_control(self):
         self.ensure_one()
         action = {
@@ -181,7 +187,7 @@ class BudgetPlanLine(models.Model):
         compute="_compute_released_amount", store=True, readonly=True
     )
     amount = fields.Float()
-    spent_amount = fields.Float(readonly=True)
+    spent_amount = fields.Float(string="Spent", readonly=True)
     active = fields.Boolean(default=True)
 
     @api.depends("plan_id.budget_control_ids.released_amount")
