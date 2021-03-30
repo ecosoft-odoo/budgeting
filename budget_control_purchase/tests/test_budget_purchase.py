@@ -120,7 +120,7 @@ class TestBudgetControl(BudgetControlCommon):
         (1) Test case, no budget check -> OK
         (2) Check Budget with analytic_kpi -> Error amount exceed on kpi1
         (3) Check Budget with analytic -> OK
-        (2) Check Budget with analytic -> Error amount exceed
+        (4) Check Budget with analytic -> Error amount exceed
         """
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)

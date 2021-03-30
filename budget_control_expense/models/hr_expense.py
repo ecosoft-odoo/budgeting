@@ -38,12 +38,8 @@ class HRExpenseSheet(models.Model):
         self.flush()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
-            BudgetPeriod.with_context(
-                date_manual=max(doc.expense_line_ids.mapped("date"))
-            ).check_budget(
-                doc.expense_line_ids,
-                doc_type="expense",
-                amount_precommit=doc.total_amount,
+            BudgetPeriod.check_budget_precommit(
+                doc.expense_line_ids, doc_type="expense"
             )
         return res
 
@@ -92,7 +88,10 @@ class HRExpense(models.Model):
     def commit_budget(self, reverse=False, **kwargs):
         """Create budget commit for each expense."""
         self.prepare_commit()
-        if self.can_commit and self.state in ("approved", "done"):
+        to_commit = self.env.context.get("force_commit") or (
+            self.can_commit and self.state in ("approved", "done")
+        )
+        if to_commit:
             account = self.account_id
             analytic_account = self.analytic_account_id
             amount_currency = self._check_amount_currency_tax(self.date_commit)

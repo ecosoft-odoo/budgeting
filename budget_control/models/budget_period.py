@@ -186,7 +186,7 @@ class BudgetPeriod(models.Model):
         )
 
     @api.model
-    def check_budget(self, doclines, doc_type="account", amount_precommit=0.0):
+    def check_budget(self, doclines, doc_type="account"):
         """Based in input budget_moves, i.e., account_move_line
         1. Get a valid budget.period (how budget is being controlled)
         2. (1) and doclines, determine what account(kpi)+analytic to ctrl
@@ -201,9 +201,8 @@ class BudgetPeriod(models.Model):
             return
         self = self.sudo()
         # Find active budget.period based on latest doclines date_commit
-        # date_manual is used when is no date_commit, mostly for precommit check
         date_commit = doclines.filtered("date_commit").mapped("date_commit")
-        date_commit = self._context.get("date_manual") or max(date_commit)
+        date_commit = max(date_commit)
         budget_period = self._get_eligible_budget_period(
             date_commit, doc_type=doc_type
         )
@@ -231,11 +230,26 @@ class BudgetPeriod(models.Model):
         )
         warnings = self.with_context(
             date_commit=date_commit, doc_currency=currency
-        )._check_budget_available(instance, controls, kpis, amount_precommit)
+        )._check_budget_available(instance, controls, kpis)
         if warnings:
             msg = "\n".join([_("Budget not sufficient,"), "\n".join(warnings)])
             raise UserError(msg)
         return
+
+    @api.model
+    def check_budget_precommit(self, doclines, doc_type="account"):
+        """Precommit check,
+        first do the normal commit, do checking, and remove commits"""
+        # Commit budget
+        budget_moves = []
+        for line in doclines:
+            budget_move = line.with_context(force_commit=True).commit_budget()
+            budget_moves.append(budget_move)
+        # Check Budget
+        self.env["budget.period"].check_budget(doclines, doc_type=doc_type)
+        # Remove commits
+        for budget_move in budget_moves:
+            budget_move.unlink()
 
     @api.model
     def check_over_returned_budget(self, doc, reverse=False):
@@ -359,9 +373,7 @@ class BudgetPeriod(models.Model):
         return kpi
 
     @api.model
-    def _check_budget_available(
-        self, instance, controls, kpis, amount_precommit=0.0
-    ):
+    def _check_budget_available(self, instance, controls, kpis):
         """
         This function is a CORE function, please modify carefully
         Author: Kitti U.
@@ -384,24 +396,27 @@ class BudgetPeriod(models.Model):
             budget_period = BudgetPeriod.search(
                 [("report_instance_id", "=", instance.id)]
             )
+            balance = False
             if budget_period.control_level == "analytic":
                 kpi_lines = {list(kpis.get(x))[0] for x in kpis}
-                amount_kpis = self._get_kpis_value(
+                balance = self._get_kpis_value(
                     kpi_matrix[analytic_id], kpi_lines, balance_period
                 )
             else:
-                amount_kpis = self._get_kpi_value(
+                balance = self._get_kpi_value(
                     kpi_matrix[analytic_id], list(kpi)[0], balance_period
                 )
-            # From amount_kpis (company currency) and amount_precommit (doc currency)
-            doc_currency = self.env.context.get("doc_currency")
-            balance = self._get_amount_balance_currency(
-                amount_kpis, amount_precommit, doc_currency
-            )
             # Show warning if budget not enough
             if balance < 0:
+                # Convert to document currency
+                company = self.env.user.company_id
+                doc_currency = self.env.context.get("doc_currency")
+                date_commit = self.env.context.get("date_commit")
+                balance_currency = company.currency_id._convert(
+                    balance, doc_currency, company, date_commit
+                )
                 fomatted_balance = format_amount(
-                    self.env, balance, doc_currency
+                    self.env, balance_currency, doc_currency
                 )
                 analytic_name = Analytic.browse(analytic_id).display_name
                 if budget_period.control_level == "analytic":
@@ -418,24 +433,6 @@ class BudgetPeriod(models.Model):
                         )
                     )
         return list(set(warnings))
-
-    @api.model
-    def _get_amount_balance_currency(
-        self, amount_kpis, amount_precommit, to_currency
-    ):
-        date_commit = self.env.context.get("date_commit")
-        # Convert amount_precommit to company currency
-        company = self.env.user.company_id
-        amount_precommit_company = to_currency._convert(
-            amount_precommit, company.currency_id, company, date_commit
-        )
-        # Balance amount in comapny currency
-        amount_balance_company = amount_kpis - amount_precommit_company
-        # Convert to doc_currency
-        balance = company.currency_id._convert(
-            amount_balance_company, to_currency, company, date_commit
-        )
-        return balance
 
     def get_report_amount(
         self, kpi_names=None, col_names=None, analytic_id=False
