@@ -21,7 +21,6 @@ class HRExpenseSheet(models.Model):
             adv_analytic = advance.expense_line_ids.mapped(
                 "analytic_account_id"
             )
-            adv_analytic.ensure_one()
             if (
                 sheet.expense_line_ids.mapped("analytic_account_id")
                 != adv_analytic

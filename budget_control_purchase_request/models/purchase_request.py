@@ -85,10 +85,10 @@ class PurchaseRequestLine(models.Model):
     def commit_budget(self, reverse=False, **kwargs):
         """Create budget commit for each purchase.request.line."""
         self.prepare_commit()
-        to_commit = self.env.context.get("force_commit") or (
-            self.can_commit and self.request_id.state in ("approved", "done")
-        )
-        if to_commit:
+        to_commit = self.env.context.get(
+            "force_commit"
+        ) or self.request_id.state in ("approved", "done")
+        if self.can_commit and to_commit:
             account = self.account_id
             analytic_account = self.analytic_account_id
             amount_currency = self.estimated_cost

@@ -120,8 +120,8 @@ class BudgetDoclineMixin(models.AbstractModel):
         which is mostly write_date during budget commitment"""
         self.ensure_one()
         docline = self
-        if docline.date_commit:
-            return
+        if self.env.context.get("force_date_commit"):
+            docline.date_commit = self.env.context["force_date_commit"]
         if not self._budget_date_commit_fields:
             raise ValidationError(
                 _("'_budget_date_commit_fields' is not set!")
@@ -129,6 +129,8 @@ class BudgetDoclineMixin(models.AbstractModel):
         analytic = docline[self._budget_analytic_field]
         if not analytic:
             docline.date_commit = False
+            return
+        if docline.date_commit:
             return
         # Get dates following _budget_date_commit_fields
         dates = [
@@ -169,17 +171,13 @@ class BudgetDoclineMixin(models.AbstractModel):
         # By default, commit date is equal to document date
         # this is correct for normal case, but may require different date
         # in case of budget that carried to new period/year
-        date_commit = (
-            self._context.get("force_date_commit")
-            or date_commit
-            or fields.Date.context_today(self)
-        )
+        today = fields.Date.context_today(self)
         res = {
             "product_id": self.product_id.id,
             "account_id": account.id,
             "analytic_account_id": analytic_account.id,
             "analytic_group": analytic_account.group_id.id,
-            "date": date_commit,
+            "date": date_commit or today,
             "amount_currency": amount_currency,
             "debit": not reverse and amount or 0,
             "credit": reverse and amount or 0,

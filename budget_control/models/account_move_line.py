@@ -44,10 +44,11 @@ class AccountMoveLine(models.Model):
     def commit_budget(self, reverse=False, **kwargs):
         """Create budget commit for each move line."""
         self.prepare_commit()
-        to_commit = self.env.context.get("force_commit") or (
-            self.can_commit and self.move_id.state == "posted"
+        to_commit = (
+            self.env.context.get("force_commit")
+            or self.move_id.state == "posted"
         )
-        if to_commit:
+        if self.can_commit and to_commit:
             account = self.account_id
             analytic_account = self.analytic_account_id
             amount_currency = self._check_amount_currency_tax(self.date_commit)

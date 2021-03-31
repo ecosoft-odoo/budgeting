@@ -8,14 +8,15 @@
             ref="hr_expense_advance_clearing.hr_expense_view_form"
         />
         <field name="arch" type="xml">
+            <!-- Bring back, as removed from hr_expense_advance_clearing -->
             <field name="analytic_account_id" position="attributes">
                 <attribute name="attrs">
-                    {'invisible': [False]}
+                    {'readonly': [('is_editable', '=', False)]}
                 </attribute>
             </field>
             <field name="analytic_tag_ids" position="attributes">
                 <attribute name="attrs">
-                    {'invisible': [False]}
+                    {'readonly': [('is_editable', '=', False)]}
                 </attribute>
             </field>
         </field>

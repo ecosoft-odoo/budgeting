@@ -246,7 +246,8 @@ class BudgetPeriod(models.Model):
         budget_moves = []
         for line in doclines:
             budget_move = line.with_context(force_commit=True).commit_budget()
-            budget_moves.append(budget_move)
+            if budget_move:
+                budget_moves.append(budget_move)
         # Check Budget
         self.env["budget.period"].check_budget(doclines, doc_type=doc_type)
         # Remove commits

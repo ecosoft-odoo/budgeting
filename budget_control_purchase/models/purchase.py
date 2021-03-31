@@ -85,7 +85,11 @@ class PurchaseOrderLine(models.Model):
     def commit_budget(self, product_qty=False, reverse=False, **kwargs):
         """Create budget commit for each purchase.order.line."""
         self.prepare_commit()
-        if self.can_commit and self.state in ("purchase", "done"):
+        to_commit = self.env.context.get("force_commit") or self.state in (
+            "purchase",
+            "done",
+        )
+        if self.can_commit and to_commit:
             if not product_qty:
                 product_qty = self.product_qty
             account = self.account_id
