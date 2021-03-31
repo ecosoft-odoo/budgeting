@@ -3,8 +3,7 @@
 
 import ast
 
-from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo import api, fields, models
 
 
 class BudgetPlan(models.Model):
@@ -37,15 +36,11 @@ class BudgetPlan(models.Model):
     def _compute_budget_control_related_count(self):
         return super()._compute_budget_control_related_count()
 
-    def _check_state_budget_control(self):
-        for rec in self:
-            bc_state = set(rec.budget_control_ids.mapped("state"))
-            if len(bc_state) != 1 or "cancel" not in bc_state:
-                raise UserError(
-                    _(
-                        "Can not revision. All budget control have to state 'cancel'"
-                    )
-                )
+    def _cancel_budget_control(self):
+        self.ensure_one()
+        budget_control = self.budget_control_ids
+        budget_control.action_cancel()
+        return budget_control
 
     def _get_context_wizard(self):
         ctx = super()._get_context_wizard()
@@ -54,46 +49,82 @@ class BudgetPlan(models.Model):
 
     def _hook_new_budget_plan(self, new_plan):
         """ Hooks for do something new plan """
+        new_plan.init_revision = False
         return True
 
-    def create_revision_budget_control(self):
+    def _update_new_analytic_plan(self, analytic_plan, budget_control):
+        """
+        Add new analytic in budget plan,
+        it should be new revision from old lasted and overwrite number.
+        """
+        Analytic = self.env["account.analytic.account"]
+        ctx = self._context.copy()
+        ctx.update(
+            {"revision_number": self.revision_number, "skip_revision": True}
+        )
+        if len(analytic_plan) > len(budget_control):
+            new_analytic = analytic_plan - budget_control.mapped(
+                "analytic_account_id"
+            )
+            for analytic in new_analytic:
+                bc_current = analytic.budget_control_ids.filtered(
+                    lambda l: l.budget_period_id == self.budget_period_id
+                )
+                if not bc_current:
+                    Analytic += analytic
+                bc_current.with_context(ctx).create_revision()
+            # new analytic, never revision
+            if Analytic:
+                self._generate_budget_control(Analytic)
+                Analytic.mapped("budget_control_ids")
+
+    def action_revision_budget_control(self):
         """
         Crete new revision Budget Control following:
             1. Inactive current version budget control
             2. Create new budget control from budget plan
         """
+        self.ensure_one()
+        BudgetControl = self.env["budget.control"]
         ctx = self._context.copy()
         ctx.update({"revision_number": self.revision_number})
-        for rec in self:
-            old_lasted = rec.old_revision_ids[0]
-            old_lasted._check_state_budget_control()
-            old_lasted.budget_control_ids.write({"active": False})
-            rec.action_create_budget_control()
+        analytic_plan = self._get_analytic_plan()
+        # Old version budget control
+        old_lasted = self.old_revision_ids[0]
+        self._update_active_budget_control(
+            analytic_plan, old_lasted.budget_control_ids
+        )
+        self._update_new_analytic_plan(
+            analytic_plan, old_lasted.budget_control_ids
+        )
+        old_budget_control = old_lasted._cancel_budget_control()
+        # New version budget control
+        action_bc = old_budget_control.create_revision()
+        domain = ast.literal_eval(action_bc.get("domain", False))
+        budget_controls = BudgetControl.browse(domain[0][2])
+        budget_controls.write({"plan_id": self.id})
+        budget_controls._update_allocated_amount(self.plan_line)
         return True
 
-    def action_create_budget_control(self):
-        res = super().action_create_budget_control()
+    def action_create_update_budget_control(self):
         self.ensure_one()
-        self.init_revision = False
-        return res
+        if not (self.init_revision or self.budget_control_ids):
+            return self.action_revision_budget_control()
+        return super().action_create_update_budget_control()
 
     def create_revision(self):
         """ Update amount from old budget control to new plan line """
-        # TODO: this function should be multi???
-        self._check_state_budget_control()
         res = super().create_revision()
         domain = ast.literal_eval(res.get("domain", False))
         new_plan = self.browse(domain[0][2])
         self._hook_new_budget_plan(new_plan)
         new_plan_line = new_plan.mapped("plan_line")
         for line in new_plan_line:
-            budget_controls = line.analytic_account_id.budget_control_ids
             # Use budget_control for this period.
-            budget_control = budget_controls.filtered_domain(
-                [
-                    ("budget_period_id", "=", self.budget_period_id.id),
-                    ("active", "=", True),
-                ]
+            budget_control = (
+                line.analytic_account_id.budget_control_ids.filtered(
+                    lambda l: l.budget_period_id.id == self.budget_period_id.id
+                )
             )
             allocated_amount = budget_control.allocated_amount
             released_amount = budget_control.released_amount

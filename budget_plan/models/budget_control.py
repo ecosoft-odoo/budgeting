@@ -19,3 +19,12 @@ class BudgetControl(models.Model):
         readonly=True,
         help="Released Amount compute from budget plan.",
     )
+
+    def _update_allocated_amount(self, plan_line):
+        for rec in self:
+            bc_plan_line = plan_line.filtered(
+                lambda l: l.analytic_account_id.id
+                == rec.analytic_account_id.id
+            )
+            if bc_plan_line.allocated_amount != rec.allocated_amount:
+                rec.write({"allocated_amount": bc_plan_line.allocated_amount})

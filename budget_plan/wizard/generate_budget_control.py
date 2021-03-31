@@ -10,6 +10,14 @@ class GenerateBudgetControl(models.TransientModel):
         comodel_name="budget.plan",
     )
 
+    def _get_existing_budget(self):
+        """ Update allocated amount from budget plan """
+        existing_budget = super()._get_existing_budget()
+        if self.budget_plan_id:
+            plan_line = self.budget_plan_id.plan_line
+            existing_budget._update_allocated_amount(plan_line)
+        return existing_budget
+
     def _prepare_value_duplicate(self, vals):
         if self.budget_plan_id:
             plan_date_range_id = (
