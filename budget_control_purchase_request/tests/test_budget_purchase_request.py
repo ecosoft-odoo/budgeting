@@ -58,7 +58,7 @@ class TestBudgetControl(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def test_01_budget_purchase_request(self):
         """
-        On Purchase Order
+        On Purchase Request
         (1) Test case, no budget check -> OK
         (2) Check Budget with analytic_kpi -> Error amount exceed on kpi1
         (3) Check Budget with analytic -> OK
@@ -114,56 +114,63 @@ class TestBudgetControl(BudgetControlCommon):
         with self.assertRaises(UserError):
             purchase_request.button_to_approve()
 
-    # @freeze_time("2001-02-01")
-    # def test_02_budget_purchase_to_invoice(self):
-    #     """
-    #     On Purchase Order
-    #     (1) Test case, no budget check -> OK
-    #     (2) Check Budget with analytic_kpi -> Error amount exceed on kpi1
-    #     (3) Check Budget with analytic -> OK
-    #     (4) Check Budget with analytic -> Error amount exceed
-    #     """
-    #     # KPI1 = 100, KPI2 = 200, Total = 300
-    #     self.assertEqual(300, self.budget_control.amount_budget)
-    #     # Prepare PO on kpi1 with qty 3 and unit_price 10
-    #     purchase = self._create_purchase(
-    #         [
-    #             {
-    #                 "product_id": self.product1,  # KPI1 = 30
-    #                 "product_qty": 3,
-    #                 "price_unit": 10,
-    #                 "analytic_id": self.costcenter1,
-    #             },
-    #         ]
-    #     )
-    #     self.budget_period.purchase = True
-    #     self.budget_period.control_level = "analytic"
-    #     purchase = purchase.with_context(force_date_commit=purchase.date_order)
-    #     purchase.button_confirm()
-    #     # PO Commit = 30, INV Actual = 0, Balance = 270
-    #     self.assertEqual(self.budget_control.amount_commit, 30)
-    #     self.assertEqual(self.budget_control.amount_actual, 0)
-    #     self.assertEqual(self.budget_control.amount_balance, 270)
-    #     # Create and post invoice
-    #     purchase.action_create_invoice()
-    #     self.assertEqual(purchase.invoice_status, "invoiced")
-    #     invoice = purchase.invoice_ids[:1]
-    #     # Change qty to 1
-    #     invoice.with_context(check_move_validity=False).invoice_line_ids[
-    #         0
-    #     ].quantity = 1
-    #     invoice.with_context(
-    #         check_move_validity=False
-    #     )._onchange_invoice_line_ids()
-    #     invoice.action_post()
-    #     # PO Commit = 20, INV Actual = 10, Balance = 270
-    #     self.budget_control.invalidate_cache()
-    #     self.assertEqual(self.budget_control.amount_commit, 20)
-    #     self.assertEqual(self.budget_control.amount_actual, 10)
-    #     self.assertEqual(self.budget_control.amount_balance, 270)
-    #     # # Cancel invoice
-    #     invoice.button_cancel()
-    #     self.budget_control.invalidate_cache()
-    #     self.assertEqual(self.budget_control.amount_commit, 30)
-    #     self.assertEqual(self.budget_control.amount_actual, 0)
-    #     self.assertEqual(self.budget_control.amount_balance, 270)
+    @freeze_time("2001-02-01")
+    def test_02_budget_pr_to_po(self):
+        """ PR to PO normally don't care about Quantity, it will uncommit all """
+        # KPI1 = 100, KPI2 = 200, Total = 300
+        self.assertEqual(300, self.budget_control.amount_budget)
+        # Prepare PR
+        purchase_request = self._create_purchase_request(
+            [
+                {
+                    "product_id": self.product1,  # KPI1 = 30
+                    "product_qty": 3,
+                    "estimated_cost": 30,
+                    "analytic_id": self.costcenter1,
+                },
+            ]
+        )
+        # Check budget as analytic
+        self.budget_period.purchase_request = True
+        self.budget_period.purchase = True
+        self.budget_period.control_level = "analytic"
+
+        purchase_request = purchase_request.with_context(
+            force_date_commit=purchase_request.date_start
+        )
+        self.assertEqual(self.budget_control.amount_balance, 300)
+        purchase_request.button_to_approve()
+        purchase_request.button_approved()  # No budget check no error
+        # PR Commit = 30, PO Commit = 0, Balance = 270
+        self.assertEqual(self.budget_control.amount_purchase_request, 30)
+        self.assertEqual(self.budget_control.amount_purchase, 0)
+        self.assertEqual(self.budget_control.amount_balance, 270)
+        # Create PR from PO
+        MakePO = self.env["purchase.request.line.make.purchase.order"]
+        view_id = (
+            "purchase_request.view_purchase_request_line_make_purchase_order"
+        )
+        ctx = {
+            "active_model": "purchase.request",
+            "active_ids": [purchase_request.id],
+        }
+        with Form(MakePO.with_context(ctx), view=view_id) as w:
+            w.supplier_id = self.vendor
+        wizard = w.save()
+        res = wizard.make_purchase_order()
+        purchase = self.env["purchase.order"].search(res["domain"])
+        # Change quantity and price_unit of purchase
+        self.assertEqual(purchase.order_line[0].product_qty, 3)
+        purchase.order_line[0].product_qty = 2
+        purchase.order_line[0].price_unit = 25
+        purchase = purchase.with_context(force_date_commit=purchase.date_order)
+        purchase.button_confirm()
+        # PR will return all, PR Commit = 0, PO Commit = 40, Balance = 260
+        self.assertEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertEqual(self.budget_control.amount_purchase, 50)
+        self.assertEqual(self.budget_control.amount_balance, 250)
+        # Cancel PO
+        purchase.button_cancel()
+        self.assertEqual(self.budget_control.amount_purchase_request, 30)
+        self.assertEqual(self.budget_control.amount_purchase, 0)
+        self.assertEqual(self.budget_control.amount_balance, 270)
