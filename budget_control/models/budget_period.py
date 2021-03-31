@@ -240,6 +240,8 @@ class BudgetPeriod(models.Model):
     def check_budget_precommit(self, doclines, doc_type="account"):
         """Precommit check,
         first do the normal commit, do checking, and remove commits"""
+        if not doclines:
+            return
         # Commit budget
         budget_moves = []
         for line in doclines:

@@ -45,6 +45,8 @@ class BudgetPeriod(models.Model):
 
     @api.model
     def check_budget(self, doclines, doc_type="account"):
+        if not doclines:
+            return
         if doclines._name == "hr.expense":
             sheet = doclines.mapped("sheet_id")
             sheet.ensure_one()

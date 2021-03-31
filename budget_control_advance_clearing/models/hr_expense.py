@@ -12,11 +12,7 @@ class HRExpenseSheet(models.Model):
         inverse_name="sheet_id",
     )
 
-    @api.constrains(
-        "advance_sheet_id",
-        "expense_line_ids",
-        "expense_line_ids.analytic_account_id",
-    )
+    @api.constrains("advance_sheet_id", "expense_line_ids")
     def _check_analtyic_advance(self):
         """ To clear advance, analytic must equal to the clear advance's """
         clear_advances = self.filtered("advance_sheet_id")
