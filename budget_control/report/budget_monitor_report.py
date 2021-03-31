@@ -124,20 +124,20 @@ class BudgetMonitorReport(models.Model):
             1000000000 + mbi.id as id,
             'mis.budget.item,' || mbi.id as res_id,
             mbi.analytic_account_id,
-            bc.analytic_group,
+            b.analytic_group,
             mbi.date_from as date,  -- approx date
             '1_budget' as amount_type,
             mbi.amount as amount,
             null::integer as product_id,
             null::integer as account_id,
-            bc.name as reference
+            b.name as reference
         """
         ]
 
     def _from_budget(self):
         return """
             from mis_budget_item mbi
-            left outer join budget_control bc on mbi.budget_control_id = bc.id
+            left outer join budget_control b on mbi.budget_control_id = b.id
         """
 
     def _where_budget(self):

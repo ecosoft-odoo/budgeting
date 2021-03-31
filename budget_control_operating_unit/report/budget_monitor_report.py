@@ -11,7 +11,7 @@ class BudgetMonitorReport(models.Model):
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query.append("bc.operating_unit_id")
+        select_budget_query.append("b.operating_unit_id")
         return select_budget_query
 
     # All consumed
