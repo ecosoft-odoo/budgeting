@@ -1,7 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from datetime import datetime
 
 from freezegun import freeze_time
 
@@ -40,26 +39,34 @@ class TestBudgetControl(BudgetControlCommon):
         cls.budget_control.action_done()
 
     @freeze_time("2001-02-01")
-    def _create_purchase(self, po_lines):
-        Purchase = self.env["purchase.order"]
-        view_id = "purchase.purchase_order_form"
+    def _create_expense_sheet(self, ex_lines):
+        Expense = self.env["hr.expense"]
+        view_id = "hr_expense.hr_expense_view_form"
         ctx = {}
-        with Form(Purchase.with_context(ctx), view=view_id) as po:
-            po.partner_id = self.vendor
-            po.date_order = datetime.today()
-            for po_line in po_lines:
-                with po.order_line.new() as line:
-                    line.product_id = po_line["product_id"]
-                    line.product_qty = po_line["product_qty"]
-                    line.price_unit = po_line["price_unit"]
-                    line.account_analytic_id = po_line["analytic_id"]
-        purchase = po.save()
-        return purchase
+        expense_ids = []
+        user = self.env.ref("base.user_admin")
+        for ex_line in ex_lines:
+            with Form(Expense.with_context(ctx), view=view_id) as ex:
+                ex.employee_id = user.employee_id
+                ex.product_id = ex_line["product_id"]
+                ex.quantity = ex_line["product_qty"]
+                ex.unit_amount = ex_line["price_unit"]
+                ex.analytic_account_id = ex_line["analytic_id"]
+            expense = ex.save()
+            expense_ids.append(expense.id)
+        expense_sheet = self.env["hr.expense.sheet"].create(
+            {
+                "name": "Test Expense",
+                "employee_id": user.employee_id.id,
+                "expense_line_ids": [(6, 0, expense_ids)],
+            }
+        )
+        return expense_sheet
 
     @freeze_time("2001-02-01")
-    def test_01_budget_purchase(self):
+    def test_01_budget_expense(self):
         """
-        On Purchase Order
+        On Expense Sheet
         (1) Test case, no budget check -> OK
         (2) Check Budget with analytic_kpi -> Error amount exceed on kpi1
         (3) Check Budget with analytic -> OK
@@ -67,8 +74,8 @@ class TestBudgetControl(BudgetControlCommon):
         """
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
-        # Prepare PO
-        purchase = self._create_purchase(
+        # Prepare Expense Sheet
+        expense = self._create_expense_sheet(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 101 -> error
@@ -84,79 +91,73 @@ class TestBudgetControl(BudgetControlCommon):
                 },
             ]
         )
-
         # (1) No budget check first
-        self.budget_period.purchase = False
+        self.budget_period.expense = False
         self.budget_period.control_level = "analytic_kpi"
         # force date commit, as freeze_time not work for write_date
-        purchase = purchase.with_context(force_date_commit=purchase.date_order)
-        purchase.button_confirm()  # No budget check no error
+        expense = expense.with_context(
+            force_date_commit=expense.expense_line_ids[:1].date
+        )
+        expense.action_submit_sheet()  # No budget check no error
         # (2) Check Budget with analytic_kpi -> Error
-        purchase.button_cancel()
-        purchase.button_draft()
-        self.budget_period.purchase = True  # Set to check budget
+        expense.reset_expense_sheets()
+        self.budget_period.expense = True  # Set to check budget
         # kpi 1 (kpi1) & CostCenter1, will result in $ -1.00
         with self.assertRaises(UserError):
-            purchase.button_confirm()
+            expense.action_submit_sheet()
         # (3) Check Budget with analytic -> OK
-        purchase.button_cancel()
-        purchase.button_draft()
+        expense.reset_expense_sheets()
         self.budget_period.control_level = "analytic"
-        purchase.button_confirm()
+        expense.action_submit_sheet()
+        expense.approve_expense_sheets()
         self.assertEqual(self.budget_control.amount_balance, 1)
-        purchase.button_cancel()
+        expense.reset_expense_sheets()
         self.assertEqual(self.budget_control.amount_balance, 300)
         # (4) Amount exceed -> Error
-        purchase.order_line[1].price_unit = 100
-        purchase.button_draft()
+        expense.expense_line_ids.write({"unit_amount": 101})
         # CostCenter1, will result in $ -1.00
         with self.assertRaises(UserError):
-            purchase.button_confirm()
+            expense.action_submit_sheet()
 
     @freeze_time("2001-02-01")
-    def test_02_budget_purchase_to_invoice(self):
-        """ Purcahse to Invoice, commit and uncommit """
+    def test_02_budget_expense_to_journal_posting(self):
+        """ Expense to Journal Posting, commit and uncommit """
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
-        # Prepare PO on kpi1 with qty 3 and unit_price 10
-        purchase = self._create_purchase(
+        # Prepare Expense on kpi1 with qty 3 and unit_price 10
+        expense = self._create_expense_sheet(
             [
                 {
-                    "product_id": self.product1,  # KPI1 = 30
+                    "product_id": self.product1,  # KPI1 = 101 -> error
                     "product_qty": 3,
                     "price_unit": 10,
                     "analytic_id": self.costcenter1,
                 },
             ]
         )
-        self.budget_period.purchase = True
+        self.budget_period.expense = True
         self.budget_period.control_level = "analytic"
-        purchase = purchase.with_context(force_date_commit=purchase.date_order)
-        purchase.button_confirm()
-        # PO Commit = 30, INV Actual = 0, Balance = 270
-        self.assertEqual(self.budget_control.amount_commit, 30)
+        expense = expense.with_context(
+            force_date_commit=expense.expense_line_ids[:1].date
+        )
+        expense.action_submit_sheet()
+        expense.approve_expense_sheets()
+        # Expense = 30, JE Actual = 0, Balance = 270
+        self.assertEqual(self.budget_control.amount_expense, 30)
         self.assertEqual(self.budget_control.amount_actual, 0)
         self.assertEqual(self.budget_control.amount_balance, 270)
         # Create and post invoice
-        purchase.action_create_invoice()
-        self.assertEqual(purchase.invoice_status, "invoiced")
-        invoice = purchase.invoice_ids[:1]
-        # Change qty to 1
-        invoice.with_context(check_move_validity=False).invoice_line_ids[
-            0
-        ].quantity = 1
-        invoice.with_context(
-            check_move_validity=False
-        )._onchange_invoice_line_ids()
-        invoice.action_post()
-        # PO Commit = 20, INV Actual = 10, Balance = 270
+        expense.action_sheet_move_create()
+        move = expense.account_move_id
+        self.assertEqual(move.state, "posted")
+        # EX Commit = 0, JE Actual = 30, Balance = 270
         self.budget_control.invalidate_cache()
-        self.assertEqual(self.budget_control.amount_commit, 20)
-        self.assertEqual(self.budget_control.amount_actual, 10)
+        self.assertEqual(self.budget_control.amount_expense, 0)
+        self.assertEqual(self.budget_control.amount_actual, 30)
         self.assertEqual(self.budget_control.amount_balance, 270)
-        # # Cancel invoice
-        invoice.button_cancel()
+        # # Cancel journal entry
+        move.button_cancel()
         self.budget_control.invalidate_cache()
-        self.assertEqual(self.budget_control.amount_commit, 30)
+        self.assertEqual(self.budget_control.amount_expense, 30)
         self.assertEqual(self.budget_control.amount_actual, 0)
         self.assertEqual(self.budget_control.amount_balance, 270)
