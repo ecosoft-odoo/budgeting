@@ -43,12 +43,8 @@ class PurchaseRequest(models.Model):
         self.flush()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
-            BudgetPeriod.with_context(
-                {"date_manual": max(doc.line_ids.mapped("date_required"))}
-            ).check_budget(
-                doc.line_ids,
-                doc_type="purchase_request",
-                amount_precommit=sum(doc.line_ids.mapped("estimated_cost")),
+            BudgetPeriod.check_budget_precommit(
+                doc.line_ids, doc_type="purchase_request"
             )
         return res
 
@@ -89,7 +85,10 @@ class PurchaseRequestLine(models.Model):
     def commit_budget(self, reverse=False, **kwargs):
         """Create budget commit for each purchase.request.line."""
         self.prepare_commit()
-        if self.can_commit and self.request_id.state in ("approved", "done"):
+        to_commit = self.env.context.get("force_commit") or (
+            self.can_commit and self.request_id.state in ("approved", "done")
+        )
+        if to_commit:
             account = self.account_id
             analytic_account = self.analytic_account_id
             amount_currency = self.estimated_cost

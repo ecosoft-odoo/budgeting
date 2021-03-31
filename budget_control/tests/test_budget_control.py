@@ -12,6 +12,32 @@ from .common import BudgetControlCommon
 
 @tagged("post_install", "-at_install")
 class TestBudgetControl(BudgetControlCommon):
+    @classmethod
+    @freeze_time("2001-02-01")
+    def setUpClass(cls):
+        super().setUpClass()
+        # Create sample ready to use Budget Control
+        cls.budget_control = cls.BudgetControl.create(
+            {
+                "name": "CostCenter1/%s" % cls.year,
+                "budget_id": cls.budget_period.mis_budget_id.id,
+                "analytic_account_id": cls.costcenter1.id,
+                "plan_date_range_type_id": cls.date_range_type.id,
+            }
+        )
+        # Test item created for 3 kpi x 4 quarters = 12 budget items
+        assert len(cls.budget_control.item_ids) == 12
+        # Assign budget.control amount: KPI1 = 100x4=400, KPI2=800, KPI3=1,200
+        cls.budget_control.item_ids.filtered(
+            lambda x: x.kpi_expression_id == cls.kpi1.expression_ids[0]
+        ).write({"amount": 100})
+        cls.budget_control.item_ids.filtered(
+            lambda x: x.kpi_expression_id == cls.kpi2.expression_ids[0]
+        ).write({"amount": 200})
+        cls.budget_control.item_ids.filtered(
+            lambda x: x.kpi_expression_id == cls.kpi3.expression_ids[0]
+        ).write({"amount": 300})
+
     @freeze_time("2001-02-01")
     def test_01_no_budget_control_check(self):
         """Invoice with analytic that has no budget_control candidate,

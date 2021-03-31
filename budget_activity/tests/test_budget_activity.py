@@ -6,11 +6,23 @@ from freezegun import freeze_time
 from odoo.tests import tagged
 from odoo.tests.common import Form
 
-from .common import BudgetActivityCommon
+from odoo.addons.budget_control.tests.common import BudgetControlCommon
 
 
 @tagged("post_install", "-at_install")
-class TestBudgetControl(BudgetActivityCommon):
+class TestBudgetControl(BudgetControlCommon):
+    @classmethod
+    @freeze_time("2001-02-01")
+    def setUpClass(cls):
+        super().setUpClass()
+        BudgetActivity = cls.env["budget.activity"]  # Create sample activity
+        cls.activity1 = BudgetActivity.create(
+            {"name": "Activity 1", "account_id": cls.account_kpi1.id}
+        )
+        cls.activity2 = BudgetActivity.create(
+            {"name": "Activity 2", "account_id": cls.account_kpi2.id}
+        )
+
     @freeze_time("2001-02-01")
     def test_01_budget_activity_account(self):
         """

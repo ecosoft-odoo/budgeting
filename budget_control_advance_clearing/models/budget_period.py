@@ -44,7 +44,7 @@ class BudgetPeriod(models.Model):
         )
 
     @api.model
-    def check_budget(self, doclines, doc_type="account", amount_precommit=0.0):
+    def check_budget(self, doclines, doc_type="account"):
         if doclines._name == "hr.expense":
             sheet = doclines.mapped("sheet_id")
             sheet.ensure_one()
@@ -54,6 +54,4 @@ class BudgetPeriod(models.Model):
                     alt_budget_move_model="advance.budget.move",
                     alt_budget_move_field="advance_budget_move_ids",
                 )
-        return super().check_budget(
-            doclines, doc_type=doc_type, amount_precommit=amount_precommit
-        )
+        return super().check_budget(doclines, doc_type=doc_type)
