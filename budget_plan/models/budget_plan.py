@@ -2,6 +2,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 
 class BudgetPlan(models.Model):
@@ -27,7 +29,6 @@ class BudgetPlan(models.Model):
     budget_control_ids = fields.One2many(
         comodel_name="budget.control",
         inverse_name="plan_id",
-        context={"active_test": False},
     )
     budget_control_count = fields.Integer(
         string="# of Budget Control",
@@ -59,6 +60,7 @@ class BudgetPlan(models.Model):
     state = fields.Selection(
         [
             ("draft", "Draft"),
+            ("confirm", "Confirmed"),
             ("done", "Done"),
             ("cancel", "Cancelled"),
         ],
@@ -129,7 +131,7 @@ class BudgetPlan(models.Model):
         return True
 
     def _get_analytic_plan(self):
-        return self.plan_line.filtered("active").mapped("analytic_account_id")
+        return self.plan_line.mapped("analytic_account_id")
 
     def _get_context_wizard(self):
         ctx = {
@@ -138,10 +140,20 @@ class BudgetPlan(models.Model):
         }
         return ctx
 
-    def action_create_budget_control(self):
+    def _update_active_budget_control(
+        self, analytic_plan, budget_control=False
+    ):
+        """ Inactive budget control is not in budget plan """
         self.ensure_one()
+        if not budget_control:
+            budget_control = self.budget_control_ids
+        budget_control_inactive = budget_control.filtered(
+            lambda l: l.analytic_account_id.id not in analytic_plan.ids
+        )
+        budget_control_inactive.write({"state": "cancel", "active": False})
+
+    def _generate_budget_control(self, analytic_plan):
         GenerateBudgetControl = self.env["generate.budget.control"]
-        analytic_plan = self._get_analytic_plan()
         ctx = self._get_context_wizard()
         budget_period = self.budget_period_id
         generate_budget_id = GenerateBudgetControl.with_context(ctx).create(
@@ -157,10 +169,37 @@ class BudgetPlan(models.Model):
         )
         return budget_control_view
 
-    def action_done(self):
+    def action_create_update_budget_control(self):
+        self.ensure_one()
+        analytic_plan = self._get_analytic_plan()
+        budget_control_view = self._generate_budget_control(analytic_plan)
+        self._update_active_budget_control(analytic_plan)
+        return budget_control_view
+
+    def action_confirm(self):
+        self.action_update_amount_consumed()
+        prec_digits = self.env.user.company_id.currency_id.decimal_places
         lines = self.mapped("plan_line")
         for line in lines:
+            if (
+                float_compare(
+                    line.amount,
+                    line.amount_consumed,
+                    precision_digits=prec_digits,
+                )
+                == -1
+            ):
+                raise UserError(
+                    _(
+                        "{} has amount less than consumed.".format(
+                            line.analytic_account_id.display_name
+                        )
+                    )
+                )
             line.allocated_amount = line.released_amount = line.amount
+        self.write({"state": "confirm"})
+
+    def action_done(self):
         self.write({"state": "done"})
 
     def action_cancel(self):

@@ -17,13 +17,17 @@
         <field name="model">budget.plan</field>
         <field name="inherit_id" ref="budget_plan.view_budget_plan_form" />
         <field name="arch" type="xml">
-            <button name="action_create_budget_control" position="attributes">
-                <attribute
-                    name="attrs"
-                >{'invisible': ['|', '|', ('budget_control_count', '!=', 0), ('state', '!=', 'done'), ('init_revision', '!=', True)]}</attribute>
+            <button name="action_confirm" position="attributes">
+                <attribute name="context">{'active_test': True}</attribute>
+            </button>
+            <button name="action_update_amount_consumed" position="attributes">
+                <attribute name="context">{'active_test': True}</attribute>
+            </button>
+            <button name="action_create_update_budget_control" position="attributes">
+                <attribute name="context">{'active_test': True}</attribute>
             </button>
             <xpath
-                expr="//header/button[@name='action_create_budget_control']"
+                expr="//header/button[@name='action_create_update_budget_control']"
                 position="after"
             >
                 <button
@@ -33,13 +37,7 @@
                     type="object"
                     attrs="{'invisible': ['|', ('budget_control_count', '=', 0), ('state', '!=', 'done')]}"
                     confirm="This operation cannot be undone. Are you sure to continue?"
-                />
-                <button
-                    name="create_revision_budget_control"
-                    class="oe_highlight"
-                    string="Update Budget Control"
-                    type="object"
-                    attrs="{'invisible': ['|', '|', ('init_revision', '=', True), ('budget_control_count', '!=', 0), ('state', '!=', 'done')]}"
+                    context="{'active_test': True}"
                 />
             </xpath>
             <xpath expr="//group[@name='budget_plan_right']" position="inside">
@@ -60,8 +58,7 @@
                 <page string="Revisions">
                     <field
                         name="old_revision_ids"
-                        domain="['|', ('active', '=', False), ('active', '=', True)]"
-                        context="{'active_test': False, 'form_view_ref': 'budget_plan.view_budget_plan_form_without_header'}"
+                        context="{'form_view_ref': 'budget_plan.view_budget_plan_form_without_header'}"
                         attrs="{'invisible': [('has_old_revisions', '=', False)]}"
                     >
                         <tree>
@@ -78,6 +75,12 @@
                 </page>
             </xpath>
         </field>
+    </record>
+
+    <record id="budget_plan.budget_plan_action" model="ir.actions.act_window">
+        <field
+            name="context"
+        >{'active_test': False, 'search_default_current_period': 1}</field>
     </record>
 
 </odoo>

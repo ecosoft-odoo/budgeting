@@ -9,6 +9,7 @@ from odoo import fields, models
 class BudgetControl(models.Model):
     _name = "budget.control"
     _inherit = ["budget.control", "base.revision"]
+    _order = "revision_number desc, budget_id desc, analytic_account_id"
 
     current_revision_id = fields.Many2one(
         comodel_name="budget.control",
