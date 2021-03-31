@@ -20,7 +20,7 @@ class MisBudgetItem(models.Model):
     state = fields.Selection(
         [
             ("draft", "Draft"),
-            ("released", "Released"),
+            ("submit", "Submitted"),
             ("done", "Controlled"),
             ("cancel", "Cancelled"),
         ],

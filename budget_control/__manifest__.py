@@ -19,6 +19,7 @@
         "security/ir.model.access.csv",
         "wizards/generate_budget_control_view.xml",
         "wizards/analytic_budget_info_view.xml",
+        "wizards/confirm_state_budget.xml",
         "views/budget_menuitem.xml",
         "views/res_config_settings_views.xml",
         "views/budget_period_view.xml",

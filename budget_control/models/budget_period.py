@@ -265,7 +265,9 @@ class BudgetPeriod(models.Model):
             )
 
     @api.model
-    def _get_eligible_budget_period(self, date, doc_type=False):
+    def _get_eligible_budget_period(self, date=False, doc_type=False):
+        if not date:
+            date = fields.Date.context_today(self)
         BudgetPeriod = self.env["budget.period"]
         budget_period = BudgetPeriod.search(
             [("bm_date_from", "<=", date), ("bm_date_to", ">=", date)]

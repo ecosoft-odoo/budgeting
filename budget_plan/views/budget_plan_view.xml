@@ -161,8 +161,8 @@
                                     states="draft"
                                 />
                                 <button
-                                    name="action_update_spent_amount"
-                                    string="Update Spent"
+                                    name="action_update_amount_consumed"
+                                    string="Update Consumed"
                                     icon="fa-refresh"
                                     type="object"
                                     states="draft,done"
@@ -181,7 +181,10 @@
                                         sum="Total Released"
                                     />
                                     <field name="amount" sum="Total Amount" />
-                                    <field name="spent_amount" sum="Total Spent" />
+                                    <field
+                                        name="amount_consumed"
+                                        sum="Total Consumed"
+                                    />
                                     <field name="active" optional="show" />
                                 </tree>
                             </field>
