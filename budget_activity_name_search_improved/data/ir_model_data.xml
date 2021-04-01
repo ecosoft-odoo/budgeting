@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="budget_activity.model_budget_activity" model="ir.model">
+        <field name="add_smart_search" eval="True" />
+        <field
+            name="name_search_ids"
+            eval="[(6,0,[ref('budget_activity.field_budget_activity__account_id'), ref('budget_activity.field_budget_activity__tag_ids')])]"
+        />
+    </record>
+</odoo>
