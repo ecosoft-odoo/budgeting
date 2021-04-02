@@ -15,6 +15,9 @@ class PurchaseOrder(models.Model):
     def recompute_budget_move(self):
         self.mapped("order_line").recompute_budget_move()
 
+    def close_budget_move(self):
+        self.mapped("order_line").close_budget_move()
+
     def write(self, vals):
         """
         - Commit budget when state changes to purchase

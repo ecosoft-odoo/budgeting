@@ -26,9 +26,21 @@
                             name="recompute_budget_move"
                             string="Recompute"
                             icon="fa-refresh"
+                            groups="budget_control.group_budget_control_manager"
+                        />
+                        <button
+                            type="object"
+                            name="close_budget_move"
+                            string="Close Budget"
+                            icon="fa-times-circle"
+                            groups="budget_control.group_budget_control_manager"
                         />
                     </div>
-                    <field name="budget_move_ids" readonly="1">
+                    <field
+                        name="budget_move_ids"
+                        readonly="1"
+                        attrs="{'invisible': [('budget_move_ids', '=', False)]}"
+                    >
                         <tree>
                             <field name="purchase_line_id" />
                             <field name="move_id" />

@@ -37,7 +37,11 @@
                             icon="fa-refresh"
                         />
                     </div> -->
-                    <field name="advance_budget_move_ids" readonly="1">
+                    <field
+                        name="advance_budget_move_ids"
+                        readonly="1"
+                        attrs="{'invisible': [('advance_budget_move_ids', '=', False)]}"
+                    >
                         <tree>
                             <field name="expense_id" optional="show" />
                             <field name="move_id" />

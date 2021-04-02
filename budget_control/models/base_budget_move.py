@@ -211,11 +211,18 @@ class BudgetDoclineMixin(models.AbstractModel):
             self.env.context.get("force_commit") or self._valid_commit_state()
         )
         if self.can_commit and to_commit:
+            # Set amount_currency
             budget_vals = self._init_docline_budget_vals(vals)
+            # Case use_amount_commit = True
+            if self.env.context.get("use_amount_commit"):
+                budget_vals["amount_currency"] = self.amount_commit
+            # Complete budget commitment dict
             budget_vals = self._update_budget_commitment(
                 budget_vals, reverse=reverse
             )
             # Create budget move
+            if not budget_vals["amount_currency"]:
+                return False
             budget_move = self.env[self._budget_model()].create(budget_vals)
             if reverse:  # On reverse, make sure not over returned
                 self.env["budget.period"].check_over_returned_budget(self)
@@ -257,3 +264,10 @@ class BudgetDoclineMixin(models.AbstractModel):
         else:
             if docline.date_commit:
                 raise UserError(_("Budget commitment date not required"))
+
+    def close_budget_move(self):
+        """ Reverse commit with amount_commit/date_commit to zero budget """
+        for docline in self:
+            docline.with_context(use_amount_commit=True).commit_budget(
+                reverse=True
+            )
