@@ -4,7 +4,7 @@
 
 from freezegun import freeze_time
 
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import Form
 
@@ -77,7 +77,7 @@ class TestBudgetControl(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def _create_clearing_sheet(self, advance, ex_lines):
         Expense = self.env["hr.expense"]
-        view_id = "hr_expense.hr_expense_view_form"
+        view_id = "hr_expense_advance_clearing.hr_expense_view_form"
         ctx = {}
         expense_ids = []
         user = self.env.ref("base.user_admin")
@@ -93,7 +93,7 @@ class TestBudgetControl(BudgetControlCommon):
         expense_sheet = self.env["hr.expense.sheet"].create(
             {
                 "name": "Test Expense",
-                "advance_sheet_id": advance.id,
+                "advance_sheet_id": advance and advance.id,
                 "employee_id": user.employee_id.id,
                 "expense_line_ids": [(6, 0, expense_ids)],
             }
@@ -153,7 +153,10 @@ class TestBudgetControl(BudgetControlCommon):
 
     @freeze_time("2001-02-01")
     def test_02_budget_advance_clearing(self):
-        """ , commit and uncommit """
+        """Advance 100 (which is equal to budget amount), with clearing cases when,
+        - Clearing 80, the uncommit advance should be 80
+        - Clearing 120, the uncommit advance should be 100 (max)
+        """
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Create advance = 100
@@ -167,54 +170,43 @@ class TestBudgetControl(BudgetControlCommon):
         advance.action_submit_sheet()
         advance.approve_expense_sheets()
         advance.action_sheet_move_create()
-        # Advance 100, Expense = 0, Balance = 100
+        # Advance 100, Clearing = 0, Balance = 200
         self.assertEqual(self.budget_control.amount_advance, 100)
         self.assertEqual(self.budget_control.amount_expense, 0)
         self.assertEqual(self.budget_control.amount_balance, 200)
-        # Create Clearing =
-        # Prepare Expense Sheet
+        # Create Clearing = 80 to this advance
         clearing = self._create_clearing_sheet(
             advance,
             [
                 {
-                    "product_id": self.product1,  # KPI1 = 101 -> error
+                    "product_id": self.product1,  # KPI1 = 120
                     "product_qty": 1,
-                    "price_unit": 101,
+                    "price_unit": 20,
                     "analytic_id": self.costcenter1,
                 },
                 {
-                    "product_id": self.product2,  # KPI2 = 198
+                    "product_id": self.product2,  # KPI2 = 80
                     "product_qty": 2,
-                    "price_unit": 100,
+                    "price_unit": 30,
                     "analytic_id": self.costcenter1,
                 },
             ],
         )
-        clearing = advance.with_context(
+        clearing = clearing.with_context(
             force_date_commit=clearing.expense_line_ids[:1].date
         )
         clearing.action_submit_sheet()
         clearing.approve_expense_sheets()
-
-        # purchase.action_create_invoice()
-        # self.assertEqual(purchase.invoice_status, "invoiced")
-        # invoice = purchase.invoice_ids[:1]
-        # # Change qty to 1
-        # invoice.with_context(check_move_validity=False).invoice_line_ids[
-        #     0
-        # ].quantity = 1
-        # invoice.with_context(
-        #     check_move_validity=False
-        # )._onchange_invoice_line_ids()
-        # invoice.action_post()
-        # # PO Commit = 20, INV Actual = 10, Balance = 270
-        # self.budget_control.invalidate_cache()
-        # self.assertEqual(self.budget_control.amount_commit, 20)
-        # self.assertEqual(self.budget_control.amount_actual, 10)
-        # self.assertEqual(self.budget_control.amount_balance, 270)
-        # # # Cancel invoice
-        # invoice.button_cancel()
-        # self.budget_control.invalidate_cache()
-        # self.assertEqual(self.budget_control.amount_commit, 30)
-        # self.assertEqual(self.budget_control.amount_actual, 0)
-        # self.assertEqual(self.budget_control.amount_balance, 270)
+        # Advance 20, Clearing = 80, Balance = 200
+        self.assertEqual(self.budget_control.amount_advance, 20)
+        self.assertEqual(self.budget_control.amount_expense, 80)
+        self.assertEqual(self.budget_control.amount_balance, 200)
+        # Refuse
+        clearing.refuse_sheet("Refuse it!")
+        self.assertEqual(self.budget_control.amount_advance, 100)
+        self.assertEqual(self.budget_control.amount_expense, 0)
+        self.assertEqual(self.budget_control.amount_balance, 200)
+        # Change line 1 amount to exceed
+        clearing.expense_line_ids[:1].unit_amount = 100
+        with self.assertRaises(ValidationError):
+            clearing.action_submit_sheet()

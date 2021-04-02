@@ -57,3 +57,20 @@ class BudgetPeriod(models.Model):
                     alt_budget_move_field="advance_budget_move_ids",
                 )
         return super().check_budget(doclines, doc_type=doc_type)
+
+    @api.model
+    def check_budget_precommit(self, doclines, doc_type="account"):
+        """ If the clearing has related advance, uncommit first """
+        budget_moves = False
+        if doclines._name == "hr.expense":
+            clearings = doclines.mapped("sheet_id").filtered(
+                "advance_sheet_id"
+            )
+            budget_moves = (
+                clearings.mapped("expense_line_ids")
+                .with_context(force_commit=True)
+                .uncommit_advance_budget()
+            )
+        super().check_budget_precommit(doclines, doc_type=doc_type)
+        if budget_moves:
+            budget_moves.unlink()

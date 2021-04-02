@@ -40,6 +40,8 @@ class PurchaseOrderLine(models.Model):
     _inherit = ["purchase.order.line", "budget.docline.mixin"]
     _budget_analytic_field = "account_analytic_id"
     _budget_date_commit_fields = ["order_id.write_date"]
+    _budget_move_model = "purchase.budget.move"
+    _doc_rel = "order_id"
 
     budget_move_ids = fields.One2many(
         comodel_name="purchase.budget.move",
@@ -70,57 +72,21 @@ class PurchaseOrderLine(models.Model):
         ]
         return account
 
-    def _check_amount_currency_tax(
-        self, product_qty, date, doc_type="purchase"
-    ):
+    def _init_docline_budget_vals(self, budget_vals):
         self.ensure_one()
-        budget_period = self.env["budget.period"]._get_eligible_budget_period(
-            date, doc_type=doc_type
+        product_qty = self.product_qty
+        if "product_qty" in budget_vals and budget_vals.get("product_qty"):
+            product_qty = budget_vals.pop("product_qty")
+        budget_vals["amount_currency"] = self.price_unit * product_qty
+        # Document specific vals
+        budget_vals.update(
+            {
+                "purchase_line_id": self.id,
+                "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
+            }
         )
-        amount_currency = product_qty * self.price_unit
-        if budget_period.include_tax:
-            amount_currency += product_qty * self.price_tax / self.product_qty
-        return amount_currency
+        return super()._init_docline_budget_vals(budget_vals)
 
-    def commit_budget(self, product_qty=False, reverse=False, **kwargs):
-        """Create budget commit for each purchase.order.line."""
-        self.prepare_commit()
-        to_commit = self.env.context.get("force_commit") or self.state in (
-            "purchase",
-            "done",
-        )
-        if self.can_commit and to_commit:
-            if not product_qty:
-                product_qty = self.product_qty
-            account = self.account_id
-            analytic_account = self.account_analytic_id
-            amount_currency = self._check_amount_currency_tax(
-                product_qty, self.date_commit
-            )
-            currency = self.currency_id
-            vals = self._prepare_budget_commitment(
-                account,
-                analytic_account,
-                self.date_commit,
-                amount_currency,
-                currency,
-                reverse=reverse,
-            )
-            # Document specific vals
-            vals.update(
-                {
-                    "purchase_line_id": self.id,
-                    "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
-                }
-            )
-            # Assign kwargs where value is not False
-            vals.update({k: v for k, v in kwargs.items() if v})
-            # Create budget move
-            budget_move = self.env["purchase.budget.move"].create(vals)
-            if reverse:  # On reverse, make sure not over returned
-                self.env["budget.period"].check_over_returned_budget(
-                    self.order_id
-                )
-            return budget_move
-        else:
-            self.budget_move_ids.unlink()
+    def _valid_commit_state(self):
+        states = ["purchase", "done"]
+        return self.state in states

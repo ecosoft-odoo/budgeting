@@ -53,6 +53,8 @@ class PurchaseRequestLine(models.Model):
     _name = "purchase.request.line"
     _inherit = ["purchase.request.line", "budget.docline.mixin"]
     _budget_date_commit_fields = ["request_id.write_date"]
+    _budget_move_model = "purchase.request.budget.move"
+    _doc_rel = "request_id"
 
     budget_move_ids = fields.One2many(
         comodel_name="purchase.request.budget.move",
@@ -82,39 +84,17 @@ class PurchaseRequestLine(models.Model):
         ]
         return account
 
-    def commit_budget(self, reverse=False, **kwargs):
-        """Create budget commit for each purchase.request.line."""
-        self.prepare_commit()
-        to_commit = self.env.context.get(
-            "force_commit"
-        ) or self.request_id.state in ("approved", "done")
-        if self.can_commit and to_commit:
-            account = self.account_id
-            analytic_account = self.analytic_account_id
-            amount_currency = self.estimated_cost
-            currency = False  # no currency, amount = amount_currency
-            vals = self._prepare_budget_commitment(
-                account,
-                analytic_account,
-                self.date_commit,
-                amount_currency,
-                currency,
-                reverse=reverse,
-            )
-            # Document specific vals
-            vals.update(
-                {
-                    "purchase_request_line_id": self.id,
-                }
-            )
-            # Assign kwargs where value is not False
-            vals.update({k: v for k, v in kwargs.items() if v})
-            # Create budget move
-            budget_move = self.env["purchase.request.budget.move"].create(vals)
-            if reverse:  # On reverse, make sure not over returned
-                self.env["budget.period"].check_over_returned_budget(
-                    self.request_id
-                )
-            return budget_move
-        else:
-            self.budget_move_ids.unlink()
+    def _init_docline_budget_vals(self, budget_vals):
+        self.ensure_one()
+        budget_vals["amount_currency"] = self.estimated_cost
+        # Document specific vals
+        budget_vals.update(
+            {
+                "purchase_request_line_id": self.id,
+            }
+        )
+        return super()._init_docline_budget_vals(budget_vals)
+
+    def _valid_commit_state(self):
+        states = ["approved", "done"]
+        return self.request_id.state in states
