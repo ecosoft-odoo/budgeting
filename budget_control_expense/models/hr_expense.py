@@ -14,6 +14,9 @@ class HRExpenseSheet(models.Model):
     def recompute_budget_move(self):
         self.mapped("expense_line_ids").recompute_budget_move()
 
+    def close_budget_move(self):
+        self.mapped("expense_line_ids").close_budget_move()
+
     def write(self, vals):
         """
         - UnCommit budget when state post

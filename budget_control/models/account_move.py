@@ -21,6 +21,9 @@ class AccountMove(models.Model):
     def recompute_budget_move(self):
         self.mapped("invoice_line_ids").recompute_budget_move()
 
+    def close_budget_move(self):
+        self.mapped("invoice_line_ids").close_budget_move()
+
     def write(self, vals):
         """
         - Commit budget when state changes to actual
