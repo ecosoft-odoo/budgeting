@@ -17,9 +17,9 @@ class AccountMove(models.Model):
                     ("analytic_account_id", "=", aml.analytic_account_id.id),
                     ("fund_id", "=", aml.fund_id.id),
                 ]
-                fund_constraint = FundConstraint.search(domain)
+                fund_constraint_ids = FundConstraint.search(domain)
                 balance = abs(aml.balance)
-                fund_over_limit = fund_constraint.filtered(
+                fund_over_limit = fund_constraint_ids.filtered(
                     lambda l: l.fund_amount < balance
                 )
                 for fc in fund_over_limit:

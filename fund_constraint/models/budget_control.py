@@ -9,17 +9,17 @@ class BudgetControl(models.Model):
 
     fund_ids = fields.Many2many(
         comodel_name="budget.source.fund",
-        compute="_compute_fund_constraint",
+        compute="_compute_fund_constraint_ids",
     )
-    fund_constraint = fields.One2many(
+    fund_constraint_ids = fields.One2many(
         comodel_name="fund.constraint",
         inverse_name="budget_control_id",
-        compute="_compute_fund_constraint",
+        compute="_compute_fund_constraint_ids",
     )
 
     @api.depends("analytic_account_id")
-    def _compute_fund_constraint(self):
+    def _compute_fund_constraint_ids(self):
         for rec in self:
-            fund_constraint = rec.analytic_account_id.fund_constraint
-            rec.fund_constraint = fund_constraint
-            rec.fund_ids = fund_constraint.mapped("fund_id")
+            fund_constraint_ids = rec.analytic_account_id.fund_constraint_ids
+            rec.fund_constraint_ids = fund_constraint_ids
+            rec.fund_ids = fund_constraint_ids.mapped("fund_id")

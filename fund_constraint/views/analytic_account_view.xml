@@ -7,7 +7,7 @@
         <field name="arch" type="xml">
             <xpath expr="//group[@name='main']/group[2]" position="inside">
                 <field
-                    name="fund_constraint"
+                    name="fund_constraint_ids"
                     widget="many2many_tags"
                     options="{'no_create': True}"
                 />
