@@ -38,6 +38,33 @@ class AccountAnalyticAccount(models.Model):
         "is setup, but the budget system set date_commit out of this date range "
         "it it can be adjusted automatically.",
     )
+    amount_budget = fields.Monetary(
+        string="Budgeted",
+        compute="_compute_amount_budget_info",
+        help="Sum of amount plan",
+    )
+    amount_consumed = fields.Monetary(
+        string="Consumed",
+        compute="_compute_amount_budget_info",
+        help="Consumed = Total Commitments + Actual",
+    )
+    amount_balance = fields.Monetary(
+        string="Balance",
+        compute="_compute_amount_budget_info",
+        help="Balance = Total Budget - Consumed",
+    )
+
+    def _compute_amount_budget_info(self):
+        for rec in self:
+            rec.amount_budget = sum(
+                rec.budget_control_ids.mapped("amount_budget")
+            )
+            rec.amount_consumed = sum(
+                rec.budget_control_ids.mapped("amount_consumed")
+            )
+            rec.amount_balance = sum(
+                rec.budget_control_ids.mapped("amount_balance")
+            )
 
     def next_year_analytic(self):
         """ Find next analytic from analytic date_to + 1 """

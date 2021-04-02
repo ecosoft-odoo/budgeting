@@ -85,7 +85,11 @@
                     </group>
                     <notebook>
                         <page name="analytic_line" string="Analytic">
-                            <field name="analytic_line" widget="many2many" />
+                            <field
+                                name="analytic_line"
+                                context="{'tree_view_ref': 'budget_control.view_budget_analytic_list'}"
+                                widget="many2many"
+                            />
                         </page>
                     </notebook>
                 </sheet>
