@@ -24,6 +24,7 @@ class BudgetControlCommon(SavepointCase):
         # Setup some required entity
         Account = cls.env["account.account"]
         type_exp = cls.env.ref("account.data_account_type_expenses").id
+        type_adv = cls.env.ref("account.data_account_type_current_assets").id
         cls.account_kpi1 = Account.create(
             {"name": "KPI1", "code": "KPI1", "user_type_id": type_exp}
         )
@@ -36,6 +37,15 @@ class BudgetControlCommon(SavepointCase):
         # Create an extra account, but not in control
         cls.account_kpiX = Account.create(
             {"name": "KPIX", "code": "KPIX", "user_type_id": type_exp}
+        )
+        # Create an extra account, for advance
+        cls.account_kpiAV = Account.create(
+            {
+                "name": "KPIAV",
+                "code": "KPIAV",
+                "user_type_id": type_adv,
+                "reconcile": True,
+            }
         )
         Product = cls.env["product.product"]
         cls.product1 = Product.create(
@@ -57,7 +67,7 @@ class BudgetControlCommon(SavepointCase):
             cls, cls.report.id, cls.date_range_type.id
         )
         # Create budget.control for CostCenter1,
-        #  by selected budget_id and date range (by quarter)
+        # by selected budget_id and date range (by quarter)
         cls.costcenter1 = cls.Analytic.create({"name": "CostCenter1"})
         cls.costcenterX = cls.Analytic.create({"name": "CostCenterX"})
 

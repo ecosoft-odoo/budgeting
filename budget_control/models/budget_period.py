@@ -70,7 +70,7 @@ class BudgetPeriod(models.Model):
         help="Budget control sheet in this budget control year, will use this "
         "data range to plan the budget.",
     )
-    include_tax = fields.Boolean(string="Included Tax")
+    # include_tax = fields.Boolean(string="Included Tax")
     analytic_line = fields.One2many(
         comodel_name="account.analytic.account",
         inverse_name="budget_period_id",
@@ -246,7 +246,8 @@ class BudgetPeriod(models.Model):
         budget_moves = []
         for line in doclines:
             budget_move = line.with_context(force_commit=True).commit_budget()
-            budget_moves.append(budget_move)
+            if budget_move:
+                budget_moves.append(budget_move)
         # Check Budget
         self.env["budget.period"].check_budget(doclines, doc_type=doc_type)
         # Remove commits
@@ -254,10 +255,12 @@ class BudgetPeriod(models.Model):
             budget_move.unlink()
 
     @api.model
-    def check_over_returned_budget(self, doc, reverse=False):
+    def check_over_returned_budget(self, docline, reverse=False):
         self = self.sudo()
-        credit = sum(doc.budget_move_ids.mapped("credit"))
-        debit = sum(doc.budget_move_ids.mapped("debit"))
+        doc = docline[docline._doc_rel]
+        budget_moves = doc[docline._budget_field()]
+        credit = sum(budget_moves.mapped("credit"))
+        debit = sum(budget_moves.mapped("debit"))
         amount_credit = reverse and debit or credit
         amount_debit = reverse and credit or debit
         if float_compare(amount_credit, amount_debit, 2) == 1:

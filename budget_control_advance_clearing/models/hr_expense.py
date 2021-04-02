@@ -21,7 +21,6 @@ class HRExpenseSheet(models.Model):
             adv_analytic = advance.expense_line_ids.mapped(
                 "analytic_account_id"
             )
-            adv_analytic.ensure_one()
             if (
                 sheet.expense_line_ids.mapped("analytic_account_id")
                 != adv_analytic
@@ -68,30 +67,35 @@ class HRExpense(models.Model):
         )
         super(HRExpense, advances).recompute_budget_move()
 
-    def commit_budget(self, reverse=False, **kwargs):
+    def commit_budget(self, reverse=False, **vals):
         if self.advance:
             self = self.with_context(
                 alt_budget_move_model="advance.budget.move",
                 alt_budget_move_field="advance_budget_move_ids",
             )
-        return super().commit_budget(reverse=reverse, **kwargs)
+        return super().commit_budget(reverse=reverse, **vals)
 
     def uncommit_advance_budget(self):
         """For clearing in valid state, do uncommit for related Advance."""
+        budget_moves = self.env["advance.budget.move"]
         for clearing in self.filtered("can_commit"):
             cl_state = clearing.sheet_id.state
-            if cl_state in ("approve", "done"):
-                # !!! There is no direct reference between advance and c    learing !!!
-                # for advance in clearing.advance_line_ids:
-                # There is only 1 line of advance, but we want write this same as others
-                for (
-                    advance
-                ) in clearing.sheet_id.advance_sheet_id.expense_line_ids:
-                    advance.commit_budget(
-                        reverse=True, clearing_id=clearing.id
-                    )
+            if self.env.context.get("force_commit") or cl_state in (
+                "approve",
+                "done",
+            ):
+                # !!! There is no direct reference between advance and clearing !!!
+                advance = clearing.sheet_id.advance_sheet_id.expense_line_ids
+                advance.ensure_one()
+                budget_move = advance.commit_budget(
+                    reverse=True,
+                    clearing_id=clearing.id,
+                    amount_currency=clearing.untaxed_amount,
+                )
+                budget_moves |= budget_move
             else:
                 # Cancel or draft, not commitment line
                 self.env["advance.budget.move"].search(
                     [("clearing_id", "=", clearing.id)]
                 ).unlink()
+        return budget_moves

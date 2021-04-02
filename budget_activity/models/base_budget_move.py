@@ -32,23 +32,8 @@ class BudgetDoclineMixin(models.AbstractModel):
         index=True,
     )
 
-    def _prepare_budget_commitment(
-        self,
-        account,
-        analytic_account,
-        date_commit,
-        amount_currency,
-        currency,
-        reverse=False,
-    ):
-        res = super()._prepare_budget_commitment(
-            account,
-            analytic_account,
-            date_commit,
-            amount_currency,
-            currency,
-            reverse=reverse,
-        )
+    def _update_budget_commitment(self, budget_vals, reverse=False):
+        res = super()._update_budget_commitment(budget_vals, reverse=reverse)
         res["activity_id"] = self.activity_id.id
         # For case object without account_id (PR/PO), normally account is from
         # product, it should now changed to follow activity.
