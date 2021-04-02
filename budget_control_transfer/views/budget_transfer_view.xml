@@ -115,14 +115,19 @@
                     <div class="oe_right oe_button_box" name="buttons">
                     </div>
                     <div class="oe_title">
-                        <label for="name" class="oe_edit_only" />
                         <h1>
                             <field name="name" />
                         </h1>
                     </div>
                     <group>
                         <group name="budget_transfer_left">
-                            <field name="budget_period_id" />
+                            <field
+                                name="budget_period_id"
+                                options="{'no_open': True}"
+                            />
+                            <field name="mis_budget_id" invisible="1" />
+                        </group>
+                        <group name="budget_transfer_right">
                             <field
                                 name="source_budget_transfer"
                                 widget="many2many_tags"
@@ -132,19 +137,23 @@
                                 widget="many2many_tags"
                             />
                         </group>
-                        <group name="budget_transfer_right">
-                            <field name="mis_budget_id" />
-                        </group>
                     </group>
                     <field name="transfer_item_ids" nolabel="1">
                         <tree editable="bottom">
                             <field name="transfer_id" invisible="1" />
                             <field name="mis_budget_id" invisible="1" />
-                            <field name="source_budget_control_id" />
-                            <field name="source_state" optional="show" />
+                            <field name="budget_period_id" invisible="1" />
+                            <field
+                                name="source_budget_control_id"
+                                options="{'no_create_edit': True, 'no_open': True}"
+                            />
+                            <field name="source_state" optional="hide" />
                             <field name="source_amount_available" string="Available" />
-                            <field name="target_budget_control_id" />
-                            <field name="target_state" optional="show" />
+                            <field
+                                name="target_budget_control_id"
+                                options="{'no_create_edit': True, 'no_open': True}"
+                            />
+                            <field name="target_state" optional="hide" />
                             <field name="target_amount_available" string="Available" />
                             <field name="amount" />
                         </tree>
