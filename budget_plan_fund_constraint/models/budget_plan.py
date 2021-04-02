@@ -11,7 +11,7 @@ class BudgetPlan(models.Model):
         res = super().action_generate_plan()
         self.ensure_one()
         for line in self.plan_line:
-            fund_amount = line.analytic_account_id.fund_constraint.mapped(
+            fund_amount = line.analytic_account_id.fund_constraint_ids.mapped(
                 "fund_amount"
             )
             line.amount = sum(fund_amount)

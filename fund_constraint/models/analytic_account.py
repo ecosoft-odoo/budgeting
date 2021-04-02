@@ -7,7 +7,7 @@ from odoo import fields, models
 class AccountAnalyticAccount(models.Model):
     _inherit = "account.analytic.account"
 
-    fund_constraint = fields.One2many(
+    fund_constraint_ids = fields.One2many(
         comodel_name="fund.constraint",
         inverse_name="analytic_account_id",
     )

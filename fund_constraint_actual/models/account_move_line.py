@@ -25,7 +25,7 @@ class AccountMoveLine(models.Model):
     @api.depends("analytic_account_id")
     def _compute_fund_id(self):
         for rec in self:
-            fund_ids = rec.analytic_account_id.fund_constraint.mapped(
+            fund_ids = rec.analytic_account_id.fund_constraint_ids.mapped(
                 "fund_id"
             )
             rec.fund_id = len(fund_ids) == 1 and fund_ids.id or False
@@ -33,6 +33,6 @@ class AccountMoveLine(models.Model):
     @api.depends("analytic_account_id")
     def _compute_fund_all(self):
         for rec in self:
-            rec.fund_all = rec.analytic_account_id.fund_constraint.mapped(
+            rec.fund_all = rec.analytic_account_id.fund_constraint_ids.mapped(
                 "fund_id"
             )
