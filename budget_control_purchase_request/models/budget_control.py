@@ -12,6 +12,3 @@ class BudgetControl(models.Model):
         compute="_compute_budget_info",
         help="Sum of purchase amount",
     )
-
-    def _get_amount_commit(self):
-        return super()._get_amount_commit() + self.amount_purchase_request

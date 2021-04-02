@@ -312,10 +312,11 @@ class BudgetPeriod(models.Model):
     @api.model
     def _prepare_matrix_by_analytic(self, instance, analytic_ids):
         """Return resulting matrix based on each analytic."""
+        ctx = self._context.copy()
         matrix = {}
         for analytic_id in analytic_ids:
             if not matrix.get(analytic_id):
-                ctx = {"filter_analytic_ids": [analytic_id]}
+                ctx.update({"filter_analytic_ids": [analytic_id]})
                 kpi_matrix = instance.with_context(ctx)._compute_matrix()
                 matrix[analytic_id] = kpi_matrix
         return matrix
@@ -323,7 +324,8 @@ class BudgetPeriod(models.Model):
     @api.model
     def _prepare_matrix_all_analytics(self, instance, analytic_ids):
         """Return resulting matrix of all analytic combined."""
-        ctx = {"filter_analytic_ids": analytic_ids}
+        ctx = self._context.copy()
+        ctx.update({"filter_analytic_ids": analytic_ids})
         return instance.with_context(ctx)._compute_matrix()
 
     @api.model
@@ -527,6 +529,9 @@ class BudgetPeriod(models.Model):
             kpi_matrix, kpi_lines, period
         )
         budget_info[source] = amount
+        # Commit
+        budget_info["amount_commit"] = 0.0
+        return budget_info
 
     def _compute_budget_info(self, **kwargs):
         """ Add more data info budget_info, based on installed modules """

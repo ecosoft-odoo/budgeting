@@ -45,14 +45,60 @@
                 <field name="bm_date_to" />
                 <field name="budget_control_ids" widget="many2many_tags" />
             </field>
+            <xpath expr="//group[@name='main']/group[2]" position="inside">
+                <field name="auto_adjust_date_commit" />
+            </xpath>
         </field>
     </record>
 
     <!-- Show Analytic Accounting on Budgeting-->
 
+    <record id="view_budget_analytic_list" model="ir.ui.view">
+        <field name="name">view.budget.analytic.list</field>
+        <field name="model">account.analytic.account</field>
+        <field name="arch" type="xml">
+            <tree string="Analytic Budgeting">
+                <field name="name" string="Name" />
+                <field name="code" />
+                <field name="budget_period_id" optional="show" />
+                <field name="bm_date_from" optional="hide" />
+                <field name="bm_date_to" optional="hide" />
+                <field
+                    name="budget_control_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                />
+                <field name="partner_id" />
+                <field name="active" invisible="1" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="amount_budget" sum="Total Budget" />
+                <field name="amount_consumed" sum="Total Consumed" />
+                <field name="amount_balance" sum="Balance" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_budget_analytic_form" model="ir.actions.act_window">
+        <field name="name">Analytic Budgeting</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">account.analytic.account</field>
+        <field
+            name="search_view_id"
+            ref="analytic.view_account_analytic_account_search"
+        />
+        <field name="view_id" ref="view_budget_analytic_list" />
+        <field name="context">{'search_default_active':1}</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+            Add a new analytic budgeting
+            </p>
+        </field>
+    </record>
+
     <menuitem
         id="budget_menu_analytic_accounting"
-        name="Analytic Accounting"
+        name="Analytic Budgeting"
         parent="budget_control.budget_config_menu"
         sequence="10"
         groups="analytic.group_analytic_accounting,analytic.group_analytic_tags"
@@ -60,16 +106,16 @@
 
     <menuitem
         id="budget_menu_analytic_account"
-        name="Analytic Accounts"
+        name="Analytic Budgeting"
         parent="budget_control.budget_menu_analytic_accounting"
         sequence="1"
-        action="analytic.action_account_analytic_account_form"
+        action="budget_control.action_budget_analytic_form"
         groups="analytic.group_analytic_accounting"
     />
 
     <menuitem
         id="budget_menu_analytic_account_group"
-        name="Analytic Account Groups"
+        name="Analytic Groups"
         parent="budget_control.budget_menu_analytic_accounting"
         sequence="2"
         action="analytic.account_analytic_group_action"
@@ -78,7 +124,7 @@
 
     <menuitem
         id="budget_menu_analytic_account_tag"
-        name="Analytic Account Tags"
+        name="Analytic Tags"
         parent="budget_control.budget_menu_analytic_accounting"
         sequence="3"
         action="analytic.account_analytic_tag_action"

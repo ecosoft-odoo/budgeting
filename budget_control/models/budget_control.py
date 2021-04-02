@@ -191,10 +191,6 @@ class BudgetControl(models.Model):
         for rec in self:
             rec.released_amount = rec.allocated_amount
 
-    def _get_amount_commit(self):
-        self.ensure_one()
-        return 0
-
     def _compute_budget_info(self):
         BudgetPeriod = self.env["budget.period"]
         for rec in self:
@@ -205,7 +201,6 @@ class BudgetControl(models.Model):
             info = budget_period.get_budget_info(analytic_ids)
             for key, value in info.items():
                 rec[key] = value
-            rec.amount_commit = rec._get_amount_commit()
             rec.amount_consumed = rec.amount_commit + rec.amount_actual
 
     @api.model

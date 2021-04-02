@@ -46,3 +46,16 @@ class MisBudgetItem(models.Model):
             rec.active = (
                 rec.budget_control_id and rec.budget_control_id.active or True
             )
+
+    @api.model
+    def search(self, args, offset=0, limit=None, order=None, count=False):
+        def neutralize(dom):
+            if len(dom) == 3 and dom[0] == "date":
+                return (1, "=", 1)
+            else:
+                return dom
+
+        args = [
+            isinstance(arg, tuple) and neutralize(arg) or arg for arg in args
+        ]
+        return super().search(args, offset, limit, order, count)

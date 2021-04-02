@@ -9,8 +9,8 @@
             <xpath expr="//page[@name='items']/div[@name='buttons']" position="inside">
                 <button
                     name="action_update_consumed_plan"
-                    class="oe_highlight"
                     string="Update Consumed Plan"
+                    icon="fa-refresh"
                     type="object"
                     states="draft,released,done"
                     groups="budget_control.group_budget_control_manager"
