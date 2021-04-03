@@ -174,3 +174,81 @@ class TestBudgetControl(BudgetControlCommon):
         self.assertEqual(self.budget_control.amount_purchase_request, 30)
         self.assertEqual(self.budget_control.amount_purchase, 0)
         self.assertEqual(self.budget_control.amount_balance, 270)
+
+    @freeze_time("2001-02-01")
+    def test_03_budget_recompute_and_close_budget_move(self):
+        """PR to PO (partial PO, but PR will return all)
+        - Test recompute on both PR and PO
+        - Test close on both PR and PO"""
+        # KPI1 = 100, KPI2 = 200, Total = 300
+        self.assertEqual(300, self.budget_control.amount_budget)
+        # Prepare PR
+        purchase_request = self._create_purchase_request(
+            [
+                {
+                    "product_id": self.product1,  # KPI1 = 30
+                    "product_qty": 2,
+                    "estimated_cost": 30,
+                    "analytic_id": self.costcenter1,
+                },
+                {
+                    "product_id": self.product2,  # KPI2 = 40
+                    "product_qty": 4,
+                    "estimated_cost": 40,
+                    "analytic_id": self.costcenter1,
+                },
+            ]
+        )
+        # Check budget as analytic
+        self.budget_period.purchase_request = True
+        self.budget_period.purchase = True
+        self.budget_period.control_level = "analytic"
+        purchase_request = purchase_request.with_context(
+            force_date_commit=purchase_request.date_start
+        )
+        self.assertEqual(self.budget_control.amount_balance, 300)
+        purchase_request.button_to_approve()
+        purchase_request.button_approved()
+        # PR Commit = 30, PO Commit = 0, Balance = 270
+        self.assertEqual(self.budget_control.amount_purchase_request, 70)
+        self.assertEqual(self.budget_control.amount_purchase, 0)
+        # Create PR from PO
+        MakePO = self.env["purchase.request.line.make.purchase.order"]
+        view_id = (
+            "purchase_request.view_purchase_request_line_make_purchase_order"
+        )
+        ctx = {
+            "active_model": "purchase.request",
+            "active_ids": [purchase_request.id],
+        }
+        with Form(MakePO.with_context(ctx), view=view_id) as w:
+            w.supplier_id = self.vendor
+        wizard = w.save()
+        res = wizard.make_purchase_order()
+        purchase = self.env["purchase.order"].search(res["domain"])
+        # Change quantity and price_unit of purchase, to commit only
+        purchase.order_line[0].write({"product_qty": 1, "price_unit": 15})
+        purchase.order_line[1].write({"product_qty": 3, "price_unit": 10})
+        purchase = purchase.with_context(force_date_commit=purchase.date_order)
+        purchase.button_confirm()
+        # PR will return all, PR Commit = 0, PO Commit = 45
+        self.assertEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertEqual(self.budget_control.amount_purchase, 45)
+        # Recompute PR and PO, should be the same.
+        purchase_request.recompute_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertEqual(self.budget_control.amount_purchase, 45)
+        purchase.recompute_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertEqual(self.budget_control.amount_purchase, 45)
+        # Close budget
+        purchase_request.close_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertEqual(self.budget_control.amount_purchase, 45)
+        purchase.close_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertEqual(self.budget_control.amount_purchase, 0)

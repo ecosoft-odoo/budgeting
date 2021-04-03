@@ -28,20 +28,28 @@
         <field name="inherit_id" ref="hr_expense.view_hr_expense_sheet_form" />
         <field name="arch" type="xml">
             <xpath expr="/form/sheet/notebook/page[last()]" position="after">
-                <page string="Advance Budget Commitment" name="advance_budget_commit">
-                    <!-- <div class="oe_read_only oe_right" name="buttons">
+                <page
+                    string="Advance Budget Commitment"
+                    name="advance_budget_commit"
+                    attrs="{'invisible': [('advance_budget_move_ids', '=', [])]}"
+                >
+                    <div class="oe_read_only oe_right" name="buttons">
                         <button
                             type="object"
-                            name="recompute_advance_budget_move"
+                            name="recompute_budget_move"
                             string="Recompute"
                             icon="fa-refresh"
+                            groups="budget_control.group_budget_control_manager"
                         />
-                    </div> -->
-                    <field
-                        name="advance_budget_move_ids"
-                        readonly="1"
-                        attrs="{'invisible': [('advance_budget_move_ids', '=', False)]}"
-                    >
+                        <button
+                            type="object"
+                            name="close_budget_move"
+                            string="Close Budget"
+                            icon="fa-times-circle"
+                            groups="budget_control.group_budget_control_manager"
+                        />
+                    </div>
+                    <field name="advance_budget_move_ids" readonly="1">
                         <tree>
                             <field name="expense_id" optional="show" />
                             <field name="move_id" />

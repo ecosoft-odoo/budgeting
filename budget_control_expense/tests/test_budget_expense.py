@@ -161,3 +161,64 @@ class TestBudgetControl(BudgetControlCommon):
         self.assertEqual(self.budget_control.amount_expense, 30)
         self.assertEqual(self.budget_control.amount_actual, 0)
         self.assertEqual(self.budget_control.amount_balance, 270)
+
+    @freeze_time("2001-02-01")
+    def test_03_budget_recompute_and_close_budget_move(self):
+        """EX to JE
+        - Test recompute on both EX and JE
+        - Test close on both EX and JE"""
+        # KPI1 = 100, KPI2 = 200, Total = 300
+        self.assertEqual(300, self.budget_control.amount_budget)
+        # Prepare Expense on kpi1 with qty 3 and unit_price 10
+        expense = self._create_expense_sheet(
+            [
+                {
+                    "product_id": self.product1,
+                    "product_qty": 2,
+                    "price_unit": 15,
+                    "analytic_id": self.costcenter1,
+                },
+                {
+                    "product_id": self.product2,
+                    "product_qty": 4,
+                    "price_unit": 10,
+                    "analytic_id": self.costcenter1,
+                },
+            ]
+        )
+        self.budget_period.expense = True
+        self.budget_period.control_level = "analytic"
+        expense = expense.with_context(
+            force_date_commit=expense.expense_line_ids[:1].date
+        )
+        expense.action_submit_sheet()
+        expense.approve_expense_sheets()
+        # Expense = 70, JE Actual = 0
+        self.assertEqual(self.budget_control.amount_expense, 70)
+        self.assertEqual(self.budget_control.amount_actual, 0)
+        # Create and post invoice
+        expense.action_sheet_move_create()
+        move = expense.account_move_id
+        self.assertEqual(move.state, "posted")
+        # EX Commit = 0, JE Actual = 70
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_expense, 0)
+        self.assertEqual(self.budget_control.amount_actual, 70)
+        # Recompute
+        expense.recompute_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_expense, 0)
+        self.assertEqual(self.budget_control.amount_actual, 70)
+        move.recompute_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_expense, 0)
+        self.assertEqual(self.budget_control.amount_actual, 70)
+        # Close
+        expense.close_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_expense, 0)
+        self.assertEqual(self.budget_control.amount_actual, 70)
+        move.close_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_expense, 0)
+        self.assertEqual(self.budget_control.amount_actual, 0)

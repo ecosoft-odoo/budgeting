@@ -49,6 +49,24 @@ class HRExpense(models.Model):
         inverse_name="expense_id",
     )
 
+    @api.depends("advance_budget_move_ids", "budget_move_ids")
+    def _compute_commit(self):
+        advances = self.filtered("advance")
+        expenses = self - advances
+        # Advances
+        for rec in self:
+            debit = sum(rec.advance_budget_move_ids.mapped("debit"))
+            credit = sum(rec.advance_budget_move_ids.mapped("credit"))
+            rec.amount_commit = debit - credit
+            if rec.advance_budget_move_ids:
+                rec.date_commit = min(
+                    rec.advance_budget_move_ids.mapped("date")
+                )
+            else:
+                rec.date_commit = False
+        # Expenses
+        super(HRExpense, expenses)._compute_commit()
+
     def _get_account_move_by_sheet(self):
         # When advance create move, do set not_affect_budget = True
         move_grouped_by_sheet = super()._get_account_move_by_sheet()
@@ -66,6 +84,23 @@ class HRExpense(models.Model):
             alt_budget_move_field="advance_budget_move_ids",
         )
         super(HRExpense, advances).recompute_budget_move()
+        # If the advances has any clearing, uncommit them from advance
+        adv_sheets = advances.mapped("sheet_id")
+        clearings = self.search(
+            [("sheet_id.advance_sheet_id", "in", adv_sheets.ids)]
+        )
+        clearings.uncommit_advance_budget()
+
+    def close_budget_move(self):
+        # Expenses
+        expenses = self.filtered(lambda l: not l.advance)
+        super(HRExpense, expenses).close_budget_move()
+        # Advances)
+        advances = self.filtered(lambda l: l.advance).with_context(
+            alt_budget_move_model="advance.budget.move",
+            alt_budget_move_field="advance_budget_move_ids",
+        )
+        super(HRExpense, advances).close_budget_move()
 
     def commit_budget(self, reverse=False, **vals):
         if self.advance:

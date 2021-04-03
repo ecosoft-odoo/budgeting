@@ -12,7 +12,11 @@
                 />
             </xpath>
             <xpath expr="/form/sheet/notebook/page[last()]" position="after">
-                <page string="Budget Commitment" name="budget_commit">
+                <page
+                    string="Budget Commitment"
+                    name="budget_commit"
+                    attrs="{'invisible': [('budget_move_ids', '=', [])]}"
+                >
                     <div class="oe_read_only oe_right" name="buttons">
                         <button
                             type="object"
@@ -29,11 +33,7 @@
                             groups="budget_control.group_budget_control_manager"
                         />
                     </div>
-                    <field
-                        name="budget_move_ids"
-                        readonly="1"
-                        attrs="{'invisible': [('budget_move_ids', '=', False)]}"
-                    >
+                    <field name="budget_move_ids" readonly="1">
                         <tree>
                             <field name="move_line_id" />
                             <field name="move_id" />

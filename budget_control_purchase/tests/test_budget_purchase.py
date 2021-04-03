@@ -115,7 +115,7 @@ class TestBudgetControl(BudgetControlCommon):
 
     @freeze_time("2001-02-01")
     def test_02_budget_purchase_to_invoice(self):
-        """ Purcahse to Invoice, commit and uncommit """
+        """ Purchase to Invoice, commit and uncommit """
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare PO on kpi1 with qty 3 and unit_price 10
@@ -160,3 +160,66 @@ class TestBudgetControl(BudgetControlCommon):
         self.assertEqual(self.budget_control.amount_commit, 30)
         self.assertEqual(self.budget_control.amount_actual, 0)
         self.assertEqual(self.budget_control.amount_balance, 270)
+
+    @freeze_time("2001-02-01")
+    def test_03_budget_recompute_and_close_budget_move(self):
+        """Purchase to Invoice (partial)
+        - Test recompute on both Purchase and Invoice
+        - Test close on both Purchase and Invoice"""
+        # Prepare PO on kpi1 with qty 3 and unit_price 10
+        purchase = self._create_purchase(
+            [
+                {
+                    "product_id": self.product1,  # KPI1 = 30
+                    "product_qty": 2,
+                    "price_unit": 15,
+                    "analytic_id": self.costcenter1,
+                },
+                {
+                    "product_id": self.product2,  # KPI2 = 40
+                    "product_qty": 4,
+                    "price_unit": 10,
+                    "analytic_id": self.costcenter1,
+                },
+            ]
+        )
+        self.budget_period.purchase = True
+        self.budget_period.control_level = "analytic"
+        purchase = purchase.with_context(force_date_commit=purchase.date_order)
+        purchase.button_confirm()
+        # PO Commit = 70, INV Actual = 0
+        self.assertEqual(self.budget_control.amount_purchase, 70)
+        self.assertEqual(self.budget_control.amount_actual, 0)
+        # Create and post invoice
+        purchase.action_create_invoice()
+        self.assertEqual(purchase.invoice_status, "invoiced")
+        invoice = purchase.invoice_ids[:1]
+        # Change qty to 1 and 3
+        invoice = invoice.with_context(check_move_validity=False)
+        invoice.invoice_line_ids[0].quantity = 1
+        invoice.invoice_line_ids[1].quantity = 3
+        invoice._onchange_invoice_line_ids()
+        invoice.action_post()
+        # PO Commit = 25, INV Actual = 45
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_purchase, 25)
+        self.assertEqual(self.budget_control.amount_actual, 45)
+        # Test recompute, must be same
+        purchase.recompute_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_purchase, 25)
+        self.assertEqual(self.budget_control.amount_actual, 45)
+        invoice.recompute_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_actual, 45)
+        self.assertEqual(self.budget_control.amount_purchase, 25)
+        # Test close budget move
+        purchase.close_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_purchase, 0)
+        self.assertEqual(self.budget_control.amount_actual, 45)
+        # Test close budget move
+        invoice.close_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_purchase, 0)
+        self.assertEqual(self.budget_control.amount_actual, 0)
