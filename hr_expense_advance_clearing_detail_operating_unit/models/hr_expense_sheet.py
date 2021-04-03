@@ -12,3 +12,10 @@ class HrExpenseSheet(models.Model):
         for i, line in enumerate(self.advance_line):
             expense_vals[i]["operating_unit_id"] = line.operating_unit_id.id
         return expense_vals
+
+    def open_clear_advance(self):
+        vals = super().open_clear_advance()
+        vals["context"][
+            "default_operating_unit_id"
+        ] = self.operating_unit_id.id
+        return vals

@@ -11,7 +11,10 @@
         "budget_activity_expense",
         "budget_control_advance_clearing",
     ],
-    "data": [],
+    "data": [
+        "data/advance_kpi.xml",
+        "views/hr_expense_view.xml",
+    ],
     "installable": True,
     "auto_install": True,
     "maintainers": ["Saran440"],

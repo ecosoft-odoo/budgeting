@@ -10,7 +10,7 @@
     "website": "https://github.com/OCA/account-budgeting",  # TODO: hr-expense
     "depends": [
         "hr_expense_advance_clearing_detail",
-        "budget_activity_expense",
+        "budget_activity_advance_clearing",
     ],
     "data": ["views/hr_expense_views.xml"],
     "installable": True,
