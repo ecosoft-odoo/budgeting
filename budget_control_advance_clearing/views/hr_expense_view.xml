@@ -31,7 +31,7 @@
                 <page
                     string="Advance Budget Commitment"
                     name="advance_budget_commit"
-                    attrs="{'invisible': [('advance_budget_move_ids', '=', False)]}"
+                    attrs="{'invisible': [('advance_budget_move_ids', '=', [])]}"
                 >
                     <div class="oe_read_only oe_right" name="buttons">
                         <button

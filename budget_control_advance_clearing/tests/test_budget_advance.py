@@ -154,7 +154,7 @@ class TestBudgetControl(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def test_02_budget_advance_clearing(self):
         """Advance 100 (which is equal to budget amount), with clearing cases when,
-        - Clearing 80, the uncommit advance should be 80
+        - Clearing 80, the uncommit advance should be 20
         - Clearing 120, the uncommit advance should be 100 (max)
         """
         # KPI1 = 100, KPI2 = 200, Total = 300
@@ -179,7 +179,7 @@ class TestBudgetControl(BudgetControlCommon):
             advance,
             [
                 {
-                    "product_id": self.product1,  # KPI1 = 120
+                    "product_id": self.product1,  # KPI1 = 20
                     "product_qty": 1,
                     "price_unit": 20,
                     "analytic_id": self.costcenter1,
@@ -210,3 +210,68 @@ class TestBudgetControl(BudgetControlCommon):
         clearing.expense_line_ids[:1].unit_amount = 100
         with self.assertRaises(ValidationError):
             clearing.action_submit_sheet()
+
+    @freeze_time("2001-02-01")
+    def test_03_budget_recompute_and_close_budget_move(self):
+        """
+        After Advance 20, Clearing 80
+        - Recompute both should be the same
+        - Close budget both should be all zero
+        """
+        # KPI1 = 100, KPI2 = 200, Total = 300
+        self.assertEqual(300, self.budget_control.amount_budget)
+        # Create advance = 100
+        advance = self._create_advance_sheet(100, self.costcenter1)
+        self.budget_period.advance = True
+        self.budget_period.expense = True
+        self.budget_period.control_level = "analytic"
+        advance = advance.with_context(
+            force_date_commit=advance.expense_line_ids[:1].date
+        )
+        advance.action_submit_sheet()
+        advance.approve_expense_sheets()
+        advance.action_sheet_move_create()
+        # Create Clearing = 80 to this advance
+        clearing = self._create_clearing_sheet(
+            advance,
+            [
+                {
+                    "product_id": self.product1,  # KPI1 = 20
+                    "product_qty": 1,
+                    "price_unit": 20,
+                    "analytic_id": self.costcenter1,
+                },
+                {
+                    "product_id": self.product2,  # KPI2 = 80
+                    "product_qty": 2,
+                    "price_unit": 30,
+                    "analytic_id": self.costcenter1,
+                },
+            ],
+        )
+        clearing = clearing.with_context(
+            force_date_commit=clearing.expense_line_ids[:1].date
+        )
+        clearing.action_submit_sheet()
+        clearing.approve_expense_sheets()
+        # Advance 20, Clearing = 80, Balance = 200
+        self.assertEqual(self.budget_control.amount_advance, 20)
+        self.assertEqual(self.budget_control.amount_expense, 80)
+        # Recompute
+        advance.recompute_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_advance, 20)
+        self.assertEqual(self.budget_control.amount_expense, 80)
+        clearing.recompute_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_advance, 20)
+        self.assertEqual(self.budget_control.amount_expense, 80)
+        # Close
+        advance.close_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_advance, 0)
+        self.assertEqual(self.budget_control.amount_expense, 80)
+        clearing.close_budget_move()
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_advance, 0)
+        self.assertEqual(self.budget_control.amount_expense, 0)
