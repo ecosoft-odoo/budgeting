@@ -31,7 +31,7 @@ class BudgetPeriod(models.Model):
     def _get_kpi_by_control_key(self, instance, kpis, control):
         if instance.report_id.is_activity:
             activity_id = control["activity_id"]
-            kpi = kpis.get(activity_id, False)
+            kpi = kpis.get(activity_id, [])
             if len(kpi) == 1:
                 return kpi
             # Invalid KPI

@@ -11,4 +11,6 @@ class HrExpenseSheet(models.Model):
         expense_vals = super()._prepare_expense_clearing()
         for i, line in enumerate(self.advance_line):
             expense_vals[i]["activity_id"] = line.activity_id.id
+            # account_id depend on activity
+            expense_vals[i]["account_id"] = line.activity_id.account_id.id
         return expense_vals
