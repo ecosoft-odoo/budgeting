@@ -20,9 +20,7 @@ class BudgetControl(models.Model):
                 }
             )
             info = budget_period.with_context(ctx).get_budget_info(analytic_id)
-            item.write(
-                {"amount": info["amount_commit"] + info["amount_actual"]}
-            )
+            item.write({"amount": info["amount_consumed"]})
 
     def _get_consumed_plan(self, date):
         """
