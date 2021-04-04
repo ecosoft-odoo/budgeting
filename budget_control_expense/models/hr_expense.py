@@ -69,8 +69,9 @@ class HRExpense(models.Model):
 
     def _init_docline_budget_vals(self, budget_vals):
         self.ensure_one()
-        if not budget_vals.get("amount_currency"):
-            budget_vals["amount_currency"] = self.untaxed_amount
+        if not budget_vals.get("amount_currency", False):  # case clear advance
+            budget_vals["amount_currency"] = self.quantity * self.unit_amount
+            budget_vals["tax_ids"] = self.tax_ids.ids
         # Document specific vals
         budget_vals.update(
             {

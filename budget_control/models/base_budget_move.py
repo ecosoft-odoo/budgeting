@@ -205,7 +205,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         return budget_vals
 
     def commit_budget(self, reverse=False, **vals):
-        """Create budget commit for each move line."""
+        """Create budget commit for each docline"""
         self.prepare_commit()
         to_commit = (
             self.env.context.get("force_commit") or self._valid_commit_state()
@@ -213,9 +213,11 @@ class BudgetDoclineMixin(models.AbstractModel):
         if self.can_commit and to_commit:
             # Set amount_currency
             budget_vals = self._init_docline_budget_vals(vals)
-            # Case use_amount_commit = True
+            # Case force use use_amount_commit = True
             if self.env.context.get("use_amount_commit"):
                 budget_vals["amount_currency"] = self.amount_commit
+            # Case budget_include_tax = True
+            budget_vals = self._budget_include_tax(budget_vals)
             # Complete budget commitment dict
             budget_vals = self._update_budget_commitment(
                 budget_vals, reverse=reverse
@@ -234,9 +236,30 @@ class BudgetDoclineMixin(models.AbstractModel):
         return [self._budget_analytic_field]
 
     def _init_docline_budget_vals(self, budget_vals):
-        if not budget_vals.get("amount_currency"):
-            raise ValidationError(_("No amount currency passed in!"))
-        # TODO: include_tax coversion.
+        """ To be extended by docline to add untaxed amount_currency """
+        if "amount_currency" not in budget_vals:
+            raise ValidationError(_("No amount_currency passed in!"))
+        return budget_vals
+
+    def _budget_include_tax(self, budget_vals):
+        if "tax_ids" not in budget_vals:
+            return budget_vals
+        tax_ids = budget_vals.pop("tax_ids")
+        if tax_ids:
+            is_refund = False
+            if (
+                self._name == "account.move.line"
+                and self.move_id.move_type in ("in_refund", "out_refund")
+            ):
+                is_refund = True
+            taxes = self.env["account.tax"].browse(tax_ids)
+            res = taxes.compute_all(
+                budget_vals["amount_currency"], is_refund=is_refund
+            )
+            if self.env.company.budget_include_tax:
+                budget_vals["amount_currency"] = res["total_included"]
+            else:
+                budget_vals["amount_currency"] = res["total_excluded"]
         return budget_vals
 
     def prepare_commit(self):

@@ -33,7 +33,18 @@ class AccountMoveLine(models.Model):
 
     def _init_docline_budget_vals(self, budget_vals):
         self.ensure_one()
-        budget_vals["amount_currency"] = self.amount_currency
+        if self.move_id.move_type == "entry":
+            budget_vals["amount_currency"] = self.amount_currency
+        else:
+            sign = (
+                -1
+                if self.move_id.move_type in ("out_refund", "in_refund")
+                else 1
+            )
+            budget_vals["amount_currency"] = (
+                sign * self.price_unit * self.quantity
+            )
+        budget_vals["tax_ids"] = self.tax_ids.ids
         # Document specific vals
         budget_vals.update(
             {
