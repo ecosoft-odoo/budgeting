@@ -508,7 +508,13 @@ class BudgetPeriod(models.Model):
         Note: based on installed modules
         """
         self.ensure_one()
-        budget_info = {}
+        budget_info = {
+            "amount_budget": 0,
+            "amount_commit": 0,
+            "amount_actual": 0,
+            "amount_consumed": 0,
+            "amount_balance": 0,
+        }
         company = self.env.user.company_id
         instance = self.report_instance_id
         kpis = instance.report_id.get_kpis(company)
@@ -519,22 +525,22 @@ class BudgetPeriod(models.Model):
         )
         return budget_info
 
-    def _set_budget_info_amount(self, source, domain, kwargs):
+    def _set_budget_info_amount(self, source, domain, kwargs, is_commit=False):
         self.ensure_one()
-        kpi_matrix, kpi_lines, budget_info = itemgetter(
+        kpi_matrix, kpi_lines, info = itemgetter(
             "kpi_matrix", "kpi_lines", "budget_info"
         )(kwargs)
         period = self.period_ids.filtered_domain(domain)
         if not period:
-            budget_info[source] = 0
+            info[source] = 0
             return
         amount = self.env["budget.period"]._get_kpis_value(
             kpi_matrix, kpi_lines, period
         )
-        budget_info[source] = amount
-        # Commit
-        budget_info["amount_commit"] = 0.0
-        return budget_info
+        info[source] = amount
+        if is_commit:
+            info["amount_commit"] += amount
+        info["amount_consumed"] = info["amount_commit"] + info["amount_actual"]
 
     def _compute_budget_info(self, **kwargs):
         """ Add more data info budget_info, based on installed modules """

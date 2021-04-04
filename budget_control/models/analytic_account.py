@@ -49,9 +49,9 @@ class AccountAnalyticAccount(models.Model):
         help="Consumed = Total Commitments + Actual",
     )
     amount_balance = fields.Monetary(
-        string="Balance",
+        string="Available",
         compute="_compute_amount_budget_info",
-        help="Balance = Total Budget - Consumed",
+        help="Available = Total Budget - Consumed",
     )
 
     def _compute_amount_budget_info(self):

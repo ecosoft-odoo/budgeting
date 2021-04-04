@@ -34,17 +34,6 @@ class BudgetPeriod(models.Model):
             periods.update({purchase_request: "-"})
         return periods
 
-    def _set_budget_info_amount(self, source, domain, kwargs):
-        budget_info = super()._set_budget_info_amount(source, domain, kwargs)
-        if budget_info.get("amount_purchase_request"):
-            budget_info["amount_commit"] += budget_info[
-                "amount_purchase_request"
-            ]
-            budget_info["amount_consumed"] = (
-                budget_info["amount_commit"] + budget_info["amount_actual"]
-            )
-        return budget_info
-
     def _compute_budget_info(self, **kwargs):
         """ Add more data info budget_info, based on installed modules """
         super()._compute_budget_info(**kwargs)
@@ -58,4 +47,5 @@ class BudgetPeriod(models.Model):
                 )
             ],
             kwargs,
+            is_commit=True,
         )
