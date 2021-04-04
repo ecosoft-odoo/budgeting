@@ -10,3 +10,5 @@ from . import mis_budget_item
 from . import budget_move_forward
 from . import mis_report_instance
 from . import mis_report
+from . import res_company
+from . import res_config_settings

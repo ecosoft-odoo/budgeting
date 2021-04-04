@@ -11,6 +11,7 @@ class BudgetControlCommon(SavepointCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.env.company.budget_include_tax = False  # Not Tax Included
         cls.year = datetime.now().year
         RangeType = cls.env["date.range.type"]
         cls.Analytic = cls.env["account.analytic.account"]

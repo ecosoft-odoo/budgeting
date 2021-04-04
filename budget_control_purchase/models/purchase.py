@@ -81,6 +81,7 @@ class PurchaseOrderLine(models.Model):
         if "product_qty" in budget_vals and budget_vals.get("product_qty"):
             product_qty = budget_vals.pop("product_qty")
         budget_vals["amount_currency"] = self.price_unit * product_qty
+        budget_vals["tax_ids"] = self.taxes_id.ids
         # Document specific vals
         budget_vals.update(
             {

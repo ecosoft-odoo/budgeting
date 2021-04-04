@@ -122,10 +122,15 @@ class HRExpense(models.Model):
                 # !!! There is no direct reference between advance and clearing !!!
                 advance = clearing.sheet_id.advance_sheet_id.expense_line_ids
                 advance.ensure_one()
+                clearing_amount = (
+                    clearing.total_amount
+                    if self.env.company.budget_include_tax
+                    else clearing.untaxed_amount
+                )
                 budget_move = advance.commit_budget(
                     reverse=True,
                     clearing_id=clearing.id,
-                    amount_currency=clearing.untaxed_amount,
+                    amount_currency=clearing_amount,
                 )
                 budget_moves |= budget_move
             else:
