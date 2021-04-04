@@ -23,7 +23,6 @@
         <field name="res_model">mis.budget.item</field>
         <field name="view_mode">tree,form</field>
         <field name="domain">[('budget_control_id', '=', active_id)]</field>
-        <field name="context">{'active_test': False}</field>
         <field name="view_id" ref="mis_budget_item_tree_view_readonly" />
     </record>
 </odoo>

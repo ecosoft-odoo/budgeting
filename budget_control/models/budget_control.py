@@ -75,6 +75,7 @@ class BudgetControl(models.Model):
         inverse_name="budget_control_id",
         string="Budget Items",
         copy=False,
+        context={"active_test": False},
         readonly=True,
         states={
             "draft": [("readonly", False)],

@@ -29,6 +29,7 @@ class BudgetPlan(models.Model):
     budget_control_ids = fields.One2many(
         comodel_name="budget.control",
         inverse_name="plan_id",
+        context={"active_test": False},
     )
     budget_control_count = fields.Integer(
         string="# of Budget Control",
@@ -88,11 +89,15 @@ class BudgetPlan(models.Model):
 
     def button_open_budget_control(self):
         self.ensure_one()
+        ctx = self._context.copy()
+        ctx.update({"create": False, "active_test": True})
+        if not self.budget_control_ids.filtered("active"):
+            ctx.update({"search_default_inactive": True})
         action = {
             "name": _("Budget Control Sheet"),
             "type": "ir.actions.act_window",
             "res_model": "budget.control",
-            "context": {"create": False, "active_test": False},
+            "context": ctx,
         }
         if len(self.budget_control_ids) == 1:
             action.update(
