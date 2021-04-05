@@ -17,17 +17,21 @@ class BudgetTransferItem(models.Model):
         comodel_name="mis.budget",
         related="transfer_id.mis_budget_id",
     )
+    budget_period_id = fields.Many2one(
+        comodel_name="budget.period",
+        related="transfer_id.budget_period_id",
+    )
     source_budget_control_id = fields.Many2one(
         comodel_name="budget.control",
         string="Source",
-        domain="[('budget_id', '=', mis_budget_id)]",
+        domain="[('budget_period_id', '=', budget_period_id)]",
         required=True,
         index=True,
     )
     target_budget_control_id = fields.Many2one(
         comodel_name="budget.control",
         string="Target",
-        domain="[('budget_id', '=', mis_budget_id)]",
+        domain="[('budget_period_id', '=', budget_period_id)]",
         required=True,
         index=True,
     )

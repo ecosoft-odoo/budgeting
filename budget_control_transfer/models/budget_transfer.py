@@ -10,9 +10,11 @@ class BudgetTransfer(models.Model):
     _description = "Budget Transfer by Item"
 
     name = fields.Char(
+        default="/",
+        index=True,
+        copy=False,
         required=True,
         readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
@@ -60,6 +62,14 @@ class BudgetTransfer(models.Model):
         default="draft",
         tracking=True,
     )
+
+    @api.model
+    def create(self, vals):
+        if vals.get("name", "/") == "/":
+            vals["name"] = (
+                self.env["ir.sequence"].next_by_code("budget.transfer") or "/"
+            )
+        return super().create(vals)
 
     @api.depends("transfer_item_ids")
     def _compute_budget_transfer(self):
