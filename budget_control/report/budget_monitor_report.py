@@ -42,6 +42,15 @@ class BudgetMonitorReport(models.Model):
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
     )
+    budget_state = fields.Selection(
+        [
+            ("draft", "Draft"),
+            ("submit", "Submitted"),
+            ("done", "Controlled"),
+            ("cancel", "Cancelled"),
+        ],
+        string="Budget State",
+    )
 
     @property
     def _table_query(self):
@@ -91,7 +100,8 @@ class BudgetMonitorReport(models.Model):
                 a.credit-a.debit as amount,
                 a.product_id,
                 a.account_id,
-                b.name as reference
+                b.name as reference,
+                null::char as budget_state
                 """
                 % (amount_type[:1], res_model, res_field, amount_type)
             ]
@@ -130,7 +140,8 @@ class BudgetMonitorReport(models.Model):
             mbi.amount as amount,
             null::integer as product_id,
             null::integer as account_id,
-            b.name as reference
+            b.name as reference,
+            b.state as budget_state
         """
         ]
 
