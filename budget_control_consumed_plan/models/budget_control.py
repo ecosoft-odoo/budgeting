@@ -1,22 +1,25 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import fields, models
+from odoo import _, fields, models
 
 
 class BudgetControl(models.Model):
     _inherit = "budget.control"
 
-    def _update_consumed_value(self, item_ids):
+    def _update_consumed_value(self, item_ids, date):
         analytic_id = [self.analytic_account_id.id]
         budget_period = self.budget_period_id
         ctx = self._context.copy()
         for item in item_ids:
+            date_to = item.date_to
+            if item.date_from <= date <= item.date_to:
+                date_to = date
             ctx.update(
                 {
                     "filter_activity_group": item.activity_group_id.id,
                     "filter_period_date_from": item.date_from,
-                    "filter_period_date_to": item.date_to,
+                    "filter_period_date_to": date_to,
                 }
             )
             info = budget_period.with_context(ctx).get_budget_info(analytic_id)
@@ -49,11 +52,26 @@ class BudgetControl(models.Model):
         # Filter date range to current month
         item_ids = self.item_ids.filtered(lambda l: l.date_from <= date)
         item_ids.write({"amount": 0.0})
-        self._update_consumed_value(item_ids)
+        self._update_consumed_value(item_ids, date)
 
-    def action_update_consumed_plan(self):
-        self.ensure_one()
-        today = fields.Date.context_today(self)
-        date = self._context.get("manual_date", today)
-        self._get_consumed_plan(date)
+    def action_update_consumed_plan(self, date=False):
+        if not date:
+            date = fields.Date.context_today(self)
+        for rec in self:
+            rec._get_consumed_plan(date)
         return True
+
+    def action_select_update_consumed_plan(self):
+        group_manual_date_consumed_plan = self.env.user.has_group(
+            "budget_control_consumed_plan.group_manual_date_consumed_plan"
+        )
+        if group_manual_date_consumed_plan:
+            return {
+                "name": _("Updating Consumed Plan"),
+                "res_model": "update.consumed.plan",
+                "view_mode": "form",
+                "context": self._context,
+                "target": "new",
+                "type": "ir.actions.act_window",
+            }
+        return self.action_update_consumed_plan()
