@@ -307,14 +307,17 @@ class BudgetControl(models.Model):
 
     def _get_value_items(self, date_range, kpi_expression):
         self.ensure_one()
-        return {
-            "budget_id": self.budget_id.id,
-            "kpi_expression_id": kpi_expression.id,
-            "date_range_id": date_range.id,
-            "date_from": date_range.date_start,
-            "date_to": date_range.date_end,
-            "analytic_account_id": self.analytic_account_id.id,
-        }
+        items = [
+            {
+                "budget_id": self.budget_id.id,
+                "kpi_expression_id": kpi_expression.id,
+                "date_range_id": date_range.id,
+                "date_from": date_range.date_start,
+                "date_to": date_range.date_end,
+                "analytic_account_id": self.analytic_account_id.id,
+            }
+        ]
+        return items
 
     def prepare_budget_control_matrix(self):
         KpiExpression = self.env["mis.report.kpi.expression"]
@@ -339,8 +342,8 @@ class BudgetControl(models.Model):
             for date_range in date_ranges:
                 for kpi_expression in kpi_expressions:
                     vals = plan._get_value_items(date_range, kpi_expression)
-                    items += [(0, 0, vals)]
-            plan.write({"item_ids": items})
+                    items += vals
+            plan.write({"item_ids": [(0, 0, val) for val in items]})
             # Also reset the carry over budget
             plan.init_budget_commit = False
 
