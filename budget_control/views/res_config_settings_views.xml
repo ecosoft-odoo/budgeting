@@ -17,11 +17,11 @@
                     <h2>Controls</h2>
                     <div
                         class="row mt16 o_settings_container"
-                        name="budget_revision_setting_container"
+                        name="budget_control_setting_container"
                     >
                         <div
                             class="col-12 col-lg-6 o_setting_box"
-                            id="budget_activity_tag"
+                            id="budget_include_tax"
                         >
                             <div class="o_setting_left_pane">
                                 <field name="budget_include_tax" />

@@ -9,8 +9,9 @@ class MisBudgetItem(models.Model):
     is_readonly = fields.Boolean(compute="_compute_amount_readonly")
 
     @api.depends("budget_control_id")
-    def _compute_amount_readonly(self):
-        today = fields.Date.context_today(self)
+    def _compute_amount_readonly(self, date=False):
+        if not date:
+            date = fields.Date.context_today(self)
         for rec in self:
             if (
                 len(self.budget_control_id) == 1
@@ -18,4 +19,4 @@ class MisBudgetItem(models.Model):
             ):
                 self.is_readonly = False
                 break
-            rec.is_readonly = rec.date_from <= today and True or False
+            rec.is_readonly = rec.date_from <= date and True or False
