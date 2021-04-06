@@ -3,12 +3,12 @@
 from odoo import models
 
 
-class AccountMove(models.Model):
-    _name = "account.move"
-    _inherit = ["account.move", "base.fund.constraint.commit"]
+class PurchaseRequest(models.Model):
+    _name = "purchase.request"
+    _inherit = ["purchase.request", "base.fund.constraint.commit"]
     _doc_line_field = "line_ids"
 
-    def action_post(self):
-        res = super().action_post()
+    def button_to_approve(self):
+        res = super().button_to_approve()
         self.check_fund_constraint()
         return res
