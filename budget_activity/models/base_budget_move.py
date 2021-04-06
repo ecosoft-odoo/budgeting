@@ -33,11 +33,13 @@ class BudgetDoclineMixin(models.AbstractModel):
     )
 
     def _update_budget_commitment(self, budget_vals, reverse=False):
-        res = super()._update_budget_commitment(budget_vals, reverse=reverse)
-        res["activity_id"] = self.activity_id.id
+        budget_vals = super()._update_budget_commitment(
+            budget_vals, reverse=reverse
+        )
+        budget_vals["activity_id"] = self.activity_id.id
         # For case object without account_id (PR/PO), normally account is from
         # product, it should now changed to follow activity.
         # But if account_id is part of object (INV), use whatever is passed-in.
         if "account_id" not in self:
-            res["account_id"] = self["activity_id"].account_id.id
-        return res
+            budget_vals["account_id"] = self["activity_id"].account_id.id
+        return budget_vals

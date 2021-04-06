@@ -1,7 +1,6 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
-import ast
 
 from odoo import api, fields, models
 
@@ -54,10 +53,8 @@ class MisReportKpi(models.Model):
         for kpi in self:
             if kpi.activity_expression and kpi.budget_activity_group:
                 activity_ids = kpi.budget_activity_group.activity_ids
-                account_ids = activity_ids.mapped("account_id")
-                account_str = [
-                    ast.literal_eval(acc.code) for acc in account_ids
-                ]
+                accounts = activity_ids.mapped("account_id")
+                account_str = "[%s]" % ",".join([acc.code for acc in accounts])
                 kpi.expression = "bal{}{}[{}]".format(
                     kpi.respectively_variation or "",
                     account_str,
