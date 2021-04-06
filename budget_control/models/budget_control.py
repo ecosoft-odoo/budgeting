@@ -142,6 +142,20 @@ class BudgetControl(models.Model):
         compute="_compute_budget_info",
         help="Available = Total Budget - Consumed",
     )
+    mis_report_id = fields.Many2one(
+        comodel_name="mis.report",
+        related="budget_period_id.report_id",
+        readonly=True,
+    )
+    use_all_kpis = fields.Boolean()
+    kpi_ids = fields.Many2many(
+        string="KPIs",
+        comodel_name="mis.report.kpi",
+        relation="kpi_budget_contol_rel",
+        column1="budget_control_id",
+        column2="kpi_id",
+        domain="[('report_id', '=', mis_report_id), ('budgetable', '=', True)]",
+    )
     state = fields.Selection(
         [
             ("draft", "Draft"),
@@ -164,6 +178,17 @@ class BudgetControl(models.Model):
             "Duplicated analytic account for the same budget!",
         ),
     ]
+
+    @api.onchange("use_all_kpis")
+    def _onchange_use_all_kpis(self):
+        if self.use_all_kpis:
+            domain = [
+                ("report_id", "=", self.mis_report_id.id),
+                ("budgetable", "=", True),
+            ]
+            self.kpi_ids = self.env["mis.report.kpi"].search(domain)
+        else:
+            self.kpi_ids = False
 
     def action_confirm_state(self):
         return {
@@ -304,6 +329,7 @@ class BudgetControl(models.Model):
         return [
             ("kpi_id.report_id", "=", self.budget_id.report_id.id),
             ("kpi_id.budgetable", "=", True),
+            ("kpi_id.id", "in", self.kpi_ids.ids),
         ]
 
     def _get_value_items(self, date_range, kpi_expression):
@@ -323,8 +349,6 @@ class BudgetControl(models.Model):
     def prepare_budget_control_matrix(self):
         KpiExpression = self.env["mis.report.kpi.expression"]
         DateRange = self.env["date.range"]
-        if self._context.get("plan_manual", False):
-            return
         for plan in self:
             if not self._context.get("skip_unlink", False):
                 plan.item_ids.unlink()

@@ -156,7 +156,6 @@
                     <group>
                         <group name="budget_control_left">
                             <field name="analytic_account_id" />
-                            <field name="init_budget_commit" />
                         </group>
                         <group name="budget_control_right">
                             <field name="active" invisible="1" />
@@ -239,6 +238,18 @@
                                     nolabel="1"
                                     class="oe_subtotal_footer_separator"
                                 />
+                            </group>
+                        </page>
+                        <page name="options" string="Reset Options">
+                            <group>
+                                <group>
+                                    <field name="init_budget_commit" />
+                                    <field name="use_all_kpis" />
+                                </group>
+                                <group>
+                                    <field name="mis_report_id" invisible="1" />
+                                    <field name="kpi_ids" widget="many2many_tags" />
+                                </group>
                             </group>
                         </page>
                     </notebook>
