@@ -36,10 +36,6 @@ class BudgetPlan(models.Model):
         self.update({"enable_revision_number": group_enable_revision})
         return True
 
-    @api.depends("budget_control_ids", "revision_number")
-    def _compute_budget_control_related_count(self):
-        return super()._compute_budget_control_related_count()
-
     def _cancel_budget_control(self):
         self.ensure_one()
         budget_control = self.budget_control_ids

@@ -21,8 +21,13 @@ class BudgetControl(models.Model):
 
     _sql_constraints = [
         (
+            "name_uniq",
+            "UNIQUE(name, revision_number, active)",
+            "Name must be unique!",
+        ),
+        (
             "budget_control_uniq",
-            "UNIQUE(budget_id, analytic_account_id, name)",
+            "UNIQUE(budget_id, analytic_account_id, revision_number, active)",
             "Duplicated analytic account for the same budget!",
         ),
     ]

@@ -93,7 +93,9 @@ class BudgetPlan(models.Model):
 
     def _compute_budget_control_related_count(self):
         for rec in self:
-            rec.budget_control_count = len(rec.budget_control_ids)
+            rec.budget_control_count = len(
+                rec.budget_control_ids.filtered("active")
+            )
 
     def action_update_amount_consumed(self):
         for rec in self:
