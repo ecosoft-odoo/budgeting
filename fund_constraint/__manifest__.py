@@ -14,6 +14,7 @@
         "views/analytic_account_view.xml",
         "views/budget_control_view.xml",
         "views/fund_constraint_view.xml",
+        "views/account_move_views.xml",
     ],
     "installable": True,
     "maintainers": ["Saran440"],
