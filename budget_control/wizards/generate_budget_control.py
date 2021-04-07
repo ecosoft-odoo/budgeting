@@ -7,10 +7,14 @@ class GenerateBudgetControl(models.TransientModel):
     _name = "generate.budget.control"
     _description = "Generate Budget Control Sheets"
 
+    mis_report_id = fields.Many2one(
+        comodel_name="mis.report",
+        required=True,
+        ondelete="cascade",
+    )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
         required=True,
-        default=lambda self: self._get_budget_period_id(),
         ondelete="cascade",
     )
     budget_id = fields.Many2one(
@@ -38,9 +42,21 @@ class GenerateBudgetControl(models.TransientModel):
         domain="[('group_id', 'in', analytic_group_ids)]",
     )
     init_budget_commit = fields.Boolean(
-        string="Initial Budget By Commitment",
+        string="Initial Budget By Commit Amount",
         help="If checked, the newly created budget control sheet will has "
         "initial budget equal to current budget commitment of its year.",
+    )
+    init_kpis = fields.Boolean(
+        string="Initial KPIs",
+        help="When each budget control sheet is created, prefill lines "
+        "with Intial KPIs",
+    )
+    kpi_ids = fields.Many2many(
+        comodel_name="mis.report.kpi",
+        relation="kpi_generate_budget_control_rel",
+        column1="wizard_id",
+        column2="kpi_id",
+        domain="[('report_id', '=', mis_report_id), ('budgetable', '=', True)]",
     )
     result_analytic_account_ids = fields.Many2many(
         comodel_name="account.analytic.account",
@@ -60,8 +76,13 @@ class GenerateBudgetControl(models.TransientModel):
     )
 
     @api.model
-    def _get_budget_period_id(self):
-        return self.env["budget.period"].browse(self._context.get("active_id"))
+    def default_get(self, default_fields):
+        values = super().default_get(default_fields)
+        period_id = self.env.context.get("active_id")
+        period = self.env["budget.period"].browse(period_id)
+        values["budget_period_id"] = period.id
+        values["mis_report_id"] = period.report_id.id
+        return values
 
     @api.onchange("all_analytic_accounts", "analytic_group_ids")
     def _onchange_analytic_accounts(self):
@@ -77,6 +98,7 @@ class GenerateBudgetControl(models.TransientModel):
         plan_date_range_id = self.budget_period_id.plan_date_range_type_id.id
         budget_id = self.budget_id.id
         budget_name = self.budget_period_id.name
+        kpi_ids = self.kpi_ids.ids
         return list(
             map(
                 lambda l: {
@@ -86,6 +108,7 @@ class GenerateBudgetControl(models.TransientModel):
                     "budget_id": budget_id,
                     "analytic_account_id": l["analytic_account_id"].id,
                     "plan_date_range_type_id": plan_date_range_id,
+                    "kpi_ids": kpi_ids,
                 },
                 vals,
             )
@@ -100,13 +123,13 @@ class GenerateBudgetControl(models.TransientModel):
 
     def _get_existing_budget(self):
         BudgetControl = self.env["budget.control"]
-        existing_budget = BudgetControl.search(
+        existing_budget_controls = BudgetControl.search(
             [
                 ("budget_id", "=", self.budget_id.id),
                 ("analytic_account_id", "in", self.analytic_account_ids.ids),
             ]
         )
-        return existing_budget
+        return existing_budget_controls
 
     def _hook_budget_controls(self, budget_controls):
         return budget_controls
@@ -118,8 +141,10 @@ class GenerateBudgetControl(models.TransientModel):
         """Create new draft budget control sheet for all selected analytics."""
         self.ensure_one()
         # Find existing controls, so we can skip.
-        existing_budget = self._get_existing_budget()
-        existing_analytics = existing_budget.mapped("analytic_account_id")
+        existing_budget_controls = self._get_existing_budget()
+        existing_analytics = existing_budget_controls.mapped(
+            "analytic_account_id"
+        )
         # Create budget controls that are not already exists
         new_analytic = self.analytic_account_ids - existing_analytics
         vals = self._prepare_budget_control_sheet(new_analytic)

@@ -18,4 +18,5 @@
     "installable": True,
     "maintainers": ["Saran440"],
     "development_status": "Alpha",
+    "post_commit_hook": "post_commit_hook",
 }

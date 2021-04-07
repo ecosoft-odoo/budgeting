@@ -12,11 +12,11 @@ class GenerateBudgetControl(models.TransientModel):
 
     def _get_existing_budget(self):
         """ Update allocated amount from budget plan """
-        existing_budget = super()._get_existing_budget()
+        existing_budget_controls = super()._get_existing_budget()
         if self.budget_plan_id:
             plan_line = self.budget_plan_id.plan_line
-            existing_budget._update_allocated_amount(plan_line)
-        return existing_budget
+            existing_budget_controls._update_allocated_amount(plan_line)
+        return existing_budget_controls
 
     def _prepare_value_duplicate(self, vals):
         if self.budget_plan_id:
@@ -25,7 +25,6 @@ class GenerateBudgetControl(models.TransientModel):
             )
             budget_id = self.budget_id.id
             budget_name = self.budget_period_id.name
-            plan_id = self.budget_plan_id.id
             return list(
                 map(
                     lambda l: {
@@ -35,7 +34,6 @@ class GenerateBudgetControl(models.TransientModel):
                         "budget_id": budget_id,
                         "analytic_account_id": l["analytic_account_id"].id,
                         "plan_date_range_type_id": plan_date_range_id,
-                        "plan_id": plan_id,
                         "allocated_amount": l["allocated_amount"],
                     },
                     vals,

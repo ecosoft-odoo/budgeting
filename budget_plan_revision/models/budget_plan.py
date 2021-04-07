@@ -24,12 +24,16 @@ class BudgetPlan(models.Model):
         compute="_compute_group_revision_number"
     )
 
+    def _domain_budget_control(self, analytics):
+        domain = super()._domain_budget_control(analytics)
+        return domain + [("revision_number", "=", self.revision_number)]
+
     @api.depends("revision_number")
     def _compute_group_revision_number(self):
         group_enable_revision = self.env.user.has_group(
             "budget_plan_revision.group_enable_revision"
         )
-        self.write({"enable_revision_number": group_enable_revision})
+        self.update({"enable_revision_number": group_enable_revision})
         return True
 
     @api.depends("budget_control_ids", "revision_number")
@@ -102,7 +106,6 @@ class BudgetPlan(models.Model):
         action_bc = old_budget_control.create_revision()
         domain = ast.literal_eval(action_bc.get("domain", False))
         budget_controls = BudgetControl.browse(domain[0][2])
-        budget_controls.write({"plan_id": self.id})
         budget_controls._update_allocated_amount(self.plan_line)
         return True
 
