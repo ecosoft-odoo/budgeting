@@ -150,6 +150,7 @@ class GenerateBudgetControl(models.TransientModel):
         vals = self._prepare_budget_control_sheet(new_analytic)
         budget_controls = self._create_budget_controls(vals)
         budget_controls = self._hook_budget_controls(budget_controls)
+        budget_controls.prepare_budget_control_matrix()
         budget_controls.do_init_budget_commit(self.init_budget_commit)
         # Return result
         self.write(

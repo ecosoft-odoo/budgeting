@@ -19,14 +19,8 @@ class BudgetControl(models.Model):
     kpi_x_job_order = fields.One2many(
         comodel_name="budget.control.kpi.x.job.order",
         inverse_name="budget_control_id",
-        compute="_compute_kpi_x_job_order",
-        store=True,
-        readonly=False,
-        states={
-            "submit": [("readonly", True)],
-            "done": [("readonly", True)],
-            "cancel": [("readonly", True)],
-        },
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
 
     @api.onchange("use_all_job_order")
@@ -39,10 +33,12 @@ class BudgetControl(models.Model):
         else:
             self.job_order_ids = False
 
-    @api.depends("kpi_ids", "job_order_ids")
+    @api.onchange("kpi_ids", "job_order_ids")
     def _compute_kpi_x_job_order(self):
+
         KPIxJO = self.env["budget.control.kpi.x.job.order"]
         for rec in self:
+            # rec.kpi_x_job_order.unlink()
             rec.kpi_x_job_order = False
             for kpi in rec.kpi_ids:
                 rec.kpi_x_job_order += KPIxJO.new(
@@ -56,14 +52,14 @@ class BudgetControl(models.Model):
         """ For each item, multiply by the job order """
         items = super()._get_value_items(date_range, kpi_expression)
         if not self.kpi_x_job_order:
-            return []
+            return items
         # On each KPI, expand it by its job orders
         kpi_jo = {
             x.kpi_ids[0].id: x.job_order_ids.ids for x in self.kpi_x_job_order
         }
         new_items = []
         for item in items:
-            job_order_ids = kpi_jo.get(item["kpi_expression_id"], [False])
+            job_order_ids = kpi_jo.get(item["kpi_expression_id"]) or [False]
             for jo_id in job_order_ids:
                 new_item = item.copy()
                 new_item["job_order_id"] = jo_id

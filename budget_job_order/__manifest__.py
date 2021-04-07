@@ -11,6 +11,7 @@
     "data": [
         "security/budget_job_order_security.xml",
         "security/ir.model.access.csv",
+        "report/budget_monitor_report_view.xml",
         "views/res_config_settings_views.xml",
         "views/account_move_views.xml",
         "views/job_order_view.xml",

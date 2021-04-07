@@ -172,14 +172,14 @@ class BudgetControl(models.Model):
         default="draft",
         tracking=True,
     )
-    _sql_constraints = [
-        ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
-        (
-            "budget_control_uniq",
-            "UNIQUE(budget_id, analytic_account_id)",
-            "Duplicated analytic account for the same budget!",
-        ),
-    ]
+    # _sql_constraints = [
+    #     ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
+    #     (
+    #         "budget_control_uniq",
+    #         "UNIQUE(budget_id, analytic_account_id)",
+    #         "Duplicated analytic account for the same budget!",
+    #     ),
+    # ]
 
     @api.onchange("use_all_kpis")
     def _onchange_use_all_kpis(self):
@@ -287,25 +287,6 @@ class BudgetControl(models.Model):
             )
         )
         return amount_compare, message
-
-    @api.model
-    def create(self, vals):
-        plan = super().create(vals)
-        plan.prepare_budget_control_matrix()
-        return plan
-
-    def write(self, vals):
-        # if any field in header changes, reset the plan matrix
-        res = super().write(vals)
-        fixed_fields = [
-            "budget_id",
-            "plan_date_range_type_id",
-            "analytic_account_id",
-        ]
-        change_fields = list(vals.keys())
-        if list(set(fixed_fields) & set(change_fields)):
-            self.prepare_budget_control_matrix()
-        return res
 
     def action_draft(self):
         self.write({"state": "draft"})

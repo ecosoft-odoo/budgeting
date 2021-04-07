@@ -11,6 +11,7 @@ class MisBudgetItem(models.Model):
         comodel_name="budget.control",
         ondelete="cascade",
         index=True,
+        required=True,
     )
     active = fields.Boolean(
         compute="_compute_active",

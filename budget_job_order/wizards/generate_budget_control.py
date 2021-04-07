@@ -6,7 +6,8 @@ from odoo import models
 class GenerateBudgetControl(models.TransientModel):
     _inherit = "generate.budget.control"
 
-    def _hook_budget_controls(self, budget_controls):
-        budget_controls = super()._hook_budget_controls(budget_controls)
+    def _create_budget_controls(self, vals):
+        budget_controls = self.env["budget.control"].create(vals)
+        # Recompute table kpi_x_job, as this will be used to reset plan.
         budget_controls._compute_kpi_x_job_order()
         return budget_controls
