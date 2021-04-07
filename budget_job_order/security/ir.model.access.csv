@@ -1,3 +1,4 @@
 "id","name","model_id:id","group_id:id","perm_read","perm_write","perm_create","perm_unlink"
 user_budget_job_order,user_budget_job_order,model_budget_job_order,budget_control.group_budget_control_user,1,0,0,0
 edit_budget_job_order,edit_budget_job_order,model_budget_job_order,budget_job_order.group_budget_job_order,1,1,1,1
+access_budget_control_kpi_x_job_order,access_budget_control_kpi_x_job_order,model_budget_control_kpi_x_job_order,base.group_user,1,1,1,1

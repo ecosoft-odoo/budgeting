@@ -19,13 +19,18 @@ class BudgetControl(models.Model):
     )
     revision_number = fields.Integer(readonly=True)
 
-    _sql_constraints = [
-        (
-            "budget_control_uniq",
-            "UNIQUE(budget_id, analytic_account_id, name)",
-            "Duplicated analytic account for the same budget!",
-        ),
-    ]
+    # _sql_constraints = [
+    #     (
+    #         "name_uniq",
+    #         "UNIQUE(name, revision_number, active)",
+    #         "Name must be unique!",
+    #     ),
+    #     (
+    #         "budget_control_uniq",
+    #         "UNIQUE(budget_id, analytic_account_id, revision_number, active)",
+    #         "Duplicated analytic account for the same budget!",
+    #     ),
+    # ]
 
     def _copy_item_ids(self, old_items):
         self.ensure_one()

@@ -23,6 +23,7 @@ class TestBudgetControl(BudgetControlCommon):
                 "budget_id": cls.budget_period.mis_budget_id.id,
                 "analytic_account_id": cls.costcenter1.id,
                 "plan_date_range_type_id": cls.date_range_type.id,
+                "kpi_ids": [cls.kpi1.id, cls.kpi2.id, cls.kpi3.id],
             }
         )
         # Test item created for 3 kpi x 4 quarters = 12 budget items

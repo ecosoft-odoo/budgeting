@@ -243,8 +243,11 @@
                         <page name="options" string="Reset Options">
                             <group>
                                 <group>
+                                    <field
+                                        name="use_all_kpis"
+                                        widget="boolean_toggle"
+                                    />
                                     <field name="init_budget_commit" />
-                                    <field name="use_all_kpis" />
                                 </group>
                                 <group>
                                     <field name="mis_report_id" invisible="1" />
