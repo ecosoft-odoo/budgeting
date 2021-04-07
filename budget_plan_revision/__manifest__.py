@@ -22,4 +22,5 @@
     "installable": True,
     "maintainers": ["Saran440"],
     "development_status": "Alpha",
+    "post_init_hook": "post_init_hook",
 }

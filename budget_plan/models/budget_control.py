@@ -6,11 +6,6 @@ from odoo import fields, models
 class BudgetControl(models.Model):
     _inherit = "budget.control"
 
-    plan_id = fields.Many2one(
-        comodel_name="budget.plan",
-        index=True,
-        ondelete="cascade",
-    )
     allocated_amount = fields.Monetary(
         readonly=True,
         help="Total amount from budget plan before revision",
@@ -21,10 +16,9 @@ class BudgetControl(models.Model):
     )
 
     def _update_allocated_amount(self, plan_line):
+        alloc = {
+            x.analytic_account_id.id: x.allocated_amount for x in plan_line
+        }
         for rec in self:
-            bc_plan_line = plan_line.filtered(
-                lambda l: l.analytic_account_id.id
-                == rec.analytic_account_id.id
-            )
-            if bc_plan_line.allocated_amount != rec.allocated_amount:
-                rec.write({"allocated_amount": bc_plan_line.allocated_amount})
+            rec.action_draft()
+            rec.allocated_amount = alloc.get(rec.analytic_account_id.id)

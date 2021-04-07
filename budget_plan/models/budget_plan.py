@@ -28,13 +28,12 @@ class BudgetPlan(models.Model):
     date_to = fields.Date(related="budget_period_id.bm_date_to")
     budget_control_ids = fields.One2many(
         comodel_name="budget.control",
-        inverse_name="plan_id",
+        compute="_compute_budget_control_ids",
         context={"active_test": False},
     )
     budget_control_count = fields.Integer(
         string="# of Budget Control",
         compute="_compute_budget_control_related_count",
-        store=True,
         help="Count budget control in Plan",
     )
     total_amount = fields.Monetary(compute="_compute_total_amount")
@@ -74,7 +73,24 @@ class BudgetPlan(models.Model):
         for rec in self:
             rec.total_amount = sum(rec.plan_line.mapped("amount"))
 
-    @api.depends("budget_control_ids")
+    def _domain_budget_control(self, analytics):
+        self.ensure_one()
+        return [
+            ("budget_period_id", "=", self.budget_period_id.id),
+            ("analytic_account_id", "in", analytics.ids),
+        ]
+
+    def _compute_budget_control_ids(self):
+        """ Find all budget controls of the same period """
+        for rec in self:
+            analytics = rec.plan_line.mapped("analytic_account_id")
+            domain = rec._domain_budget_control(analytics)
+            rec.budget_control_ids = (
+                self.env["budget.control"]
+                .with_context(active_test=False)
+                .search(domain)
+            )
+
     def _compute_budget_control_related_count(self):
         for rec in self:
             rec.budget_control_count = len(rec.budget_control_ids)
@@ -164,6 +180,7 @@ class BudgetPlan(models.Model):
         generate_budget_id = GenerateBudgetControl.with_context(ctx).create(
             {
                 "budget_period_id": budget_period.id,
+                "mis_report_id": budget_period.report_id.id,
                 "budget_id": budget_period.mis_budget_id.id,
                 "budget_plan_id": self.id,
                 "analytic_account_ids": [(6, 0, analytic_plan.ids)],
@@ -239,11 +256,9 @@ class BudgetPlanLine(models.Model):
     @api.depends("plan_id.budget_control_ids.released_amount")
     def _compute_released_amount(self):
         for rec in self:
-            budget_control_ids = rec.plan_id.budget_control_ids
-            if budget_control_ids:
-                budget_control = budget_control_ids.filtered(
-                    lambda l: l.released_amount != rec.released_amount
-                    and l.analytic_account_id == rec.analytic_account_id
-                )
-                if budget_control:
-                    rec.released_amount = budget_control.released_amount
+            budget_controls = rec.plan_id.budget_control_ids
+            release = {
+                x.analytic_account_id.id: x.released_amount
+                for x in budget_controls
+            }
+            rec.released_amount = release.get(rec.analytic_account_id.id)

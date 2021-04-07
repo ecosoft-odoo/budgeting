@@ -78,7 +78,7 @@ class GenerateBudgetControl(models.TransientModel):
     @api.model
     def default_get(self, default_fields):
         values = super().default_get(default_fields)
-        period_id = self._context.get("active_id")
+        period_id = self.env.context.get("active_id")
         period = self.env["budget.period"].browse(period_id)
         values["budget_period_id"] = period.id
         values["mis_report_id"] = period.report_id.id
@@ -123,13 +123,13 @@ class GenerateBudgetControl(models.TransientModel):
 
     def _get_existing_budget(self):
         BudgetControl = self.env["budget.control"]
-        existing_budget = BudgetControl.search(
+        existing_budget_controls = BudgetControl.search(
             [
                 ("budget_id", "=", self.budget_id.id),
                 ("analytic_account_id", "in", self.analytic_account_ids.ids),
             ]
         )
-        return existing_budget
+        return existing_budget_controls
 
     def _hook_budget_controls(self, budget_controls):
         return budget_controls
@@ -141,8 +141,10 @@ class GenerateBudgetControl(models.TransientModel):
         """Create new draft budget control sheet for all selected analytics."""
         self.ensure_one()
         # Find existing controls, so we can skip.
-        existing_budget = self._get_existing_budget()
-        existing_analytics = existing_budget.mapped("analytic_account_id")
+        existing_budget_controls = self._get_existing_budget()
+        existing_analytics = existing_budget_controls.mapped(
+            "analytic_account_id"
+        )
         # Create budget controls that are not already exists
         new_analytic = self.analytic_account_ids - existing_analytics
         vals = self._prepare_budget_control_sheet(new_analytic)

@@ -178,7 +178,10 @@
                             <field name="plan_line">
                                 <tree editable="bottom">
                                     <field name="budget_period_id" optional="hide" />
-                                    <field name="analytic_account_id" />
+                                    <field
+                                        name="analytic_account_id"
+                                        options="{'no_create': True, 'no_open': True}"
+                                    />
                                     <field
                                         name="allocated_amount"
                                         sum="Total Allocated"
@@ -192,7 +195,11 @@
                                         name="amount_consumed"
                                         sum="Total Consumed"
                                     />
-                                    <field name="active" optional="show" />
+                                    <field
+                                        name="active"
+                                        optional="show"
+                                        widget="boolean_toggle"
+                                    />
                                 </tree>
                             </field>
                         </page>

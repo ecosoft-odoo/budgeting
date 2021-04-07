@@ -33,7 +33,13 @@
                             string="Initial KPIs"
                             attrs="{'invisible': [('init_kpis', '=', False)]}"
                         >
-                            <field name="kpi_ids" nolabel="1" states="choose" />
+                            <field name="kpi_ids" nolabel="1" states="choose">
+                                <tree name="kpis">
+                                    <field name="description" />
+                                    <field name="name" />
+                                    <field name="budgetable" />
+                                </tree>
+                            </field>
                         </page>
                     </notebook>
                     <footer states="choose">
