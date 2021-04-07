@@ -147,7 +147,7 @@ class BudgetControl(models.Model):
         related="budget_period_id.report_id",
         readonly=True,
     )
-    use_all_kpis = fields.Boolean()
+    use_all_kpis = fields.Boolean(string="Use All KPIs")
     kpi_ids = fields.Many2many(
         string="KPIs",
         comodel_name="mis.report.kpi",
@@ -155,6 +155,8 @@ class BudgetControl(models.Model):
         column1="budget_control_id",
         column2="kpi_id",
         domain="[('report_id', '=', mis_report_id), ('budgetable', '=', True)]",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     state = fields.Selection(
         [
