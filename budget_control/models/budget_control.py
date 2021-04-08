@@ -181,6 +181,18 @@ class BudgetControl(models.Model):
     #     ),
     # ]
 
+    @api.model
+    def name_search(self, name, args=None, operator="ilike", limit=100):
+        if self._context.get("access_sudo", False):
+            self = self.sudo()
+        return super().name_search(name, args, operator, limit)
+
+    def _read(self, fields):
+        """ Add permission to read budget control for do something. """
+        if self._context.get("access_sudo", False):
+            self = self.sudo()
+        return super()._read(fields)
+
     @api.onchange("use_all_kpis")
     def _onchange_use_all_kpis(self):
         if self.use_all_kpis:
