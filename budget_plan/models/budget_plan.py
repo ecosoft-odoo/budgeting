@@ -28,12 +28,11 @@ class BudgetPlan(models.Model):
     date_to = fields.Date(related="budget_period_id.bm_date_to")
     budget_control_ids = fields.One2many(
         comodel_name="budget.control",
-        compute="_compute_budget_control_ids",
-        context={"active_test": False},
+        compute="_compute_budget_control",
     )
     budget_control_count = fields.Integer(
         string="# of Budget Control",
-        compute="_compute_budget_control_related_count",
+        compute="_compute_budget_control",
         help="Count budget control in Plan",
     )
     total_amount = fields.Monetary(compute="_compute_total_amount")
@@ -73,35 +72,22 @@ class BudgetPlan(models.Model):
         for rec in self:
             rec.total_amount = sum(rec.plan_line.mapped("amount"))
 
-    def _domain_budget_control(self, analytics):
-        self.ensure_one()
-        return [
-            ("budget_period_id", "=", self.budget_period_id.id),
-            ("analytic_account_id", "in", analytics.ids),
-        ]
-
-    def _compute_budget_control_ids(self):
+    def _compute_budget_control(self):
         """ Find all budget controls of the same period """
         for rec in self:
-            analytics = rec.plan_line.mapped("analytic_account_id")
-            domain = rec._domain_budget_control(analytics)
-            rec.budget_control_ids = (
-                self.env["budget.control"]
-                .with_context(active_test=False)
-                .search(domain)
-            )
-
-    def _compute_budget_control_related_count(self):
-        for rec in self:
+            rec.budget_control_ids = rec.plan_line.mapped("budget_control_ids")
             rec.budget_control_count = len(rec.budget_control_ids)
 
     def action_update_amount_consumed(self):
         for rec in self:
             for line in rec.plan_line:
-                budget_control = line.analytic_account_id.budget_control_ids
-                line.amount_consumed = sum(
-                    budget_control.mapped("amount_consumed")
-                )
+                budget_control = line.budget_control_ids
+                if len(budget_control) > 1:
+                    raise UserError(
+                        _("%s should have only 1 active budget control")
+                        % line.analytic_account_id.display_name
+                    )
+                line.amount_consumed = budget_control.amount_consumed
 
     def button_open_budget_control(self):
         self.ensure_one()
@@ -137,7 +123,8 @@ class BudgetPlan(models.Model):
         plan_analytic = self.plan_line.mapped("analytic_account_id")
         analytic_ids = Analytic.search(
             [
-                ("budget_period_id", "=", self.budget_period_id.id),
+                ("bm_date_from", "<=", self.budget_period_id.bm_date_from),
+                ("bm_date_to", ">=", self.budget_period_id.bm_date_to),
                 ("id", "not in", plan_analytic.ids),
             ]
         )
@@ -161,23 +148,11 @@ class BudgetPlan(models.Model):
         }
         return ctx
 
-    def _update_active_budget_control(
-        self, analytic_plan, budget_control=False
-    ):
-        """ Inactive budget control is not in budget plan """
-        self.ensure_one()
-        if not budget_control:
-            budget_control = self.budget_control_ids
-        budget_control_inactive = budget_control.filtered(
-            lambda l: l.analytic_account_id.id not in analytic_plan.ids
-        )
-        budget_control_inactive.write({"state": "cancel", "active": False})
-
     def _generate_budget_control(self, analytic_plan):
         GenerateBudgetControl = self.env["generate.budget.control"]
         ctx = self._get_context_wizard()
         budget_period = self.budget_period_id
-        generate_budget_id = GenerateBudgetControl.with_context(ctx).create(
+        generate_budget = GenerateBudgetControl.with_context(ctx).create(
             {
                 "budget_period_id": budget_period.id,
                 "mis_report_id": budget_period.report_id.id,
@@ -186,16 +161,15 @@ class BudgetPlan(models.Model):
                 "analytic_account_ids": [(6, 0, analytic_plan.ids)],
             }
         )
-        budget_control_view = (
-            generate_budget_id.action_generate_budget_control()
-        )
+        budget_control_view = generate_budget.action_generate_budget_control()
         return budget_control_view
 
     def action_create_update_budget_control(self):
         self.ensure_one()
         analytic_plan = self._get_analytic_plan()
         budget_control_view = self._generate_budget_control(analytic_plan)
-        self._update_active_budget_control(analytic_plan)
+        self.plan_line._update_budget_control_data()
+        # self._update_active_budget_control(analytic_plan)
         return budget_control_view
 
     def action_confirm(self):
@@ -238,6 +212,12 @@ class BudgetPlanLine(models.Model):
     plan_id = fields.Many2one(
         comodel_name="budget.plan",
     )
+    budget_control_ids = fields.Many2many(
+        comodel_name="budget.control",
+        string="Related Budget Control(s)",
+        compute="_compute_budget_control_ids",
+        help="Note: It is intention for this field to compute in realtime",
+    )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period", related="plan_id.budget_period_id"
     )
@@ -245,20 +225,39 @@ class BudgetPlanLine(models.Model):
         comodel_name="account.analytic.account",
         required=True,
     )
-    allocated_amount = fields.Float(readonly=True)
-    released_amount = fields.Float(
-        compute="_compute_released_amount", store=True, readonly=True
-    )
-    amount = fields.Float()
+    allocated_amount = fields.Float(string="Allocated", readonly=True)
+    released_amount = fields.Float(string="Released", readonly=True)
+    amount = fields.Float(string="New Amount")
     amount_consumed = fields.Float(string="Consumed", readonly=True)
-    active = fields.Boolean(default=True)
+    active_status = fields.Boolean(default=True)
 
-    @api.depends("plan_id.budget_control_ids.released_amount")
-    def _compute_released_amount(self):
+    def _domain_budget_control(self):
+        self.ensure_one()
+        return [
+            ("date_from", "<=", self.budget_period_id.bm_date_from),
+            ("date_to", ">=", self.budget_period_id.bm_date_to),
+            ("analytic_account_id", "=", self.analytic_account_id.id),
+            ("active", "=", True),
+        ]
+
+    def _compute_budget_control_ids(self):
+        """ It is expected this to contain only """
+        analytics = self.mapped("analytic_account_id")
+        budget_controls = self.env["budget.control"].search(
+            [("analytic_account_id", "in", analytics.ids)]
+        )
         for rec in self:
-            budget_controls = rec.plan_id.budget_control_ids
-            release = {
-                x.analytic_account_id.id: x.released_amount
-                for x in budget_controls
-            }
-            rec.released_amount = release.get(rec.analytic_account_id.id)
+            rec.budget_control_ids = budget_controls.filtered_domain(
+                rec._domain_budget_control()
+            )
+
+    def _update_budget_control_data(self):
+        """ Push data budget control, i.e., alloc amount, active status """
+        self.invalidate_cache()
+        for rec in self:
+            rec.budget_control_ids.write(
+                {
+                    "allocated_amount": rec.allocated_amount,
+                    "active": rec.active_status,
+                }
+            )

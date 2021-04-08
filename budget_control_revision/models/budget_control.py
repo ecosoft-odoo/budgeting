@@ -30,10 +30,3 @@ class BudgetControl(models.Model):
     #         "Duplicated analytic account for the same budget!",
     #     ),
     # ]
-
-    def create_revision(self):
-        res = super().create_revision()
-        self.write(
-            {"active": False}
-        )  # item_ids is auto set by _compute_active()
-        return res
