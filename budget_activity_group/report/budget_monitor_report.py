@@ -26,7 +26,7 @@ class BudgetMonitorReport(models.Model):
             [
                 from_budget_query,
                 "join mis_report_kpi_expression mrke on "
-                "mbi.kpi_expression_id = mrke.id",
+                "a.kpi_expression_id = mrke.id",
                 "join mis_report_kpi bag on mrke.kpi_id = bag.id",
             ]
         )

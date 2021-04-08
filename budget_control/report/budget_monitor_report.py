@@ -121,13 +121,13 @@ class BudgetMonitorReport(models.Model):
     def _select_budget(self):
         return [
             """
-            1000000000 + mbi.id as id,
-            'mis.budget.item,' || mbi.id as res_id,
-            mbi.analytic_account_id,
+            1000000000 + a.id as id,
+            'mis.budget.item,' || a.id as res_id,
+            a.analytic_account_id,
             b.analytic_group,
-            mbi.date_from as date,  -- approx date
+            a.date_from as date,  -- approx date
             '1_budget' as amount_type,
-            mbi.amount as amount,
+            a.amount as amount,
             null::integer as product_id,
             null::integer as account_id,
             b.name as reference
@@ -136,14 +136,14 @@ class BudgetMonitorReport(models.Model):
 
     def _from_budget(self):
         return """
-            from mis_budget_item mbi
-            left outer join budget_control b on mbi.budget_control_id = b.id
+            from mis_budget_item a
+            left outer join budget_control b on a.budget_control_id = b.id
         """
 
     def _where_budget(self):
         return """
-            -- where mbi.active = true and mbi.state = 'done'
-            where mbi.active = true
+            -- where a.active = true and a.state = 'done'
+            where a.active = true
         """
 
     def _select_statement(self, amount_type):

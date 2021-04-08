@@ -38,11 +38,11 @@ class BudgetMonitorRevisionReport(models.Model):
     def _select_budget(self):
         return [
             """
-            1000000000 + mbi.id as id,
-            mbi.analytic_account_id,
-            mbi.date_from as date,  -- approx date
+            1000000000 + a.id as id,
+            a.analytic_account_id,
+            a.date_from as date,  -- approx date
             '1_budget' as amount_type,
-            mbi.amount as amount,
+            a.amount as amount,
             bc.name as reference,
             'Version ' || bc.revision_number::char as revision_number
         """
@@ -50,14 +50,14 @@ class BudgetMonitorRevisionReport(models.Model):
 
     def _from_budget(self):
         return """
-            from mis_budget_item mbi
-            left outer join budget_control bc on mbi.budget_control_id = bc.id
+            from mis_budget_item a
+            left outer join budget_control bc on a.budget_control_id = bc.id
         """
 
     def _where_budget(self):
         operating_unit = self._find_operating_unit()
         return """
-            where mbi.state != 'draft' and bc.operating_unit_id {}
+            where a.state != 'draft' and bc.operating_unit_id {}
         """.format(
             operating_unit
         )
