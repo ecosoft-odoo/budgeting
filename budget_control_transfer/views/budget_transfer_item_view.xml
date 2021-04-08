@@ -5,7 +5,7 @@
         <field name="name">view.budget.transfer.item.tree</field>
         <field name="model">budget.transfer.item</field>
         <field name="arch" type="xml">
-            <tree string="Budget Transfer Item">
+            <tree editable="bottom" string="Budget Transfer Item">
                 <field name="transfer_id" invisible="1" />
                 <field name="mis_budget_id" invisible="1" />
                 <field name="budget_period_id" invisible="1" />

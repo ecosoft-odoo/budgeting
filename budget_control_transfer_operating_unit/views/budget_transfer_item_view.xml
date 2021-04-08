@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_transfer_item_tree" model="ir.ui.view">
+        <field name="name">view.budget.transfer.item.tree</field>
+        <field name="model">budget.transfer.item</field>
+        <field
+            name="inherit_id"
+            ref="budget_control_transfer.view_budget_transfer_item_tree"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//tree/field[@name='source_budget_control_id']"
+                position="attributes"
+            >
+                <attribute name="context">{'access_sudo': 1}</attribute>
+            </xpath>
+            <xpath
+                expr="//tree/field[@name='target_budget_control_id']"
+                position="attributes"
+            >
+                <attribute name="context">{'access_sudo': 1}</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
