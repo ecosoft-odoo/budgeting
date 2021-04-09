@@ -14,11 +14,3 @@ class BudgetControl(models.Model):
         readonly=True,
         help="Released Amount compute from budget plan.",
     )
-
-    def _update_allocated_amount(self, plan_line):
-        alloc = {
-            x.analytic_account_id.id: x.allocated_amount for x in plan_line
-        }
-        for rec in self:
-            rec.action_draft()
-            rec.allocated_amount = alloc.get(rec.analytic_account_id.id)

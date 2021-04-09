@@ -45,7 +45,7 @@ class MisBudgetItem(models.Model):
     def _compute_active(self):
         for rec in self:
             rec.active = (
-                rec.budget_control_id and rec.budget_control_id.active or True
+                rec.budget_control_id.active if rec.budget_control_id else True
             )
 
     @api.model

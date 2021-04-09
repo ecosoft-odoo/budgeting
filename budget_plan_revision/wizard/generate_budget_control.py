@@ -17,3 +17,7 @@ class GenerateBudgetControl(models.TransientModel):
                 }
             )
         return budget_controls
+
+    def _get_existing_budget(self):
+        self = self.with_context(active_test=False)
+        return super()._get_existing_budget()

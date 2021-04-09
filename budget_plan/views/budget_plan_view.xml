@@ -79,8 +79,8 @@
                         name="action_create_update_budget_control"
                         class="oe_highlight"
                         string="Create/Update Budget Control"
-                        states="confirm"
                         type="object"
+                        attrs="{'invisible': ['|', ('active', '=', False), ('state', '!=', 'confirm')]}"
                     />
                     <button
                         name="action_confirm"
@@ -183,6 +183,11 @@
                                         options="{'no_create': True, 'no_open': True}"
                                     />
                                     <field
+                                        name="budget_control_ids"
+                                        widget="many2many_tags"
+                                        optional="hide"
+                                    />
+                                    <field
                                         name="allocated_amount"
                                         sum="Total Allocated"
                                     />
@@ -196,7 +201,7 @@
                                         sum="Total Consumed"
                                     />
                                     <field
-                                        name="active"
+                                        name="active_status"
                                         optional="show"
                                         widget="boolean_toggle"
                                     />
