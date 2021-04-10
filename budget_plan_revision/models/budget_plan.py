@@ -62,6 +62,7 @@ class BudgetPlan(models.Model):
         new_plan.active = True
         # By default, there should be no budget_controls, but in case there is,
         # so we want to make sure not to create it.
+        new_plan.plan_line.invalidate_cache()
         no_bc_lines = new_plan.plan_line.filtered_domain(
             [("budget_control_ids", "=", False)]
         )
