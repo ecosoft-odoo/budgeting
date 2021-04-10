@@ -13,6 +13,7 @@ class BudgetControl(models.Model):
         relation="job_order_budget_contol_rel",
         column1="budget_control_id",
         column2="job_order_id",
+        domain="[('analytic_account_id', '=', analytic_account_id)]",
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -83,6 +84,12 @@ class BudgetControlKPIxJobOrder(models.Model):
         string="KPI",
         readonly=True,
     )
+    analytic_account_id = fields.Many2one(
+        comodel_name="account.analytic.account",
+        related="budget_control_id.analytic_account_id",
+    )
     job_order_ids = fields.Many2many(
-        comodel_name="budget.job.order", string="Job Orders"
+        comodel_name="budget.job.order",
+        string="Job Orders",
+        domain="[('analytic_account_id', '=', analytic_account_id)]",
     )

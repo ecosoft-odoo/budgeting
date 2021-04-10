@@ -16,6 +16,7 @@
                 />
                 <field name="kpi_x_job_order" nolabel="1" colspan="2">
                     <tree editable="bottom" create="0" delete="0">
+                        <field name="analytic_account_id" invisible="1" />
                         <field
                             name="kpi_ids"
                             force_save="1"
