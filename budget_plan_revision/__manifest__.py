@@ -14,11 +14,7 @@
         "budget_plan",
         "base_revision",
     ],
-    "data": [
-        "security/security.xml",
-        "views/res_config_settings_views.xml",
-        "views/budget_plan_view.xml",
-    ],
+    "data": ["views/budget_plan_view.xml"],
     "installable": True,
     "maintainers": ["Saran440"],
     "development_status": "Alpha",

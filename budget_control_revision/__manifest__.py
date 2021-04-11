@@ -12,6 +12,8 @@
     "depends": ["base_revision", "budget_control"],
     "data": [
         "security/ir.model.access.csv",
+        "security/security.xml",
+        "views/res_config_settings_views.xml",
         "views/budget_control_view.xml",
         "report/budget_monitor_revision_view.xml",
     ],

@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class BudgetControl(models.Model):
@@ -16,17 +16,28 @@ class BudgetControl(models.Model):
     old_revision_ids = fields.One2many(
         comodel_name="budget.control",
     )
+    init_revision = fields.Boolean(
+        string="Initial Version", default=True, readonly=True
+    )
     revision_number = fields.Integer(readonly=True)
+    enable_revision_number = fields.Boolean(
+        compute="_compute_group_revision_number"
+    )
 
-    # _sql_constraints = [
-    #     (
-    #         "name_uniq",
-    #         "UNIQUE(name, revision_number, active)",
-    #         "Name must be unique!",
-    #     ),
-    #     (
-    #         "budget_control_uniq",
-    #         "UNIQUE(budget_id, analytic_account_id, revision_number, active)",
-    #         "Duplicated analytic account for the same budget!",
-    #     ),
-    # ]
+    def _get_permission_edit_revision(self):
+        # Default by Budget Manager
+        return self.env.user.has_group(
+            "budget_control.group_budget_control_manager"
+        )
+
+    @api.depends("revision_number")
+    def _compute_group_revision_number(self):
+        editable = False
+        group_enable_revision = self.env.user.has_group(
+            "budget_control_revision.group_enable_revision"
+        )
+        permission_editable = self._get_permission_edit_revision()
+        if group_enable_revision and permission_editable:
+            editable = True
+        self.update({"enable_revision_number": editable})
+        return True

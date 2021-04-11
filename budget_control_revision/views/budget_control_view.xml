@@ -20,6 +20,21 @@
         </field>
     </record>
 
+    <record id="view_budget_control_filter" model="ir.ui.view">
+        <field name="name">view.budget.control.filter</field>
+        <field name="model">budget.control</field>
+        <field name="inherit_id" ref="budget_control.view_budget_control_filter" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter
+                    name="revision_number"
+                    string="Revision"
+                    context="{'group_by': 'revision_number'}"
+                />
+            </xpath>
+        </field>
+    </record>
+
     <record id="budget_control_view_tree" model="ir.ui.view">
         <field name="name">budget.control.view.tree</field>
         <field name="model">budget.control</field>
@@ -49,7 +64,12 @@
                 expr="//group[@name='budget_control_right']/field[@name='budget_period_id']"
                 position="before"
             >
-                <field name="revision_number" />
+                <field name="enable_revision_number" invisible="1" />
+                <field name="init_revision" />
+                <field
+                    name="revision_number"
+                    attrs="{'readonly': [('enable_revision_number', '=', False)]}"
+                />
             </xpath>
             <xpath expr="//notebook" position="inside">
                 <page string="Revisions">

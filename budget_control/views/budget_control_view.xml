@@ -45,6 +45,11 @@
                     string="My Budget Control Sheet"
                     domain="[('assignee_id', '=', uid)]"
                 />
+                <filter
+                    name="current_period"
+                    string="Current Period"
+                    domain="[('date_to', '&gt;=', context_today().strftime('%Y-%m-%d')), ('date_from', '&lt;=', context_today().strftime('%Y-%m-%d'))]"
+                />
                 <separator />
                 <filter
                     name="inactive"
@@ -269,6 +274,7 @@
         <field name="name">Budget Control Sheet</field>
         <field name="view_id" ref="budget_control_view_tree" />
         <field name="res_model">budget.control</field>
+        <field name="context">{'search_default_current_period': 1}</field>
         <field name="view_mode">tree,form</field>
     </record>
 

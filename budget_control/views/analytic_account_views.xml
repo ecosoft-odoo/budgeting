@@ -57,7 +57,7 @@
         <field name="name">view.budget.analytic.list</field>
         <field name="model">account.analytic.account</field>
         <field name="arch" type="xml">
-            <tree string="Analytic Budgeting">
+            <tree string="Analytic Accounts">
                 <field name="name" string="Name" />
                 <field name="code" />
                 <field name="budget_period_id" optional="show" />
@@ -79,7 +79,7 @@
     </record>
 
     <record id="action_budget_analytic_form" model="ir.actions.act_window">
-        <field name="name">Analytic Budgeting</field>
+        <field name="name">Analytic Accounts</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">account.analytic.account</field>
         <field
@@ -91,14 +91,14 @@
         <field name="view_mode">tree,kanban,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-            Add a new analytic budgeting
+            Add a new analytic account
             </p>
         </field>
     </record>
 
     <menuitem
         id="budget_menu_analytic_accounting"
-        name="Analytic Budgeting"
+        name="Analytic Accounting"
         parent="budget_control.budget_config_menu"
         sequence="10"
         groups="analytic.group_analytic_accounting,analytic.group_analytic_tags"
@@ -106,7 +106,7 @@
 
     <menuitem
         id="budget_menu_analytic_account"
-        name="Analytic Budgeting"
+        name="Analytic Accounts"
         parent="budget_control.budget_menu_analytic_accounting"
         sequence="1"
         action="budget_control.action_budget_analytic_form"
@@ -115,7 +115,7 @@
 
     <menuitem
         id="budget_menu_analytic_account_group"
-        name="Analytic Groups"
+        name="Analytic Account Groups"
         parent="budget_control.budget_menu_analytic_accounting"
         sequence="2"
         action="analytic.account_analytic_group_action"

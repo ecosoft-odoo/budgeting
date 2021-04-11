@@ -9,5 +9,5 @@ class ResConfigSettings(models.TransientModel):
 
     group_enable_revision = fields.Boolean(
         string="Enable Revision Number",
-        implied_group="budget_plan_revision.group_enable_revision",
+        implied_group="budget_control_revision.group_enable_revision",
     )

@@ -27,7 +27,7 @@ class BudgetPlan(models.Model):
     @api.depends("revision_number")
     def _compute_group_revision_number(self):
         group_enable_revision = self.env.user.has_group(
-            "budget_plan_revision.group_enable_revision"
+            "budget_control_revision.group_enable_revision"
         )
         self.update({"enable_revision_number": group_enable_revision})
         return True
