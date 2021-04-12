@@ -14,6 +14,7 @@
     "data": [
         "views/purchase_request_view.xml",
         "views/purchase_request_line_view.xml",
+        "wizard/purchase_line_make_purchase_order_view.xml",
     ],
     "installable": True,
     "auto_install": True,
