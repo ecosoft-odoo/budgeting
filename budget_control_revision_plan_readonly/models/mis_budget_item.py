@@ -1,6 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class MisBudgetItem(models.Model):
@@ -13,10 +14,16 @@ class MisBudgetItem(models.Model):
         if not date:
             date = fields.Date.context_today(self)
         for rec in self:
+            rec.is_readonly = False
             if (
-                len(self.budget_control_id) == 1
-                and self.budget_control_id.revision_number == 0
+                not rec.budget_control_id.init_revision
+                and rec.date_from <= date
             ):
-                self.is_readonly = False
-                break
-            rec.is_readonly = rec.date_from <= date and True or False
+                rec.is_readonly = True
+
+    @api.constrains("amount")
+    def _check_amount_readonly(self):
+        revision_number = self._context.get("revision_number", False)
+        for rec in self:
+            if not revision_number and rec.is_readonly:
+                raise UserError(_("You can not edit past amount."))

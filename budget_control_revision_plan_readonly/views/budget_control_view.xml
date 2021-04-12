@@ -14,11 +14,7 @@
                 expr="//field[@name='item_ids']/tree/field[@name='amount']"
                 position="replace"
             >
-                <field
-                    name="amount"
-                    decoration-danger="is_readonly != False"
-                    attrs="{'readonly': [('is_readonly', '!=', False)]}"
-                />
+                <field name="amount" decoration-danger="is_readonly != False" />
             </xpath>
         </field>
     </record>

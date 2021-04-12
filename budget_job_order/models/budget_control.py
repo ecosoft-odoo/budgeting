@@ -20,6 +20,7 @@ class BudgetControl(models.Model):
     kpi_x_job_order = fields.One2many(
         comodel_name="budget.control.kpi.x.job.order",
         inverse_name="budget_control_id",
+        copy=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )

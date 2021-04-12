@@ -43,11 +43,6 @@ class BudgetPlan(models.Model):
         ctx.update({"revision": self.revision_number})
         return ctx
 
-    def _hook_new_budget_plan(self, new_plan):
-        """ Hooks for do something new plan """
-        new_plan.init_revision = False
-        return True
-
     def action_create_update_budget_control(self):
         self = self.with_context(active_test=False)
         return super().action_create_update_budget_control()
@@ -59,7 +54,7 @@ class BudgetPlan(models.Model):
         # Based on new budget_plan, create new budget controls by create_revision()
         new_plan = self.search(ast.literal_eval(res.get("domain", False)))
         new_plan.ensure_one()
-        new_plan.active = True
+        new_plan.write({"active": True, "init_revision": False})
         # By default, there should be no budget_controls, but in case there is,
         # so we want to make sure not to create it.
         new_plan.plan_line.invalidate_cache()
@@ -88,7 +83,7 @@ class BudgetPlan(models.Model):
         # Ensure all budget controls are set as active to start
         new_plan.invalidate_cache()
         new_plan.with_context(active_test=False).budget_control_ids.write(
-            {"active": True}
+            {"active": True, "init_revision": False}
         )
         return res
 
