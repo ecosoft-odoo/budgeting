@@ -8,7 +8,7 @@
     <record id="action_budget_plan_export_xlsx" model="ir.actions.act_window">
         <field name="name">Export Excel</field>
         <field name="res_model">export.xlsx.wizard</field>
-        <field name="binding_view_types">form</field>
+        <field name="binding_view_types">list,form</field>
         <field name="binding_model_id" ref="budget_plan.model_budget_plan" />
         <field name="view_mode">form</field>
         <field name="target">new</field>

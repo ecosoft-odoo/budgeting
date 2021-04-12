@@ -8,8 +8,8 @@
         <field name="fname">budget_plan.xlsx</field>
         <field name="name">Budget Plan XLSX Template</field>
         <field name="description">Budget Plan XLSX Template</field>
-        <field name="import_action_id" eval="ref('action_budget_plan_export_xlsx')" />
-        <field name="export_action_id" eval="ref('action_budget_plan_import_xlsx')" />
+        <field name="import_action_id" eval="ref('action_budget_plan_import_xlsx')" />
+        <field name="export_action_id" eval="ref('action_budget_plan_export_xlsx')" />
         <field name="input_instruction">
             {
                 '__EXPORT__': {
