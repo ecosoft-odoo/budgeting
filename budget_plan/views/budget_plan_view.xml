@@ -1,6 +1,52 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
 
+    <record id="view_budget_plan_line_tree" model="ir.ui.view">
+        <field name="name">budget.plan.line.tree</field>
+        <field name="model">budget.plan.line</field>
+        <field name="arch" type="xml">
+            <tree editable="bottom">
+                <field name="budget_period_id" optional="hide" />
+                <field
+                    name="analytic_account_id"
+                    options="{'no_create': True, 'no_open': True}"
+                />
+                <field
+                    name="budget_control_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                />
+                <field name="allocated_amount" sum="Total Allocated" />
+                <field name="released_amount" sum="Total Released" />
+                <field name="amount" sum="Total Amount" />
+                <field name="amount_consumed" sum="Total Consumed" />
+                <field name="active_status" optional="show" widget="boolean_toggle" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_budget_plan_line_form" model="ir.ui.view">
+        <field name="name">budget.plan.line.form</field>
+        <field name="model">budget.plan.line</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group>
+                        <field name="analytic_account_id" />
+                        <field name="budget_control_ids" widget="many2many_tags" />
+                        <field name="active_status" />
+                    </group>
+                    <group>
+                        <field name="allocated_amount" />
+                        <field name="released_amount" />
+                        <field name="amount" />
+                        <field name="amount_consumed" />
+                    </group>
+                </group>
+            </form>
+        </field>
+    </record>
+
     <record id="budget_plan_filter" model="ir.ui.view">
         <field name="name">budget.plan.filter</field>
         <field name="model">budget.plan</field>
@@ -175,38 +221,7 @@
                                     states="draft,confirm,done"
                                 />
                             </div>
-                            <field name="plan_line">
-                                <tree editable="bottom">
-                                    <field name="budget_period_id" optional="hide" />
-                                    <field
-                                        name="analytic_account_id"
-                                        options="{'no_create': True, 'no_open': True}"
-                                    />
-                                    <field
-                                        name="budget_control_ids"
-                                        widget="many2many_tags"
-                                        optional="hide"
-                                    />
-                                    <field
-                                        name="allocated_amount"
-                                        sum="Total Allocated"
-                                    />
-                                    <field
-                                        name="released_amount"
-                                        sum="Total Released"
-                                    />
-                                    <field name="amount" sum="Total Amount" />
-                                    <field
-                                        name="amount_consumed"
-                                        sum="Total Consumed"
-                                    />
-                                    <field
-                                        name="active_status"
-                                        optional="show"
-                                        widget="boolean_toggle"
-                                    />
-                                </tree>
-                            </field>
+                            <field name="plan_line" />
                         </page>
                     </notebook>
                 </sheet>
