@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
 
+    <record id="view_budget_plan_line_tree" model="ir.ui.view">
+        <field name="name">budget.plan.line.tree</field>
+        <field name="model">budget.plan.line</field>
+        <field name="inherit_id" ref="budget_plan.view_budget_plan_line_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="inside">
+                <field name="revision_number" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
     <record id="budget_plan_filter" model="ir.ui.view">
         <field name="name">budget.plan.filter</field>
         <field name="model">budget.plan</field>
@@ -52,12 +63,6 @@
                     name="revision_number"
                     attrs="{'readonly': [('enable_revision_number', '=', False)]}"
                 />
-            </xpath>
-            <xpath
-                expr="//page[@name='plan_line']/field[@name='plan_line']/tree/field[@name='released_amount']"
-                position="after"
-            >
-                <field name="revision_number" optional="hide" />
             </xpath>
             <xpath expr="//notebook" position="inside">
                 <page string="Revisions">
