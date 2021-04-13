@@ -93,8 +93,6 @@ class BudgetPlan(models.Model):
         self.ensure_one()
         ctx = self._context.copy()
         ctx.update({"create": False, "active_test": True})
-        if not self.budget_control_ids.filtered("active"):
-            ctx.update({"search_default_inactive": True})
         action = {
             "name": _("Budget Control Sheet"),
             "type": "ir.actions.act_window",

@@ -24,6 +24,9 @@ class MisBudgetItem(models.Model):
     @api.constrains("amount")
     def _check_amount_readonly(self):
         revision_number = self._context.get("revision_number", False)
+        edit_amount = self._context.get("edit_amount", False)
+        if revision_number or edit_amount:
+            return
         for rec in self:
-            if not revision_number and rec.is_readonly:
+            if rec.is_readonly:
                 raise UserError(_("You can not edit past amount."))

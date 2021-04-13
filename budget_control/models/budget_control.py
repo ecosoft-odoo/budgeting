@@ -344,8 +344,11 @@ class BudgetControl(models.Model):
     def prepare_budget_control_matrix(self):
         KpiExpression = self.env["mis.report.kpi.expression"]
         DateRange = self.env["date.range"]
+        # skip_unlink and _domain_kpi_expression() will help
+        # you plan update without reset amount.
+        skip_unlink = self._context.get("skip_unlink", False)
         for plan in self:
-            if not self._context.get("skip_unlink", False):
+            if not skip_unlink:
                 plan.item_ids.unlink()
             if not plan.plan_date_range_type_id:
                 raise UserError(_("Please select range"))

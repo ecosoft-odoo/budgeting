@@ -20,5 +20,5 @@ class UpdateConsumedPlan(models.TransientModel):
         active_ids = self._context.get("active_ids", [])
         budget_control = self.env["budget.control"].browse(active_ids)
         if budget_control:
-            budget_control.action_update_consumed_plan(self.date_to)
+            budget_control.update_consumed_plan(self.date_to)
         return True

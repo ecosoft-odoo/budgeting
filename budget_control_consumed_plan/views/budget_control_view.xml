@@ -8,11 +8,12 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='items']/div[@name='buttons']" position="inside">
                 <button
-                    name="action_select_update_consumed_plan"
+                    name="action_update_consumed_plan"
                     string="Update Consumed Plan"
                     icon="fa-refresh"
                     type="object"
                     states="draft,released,done"
+                    context="{'edit_amount': 1}"
                     groups="budget_control.group_budget_control_manager"
                 />
             </xpath>
