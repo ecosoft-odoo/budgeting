@@ -25,6 +25,20 @@ class BudgetControl(models.Model):
             info = budget_period.with_context(ctx).get_budget_info(analytic_id)
             item.write({"amount": info["amount_consumed"]})
 
+    def _domain_kpi_expression(self):
+        """
+        For case reset plan without unlink,
+        it will create new kpi from context new_kpi and not unlink old plan.
+        """
+        domain_kpi = super()._domain_kpi_expression()
+        skip_unlink = self._context.get("skip_unlink", False)
+        new_kpi = self._context.get("new_kpi", False)
+        if skip_unlink and new_kpi:
+            for i, domain in enumerate(domain_kpi):
+                if domain[0] == "kpi_id.id":
+                    domain_kpi[i] = (domain[0], domain[1], new_kpi)
+        return domain_kpi
+
     def _get_consumed_plan(self, date):
         """
         Update consumed amount (actual + commit)
@@ -43,25 +57,28 @@ class BudgetControl(models.Model):
         for row in kpi_matrix.iter_rows():
             if row.kpi.id in kpi_ids:
                 continue
+            budgetable = row.kpi.budgetable
             for cell in row.iter_cells():
-                if cell.val > 0.0:
+                if cell.val > 0.0 and budgetable:
                     MISReport += cell.row.kpi
         if MISReport:
-            ctx = {"skip_unlink": True, "kpi_ids": list(set(MISReport.ids))}
-            self.sudo().with_context(ctx).prepare_budget_control_matrix()
+            self.kpi_ids = [(4, x.id) for x in list(set(MISReport))]
+            self._compute_kpi_x_job_order()
+            self.sudo().with_context(
+                skip_unlink=True, new_kpi=list(set(MISReport.ids))
+            ).prepare_budget_control_matrix()
         # Filter date range to current month
         item_ids = self.item_ids.filtered(lambda l: l.date_from <= date)
-        item_ids.write({"amount": 0.0})
         self._update_consumed_value(item_ids, date)
 
-    def action_update_consumed_plan(self, date=False):
+    def update_consumed_plan(self, date=False):
         if not date:
             date = fields.Date.context_today(self)
         for rec in self:
             rec._get_consumed_plan(date)
         return True
 
-    def action_select_update_consumed_plan(self):
+    def action_update_consumed_plan(self):
         group_manual_date_consumed_plan = self.env.user.has_group(
             "budget_control_consumed_plan.group_manual_date_consumed_plan"
         )
@@ -74,4 +91,4 @@ class BudgetControl(models.Model):
                 "target": "new",
                 "type": "ir.actions.act_window",
             }
-        return self.action_update_consumed_plan()
+        return self.update_consumed_plan()

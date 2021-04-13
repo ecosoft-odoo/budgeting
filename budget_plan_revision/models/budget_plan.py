@@ -35,7 +35,8 @@ class BudgetPlan(models.Model):
     def button_open_budget_control(self):
         # Beacuse we want to use revision number, and inactive should be shown
         action = super().button_open_budget_control()
-        action["context"]["active_test"] = False
+        if not self.budget_control_ids.filtered("active"):
+            action["context"]["search_default_inactive"] = True
         return action
 
     def _get_context_wizard(self):
