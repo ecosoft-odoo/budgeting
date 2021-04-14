@@ -4,23 +4,22 @@ from odoo import api, models
 
 
 class PurchaseOrder(models.Model):
-    _name = "purchase.order"
-    _inherit = ["purchase.order", "base.fund.constraint.commit"]
-    _doc_line_field = "order_line"
+    _inherit = "purchase.order"
 
     def button_confirm(self):
         res = super().button_confirm()
-        self.check_fund_constraint()
+        for doc in self:
+            po_line = doc.order_line.filtered("fund_id")
+            for line in po_line:
+                line.check_fund_constraint()
         return res
 
 
 class PurchaseOrderLine(models.Model):
-    _name = "purchase.order.line"
-    _inherit = ["purchase.order.line", "fund.docline.mixin"]
-    _fund_analytic_field = "account_analytic_id"
+    _inherit = "purchase.order.line"
     _amount_balance_field = "price_total"
 
-    @api.depends(_fund_analytic_field)
+    @api.depends("account_analytic_id")
     def _compute_fund_constraint(self):
         super()._compute_fund_constraint()
 

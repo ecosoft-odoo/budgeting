@@ -4,11 +4,12 @@ from odoo import models
 
 
 class PurchaseRequest(models.Model):
-    _name = "purchase.request"
-    _inherit = ["purchase.request", "base.fund.constraint.commit"]
-    _doc_line_field = "line_ids"
+    _inherit = "purchase.request"
 
     def button_to_approve(self):
         res = super().button_to_approve()
-        self.check_fund_constraint()
+        for doc in self:
+            pr_line = doc.line_ids.filtered("fund_id")
+            for line in pr_line:
+                line.check_fund_constraint()
         return res
