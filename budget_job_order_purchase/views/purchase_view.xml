@@ -10,7 +10,10 @@
                 expr="//field[@name='order_line']/tree//field[@name='account_analytic_id']"
                 position="after"
             >
-                <field name="job_order_id" />
+                <field
+                    name="job_order_id"
+                    domain="[('analytic_account_id', '=', account_analytic_id)]"
+                />
             </xpath>
             <xpath
                 expr="//field[@name='order_line']/form//field[@name='account_analytic_id']"

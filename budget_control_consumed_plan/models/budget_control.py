@@ -7,21 +7,25 @@ from odoo import _, fields, models
 class BudgetControl(models.Model):
     _inherit = "budget.control"
 
+    def _context_filter_budget_info(self, item, date_to):
+        ctx = self._context.copy()
+        ctx.update(
+            {
+                "filter_activity_group": item.activity_group_id.id,
+                "filter_period_date_from": item.date_from,
+                "filter_period_date_to": date_to,
+            }
+        )
+        return ctx
+
     def _update_consumed_value(self, item_ids, date):
         analytic_id = [self.analytic_account_id.id]
         budget_period = self.budget_period_id
-        ctx = self._context.copy()
         for item in item_ids:
             date_to = item.date_to
             if item.date_from <= date <= item.date_to:
                 date_to = date
-            ctx.update(
-                {
-                    "filter_activity_group": item.activity_group_id.id,
-                    "filter_period_date_from": item.date_from,
-                    "filter_period_date_to": date_to,
-                }
-            )
+            ctx = self._context_filter_budget_info(item, date_to)
             info = budget_period.with_context(ctx).get_budget_info(analytic_id)
             item.write({"amount": info["amount_consumed"]})
 
@@ -39,13 +43,17 @@ class BudgetControl(models.Model):
                     domain_kpi[i] = (domain[0], domain[1], new_kpi)
         return domain_kpi
 
+    def _update_kpi_reset_plan(self, kpis):
+        self.ensure_one()
+        self.kpi_ids = [(4, x.id) for x in list(set(kpis))]
+
     def _get_consumed_plan(self, date):
         """
         Update consumed amount (actual + commit)
         since first date to current day.
         """
         self.ensure_one()
-        MISReport = self.env["mis.report.kpi"]
+        kpis = self.env["mis.report.kpi"]
         # Prepare result matrix for all analytic_id
         analytic_ids = self.analytic_account_id.ids
         instance = self.budget_period_id.report_instance_id
@@ -60,12 +68,11 @@ class BudgetControl(models.Model):
             budgetable = row.kpi.budgetable
             for cell in row.iter_cells():
                 if cell.val > 0.0 and budgetable:
-                    MISReport += cell.row.kpi
-        if MISReport:
-            self.kpi_ids = [(4, x.id) for x in list(set(MISReport))]
-            self._compute_kpi_x_job_order()
+                    kpis += cell.row.kpi
+        if kpis:
+            self._update_kpi_reset_plan(kpis)
             self.sudo().with_context(
-                skip_unlink=True, new_kpi=list(set(MISReport.ids))
+                skip_unlink=True, new_kpi=list(set(kpis.ids))
             ).prepare_budget_control_matrix()
         # Filter date range to current month
         item_ids = self.item_ids.filtered(lambda l: l.date_from <= date)

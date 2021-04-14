@@ -5,4 +5,5 @@ from . import job_order
 from . import account_analytic_line
 from . import base_budget_move
 from . import budget_control
+from . import mis_report_instance
 from . import mis_budget_item
