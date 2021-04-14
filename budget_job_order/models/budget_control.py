@@ -37,10 +37,8 @@ class BudgetControl(models.Model):
 
     @api.onchange("kpi_ids", "job_order_ids")
     def _compute_kpi_x_job_order(self):
-
         KPIxJO = self.env["budget.control.kpi.x.job.order"]
         for rec in self:
-            # rec.kpi_x_job_order.unlink()
             rec.kpi_x_job_order = False
             for kpi in rec.kpi_ids:
                 rec.kpi_x_job_order += KPIxJO.new(

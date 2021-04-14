@@ -6,8 +6,7 @@ from odoo import models
 class MisReportInstance(models.Model):
     _inherit = "mis.report.instance"
 
-    def _compute_matrix(self):
-        """ Add possible filter_analytic_ids to compute """
+    def _get_context_filter_matrix(self):
         ctx = self.env.context.copy()
         if ctx.get("filter_analytic_ids"):
             ctx["mis_report_filters"] = ctx.get("mis_report_filters", {})
@@ -30,6 +29,11 @@ class MisReportInstance(models.Model):
                 "value": ctx["filter_period_date_to"],
                 "operator": "<=",
             }
+        return ctx
+
+    def _compute_matrix(self):
+        """ Add possible filter_analytic_ids to compute """
+        ctx = self._get_context_filter_matrix()
         return super(
             MisReportInstance, self.with_context(ctx)
         )._compute_matrix()

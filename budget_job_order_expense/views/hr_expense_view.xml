@@ -7,10 +7,13 @@
         <field name="inherit_id" ref="hr_expense.hr_expense_view_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="/form/sheet/group/group/field['analytic_account_id']"
+                expr="/form/sheet/group/group/field[@name='analytic_account_id']"
                 position="after"
             >
-                <field name="job_order_id" />
+                <field
+                    name="job_order_id"
+                    domain="[('analytic_account_id', '=', analytic_account_id)]"
+                />
             </xpath>
         </field>
     </record>

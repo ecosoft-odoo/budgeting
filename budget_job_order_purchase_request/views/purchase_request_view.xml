@@ -7,17 +7,18 @@
         <field name="inherit_id" ref="purchase_request.view_purchase_request_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="//field['line_ids']/tree/field['analytic_account_id']"
+                expr="//field[@name='line_ids']/tree/field[@name='analytic_account_id']"
                 position="after"
             >
                 <field name="job_order_id" />
             </xpath>
             <xpath
-                expr="//field['line_ids']/form//field['analytic_account_id']"
+                expr="//field[@name='line_ids']/form//field[@name='analytic_account_id']"
                 position="after"
             >
                 <field
                     name="job_order_id"
+                    domain="[('analytic_account_id', '=', analytic_account_id)]"
                     attrs="{'readonly': [('is_editable','=', False)]}"
                 />
             </xpath>
@@ -30,11 +31,12 @@
         <field name="inherit_id" ref="purchase_request.purchase_request_line_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="/form/sheet/group/group/field['analytic_account_id']"
+                expr="/form/sheet/group/group/field[@name='analytic_account_id']"
                 position="after"
             >
                 <field
                     name="job_order_id"
+                    domain="[('analytic_account_id', '=', analytic_account_id)]"
                     attrs="{'readonly': [('is_editable','=', False)]}"
                 />
             </xpath>

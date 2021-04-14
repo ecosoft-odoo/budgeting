@@ -26,3 +26,8 @@ class MisBudgetItem(models.Model):
                 rec.name = "{} / {}".format(rec.job_order_id.name, rec.name)
             else:
                 rec.name = rec.name
+
+    def search_neutralize(self, dom):
+        if len(dom) == 3 and dom[0] == "job_order_id":
+            return (1, "=", 1)
+        return super().search_neutralize(dom)
