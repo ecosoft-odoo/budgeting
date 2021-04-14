@@ -55,22 +55,22 @@
                 <filter
                     name="budget_state_draft"
                     string="Budget Draft"
-                    domain="[('budget_state', '=', 'draft')]"
+                    domain="[('budget_state', 'in', ['draft', False])]"
                 />
                 <filter
                     name="budget_state_submit"
                     string="Budget Submitted"
-                    domain="[('budget_state', '=', 'submit')]"
+                    domain="[('budget_state', 'in', ['submit', False])]"
                 />
                 <filter
                     name="budget_state_done"
                     string="Budget Controlled"
-                    domain="[('budget_state', '=', 'done')]"
+                    domain="[('budget_state', 'in', ['done', False])]"
                 />
                 <filter
                     name="budget_state_cancel"
                     string="Budget Cancelled"
-                    domain="[('budget_state', '=', 'cancel')]"
+                    domain="[('budget_state', 'in', ['cancel', False])]"
                 />
                 <group expand="1" string="Group By">
                     <filter

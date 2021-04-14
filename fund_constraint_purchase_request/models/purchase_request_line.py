@@ -4,8 +4,7 @@ from odoo import api, models
 
 
 class PurchaseRequestLine(models.Model):
-    _name = "purchase.request.line"
-    _inherit = ["purchase.request.line", "fund.docline.mixin"]
+    _inherit = "purchase.request.line"
     _amount_balance_field = "estimated_cost"
 
     @api.depends("analytic_account_id")

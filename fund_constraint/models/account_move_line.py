@@ -4,10 +4,10 @@ from odoo import api, models
 
 
 class AccountMoveLine(models.Model):
-    _name = "account.move.line"
-    _inherit = ["account.move.line", "fund.docline.mixin"]
+    _inherit = "account.move.line"
     _amount_balance_field = "balance"
 
+    # Trigger analytic
     @api.depends("analytic_account_id")
     def _compute_fund_constraint(self):
         super()._compute_fund_constraint()

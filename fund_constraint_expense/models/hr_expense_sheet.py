@@ -4,11 +4,12 @@ from odoo import models
 
 
 class HRExpenseSheet(models.Model):
-    _name = "hr.expense.sheet"
-    _inherit = ["hr.expense.sheet", "base.fund.constraint.commit"]
-    _doc_line_field = "expense_line_ids"
+    _inherit = "hr.expense.sheet"
 
     def action_submit_sheet(self):
         res = super().action_submit_sheet()
-        self.check_fund_constraint()
+        for doc in self:
+            exp_line = doc.expense_line_ids.filtered("fund_id")
+            for line in exp_line:
+                line.check_fund_constraint()
         return res

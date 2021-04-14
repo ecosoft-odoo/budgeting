@@ -4,11 +4,12 @@ from odoo import models
 
 
 class AccountMove(models.Model):
-    _name = "account.move"
-    _inherit = ["account.move", "base.fund.constraint.commit"]
-    _doc_line_field = "line_ids"
+    _inherit = "account.move"
 
     def action_post(self):
         res = super().action_post()
-        self.check_fund_constraint()
+        for doc in self:
+            move_line = doc.line_ids.filtered("fund_id")
+            for line in move_line:
+                line.check_fund_constraint()
         return res

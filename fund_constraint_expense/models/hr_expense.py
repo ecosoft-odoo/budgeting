@@ -4,8 +4,7 @@ from odoo import api, models
 
 
 class HRExpense(models.Model):
-    _name = "hr.expense"
-    _inherit = ["hr.expense", "fund.docline.mixin"]
+    _inherit = "hr.expense"
     _amount_balance_field = "total_amount"
 
     def _get_account_move_line_values(self):
