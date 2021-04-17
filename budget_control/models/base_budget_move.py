@@ -172,7 +172,12 @@ class BudgetDoclineMixin(models.AbstractModel):
         company = self.env.user.company_id
         account = self.account_id
         analytic_account = self[self._budget_analytic_field]
-        date_commit = self.date_commit
+        budget_moves = self[self._budget_field()]
+        date_commit = (
+            max(budget_moves.mapped("date"))
+            if budget_moves
+            else self.date_commit
+        )
         currency = hasattr(self, "currency_id") and self.currency_id or False
         amount = (
             currency

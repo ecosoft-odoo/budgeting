@@ -28,6 +28,7 @@ class MisBudgetItem(models.Model):
                 rec.name = rec.name
 
     def search_neutralize(self, dom):
-        if len(dom) == 3 and dom[0] == "job_order_id":
+        mis_filter = self._context.get("mis_report_filters", {})
+        if mis_filter and len(dom) == 3 and dom[0] == "job_order_id":
             return (1, "=", 1)
         return super().search_neutralize(dom)
