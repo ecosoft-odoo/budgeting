@@ -193,6 +193,25 @@ class BudgetControl(models.Model):
             self = self.sudo()
         return super()._read(fields)
 
+    def get_move_commit(self, domain):
+        """
+        this function will return budget move list following your installed module
+        i.e. return [
+            <object of account_budget_move>,
+            <object of expense_budget_move>,
+            <object of advance_budget_move>,
+            <object of purchase_budget_move>,
+            <object of purchase_request_budget_move>,
+        ]
+        """
+        self.ensure_one()
+        budget_move = []
+        AccountBudgetMove = self.env["account.budget.move"]
+        account_move = AccountBudgetMove.search(domain)
+        if account_move:
+            budget_move.append(account_move)
+        return budget_move
+
     @api.onchange("use_all_kpis")
     def _onchange_use_all_kpis(self):
         if self.use_all_kpis:
@@ -341,15 +360,18 @@ class BudgetControl(models.Model):
         ]
         return items
 
+    def _keep_item_amount(self, vals, old_items):
+        """ Find amount from old plan for update new plan """
+        for val in vals:
+            domain_item = [(k, "=", v) for k, v in val.items()]
+            item = old_items.search(domain_item)
+            val["amount"] = item.amount
+
     def prepare_budget_control_matrix(self):
         KpiExpression = self.env["mis.report.kpi.expression"]
         DateRange = self.env["date.range"]
-        # skip_unlink and _domain_kpi_expression() will help
-        # you plan update without reset amount.
-        skip_unlink = self._context.get("skip_unlink", False)
+        keep_item_amount = self._context.get("keep_item_amount", False)
         for plan in self:
-            if not skip_unlink:
-                plan.item_ids.unlink()
             if not plan.plan_date_range_type_id:
                 raise UserError(_("Please select range"))
             domain_kpi = plan._domain_kpi_expression()
@@ -365,7 +387,11 @@ class BudgetControl(models.Model):
             for date_range in date_ranges:
                 for kpi_expression in kpi_expressions:
                     vals = plan._get_value_items(date_range, kpi_expression)
+                    # Update without reset amount.
+                    if keep_item_amount:
+                        self._keep_item_amount(vals, self.item_ids)
                     items += vals
+            plan.item_ids.unlink()
             plan.write({"item_ids": [(0, 0, val) for val in items]})
             # Also reset the carry over budget
             plan.init_budget_commit = False

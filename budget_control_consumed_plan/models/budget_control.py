@@ -29,30 +29,12 @@ class BudgetControl(models.Model):
             info = budget_period.with_context(ctx).get_budget_info(analytic_id)
             item.write({"amount": info["amount_consumed"]})
 
-    def _domain_kpi_expression(self):
-        """
-        For case reset plan without unlink,
-        it will create new kpi from context new_kpi and not unlink old plan.
-        """
-        domain_kpi = super()._domain_kpi_expression()
-        skip_unlink = self._context.get("skip_unlink", False)
-        new_kpi = self._context.get("new_kpi", False)
-        if skip_unlink and new_kpi:
-            for i, domain in enumerate(domain_kpi):
-                if domain[0] == "kpi_id.id":
-                    domain_kpi[i] = (domain[0], domain[1], new_kpi)
-        return domain_kpi
-
     def _update_kpi_reset_plan(self, kpis):
         self.ensure_one()
-        self.kpi_ids = [(4, x.id) for x in list(set(kpis))]
+        if kpis:
+            self.kpi_ids = [(4, x.id) for x in list(set(kpis))]
 
-    def _get_consumed_plan(self, date):
-        """
-        Update consumed amount (actual + commit)
-        since first date to current day.
-        """
-        self.ensure_one()
+    def _get_new_kpis(self):
         kpis = self.env["mis.report.kpi"]
         # Prepare result matrix for all analytic_id
         analytic_ids = self.analytic_account_id.ids
@@ -69,11 +51,19 @@ class BudgetControl(models.Model):
             for cell in row.iter_cells():
                 if cell.val > 0.0 and budgetable:
                     kpis += cell.row.kpi
-        if kpis:
-            self._update_kpi_reset_plan(kpis)
-            self.sudo().with_context(
-                skip_unlink=True, new_kpi=list(set(kpis.ids))
-            ).prepare_budget_control_matrix()
+        return kpis
+
+    def _get_consumed_plan(self, date):
+        """
+        Update consumed amount (actual + commit)
+        since first date to current day.
+        """
+        self.ensure_one()
+        kpis = self._get_new_kpis()
+        self._update_kpi_reset_plan(kpis)
+        self.sudo().with_context(
+            keep_item_amount=True
+        ).prepare_budget_control_matrix()
         # Filter date range to current month
         item_ids = self.item_ids.filtered(lambda l: l.date_from <= date)
         self._update_consumed_value(item_ids, date)

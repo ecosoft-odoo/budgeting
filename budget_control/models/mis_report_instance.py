@@ -14,11 +14,6 @@ class MisReportInstance(models.Model):
                 "value": ctx["filter_analytic_ids"],
                 "operator": "all",
             }
-        if ctx.get("filter_activity_group"):
-            ctx["mis_report_filters"]["activity_group_id"] = {
-                "value": ctx["filter_activity_group"],
-                "operator": "all",
-            }
         if ctx.get("filter_period_date_from"):
             ctx["mis_report_filters"]["date"] = {
                 "value": ctx["filter_period_date_from"],

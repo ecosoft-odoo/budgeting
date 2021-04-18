@@ -11,11 +11,37 @@ class BudgetControl(models.Model):
         self.ensure_one()
         super()._update_kpi_reset_plan(kpis)
         KPIxJO = self.env["budget.control.kpi.x.job.order"]
+        domain = [("analytic_account_id", "=", self.analytic_account_id.id)]
+        budget_move = self.get_move_commit(domain)
+        # Same AG, Difference Job
+        for move_obj in budget_move:
+            for move in move_obj:
+                activity_group = move.activity_group_id.id
+                job_order = move.job_order_id.id
+                kpi_jo = self.kpi_x_job_order.filtered(
+                    lambda l: l.kpi_ids.budget_activity_group.id
+                    == activity_group
+                    and job_order not in l.job_order_ids.ids
+                )
+                if kpi_jo and job_order:
+                    kpi_jo.job_order_ids = [(4, job_order)]
+        # New AG with job order
         for kpi in list(set(kpis)):
+            move_job = [
+                move_obj.filtered(
+                    lambda l: l.activity_group_id == kpi.budget_activity_group
+                    and l.job_order_id
+                )
+                for move_obj in budget_move
+            ]
             self.kpi_x_job_order += KPIxJO.new(
                 {
                     "kpi_ids": [kpi.id],
-                    "job_order_ids": self.job_order_ids.ids,
+                    "job_order_ids": [
+                        (4, x.job_order_id.id)
+                        for x in move_job
+                        if x.job_order_id
+                    ],
                 }
             )
 

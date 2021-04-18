@@ -12,3 +12,11 @@ class BudgetControl(models.Model):
         compute="_compute_budget_info",
         help="Sum of advance amount",
     )
+
+    def get_move_commit(self, domain):
+        budget_move = super().get_move_commit(domain)
+        AdvanceBudgetMove = self.env["advance.budget.move"]
+        advance_move = AdvanceBudgetMove.search(domain)
+        if advance_move:
+            budget_move.append(advance_move)
+        return budget_move

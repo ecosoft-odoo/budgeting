@@ -12,3 +12,11 @@ class BudgetControl(models.Model):
         compute="_compute_budget_info",
         help="Sum of purchase amount",
     )
+
+    def get_move_commit(self, domain):
+        budget_move = super().get_move_commit(domain)
+        PurchaseBudgetMove = self.env["purchase.budget.move"]
+        purchase_move = PurchaseBudgetMove.search(domain)
+        if purchase_move:
+            budget_move.append(purchase_move)
+        return budget_move

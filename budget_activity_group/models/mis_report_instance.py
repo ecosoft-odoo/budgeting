@@ -8,10 +8,9 @@ class MisReportInstance(models.Model):
 
     def _get_context_filter_matrix(self):
         ctx = super()._get_context_filter_matrix()
-        job_order = self._context.get("filter_job_order", False)
-        if ctx.get("mis_report_filters"):
-            ctx["mis_report_filters"]["job_order_id"] = {
-                "value": job_order,
+        if ctx.get("filter_analytic_ids") and ctx.get("filter_activity_group"):
+            ctx["mis_report_filters"]["activity_group_id"] = {
+                "value": ctx["filter_activity_group"],
                 "operator": "all",
             }
         return ctx
