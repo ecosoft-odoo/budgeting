@@ -10,7 +10,7 @@
         />
         <field name="arch" type="xml">
             <xpath expr="//div[@data-key='budget_control']" position="inside">
-                <h2>Activity</h2>
+                <h2>Job Order</h2>
                 <div
                     class="row mt16 o_settings_container"
                     name="budget_job_order_setting_container"
