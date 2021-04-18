@@ -18,6 +18,7 @@ class MisReportKpi(models.Model):
     )
     budget_activity_group = fields.Many2one(
         comodel_name="budget.activity.group",
+        index=True,
         string="Activity Group",
     )
     respectively_variation = fields.Char(
