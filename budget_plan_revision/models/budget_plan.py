@@ -3,7 +3,8 @@
 
 import ast
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class BudgetPlan(models.Model):
@@ -41,27 +42,21 @@ class BudgetPlan(models.Model):
 
     def _get_context_wizard(self):
         ctx = super()._get_context_wizard()
-        ctx.update({"revision": self.revision_number})
+        ctx.update(
+            {
+                "plan_line_revision": self._context.get(
+                    "plan_line_revision", False
+                )
+            }
+        )
         return ctx
 
     def action_create_update_budget_control(self):
         self = self.with_context(active_test=False)
-        return super().action_create_update_budget_control()
-
-    def create_revision(self):
-        """ Create budget plan revision and all its budget controls """
-        self = self.sudo().with_context(active_test=False)
-        res = super().create_revision()
-        # Based on new budget_plan, create new budget controls by create_revision()
-        new_plan = self.search(ast.literal_eval(res.get("domain", False)))
-        new_plan.ensure_one()
-        new_plan.write({"active": True, "init_revision": False})
-        # By default, there should be no budget_controls, but in case there is,
-        # so we want to make sure not to create it.
-        new_plan.plan_line.invalidate_cache()
-        no_bc_lines = new_plan.plan_line.filtered_domain(
+        no_bc_lines = self.plan_line.filtered_domain(
             [("budget_control_ids", "=", False)]
         )
+        plan_line_revision = self.env["budget.plan.line"]
         analytics = no_bc_lines.mapped("analytic_account_id")
         # Find revisions of budget_controls, and use latest one to create_revision()
         budget_controls = self.env["budget.control"].search(
@@ -78,9 +73,33 @@ class BudgetPlan(models.Model):
                 -1:
             ]  # sorted asc and get the last one
             if prev_control:
+                # Check state budget control for user manual cancel.
+                if prev_control.state != "cancel" and prev_control.active:
+                    raise UserError(
+                        _("{} must be cancelled.".format(prev_control.name))
+                    )
                 prev_control.with_context(
-                    revision_number=new_plan.revision_number
+                    revision_number=self.revision_number
                 ).create_revision()
+                plan_line_revision += self.plan_line.filtered_domain(
+                    [("analytic_account_id", "=", analytic.id)]
+                )
+        return super(
+            BudgetPlan,
+            self.with_context(plan_line_revision=plan_line_revision),
+        ).action_create_update_budget_control()
+
+    def create_revision(self):
+        """ Create budget plan revision and all its budget controls """
+        self = self.sudo().with_context(active_test=False)
+        res = super().create_revision()
+        # Based on new budget_plan, create new budget controls by create_revision()
+        new_plan = self.search(ast.literal_eval(res.get("domain", False)))
+        new_plan.ensure_one()
+        new_plan.write({"active": True, "init_revision": False})
+        # By default, there should be no budget_controls, but in case there is,
+        # so we want to make sure not to create it.
+        new_plan.plan_line.invalidate_cache()
         # Ensure all budget controls are set as active to start
         new_plan.invalidate_cache()
         new_plan.with_context(active_test=False).budget_control_ids.write(
