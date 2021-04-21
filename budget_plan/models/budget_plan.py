@@ -140,10 +140,15 @@ class BudgetPlan(models.Model):
         return self.plan_line.mapped("analytic_account_id")
 
     def _get_context_wizard(self):
-        ctx = {
-            "active_model": "budget.plan",
-            "active_ids": self.ids,
-        }
+        ctx = self._context.copy()
+        ctx.update(
+            {
+                "active_model": "budget.plan",
+                "active_ids": self.ids,
+            }
+        )
+        # Used active_id from generate budget control
+        del ctx["active_id"]
         return ctx
 
     def _generate_budget_control(self, analytic_plan):

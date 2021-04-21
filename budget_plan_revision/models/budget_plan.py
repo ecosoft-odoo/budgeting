@@ -40,17 +40,6 @@ class BudgetPlan(models.Model):
             action["context"]["search_default_inactive"] = True
         return action
 
-    def _get_context_wizard(self):
-        ctx = super()._get_context_wizard()
-        ctx.update(
-            {
-                "plan_line_revision": self._context.get(
-                    "plan_line_revision", False
-                )
-            }
-        )
-        return ctx
-
     def action_create_update_budget_control(self):
         self = self.with_context(active_test=False)
         no_bc_lines = self.plan_line.filtered_domain(
@@ -86,7 +75,11 @@ class BudgetPlan(models.Model):
                 )
         return super(
             BudgetPlan,
-            self.with_context(plan_line_revision=plan_line_revision),
+            self.with_context(
+                plan_line_revision=plan_line_revision,
+                revision_number=self.revision_number,
+                init_revision=self.init_revision,
+            ),
         ).action_create_update_budget_control()
 
     def create_revision(self):
