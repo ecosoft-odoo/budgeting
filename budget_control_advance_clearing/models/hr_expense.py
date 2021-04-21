@@ -127,7 +127,9 @@ class HRExpense(models.Model):
                     if self.env.company.budget_include_tax
                     else clearing.untaxed_amount
                 )
-                budget_move = advance.commit_budget(
+                budget_move = advance.with_context(
+                    uncommit=True
+                ).commit_budget(
                     reverse=True,
                     clearing_id=clearing.id,
                     amount_currency=clearing_amount,

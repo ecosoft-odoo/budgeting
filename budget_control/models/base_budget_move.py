@@ -193,6 +193,12 @@ class BudgetDoclineMixin(models.AbstractModel):
         # this is correct for normal case, but may require different date
         # in case of budget that carried to new period/year
         today = fields.Date.context_today(self)
+        # In case of budget carried, returning commit budget
+        # date_commit and analytic should first date of next year
+        uncommit = self._context.get("uncommit", False)
+        if uncommit and date_commit > self.date_commit:
+            self.date_commit = date_commit
+            analytic_account = analytic_account.next_year_analytic()
         res = {
             "product_id": self.product_id.id,
             "account_id": account.id,
@@ -277,13 +283,25 @@ class BudgetDoclineMixin(models.AbstractModel):
         self.ensure_one()
         docline = self
         analytic = docline[self._budget_analytic_field]
+        budget_moves = self[self._budget_field()]
+        date_commit = (
+            max(budget_moves.mapped("date"))
+            if budget_moves
+            else docline.date_commit
+        )
+        uncommit = docline._context.get("uncommit", False)
         if analytic:
             if not docline.date_commit:
                 raise UserError(_("No budget commitment date"))
             date_from = analytic.bm_date_from
             date_to = analytic.bm_date_to
-            if (date_from and date_from > docline.date_commit) or (
-                date_to and date_to < docline.date_commit
+            # For case carry forward, skip check date.
+            check_date = True
+            if uncommit and date_commit > docline.date_commit:
+                check_date = False
+            if check_date and (
+                (date_from and date_from > docline.date_commit)
+                or (date_to and date_to < docline.date_commit)
             ):
                 raise UserError(
                     _("Budget date commit is not within date range of - %s")

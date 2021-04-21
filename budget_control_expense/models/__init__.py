@@ -6,3 +6,5 @@ from . import account_move_line
 from . import hr_expense
 from . import budget_control
 from . import budget_move_forward
+from . import res_company
+from . import res_config_settings

@@ -121,6 +121,9 @@ class BudgetMoveForward(models.Model):
                 vals = rec._prepare_vals_forward(docs, model)
                 Line.create(vals)
 
+    def _hooks_document_carry_forward(self, docline):
+        return
+
     def action_budget_carry_forward(self):
         """
         Concept carry forward
@@ -149,6 +152,7 @@ class BudgetMoveForward(models.Model):
                 if not doclines:
                     continue
                 for docline in doclines:
+                    # Find next analytic and clearing commit this analytic
                     analytic = docline[docline._budget_analytic_field]
                     next_analytic = analytic.next_year_analytic()
                     docline.commit_budget(reverse=True)
@@ -159,6 +163,7 @@ class BudgetMoveForward(models.Model):
                             "date": rec.date_budget_move,
                         }
                     )
+                    rec._hooks_document_carry_forward(docline)
         self.write({"state": "done"})
 
     def action_cancel(self):
