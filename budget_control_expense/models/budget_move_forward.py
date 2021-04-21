@@ -30,6 +30,11 @@ class BudgetMoveForward(models.Model):
             )
         return domain_search
 
+    def _hooks_document_carry_forward(self, docline):
+        if docline._name == "hr.expense":
+            docline.write({"auto_post": self.env.company.auto_post_journal})
+        return super()._hooks_document_carry_forward(docline)
+
 
 class BudgetMoveForwardLine(models.Model):
     _inherit = "budget.move.forward.line"
