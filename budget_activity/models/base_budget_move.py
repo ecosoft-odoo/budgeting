@@ -12,6 +12,11 @@ class BaseBudgetMove(models.AbstractModel):
         string="Activity",
         index=True,
     )
+    activity_group_id = fields.Many2one(
+        comodel_name="budget.activity.group",
+        string="Activity Group",
+        related="activity_id.activity_group_id",
+    )
 
     @api.constrains("activity_id", "account_id")
     def _check_activity_account(self):

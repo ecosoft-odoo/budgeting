@@ -15,6 +15,7 @@
         "views/res_config_settings_views.xml",
         "views/account_move_views.xml",
         "views/budget_activity_view.xml",
+        "views/budget_activity_group_view.xml",
     ],
     "installable": True,
     "maintainers": ["kittiu"],

@@ -10,7 +10,7 @@
             <xpath expr="//notebook//field[@name='multi']" position="after">
                 <field name="activity_expression" />
                 <field
-                    name="budget_activity_group"
+                    name="activity_group_id"
                     attrs="{
                                     'invisible': [('activity_expression', '=', False)],
                                     'required': [('activity_expression', '=', True)]}"
