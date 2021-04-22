@@ -22,8 +22,7 @@ class BudgetControl(models.Model):
                 activity_group = move.activity_group_id.id
                 job_order = move.job_order_id.id
                 kpi_jo = self.kpi_x_job_order.filtered(
-                    lambda l: l.kpi_ids.budget_activity_group.id
-                    == activity_group
+                    lambda l: l.kpi_ids.activity_group_id.id == activity_group
                     and job_order not in l.job_order_ids.ids
                 )
                 if kpi_jo:
@@ -32,7 +31,7 @@ class BudgetControl(models.Model):
         for kpi in list(set(kpis)):
             move_job = [
                 move_obj.filtered(
-                    lambda l: l.activity_group_id == kpi.budget_activity_group
+                    lambda l: l.activity_group_id == kpi.activity_group_id
                 )
                 for move_obj in budget_move
             ]

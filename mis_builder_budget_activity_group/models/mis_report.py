@@ -25,7 +25,7 @@ class MisReport(models.Model):
             for expression in kpi.expression_ids:
                 if not expression.name:
                     continue
-                activity_ids = kpi.budget_activity_group.activity_ids.ids
+                activity_ids = kpi.activity_group_id.activity_ids.ids
                 for activity_id in activity_ids:
                     res[activity_id].add(kpi)
         return res

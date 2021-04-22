@@ -94,6 +94,7 @@
                     optional="hide"
                     groups="budget_activity.group_budget_activity_tag"
                 />
+                <field name="activity_group_id" />
             </tree>
         </field>
     </record>
@@ -120,6 +121,11 @@
                         name="groupby_account"
                         context="{'group_by': 'account_id'}"
                     />
+                    <filter
+                        string="Activity Group"
+                        name="groupby_activity_group"
+                        context="{'group_by': 'activity_group_id'}"
+                    />
                 </group>
            </search>
         </field>
@@ -142,6 +148,13 @@
                         <h1>
                             <field name="name" />
                         </h1>
+                        <h4>
+                            <field
+                                name="activity_group_id"
+                                placeholder="Group of Activity"
+                                options="{'no_create': True}"
+                            />
+                        </h4>
                     </div>
                     <group>
                         <group>

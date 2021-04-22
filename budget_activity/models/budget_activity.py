@@ -1,6 +1,6 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class BudgetActivityTag(models.Model):
@@ -35,11 +35,18 @@ class BudgetActivity(models.Model):
         required=True,
     )
     active = fields.Boolean(default=True)
+    activity_group_id = fields.Many2one(
+        comodel_name="budget.activity.group",
+        index=True,
+    )
     account_id = fields.Many2one(
         comodel_name="account.account",
         string="Account",
+        compute="_compute_account_id",
+        store=True,
         domain=[("deprecated", "=", False)],
-        required=True,
+        readonly=False,
+        required=False,
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
@@ -56,3 +63,12 @@ class BudgetActivity(models.Model):
         string="Tags",
         help="Optional tags you may want to assign for search",
     )
+
+    @api.depends("activity_group_id")
+    def _compute_account_id(self):
+        for rec in self:
+            rec.account_id = (
+                not rec.account_id
+                and rec.activity_group_id.account_id
+                or rec.account_id
+            )

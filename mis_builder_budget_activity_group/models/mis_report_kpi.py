@@ -16,7 +16,7 @@ class MisReportKpi(models.Model):
         readonly=False,
         store=True,
     )
-    budget_activity_group = fields.Many2one(
+    activity_group_id = fields.Many2one(
         comodel_name="budget.activity.group",
         index=True,
         string="Activity Group",
@@ -26,12 +26,12 @@ class MisReportKpi(models.Model):
         "period (p), initial balance (i), ending balance (e)"
     )
 
-    @api.depends("budget_activity_group")
+    @api.depends("activity_group_id")
     def _compute_name_activity(self):
         for rec in self:
             rec.description = False
-            if rec.activity_expression and rec.budget_activity_group:
-                rec.description = rec.budget_activity_group.name
+            if rec.activity_expression and rec.activity_group_id:
+                rec.description = rec.activity_group_id.name
 
     @api.depends("report_id.is_activity")
     def _compute_is_activity(self):
@@ -46,14 +46,14 @@ class MisReportKpi(models.Model):
     @api.depends(
         "expression_ids.subkpi_id.name",
         "expression_ids.name",
-        "budget_activity_group.activity_ids",
+        "activity_group_id.activity_ids",
         "respectively_variation",
     )
     def _compute_expression(self):
         super()._compute_expression()
         for kpi in self:
-            if kpi.activity_expression and kpi.budget_activity_group:
-                activity_ids = kpi.budget_activity_group.activity_ids
+            if kpi.activity_expression and kpi.activity_group_id:
+                activity_ids = kpi.activity_group_id.activity_ids
                 accounts = activity_ids.mapped("account_id")
                 account_str = "[%s]" % ",".join([acc.code for acc in accounts])
                 kpi.expression = "bal{}{}[{}]".format(
