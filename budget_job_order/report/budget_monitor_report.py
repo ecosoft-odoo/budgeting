@@ -14,11 +14,11 @@ class BudgetMonitorReport(models.Model):
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query.append("a.job_order_id as job_order_id")
+        select_budget_query[40] = "a.job_order_id"
         return select_budget_query
 
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)
-        select_statement.append("a.job_order_id as job_order_id")
+        select_statement[40] = "a.job_order_id"
         return select_statement

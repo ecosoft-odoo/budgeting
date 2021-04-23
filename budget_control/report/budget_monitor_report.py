@@ -89,8 +89,8 @@ class BudgetMonitorReport(models.Model):
             res_model = source["model"][0]  # i.e., account.move.line
             amount_type = source["type"][0]  # i.e., 8_actual
             res_field = source["budget_move"][1]  # i.e., move_line_id
-            sql_select[amount_type] = [
-                """
+            sql_select[amount_type] = {
+                0: """
                 %s000000000 + a.id as id,
                 '%s,' || a.%s as res_id,
                 a.analytic_account_id,
@@ -104,7 +104,7 @@ class BudgetMonitorReport(models.Model):
                 null::char as budget_state
                 """
                 % (amount_type[:1], res_model, res_field, amount_type)
-            ]
+            }
         return sql_select
 
     def _get_from_amount_types(self):
@@ -129,8 +129,8 @@ class BudgetMonitorReport(models.Model):
         return sql_from
 
     def _select_budget(self):
-        return [
-            """
+        return {
+            0: """
             1000000000 + a.id as id,
             'mis.budget.item,' || a.id as res_id,
             a.analytic_account_id,
@@ -143,7 +143,7 @@ class BudgetMonitorReport(models.Model):
             b.name as reference,
             b.state as budget_state
         """
-        ]
+        }
 
     def _from_budget(self):
         return """
@@ -152,10 +152,7 @@ class BudgetMonitorReport(models.Model):
         """
 
     def _where_budget(self):
-        return """
-            -- where a.active = true and a.state = 'done'
-            where a.active = true
-        """
+        return """ where a.active = true """
 
     def _select_statement(self, amount_type):
         return self._get_select_amount_types()[amount_type]
@@ -170,9 +167,15 @@ class BudgetMonitorReport(models.Model):
 
     def _get_sql(self):
         select_budget_query = self._select_budget()
-        select_budget = ", ".join(sorted(select_budget_query))
+        key_select_budget_list = sorted(select_budget_query.keys())
+        select_budget = ", ".join(
+            select_budget_query[x] for x in key_select_budget_list
+        )
         select_actual_query = self._select_statement("8_actual")
-        select_actual = ", ".join(sorted(select_actual_query))
+        key_select_actual_list = sorted(select_budget_query.keys())
+        select_actual = ", ".join(
+            select_actual_query[x] for x in key_select_actual_list
+        )
         return "(select {} {} {}) union (select {} {} {})".format(
             select_budget,
             self._from_budget(),
