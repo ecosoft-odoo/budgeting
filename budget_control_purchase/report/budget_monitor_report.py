@@ -18,7 +18,8 @@ class BudgetMonitorReport(models.Model):
 
     def _get_sql(self):
         select_po_query = self._select_statement("3_po_commit")
-        select_po = ", ".join(sorted(select_po_query))
+        key_select_list = sorted(select_po_query.keys())
+        select_po = ", ".join(select_po_query[x] for x in key_select_list)
         return super()._get_sql() + "union (select {} {})".format(
             select_po,
             self._from_statement("3_po_commit"),

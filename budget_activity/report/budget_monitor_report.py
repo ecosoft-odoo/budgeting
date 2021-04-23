@@ -12,9 +12,9 @@ class BudgetMonitorReport(models.Model):
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query.append(
-            "bag.description as activity_group, null::char as activity"
-        )
+        select_budget_query[
+            20
+        ] = "bag.description as activity_group, null::char as activity"
         return select_budget_query
 
     def _from_budget(self):
@@ -32,9 +32,9 @@ class BudgetMonitorReport(models.Model):
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)
-        select_statement.append(
-            "bag.name as activity_group, ba.name as activity"
-        )
+        select_statement[
+            20
+        ] = "bag.name as activity_group, ba.name as activity"
         return select_statement
 
     def _from_statement(self, amount_type):
