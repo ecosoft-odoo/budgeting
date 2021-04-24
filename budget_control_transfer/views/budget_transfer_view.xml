@@ -53,16 +53,6 @@
                 <field name="name" />
                 <field name="budget_period_id" />
                 <field
-                    name="source_budget_transfer"
-                    widget="many2many_tags"
-                    optional="show"
-                />
-                <field
-                    name="target_budget_transfer"
-                    widget="many2many_tags"
-                    optional="show"
-                />
-                <field
                     name="state"
                     widget="badge"
                     decoration-success="state == 'transfer'"
@@ -127,16 +117,7 @@
                             />
                             <field name="mis_budget_id" invisible="1" />
                         </group>
-                        <group name="budget_transfer_right">
-                            <field
-                                name="source_budget_transfer"
-                                widget="many2many_tags"
-                            />
-                            <field
-                                name="target_budget_transfer"
-                                widget="many2many_tags"
-                            />
-                        </group>
+                        <group name="budget_transfer_right" />
                     </group>
                     <field name="transfer_item_ids" nolabel="1" />
                 </sheet>

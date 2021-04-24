@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
+
+    <record id="view_budget_transfer_tree" model="ir.ui.view">
+        <field name="name">view.budget.transfer.tree</field>
+        <field name="model">budget.transfer</field>
+        <field
+            name="inherit_id"
+            ref="budget_control_transfer.view_budget_transfer_tree"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//tree/field[@name='budget_period_id']" position="after">
+                <field name="source_operating_unit" optional="show" />
+                <field name="target_operating_unit" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
     <record id="view_budget_transfer_form" model="ir.ui.view">
         <field name="name">view.budget.transfer.form</field>
         <field name="model">budget.transfer</field>
@@ -9,7 +25,15 @@
         />
         <field name="arch" type="xml">
             <xpath expr="//group[@name='budget_transfer_left']" position="inside">
-                <field name="operating_unit_id" />
+                <field name="source_operating_unit" />
+                <field name="target_operating_unit" />
+            </xpath>
+            <xpath expr="//group[@name='budget_transfer_right']" position="inside">
+                <field
+                    name="operating_unit_ids"
+                    widget="many2many_tags"
+                    groups="operating_unit.group_multi_operating_unit"
+                />
             </xpath>
         </field>
     </record>

@@ -9,16 +9,10 @@
                 <field name="transfer_id" invisible="1" />
                 <field name="mis_budget_id" invisible="1" />
                 <field name="budget_period_id" invisible="1" />
-                <field
-                    name="source_budget_control_id"
-                    options="{'no_create_edit': True, 'no_open': True}"
-                />
+                <field name="source_budget_control_id" />
                 <field name="source_state" optional="hide" />
                 <field name="source_amount_available" string="Available" />
-                <field
-                    name="target_budget_control_id"
-                    options="{'no_create_edit': True, 'no_open': True}"
-                />
+                <field name="target_budget_control_id" />
                 <field name="target_state" optional="hide" />
                 <field name="target_amount_available" string="Available" />
                 <field name="amount" />
@@ -37,18 +31,12 @@
                             <field name="transfer_id" invisible="1" />
                             <field name="mis_budget_id" invisible="1" />
                             <field name="budget_period_id" invisible="1" />
-                            <field
-                                name="source_budget_control_id"
-                                options="{'no_create_edit': True, 'no_open': True}"
-                            />
+                            <field name="source_budget_control_id" />
                             <field name="source_state" />
                             <field name="source_amount_available" string="Available" />
                         </group>
                         <group name="budget_transfer_item_right">
-                            <field
-                                name="target_budget_control_id"
-                                options="{'no_create_edit': True, 'no_open': True}"
-                            />
+                            <field name="target_budget_control_id" />
                             <field name="target_state" />
                             <field name="target_amount_available" string="Available" />
                         </group>
@@ -56,13 +44,6 @@
                 </sheet>
             </form>
         </field>
-    </record>
-
-    <record id="action_budget_transfer_item" model="ir.actions.act_window">
-        <field name="name">Budget Transfer Item</field>
-        <field name="view_id" ref="view_budget_transfer_item_tree" />
-        <field name="res_model">budget.transfer.item</field>
-        <field name="view_mode">tree,form</field>
     </record>
 
 </odoo>

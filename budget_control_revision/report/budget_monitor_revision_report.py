@@ -24,20 +24,21 @@ class BudgetMonitorRevisionReport(models.Model):
     revision_number = fields.Char()
 
     def _find_operating_unit(self):
-        user_id = self.env["res.users"].browse(self._uid)
-        if user_id.operating_unit_ids:
-            ou = "in {}".format(tuple(user_id.operating_unit_ids.ids))
+        operating_unit_ids = self.env.user.operating_unit_ids
+        if len(operating_unit_ids) == 1:
+            ou = "= {}".format(operating_unit_ids.id)
         else:
-            ou = "= {}".format(user_id.default_operating_unit_id.id)
-        return ou
+            ou = "in {}".format(tuple(operating_unit_ids.ids))
+        domain_operating_unit = "and bc.operating_unit_id {}".format(ou)
+        return domain_operating_unit
 
     @property
     def _table_query(self):
-        return "%s" % (self._get_sql())
+        return "{}".format(self._get_sql())
 
     def _select_budget(self):
-        return [
-            """
+        return {
+            0: """
             1000000000 + a.id as id,
             a.analytic_account_id,
             a.date_from as date,  -- approx date
@@ -46,7 +47,7 @@ class BudgetMonitorRevisionReport(models.Model):
             bc.name as reference,
             'Version ' || bc.revision_number::char as revision_number
         """
-        ]
+        }
 
     def _from_budget(self):
         return """
@@ -55,16 +56,23 @@ class BudgetMonitorRevisionReport(models.Model):
         """
 
     def _where_budget(self):
+        """
+        Maybe function _find_operating_unit should be move on
+        new module budget_control_revision_operating_unit
+        """
         operating_unit = self._find_operating_unit()
         return """
-            where a.state != 'draft' and bc.operating_unit_id {}
+            where a.state != 'draft' {}
         """.format(
             operating_unit
         )
 
     def _get_sql(self):
         select_budget_query = self._select_budget()
-        select_budget = ", ".join(sorted(select_budget_query))
+        key_select_budget_list = sorted(select_budget_query.keys())
+        select_budget = ", ".join(
+            select_budget_query[x] for x in key_select_budget_list
+        )
         return "select {} {} {}".format(
             select_budget,
             self._from_budget(),
