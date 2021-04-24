@@ -23,15 +23,6 @@ class BudgetMonitorRevisionReport(models.Model):
     )
     revision_number = fields.Char()
 
-    def _find_operating_unit(self):
-        operating_unit_ids = self.env.user.operating_unit_ids
-        if len(operating_unit_ids) == 1:
-            ou = "= {}".format(operating_unit_ids.id)
-        else:
-            ou = "in {}".format(tuple(operating_unit_ids.ids))
-        domain_operating_unit = "and bc.operating_unit_id {}".format(ou)
-        return domain_operating_unit
-
     @property
     def _table_query(self):
         return "{}".format(self._get_sql())
@@ -56,16 +47,7 @@ class BudgetMonitorRevisionReport(models.Model):
         """
 
     def _where_budget(self):
-        """
-        Maybe function _find_operating_unit should be move on
-        new module budget_control_revision_operating_unit
-        """
-        operating_unit = self._find_operating_unit()
-        return """
-            where a.state != 'draft' {}
-        """.format(
-            operating_unit
-        )
+        return """ where a.state != 'draft' """
 
     def _get_sql(self):
         select_budget_query = self._select_budget()
