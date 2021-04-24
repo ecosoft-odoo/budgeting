@@ -17,11 +17,15 @@ class BudgetMonitorReport(models.Model):
             }
         ]
 
+    def _where_advance_clearing(self):
+        return ""
+
     def _get_sql(self):
         select_av_query = self._select_statement("4_av_commit")
         key_select_list = sorted(select_av_query.keys())
         select_av = ", ".join(select_av_query[x] for x in key_select_list)
-        return super()._get_sql() + "union (select {} {})".format(
+        return super()._get_sql() + "union (select {} {} {})".format(
             select_av,
             self._from_statement("4_av_commit"),
+            self._where_advance_clearing(),
         )

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="view_budget_monitor_revision_report_search" model="ir.ui.view">
+        <field name="name">budget.monitor.revision.report.search</field>
+        <field name="model">budget.monitor.revision.report</field>
+        <field
+            name="inherit_id"
+            ref="budget_control_revision.view_budget_monitor_revision_report_search"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//group/filter[@name='group_by_analytic']" position="before">
+                <filter
+                    string="Operating Unit"
+                    name="group_by_operating_unit"
+                    context="{'group_by':'operating_unit_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record
+        id="budget_control_revision.action_budget_monitor_revision_report_all"
+        model="ir.actions.act_window"
+    >
+        <field
+            name="context"
+        >{'search_default_group_by_operating_unit': 1, 'search_default_group_by_analytic': 1, 'search_default_group_by_revision': 1}</field>
+    </record>
+
+</odoo>

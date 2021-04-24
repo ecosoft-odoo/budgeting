@@ -1,15 +1,15 @@
-# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import fields, models
 
 
-class BudgetMonitorReport(models.Model):
-    _inherit = "budget.monitor.report"
+class BudgetMonitorRevisionReport(models.Model):
+    _inherit = "budget.monitor.revision.report"
 
     operating_unit_id = fields.Many2one(comodel_name="operating.unit")
 
-    def _get_where_sql(self):
-        where_sql = super()._get_where_sql()
+    def _where_budget(self):
+        where_sql = super()._where_budget()
         if where_sql:
             where_clause = "and"
         else:
@@ -19,7 +19,7 @@ class BudgetMonitorReport(models.Model):
             ou = "= {}".format(operating_unit_ids.id)
         else:
             ou = "in {}".format(tuple(operating_unit_ids.ids))
-        domain_operating_unit = "{} a.operating_unit_id {}".format(
+        domain_operating_unit = "{} bc.operating_unit_id {}".format(
             where_clause, ou
         )
         where_query = " ".join([where_sql, domain_operating_unit])
@@ -28,11 +28,5 @@ class BudgetMonitorReport(models.Model):
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query[30] = "b.operating_unit_id"
+        select_budget_query[20] = "bc.operating_unit_id"
         return select_budget_query
-
-    # All consumed
-    def _select_statement(self, amount_type):
-        select_statement = super()._select_statement(amount_type)
-        select_statement[30] = "b.operating_unit_id"
-        return select_statement

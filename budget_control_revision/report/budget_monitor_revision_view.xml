@@ -21,6 +21,7 @@
              <pivot string="Budget Monitoring">
                  <field name="analytic_account_id" type="row" />
                  <field name="amount_type" type="col" />
+                 <field name="date" type="col" />
                  <field name="amount" type="measure" />
              </pivot>
          </field>

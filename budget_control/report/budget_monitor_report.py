@@ -56,13 +56,14 @@ class BudgetMonitorReport(models.Model):
     def _table_query(self):
         return """
             select a.*, d.id as date_range_id, p.id as budget_period_id
-            from (%s) a
+            from ({}) a
             left outer join date_range d
                 on a.date between d.date_start and d.date_end
             left outer join budget_period p
                 on a.date between p.bm_date_from and p.bm_date_to
-        """ % (
-            self._get_sql()
+            {}
+        """.format(
+            self._get_sql(), self._get_where_sql()
         )
 
     def _get_consumed_sources(self):
@@ -182,5 +183,8 @@ class BudgetMonitorReport(models.Model):
             self._where_budget(),
             select_actual,
             self._from_statement("8_actual"),
-            "where b.state = 'posted'",
+            self._where_actual(),
         )
+
+    def _get_where_sql(self):
+        return ""
