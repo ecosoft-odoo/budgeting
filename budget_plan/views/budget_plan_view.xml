@@ -9,6 +9,7 @@
                 <field name="budget_period_id" optional="hide" />
                 <field
                     name="analytic_account_id"
+                    domain="[('budget_period_id', '=', budget_period_id)]"
                     options="{'no_create': True, 'no_open': True}"
                 />
                 <field

@@ -14,7 +14,6 @@
                     name="job_order_id"
                     options="{'no_create': True}"
                     context="{'default_analytic_account_id': analytic_account_id}"
-                    groups="budget_job_order.group_budget_job_order"
                 />
             </xpath>
             <xpath
@@ -25,7 +24,6 @@
                     name="job_order_id"
                     options="{'no_create': True}"
                     context="{'default_analytic_account_id': analytic_account_id}"
-                    groups="budget_job_order.group_budget_job_order"
                 />
             </xpath>
         </field>

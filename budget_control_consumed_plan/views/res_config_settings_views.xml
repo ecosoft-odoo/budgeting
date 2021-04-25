@@ -16,13 +16,13 @@
                     id="budget_update_consumed_plan"
                 >
                     <div class="o_setting_left_pane">
-                        <field name="group_manual_date_consumed_plan" />
+                        <field name="budget_manual_consumed_plan" />
                     </div>
                     <div class="o_setting_right_pane">
-                        <label for="group_manual_date_consumed_plan" />
+                        <label for="budget_manual_consumed_plan" />
                         <div class="text-muted">
-                            If checked, user can select date for update consumed amount
-                            in budget control plan.
+                            If checked, all budget will manual date for
+                            updateconsumed amount on budget control.
                         </div>
                     </div>
                 </div>

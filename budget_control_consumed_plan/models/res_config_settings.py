@@ -7,7 +7,6 @@ from odoo import fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
-    group_manual_date_consumed_plan = fields.Boolean(
-        string="Update date manual on consumed plan",
-        implied_group="budget_control_consumed_plan.group_manual_date_consumed_plan",
+    budget_manual_consumed_plan = fields.Boolean(
+        related="company_id.budget_manual_consumed_plan", readonly=False
     )
