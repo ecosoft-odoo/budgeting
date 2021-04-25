@@ -7,13 +7,14 @@ from odoo import _, fields, models
 class BudgetControl(models.Model):
     _inherit = "budget.control"
 
-    def _context_filter_budget_info(self, item, date_to):
+    def _context_filter_budget_info(self, item, date_to, all_kpi_ids):
         ctx = self._context.copy()
         ctx.update(
             {
                 "filter_activity_group": item.activity_group_id.id,
                 "filter_period_date_from": item.date_from,
                 "filter_period_date_to": date_to,
+                "filter_kpi_ids": all_kpi_ids or False,
             }
         )
         return ctx
@@ -21,11 +22,12 @@ class BudgetControl(models.Model):
     def _update_consumed_value(self, item_ids, date):
         analytic_id = [self.analytic_account_id.id]
         budget_period = self.budget_period_id
+        all_kpi_ids = self.kpi_ids
         for item in item_ids:
             date_to = item.date_to
             if item.date_from <= date <= item.date_to:
                 date_to = date
-            ctx = self._context_filter_budget_info(item, date_to)
+            ctx = self._context_filter_budget_info(item, date_to, all_kpi_ids)
             info = budget_period.with_context(ctx).get_budget_info(analytic_id)
             item.write({"amount": info["amount_consumed"]})
 

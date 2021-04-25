@@ -44,7 +44,7 @@ class BudgetControl(models.Model):
                 }
             )
 
-    def _context_filter_budget_info(self, item, date_to):
-        ctx = super()._context_filter_budget_info(item, date_to)
+    def _context_filter_budget_info(self, item, date_to, all_kpi_ids):
+        ctx = super()._context_filter_budget_info(item, date_to, all_kpi_ids)
         ctx["filter_job_order"] = item.job_order_id.id or [False]
         return ctx
