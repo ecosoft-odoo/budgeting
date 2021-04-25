@@ -78,10 +78,7 @@ class BudgetControl(models.Model):
         return True
 
     def action_update_consumed_plan(self):
-        group_manual_date_consumed_plan = self.env.user.has_group(
-            "budget_control_consumed_plan.group_manual_date_consumed_plan"
-        )
-        if group_manual_date_consumed_plan:
+        if self.env.company.budget_manual_consumed_plan:
             return {
                 "name": _("Updating Consumed Plan"),
                 "res_model": "update.consumed.plan",

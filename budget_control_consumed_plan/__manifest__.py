@@ -11,7 +11,6 @@
     "website": "https://github.com/OCA/account-budgeting",
     "depends": ["budget_control", "mis_builder_budget_activity_group"],
     "data": [
-        "security/security.xml",
         "security/ir.model.access.csv",
         "views/res_config_settings_views.xml",
         "views/budget_control_view.xml",
