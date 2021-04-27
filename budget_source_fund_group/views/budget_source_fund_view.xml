@@ -40,7 +40,7 @@
         <field name="model">budget.source.fund</field>
         <field name="inherit_id" ref="budget_source_fund.budget_source_fund_form" />
         <field name="arch" type="xml">
-            <xpath expr="//form//div[@class='oe_title']" position="inside">
+            <xpath expr="//form//div[hasclass('oe_title')]" position="inside">
                 <h4>
                     <field
                         name="fund_group_id"
