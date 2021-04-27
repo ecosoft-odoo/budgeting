@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_source_fund_monitor_report_search" model="ir.ui.view">
+        <field name="name">source.fund.monitor.report.search</field>
+        <field name="model">source.fund.monitor.report</field>
+        <field
+            name="inherit_id"
+            ref="budget_source_fund.view_source_fund_monitor_report_search"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//group/filter[@name='fund_id']" position="before">
+                <filter
+                    string="Fund Group"
+                    name="fund_group_id"
+                    context="{'group_by':'fund_group_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

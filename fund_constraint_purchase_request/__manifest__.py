@@ -8,7 +8,7 @@
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
-    "depends": ["fund_constraint", "purchase_request"],
+    "depends": ["fund_constraint", "budget_control_purchase_request"],
     "data": [
         "views/purchase_request_line_view.xml",
         "wizard/purchase_line_make_purchase_order_view.xml",
