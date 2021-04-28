@@ -7,7 +7,7 @@ from odoo.exceptions import ValidationError
 class BudgetTransfer(models.Model):
     _name = "budget.transfer"
     _inherit = ["mail.thread"]
-    _description = "Budget Transfer by Item"
+    _description = "Budget Transfer"
 
     name = fields.Char(
         default="/",
