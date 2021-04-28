@@ -59,18 +59,18 @@ class BudgetControl(models.Model):
         }
         new_items = []
         for item in items:
-            first = True
+            # first = True
             job_order_ids = kpi_jo.get(item["kpi_expression_id"]) or [False]
             for jo_id in job_order_ids:
                 new_item = item.copy()
                 new_item["job_order_id"] = jo_id
                 new_items.append(new_item)
                 # Create empty job order on kpi.
-                if jo_id and first:
-                    new_item = item.copy()
-                    new_item["job_order_id"] = False
-                    new_items.append(new_item)
-                    first = False
+                # if jo_id and first:
+                #     new_item = item.copy()
+                #     new_item["job_order_id"] = False
+                #     new_items.append(new_item)
+                #     first = False
         return new_items
 
 
