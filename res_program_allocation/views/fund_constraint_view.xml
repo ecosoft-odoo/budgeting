@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="fund_constraint_view_tree" model="ir.ui.view">
+        <field name="name">fund.constraint.view.tree</field>
+        <field name="model">fund.constraint</field>
+        <field name="inherit_id" ref="fund_constraint.fund_constraint_view_tree" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="program_id" />
+            </field>
+        </field>
+    </record>
+
+    <record id="fund_constraint_view_filter" model="ir.ui.view">
+        <field name="name">fund.constraint.view.filter</field>
+        <field name="model">fund.constraint</field>
+        <field name="inherit_id" ref="fund_constraint.fund_constraint_view_filter" />
+        <field name="arch" type="xml">
+            <xpath expr="//search/group" position="inside">
+                <filter
+                    name="program"
+                    string="Program"
+                    context="{'group_by': 'program_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="fund_constraint_view_form" model="ir.ui.view">
+        <field name="name">fund.constraint.view.form</field>
+        <field name="model">fund.constraint</field>
+        <field name="inherit_id" ref="fund_constraint.fund_constraint_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='fund_constraint_left']" position="inside">
+                <field name="program_id" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

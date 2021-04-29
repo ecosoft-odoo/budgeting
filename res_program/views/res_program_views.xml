@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="view_res_program_tree" model="ir.ui.view">
+        <field name="name">res.program.tree</field>
+        <field name="model">res.program</field>
+        <field name="arch" type="xml">
+            <tree sample="1">
+                <field name="name" />
+                <field name="code" optional="show" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_res_program_form" model="ir.ui.view">
+        <field name="name">res.program.form</field>
+        <field name="model">res.program</field>
+        <field name="arch" type="xml">
+            <form sample="1">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" />
+                        <h1>
+                            <field name="name" />
+                        </h1>
+                    </div>
+                    <group name="main_program">
+                        <field name="active" invisible="1" />
+                        <group name="main_left_program">
+                            <field name="code" />
+                        </group>
+                        <group name="main_right_program" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_res_program_filter" model="ir.ui.view">
+        <field name="name">res.program.select</field>
+        <field name="model">res.program</field>
+        <field name="arch" type="xml">
+            <search string="Search Program">
+                <field
+                    name="name"
+                    string="Program"
+                    filter_domain="['|', ('name','ilike',self), ('code','ilike',self)]"
+                />
+                <filter
+                    string="Archived"
+                    name="inactive"
+                    domain="[('active', '=', False)]"
+                />
+            </search>
+        </field>
+    </record>
+
+
+    <record id="res_program_action" model="ir.actions.act_window">
+        <field name="name">Program</field>
+        <field name="res_model">res.program</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_res_program_filter" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No program found. Let's create one!
+            </p>
+        </field>
+    </record>
+
+    <menuitem
+        id="res_program_menu"
+        parent="budget_source_fund.budget_source_of_fund_menu"
+        name="Program"
+        action="res_program_action"
+        sequence="70"
+    />
+
+</odoo>
