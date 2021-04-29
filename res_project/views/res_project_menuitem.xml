@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Top menu item -->
+    <menuitem
+        id="menu_main_res_project"
+        name="Projects"
+        groups="group_res_project_user,group_res_project_user"
+        sequence="30"
+    />
+
+    <menuitem
+        id="menu_res_project_config"
+        name="Configuration"
+        parent="menu_main_res_project"
+        sequence="100"
+        groups="group_res_project_manager"
+    />
+</odoo>

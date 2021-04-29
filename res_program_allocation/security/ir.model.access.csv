@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_res_program_allocation,access_res_program_allocation,model_res_program_allocation,res_program.group_res_program,1,1,1,1

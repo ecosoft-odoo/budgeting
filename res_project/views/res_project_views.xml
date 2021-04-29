@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="view_res_project_tree" model="ir.ui.view">
+        <field name="name">res.project.tree</field>
+        <field name="model">res.project</field>
+        <field name="arch" type="xml">
+            <tree sample="1">
+                <field name="name" />
+                <field name="code" optional="show" />
+                <field name="parent_project" />
+                <field name="user_id" />
+                <field name="date_from" />
+                <field name="date_to" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'confirm'"
+                    decoration-danger="state == 'close'"
+                />
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_res_project_form" model="ir.ui.view">
+        <field name="name">res.project.form</field>
+        <field name="model">res.project</field>
+        <field name="arch" type="xml">
+            <form sample="1">
+                <header>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="Confirm"
+                        class="oe_highlight"
+                        attrs="{'invisible':[('state', '!=', 'draft')]}"
+                        groups="res_project.group_res_project_manager"
+                    />
+                    <button
+                        name="action_close_project"
+                        type="object"
+                        string="Close"
+                        class="oe_highlight"
+                        attrs="{'invisible':[('state', '!=', 'confirm')]}"
+                        groups="res_project.group_res_project_manager"
+                    />
+                    <button
+                        name="action_draft"
+                        type="object"
+                        string="Reset to Draft"
+                        attrs="{'invisible':[('state', 'not in', ('confirm', 'cancel'))]}"
+                        groups="res_project.group_res_project_manager"
+                    />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="Cancel"
+                        attrs="{'invisible':[('state', 'not in', ('draft', 'confirm'))]}"
+                        groups="res_project.group_res_project_manager"
+                    />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" />
+                        <h1>
+                            <field name="name" />
+                        </h1>
+                        <h4>
+                            <field name="code" />
+                        </h4>
+                    </div>
+                    <group name="main_project">
+                        <field name="active" invisible="1" />
+                        <group name="main_left_project">
+                            <field name="parent_project" />
+                            <field name="user_id" />
+                        </group>
+                        <group name="main_right_project">
+                            <field name="date_from" />
+                            <field name="date_to" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
+                    </group>
+                    <notebook />
+                    <group name="description" string="Description">
+                        <field name="description" nolabel="1" />
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" />
+                    <field name="message_ids" />
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_res_project_filter" model="ir.ui.view">
+        <field name="name">res.project.select</field>
+        <field name="model">res.project</field>
+        <field name="arch" type="xml">
+            <search string="Search Project">
+                <field name="name" string="Project" />
+                <field name="parent_project" string="Parent Project" />
+                <field name="user_id" string="Project Manager" />
+                <separator name="filter_information" />
+                <filter
+                    string="My Projects"
+                    name="own_projects"
+                    domain="[('user_id', '=', uid)]"
+                />
+                <separator name="filter_state" />
+                <filter
+                    string="Draft"
+                    name="state_draft"
+                    domain="[('state', '=', 'draft')]"
+                />
+                <filter
+                    string="Confirmed"
+                    name="state_confirm"
+                    domain="[('state', '=', 'confirm')]"
+                />
+                <filter
+                    string="Closed"
+                    name="state_close"
+                    domain="[('state', '=', 'close')]"
+                />
+                <filter
+                    string="Cancelled"
+                    name="state_cancel"
+                    domain="[('state', '=', 'cancel')]"
+                />
+                <separator name="filter_date" />
+                <filter name="date_from" date="date_from" />
+                <filter name="date_to" date="date_to" />
+                <separator name="filter_other" />
+                <filter
+                    string="Archived"
+                    name="inactive"
+                    domain="[('active', '=', False)]"
+                />
+                <group expand="0" string="Group By">
+                    <filter
+                        string="Project Manager"
+                        name="Manager"
+                        context="{'group_by': 'user_id'}"
+                    />
+                    <filter
+                        string="Parent Project"
+                        name="parent_project"
+                        context="{'group_by': 'parent_project'}"
+                    />
+                    <filter
+                        string="Status"
+                        name="state"
+                        context="{'group_by': 'state'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+
+    <record id="open_view_res_project_all" model="ir.actions.act_window">
+        <field name="name">Projects</field>
+        <field name="res_model">res.project</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_res_project_filter" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No projects found. Let's create one!
+            </p>
+        </field>
+    </record>
+
+    <menuitem
+        action="open_view_res_project_all"
+        id="menu_res_project"
+        name="Projects"
+        parent="menu_main_res_project"
+        sequence="1"
+    />
+
+</odoo>

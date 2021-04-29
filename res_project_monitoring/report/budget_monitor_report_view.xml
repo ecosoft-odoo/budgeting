@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="view_budget_monitor_report_graph" model="ir.ui.view">
+         <field name="name">budget.monitor.report.graph</field>
+         <field name="model">budget.monitor.report</field>
+         <field
+            name="inherit_id"
+            ref="budget_control.view_budget_monitor_report_graph"
+        />
+         <field name="arch" type="xml">
+             <xpath expr="//graph/field[@name='amount']" position="before">
+                 <field name="project_id" type="measure" />
+             </xpath>
+         </field>
+    </record>
+
+    <record id="view_budget_monitor_report_search" model="ir.ui.view">
+        <field name="name">budget.monitor.report.search</field>
+        <field name="model">budget.monitor.report</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.view_budget_monitor_report_search"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='analytic_account_id']" position="after">
+                <filter
+                    string="Parent Project"
+                    name="parent_project"
+                    context="{'group_by':'parent_project'}"
+                />
+                <filter
+                    string="Project"
+                    name="project_id"
+                    context="{'group_by':'project_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

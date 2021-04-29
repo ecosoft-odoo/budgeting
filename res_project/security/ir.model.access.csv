@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_res_project,access_res_project,model_res_project,analytic.group_analytic_accounting,1,1,1,1
+access_res_project_user,access_res_project_user,model_res_project,res_project.group_res_project_user,1,0,0,0
+access_res_project_manager,access_res_project_manager,model_res_project,res_project.group_res_project_manager,1,1,1,1

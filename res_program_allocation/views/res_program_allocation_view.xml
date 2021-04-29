@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="res_program_allocation_view_tree" model="ir.ui.view">
+        <field name="name">res.program.allocation.view.tree</field>
+        <field name="model">res.program.allocation</field>
+        <field name="arch" type="xml">
+            <tree string="Fund Constraint">
+                <field name="name" />
+                <field name="budget_period_id" />
+                <field name="active" optional="show" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-success="state == 'done'"
+                    decoration-info="state == 'draft'"
+                    optional="show"
+                />
+            </tree>
+        </field>
+    </record>
+
+    <record id="res_program_allocation_view_filter" model="ir.ui.view">
+        <field name="name">res.program.allocation.view.filter</field>
+        <field name="model">res.program.allocation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" filter_domain="[('name', 'ilike', self)]" />
+                <filter
+                    name="draft"
+                    string="Draft"
+                    domain="[('state', '=', 'draft')]"
+                />
+                <filter name="done" string="Done" domain="[('state', '=', 'done')]" />
+                <filter
+                    name="cancel"
+                    string="Cancel"
+                    domain="[('state', '=', 'cancel')]"
+                />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+           </search>
+        </field>
+    </record>
+
+    <record id="res_program_allocation_view_form" model="ir.ui.view">
+        <field name="name">res.program.allocation.view.form</field>
+        <field name="model">res.program.allocation</field>
+        <field name="arch" type="xml">
+            <form string="Fund Constraint">
+                <header>
+                    <button
+                        id="action_generate_budget_plan"
+                        name="action_generate_budget_plan"
+                        string="Generate Budget Plan"
+                        class="btn-primary"
+                        type="object"
+                        attrs="{'invisible': ['|', ('plan_id', '!=', False), ('state', '!=', 'done')]}"
+                    />
+                    <button
+                        id="action_done"
+                        name="action_done"
+                        string="Done"
+                        class="btn-primary"
+                        type="object"
+                        states="draft"
+                    />
+                    <button
+                        id="action_draft"
+                        name="action_draft"
+                        string="Set to Draft"
+                        type="object"
+                        states="done,cancel"
+                    />
+                    <button
+                        id="action_cancel"
+                        name="action_cancel"
+                        string="Cancel"
+                        type="object"
+                        states="draft"
+                    />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="button_open_budget_plan"
+                            string="Budget Plan"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-bars"
+                            attrs="{'invisible': [('plan_id', '=', False)]}"
+                        />
+                        <button
+                            name="button_open_funds"
+                            string="Funds"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-bars"
+                            context="{'search_default_fund': True}"
+                            attrs="{'invisible': [('fund_constraint_ids', '=', [])]}"
+                        />
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
+                    <div class="oe_title">
+                        <label for="name" string="Program Allocation" />
+                        <h1>
+                            <field name="name" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="program_allocation_left">
+                            <field name="budget_period_id" />
+                            <field name="total_amount" />
+                            <field name="plan_id" invisible="1" />
+                        </group>
+                        <group name="program_allocation_right">
+                            <field name="active" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                            <field
+                                name="currency_id"
+                                groups="base.group_multi_currency"
+                            />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="allocation" string="Allocation">
+                            <field name="fund_constraint_ids">
+                                <tree editable="bottom">
+                                    <field name="program_id" />
+                                    <field name="name" string="Description" />
+                                    <field name="period_id" invisible="1" />
+                                    <field
+                                        name="analytic_account_id"
+                                        domain="[('budget_period_id', '=', period_id)]"
+                                    />
+                                    <field name="fund_id" />
+                                    <field name="budget_control_id" optional="hide" />
+                                    <field name="budget_period_id" optional="show" />
+                                    <field name="fund_amount" sum="Total Amount" />
+                                    <field
+                                        name="active"
+                                        widget="boolean_toggle"
+                                        optional="show"
+                                    />
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers" />
+                    <field name="message_ids" widget="mail_thread" />
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="res_program_allocation_action" model="ir.actions.act_window">
+        <field name="name">Program Allocation</field>
+        <field name="res_model">res.program.allocation</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="res_program_allocation_menu"
+        parent="budget_control.budget_control_menu"
+        name="Program Allocation"
+        action="res_program_allocation_action"
+        sequence="22"
+    />
+
+</odoo>
