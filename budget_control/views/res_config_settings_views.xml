@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-
     <record id="res_config_settings_view_form_budget" model="ir.ui.view">
         <field name="name">res.config.settings.view.form.budget</field>
         <field name="model">res.config.settings</field>
@@ -39,7 +38,6 @@
             </xpath>
         </field>
     </record>
-
     <record id="action_budget_configuration" model="ir.actions.act_window">
         <field name="name">Settings</field>
         <field name="type">ir.actions.act_window</field>
@@ -48,7 +46,6 @@
         <field name="target">inline</field>
         <field name="context">{'module' : 'budget_control', 'bin_size': False}</field>
     </record>
-
     <menuitem
         id="budget_settings_menu"
         name="Settings"
@@ -57,5 +54,4 @@
         action="action_budget_configuration"
         groups="base.group_system"
     />
-
 </odoo>

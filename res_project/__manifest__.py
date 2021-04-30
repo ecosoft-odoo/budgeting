@@ -7,7 +7,8 @@
     "version": "14.0.1.0.0",
     "license": "AGPL-3",
     "category": "Project",
-    "author": "Ecosoft",
+    "website": "https://github.com/OCA/account-budgeting",
+    "author": "Ecosoft, Odoo Community Association (OCA)",
     "depends": ["base", "mail"],
     "data": [
         "security/res_project_security_groups.xml",

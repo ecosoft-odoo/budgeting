@@ -7,7 +7,6 @@
         groups="group_res_project_user,group_res_project_user"
         sequence="30"
     />
-
     <menuitem
         id="menu_res_project_config"
         name="Configuration"

@@ -27,6 +27,7 @@ class FundConstraint(models.Model):
         comodel_name="budget.source.fund",
         required=True,
         index=True,
+        ondelete="restrict",
     )
     fund_amount = fields.Monetary()
     account_constraint_line = fields.One2many(

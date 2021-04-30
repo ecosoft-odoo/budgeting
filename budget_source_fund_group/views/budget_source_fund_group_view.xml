@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-
     <record id="budget_source_fund_group_filter" model="ir.ui.view">
         <field name="name">budget.source.fund.group.filter</field>
         <field name="model">budget.source.fund.group</field>
@@ -15,7 +14,6 @@
             </search>
         </field>
     </record>
-
     <record id="budget_source_fund_group_tree" model="ir.ui.view">
         <field name="name">budget.source.fund.group.tree</field>
         <field name="model">budget.source.fund.group</field>
@@ -25,7 +23,6 @@
             </tree>
         </field>
     </record>
-
     <record id="budget_source_fund_group_form" model="ir.ui.view">
         <field name="name">budget.source.fund.group.form</field>
         <field name="model">budget.source.fund.group</field>
@@ -67,13 +64,11 @@
             </form>
         </field>
     </record>
-
     <record id="budget_source_fund_group_action" model="ir.actions.act_window">
         <field name="name">Source of Fund Groups</field>
         <field name="res_model">budget.source.fund.group</field>
         <field name="view_mode">tree,form</field>
     </record>
-
     <menuitem
         id="budget_source_fund_group_menu"
         parent="budget_source_fund.budget_source_of_fund_menu"
@@ -81,5 +76,4 @@
         action="budget_source_fund_group_action"
         sequence="30"
     />
-
 </odoo>

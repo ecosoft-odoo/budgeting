@@ -15,7 +15,6 @@
         <field eval="1" name="perm_read" />
         <field eval="0" name="perm_create" />
     </record>
-
     <record id="rule_budget_control_budget_manager" model="ir.rule">
         <field name="name">Budget Control Rule For Budget Manager</field>
         <field name="model_id" ref="budget_control.model_budget_control" />

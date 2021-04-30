@@ -52,5 +52,4 @@
         <field name="binding_model_id" ref="account.model_account_analytic_account" />
         <field name="binding_view_types">list,form</field>
     </record>
-
 </odoo>

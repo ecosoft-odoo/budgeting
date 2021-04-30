@@ -6,6 +6,8 @@
     "summary": "Import/Export Excel for Program Allocation",
     "version": "14.0.1.0.0",
     "license": "AGPL-3",
+    "author": "Ecosoft, Odoo Community Association (OCA)",
+    "website": "https://github.com/OCA/account-budgeting",
     "category": "Accounting",
     "depends": ["excel_import_export", "res_program_allocation"],
     "external_dependencies": {"python": ["pandas", "numpy", "openpyxl"]},

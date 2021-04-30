@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-
     <record id="view_budget_plan_line_tree" model="ir.ui.view">
         <field name="name">budget.plan.line.tree</field>
         <field name="model">budget.plan.line</field>
@@ -11,7 +10,6 @@
             </xpath>
         </field>
     </record>
-
     <record id="budget_plan_filter" model="ir.ui.view">
         <field name="name">budget.plan.filter</field>
         <field name="model">budget.plan</field>
@@ -26,7 +24,6 @@
             </xpath>
         </field>
     </record>
-
     <record id="view_budget_plan_tree" model="ir.ui.view">
         <field name="name">budget.plan.tree</field>
         <field name="model">budget.plan</field>
@@ -37,7 +34,6 @@
             </field>
         </field>
     </record>
-
     <record id="view_budget_plan_form" model="ir.ui.view">
         <field name="name">budget.plan.form</field>
         <field name="model">budget.plan</field>
@@ -86,11 +82,9 @@
             </xpath>
         </field>
     </record>
-
     <record id="budget_plan.budget_plan_action" model="ir.actions.act_window">
         <field
             name="context"
         >{'active_test': False, 'search_default_current_period': 1}</field>
     </record>
-
 </odoo>

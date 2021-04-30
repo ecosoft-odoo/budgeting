@@ -26,7 +26,6 @@
             </form>
         </field>
     </record>
-
     <record id="action_update_consumed_plan" model="ir.actions.act_window">
         <field name="name">Updating Consumed Plan</field>
         <field name="res_model">update.consumed.plan</field>

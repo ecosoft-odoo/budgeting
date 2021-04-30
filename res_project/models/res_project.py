@@ -1,7 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
 
 
 class ResProject(models.Model):
@@ -39,7 +38,6 @@ class ResProject(models.Model):
     user_id = fields.Many2one(
         comodel_name="res.users",
         string="Project Manager",
-        default=lambda self: self.env.user,
         readonly=True,
         states={"draft": [("readonly", False)]},
         tracking=True,
@@ -101,17 +99,8 @@ class ResProject(models.Model):
 
     def copy(self, default=None):
         self.ensure_one()
-        if default is None:
-            default = {}
-        if "name" not in default:
-            default["name"] = _("%s (copy)") % (self.name)
-            name_duplicate = self.search_count(
-                [("name", "=", default["name"])]
-            )
-            if name_duplicate:
-                raise UserError(_("Name is duplicated."))
-        res = super().copy(default=default)
-        return res
+        default = dict(default or {}, name=_("%s (copy)") % self.name)
+        return super().copy(default)
 
     def action_split_project(self):
         for project in self.browse(self.env.context["active_ids"]):

@@ -10,7 +10,6 @@
             </field>
         </field>
     </record>
-
     <record id="view_budget_plan_form" model="ir.ui.view">
         <field name="name">budget.plan.form</field>
         <field name="model">budget.plan</field>
