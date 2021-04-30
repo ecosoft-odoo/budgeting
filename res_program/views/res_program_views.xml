@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-
     <record id="view_res_program_tree" model="ir.ui.view">
         <field name="name">res.program.tree</field>
         <field name="model">res.program</field>
@@ -11,7 +10,6 @@
             </tree>
         </field>
     </record>
-
     <record id="view_res_program_form" model="ir.ui.view">
         <field name="name">res.program.form</field>
         <field name="model">res.program</field>
@@ -41,7 +39,6 @@
             </form>
         </field>
     </record>
-
     <record id="view_res_program_filter" model="ir.ui.view">
         <field name="name">res.program.select</field>
         <field name="model">res.program</field>
@@ -60,8 +57,6 @@
             </search>
         </field>
     </record>
-
-
     <record id="res_program_action" model="ir.actions.act_window">
         <field name="name">Program</field>
         <field name="res_model">res.program</field>
@@ -73,7 +68,6 @@
             </p>
         </field>
     </record>
-
     <menuitem
         id="res_program_menu"
         parent="budget_source_fund.budget_source_of_fund_menu"
@@ -81,5 +75,4 @@
         action="res_program_action"
         sequence="70"
     />
-
 </odoo>

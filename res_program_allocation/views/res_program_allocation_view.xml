@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-
     <record id="res_program_allocation_view_tree" model="ir.ui.view">
         <field name="name">res.program.allocation.view.tree</field>
         <field name="model">res.program.allocation</field>
@@ -19,7 +18,6 @@
             </tree>
         </field>
     </record>
-
     <record id="res_program_allocation_view_filter" model="ir.ui.view">
         <field name="name">res.program.allocation.view.filter</field>
         <field name="model">res.program.allocation</field>
@@ -43,10 +41,9 @@
                     string="Archived"
                     domain="[('active', '=', False)]"
                 />
-           </search>
+            </search>
         </field>
     </record>
-
     <record id="res_program_allocation_view_form" model="ir.ui.view">
         <field name="name">res.program.allocation.view.form</field>
         <field name="model">res.program.allocation</field>
@@ -167,13 +164,11 @@
             </form>
         </field>
     </record>
-
     <record id="res_program_allocation_action" model="ir.actions.act_window">
         <field name="name">Program Allocation</field>
         <field name="res_model">res.program.allocation</field>
         <field name="view_mode">tree,form</field>
     </record>
-
     <menuitem
         id="res_program_allocation_menu"
         parent="budget_control.budget_control_menu"
@@ -181,5 +176,4 @@
         action="res_program_allocation_action"
         sequence="22"
     />
-
 </odoo>

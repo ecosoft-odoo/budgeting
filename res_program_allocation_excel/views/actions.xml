@@ -3,8 +3,6 @@
   Copyright 2021 Ecosoft Co., Ltd.
   License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).-->
 <odoo>
-
-
     <record id="action_program_allocation_export_xlsx" model="ir.actions.act_window">
         <field name="name">Export Excel</field>
         <field name="res_model">export.xlsx.wizard</field>
@@ -23,7 +21,6 @@
             }
         </field>
     </record>
-
     <record id="action_program_allocation_import_xlsx" model="ir.actions.act_window">
         <field name="name">Import Excel</field>
         <field name="res_model">import.xlsx.wizard</field>
@@ -44,5 +41,4 @@
             }
         </field>
     </record>
-
 </odoo>

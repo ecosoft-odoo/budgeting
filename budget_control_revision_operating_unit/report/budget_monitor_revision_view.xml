@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-
     <record id="view_budget_monitor_revision_report_search" model="ir.ui.view">
         <field name="name">budget.monitor.revision.report.search</field>
         <field name="model">budget.monitor.revision.report</field>
@@ -18,7 +17,6 @@
             </xpath>
         </field>
     </record>
-
     <record
         id="budget_control_revision.action_budget_monitor_revision_report_all"
         model="ir.actions.act_window"
@@ -27,5 +25,4 @@
             name="context"
         >{'search_default_group_by_operating_unit': 1, 'search_default_group_by_analytic': 1, 'search_default_group_by_revision': 1}</field>
     </record>
-
 </odoo>

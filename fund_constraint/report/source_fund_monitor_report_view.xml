@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-
     <record id="view_source_fund_monitor_report_search" model="ir.ui.view">
         <field name="name">source.fund.monitor.report.search</field>
         <field name="model">source.fund.monitor.report</field>
@@ -25,7 +24,6 @@
             </xpath>
         </field>
     </record>
-
     <record
         id="budget_source_fund.action_source_fund_monitor_report_all"
         model="ir.actions.act_window"

@@ -1,20 +1,18 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-
     <record id="view_budget_monitor_report_graph" model="ir.ui.view">
-         <field name="name">budget.monitor.report.graph</field>
-         <field name="model">budget.monitor.report</field>
-         <field
+        <field name="name">budget.monitor.report.graph</field>
+        <field name="model">budget.monitor.report</field>
+        <field
             name="inherit_id"
             ref="budget_control.view_budget_monitor_report_graph"
         />
-         <field name="arch" type="xml">
-             <xpath expr="//graph/field[@name='amount']" position="before">
-                 <field name="project_id" type="measure" />
-             </xpath>
-         </field>
+        <field name="arch" type="xml">
+            <xpath expr="//graph/field[@name='amount']" position="before">
+                <field name="project_id" type="measure" />
+            </xpath>
+        </field>
     </record>
-
     <record id="view_budget_monitor_report_search" model="ir.ui.view">
         <field name="name">budget.monitor.report.search</field>
         <field name="model">budget.monitor.report</field>
@@ -37,5 +35,4 @@
             </xpath>
         </field>
     </record>
-
 </odoo>
