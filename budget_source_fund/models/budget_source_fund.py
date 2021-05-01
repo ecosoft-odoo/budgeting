@@ -10,6 +10,12 @@ class BudgetSourceFund(models.Model):
     _order = "name"
 
     name = fields.Char(required=True, string="Source of Fund")
+    fund_group_id = fields.Many2one(
+        comodel_name="budget.source.fund.group",
+        string="Fund Group",
+        required=True,
+        tracking=True,
+    )
     objective = fields.Html()
     active = fields.Boolean(default=True)
     company_id = fields.Many2one(
