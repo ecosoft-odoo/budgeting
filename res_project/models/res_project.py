@@ -35,8 +35,8 @@ class ResProject(models.Model):
         readonly=True,
         default=lambda self: self.env.company,
     )
-    user_id = fields.Many2one(
-        comodel_name="res.users",
+    project_manager_id = fields.Many2one(
+        comodel_name="hr.employee",
         string="Project Manager",
         readonly=True,
         states={"draft": [("readonly", False)]},
@@ -55,6 +55,20 @@ class ResProject(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
         tracking=True,
+    )
+    department_id = fields.Many2one(
+        comodel_name="hr.department",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    member_ids = fields.Many2many(
+        comodel_name="hr.employee",
+        relation="employee_project_member_rel",
+        column1="project_id",
+        column2="employee_id",
+        string="Member",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     state = fields.Selection(
         [
@@ -137,3 +151,8 @@ class ResProject(models.Model):
         if not project_expired:
             return
         return project_expired.write({"active": False})
+
+    @api.onchange("project_manager_id")
+    def _onchange_department_id(self):
+        for rec in self:
+            rec.department_id = rec.project_manager_id.department_id or False

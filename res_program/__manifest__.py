@@ -13,6 +13,7 @@
     "data": [
         "security/res_program_security.xml",
         "security/ir.model.access.csv",
+        "data/program_data.xml",
         "views/res_program_views.xml",
     ],
     "maintainers": ["Saran440"],
