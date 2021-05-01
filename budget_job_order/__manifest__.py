@@ -15,6 +15,7 @@
         "views/res_config_settings_views.xml",
         "views/account_move_views.xml",
         "views/job_order_view.xml",
+        "views/analytic_account_views.xml",
         "views/budget_control_view.xml",
         "views/mis_budget_item.xml",
     ],

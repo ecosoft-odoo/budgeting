@@ -94,16 +94,23 @@ class GenerateBudgetControl(models.TransientModel):
                 [("group_id", "in", self.analytic_group_ids.ids)]
             )
 
+    def _get_budget_period_name(self):
+        budget_name = "{} :: ".format(self.budget_period_id.name)
+        return budget_name
+
     def _prepare_value_duplicate(self, vals):
         plan_date_range_id = self.budget_period_id.plan_date_range_type_id.id
         budget_id = self.budget_id.id
-        budget_name = self.budget_period_id.name
+        # Just in case not budget name
+        budget_name = self._get_budget_period_name()
         kpi_ids = self.kpi_ids.ids
         return list(
             map(
                 lambda l: {
-                    "name": "{} :: {}".format(
-                        budget_name, l["analytic_account_id"].name
+                    "name": "{}".format(
+                        budget_name
+                        and budget_name + l["analytic_account_id"].name
+                        or l["analytic_account_id"].name
                     ),
                     "budget_id": budget_id,
                     "analytic_account_id": l["analytic_account_id"].id,

@@ -88,7 +88,7 @@ class BudgetControlKPIxJobOrder(models.Model):
     kpi_ids = fields.Many2many(
         comodel_name="mis.report.kpi",
         string="KPI",
-        readonly=True,
+        required=True,
     )
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",

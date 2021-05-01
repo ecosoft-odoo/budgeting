@@ -12,6 +12,11 @@ class BaseBudgetMove(models.AbstractModel):
         string="Fund",
         index=True,
     )
+    fund_group_id = fields.Many2one(
+        comodel_name="budget.source.fund.group",
+        string="Fund Group",
+        index=True,
+    )
 
 
 class BudgetDoclineMixin(models.AbstractModel):
@@ -50,6 +55,7 @@ class BudgetDoclineMixin(models.AbstractModel):
             budget_vals, reverse=reverse
         )
         budget_vals["fund_id"] = self.fund_id.id
+        budget_vals["fund_group_id"] = self.fund_id.fund_group_id.id
         return budget_vals
 
     def check_fund_constraint(self):

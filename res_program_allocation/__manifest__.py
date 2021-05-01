@@ -12,6 +12,7 @@
     "depends": ["fund_constraint", "budget_plan", "res_program"],
     "data": [
         "security/ir.model.access.csv",
+        "data/program_allocation_sequence.xml",
         "views/fund_constraint_view.xml",
         "views/budget_control_view.xml",
         "views/res_program_allocation_view.xml",

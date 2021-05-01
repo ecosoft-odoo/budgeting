@@ -63,8 +63,9 @@ class SourceFundMonitorReport(models.Model):
                 0: """
                 %s000000000 + a.id as id,
                 '%s,' || a.%s as res_id,
-                a.fund_id as fund_id,
-                sf_group.id as fund_group_id,
+                b.name as reference,
+                null::integer as fund_id,
+                null::integer as fund_group_id,
                 a.analytic_account_id,
                 '%s' as amount_type,
                 a.credit-a.debit as amount
@@ -87,9 +88,6 @@ class SourceFundMonitorReport(models.Model):
             ] = """
                 from {} a
                 left outer join {} b on a.{} = b.id
-                join budget_source_fund sf on sf.id = a.fund_id
-                join budget_source_fund_group sf_group
-                    on sf_group.id = sf.fund_group_id
             """.format(
                 budget_table,
                 doc_table,
@@ -102,6 +100,7 @@ class SourceFundMonitorReport(models.Model):
             0: """
             1000000000 + sf.id as id,
             'budget.source.fund,' || sf.id as res_id,
+            sf.name as reference,
             sf.id as fund_id,
             sf_group.id as fund_group_id,
             null::integer as analytic_account_id,

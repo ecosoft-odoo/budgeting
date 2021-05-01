@@ -18,16 +18,15 @@
             <xpath expr="//page[@name='options']" position="inside">
                 <group name="kpi_x_job_order" string="KPIs Description">
                     <field name="kpi_x_job_order" nolabel="1" colspan="2">
-                        <tree editable="bottom" create="0" delete="0">
+                        <tree editable="bottom">
                             <field name="analytic_account_id" invisible="1" />
                             <field
-                                name="kpi_ids"
-                                force_save="1"
+                                name="job_order_ids"
                                 widget="many2many_tags"
                                 options="{'no_open': True, 'no_create': True}"
                             />
                             <field
-                                name="job_order_ids"
+                                name="kpi_ids"
                                 widget="many2many_tags"
                                 options="{'no_open': True, 'no_create': True}"
                             />

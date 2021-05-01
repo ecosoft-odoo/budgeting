@@ -82,7 +82,7 @@
         id="budget_job_order_menu"
         parent="budget_control.budget_config_menu"
         name="Job Order"
-        sequence="20"
+        sequence="30"
     />
     <menuitem
         id="budget_budget_job_order_menu"

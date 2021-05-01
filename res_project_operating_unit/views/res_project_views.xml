@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_res_project_tree" model="ir.ui.view">
+        <field name="name">res.project.tree</field>
+        <field name="model">res.project</field>
+        <field name="inherit_id" ref="res_project.view_res_project_tree" />
+        <field name="arch" type="xml">
+            <field name="department_id" position="before">
+                <field
+                    name="operating_unit_id"
+                    groups="operating_unit.group_multi_operating_unit"
+                    optional="show"
+                />
+            </field>
+        </field>
+    </record>
+    <record id="view_res_project_form" model="ir.ui.view">
+        <field name="name">res.project.form</field>
+        <field name="model">res.project</field>
+        <field name="inherit_id" ref="res_project.view_res_project_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//group[@name='main_left_project']/field[@name='department_id']"
+                position="before"
+            >
+                <field
+                    name="operating_unit_id"
+                    groups="operating_unit.group_multi_operating_unit"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_res_project_filter" model="ir.ui.view">
+        <field name="name">res.project.select</field>
+        <field name="model">res.project</field>
+        <field name="inherit_id" ref="res_project.view_res_project_filter" />
+        <field name="arch" type="xml">
+            <xpath expr="//group/filter[@name='department']" position="before">
+                <filter
+                    name="operating_unit"
+                    string="Operating Unit"
+                    context="{'group_by': 'operating_unit_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

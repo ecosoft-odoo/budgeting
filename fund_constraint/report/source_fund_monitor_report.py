@@ -60,6 +60,18 @@ class SourceFundMonitorReport(models.Model):
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)
+        statement_query = (
+            select_statement[0]
+            .replace(
+                "null::integer as fund_id,",
+                "a.fund_id as fund_id,",
+            )
+            .replace(
+                "null::integer as fund_group_id,",
+                "a.fund_group_id as fund_group_id,",
+            )
+        )
+        select_statement[0] = statement_query
         select_statement[
             10
         ] = """

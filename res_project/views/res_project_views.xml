@@ -5,10 +5,11 @@
         <field name="model">res.project</field>
         <field name="arch" type="xml">
             <tree sample="1">
-                <field name="name" />
                 <field name="code" optional="show" />
-                <field name="parent_project" />
-                <field name="project_manager_id" />
+                <field name="name" />
+                <field name="parent_project" optional="show" />
+                <field name="project_manager_id" optional="show" />
+                <field name="create_date" optional="show" />
                 <field name="date_from" />
                 <field name="date_to" />
                 <field name="department_id" />
@@ -124,23 +125,23 @@
                 /> -->
                 <separator name="filter_state" />
                 <filter
-                    string="Draft"
                     name="state_draft"
+                    string="Draft"
                     domain="[('state', '=', 'draft')]"
                 />
                 <filter
-                    string="Confirmed"
                     name="state_confirm"
+                    string="Confirmed"
                     domain="[('state', '=', 'confirm')]"
                 />
                 <filter
-                    string="Closed"
                     name="state_close"
+                    string="Closed"
                     domain="[('state', '=', 'close')]"
                 />
                 <filter
-                    string="Cancelled"
                     name="state_cancel"
+                    string="Cancelled"
                     domain="[('state', '=', 'cancel')]"
                 />
                 <separator name="filter_date" />
@@ -148,24 +149,29 @@
                 <filter name="date_to" date="date_to" />
                 <separator name="filter_other" />
                 <filter
-                    string="Archived"
                     name="inactive"
+                    string="Archived"
                     domain="[('active', '=', False)]"
                 />
                 <group expand="0" string="Group By">
                     <filter
-                        string="Project Manager"
                         name="project_manager"
+                        string="Project Manager"
                         context="{'group_by': 'project_manager_id'}"
                     />
                     <filter
-                        string="Parent Project"
                         name="parent_project"
+                        string="Parent Project"
                         context="{'group_by': 'parent_project'}"
                     />
                     <filter
-                        string="Status"
+                        name="department"
+                        string="Department"
+                        context="{'group_by': 'department_id'}"
+                    />
+                    <filter
                         name="state"
+                        string="Status"
                         context="{'group_by': 'state'}"
                     />
                 </group>

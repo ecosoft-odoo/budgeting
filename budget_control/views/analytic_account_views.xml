@@ -11,6 +11,11 @@
                     string="Budget Period"
                     context="{'group_by': 'budget_period_id'}"
                 />
+                <filter
+                    name="group_id"
+                    string="Group"
+                    context="{'group_by': 'group_id'}"
+                />
             </xpath>
         </field>
     </record>
@@ -93,7 +98,7 @@
         id="budget_menu_analytic_accounting"
         name="Analytic Accounting"
         parent="budget_control.budget_config_menu"
-        sequence="10"
+        sequence="20"
         groups="analytic.group_analytic_accounting,analytic.group_analytic_tags"
     />
     <menuitem

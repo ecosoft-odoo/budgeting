@@ -187,6 +187,7 @@
                             <div class="oe_right" name="buttons">
                                 <button
                                     name="prepare_budget_control_matrix"
+                                    class="btn-danger"
                                     type="object"
                                     string="Reset Plan"
                                     icon="fa-refresh"
