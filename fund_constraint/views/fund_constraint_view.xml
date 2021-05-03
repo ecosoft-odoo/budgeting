@@ -91,6 +91,7 @@
                         <group name="fund_constraint_left">
                             <field name="analytic_account_id" />
                             <field name="fund_id" />
+                            <field name="fund_group_id" />
                         </group>
                         <group name="fund_constraint_right">
                             <field name="budget_control_id" />
@@ -106,6 +107,9 @@
                                 groups="base.group_multi_currency"
                             />
                         </group>
+                    </group>
+                    <group name="description">
+                        <field name="description" />
                     </group>
                     <notebook>
                         <page name="constraint" string="Cross Over Constraint">

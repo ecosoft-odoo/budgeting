@@ -9,6 +9,7 @@ class FundConstraint(models.Model):
     program_id = fields.Many2one(
         comodel_name="res.program",
         required=True,
+        ondelete="restrict",
     )
     program_allocation_id = fields.Many2one(
         comodel_name="res.program.allocation",
