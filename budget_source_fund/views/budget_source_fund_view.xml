@@ -93,7 +93,7 @@
         id="budget_source_of_fund_menu"
         parent="budget_control.budget_config_menu"
         name="Source of Fund"
-        sequence="30"
+        sequence="15"
     />
     <menuitem
         id="budget_source_fund_menu"

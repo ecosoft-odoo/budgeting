@@ -29,7 +29,12 @@ class FundConstraint(models.Model):
         index=True,
         ondelete="restrict",
     )
+    fund_group_id = fields.Many2one(
+        comodel_name="budget.source.fund.group",
+        related="fund_id.fund_group_id",
+    )
     fund_amount = fields.Monetary()
+    description = fields.Text()
     account_constraint_line = fields.One2many(
         comodel_name="account.constraint.line",
         inverse_name="fund_constraint_id",

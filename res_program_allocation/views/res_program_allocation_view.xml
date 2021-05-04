@@ -136,16 +136,22 @@
                         <page name="allocation" string="Allocation">
                             <field name="fund_constraint_ids">
                                 <tree editable="bottom">
-                                    <field name="program_id" />
-                                    <field name="name" string="Description" />
-                                    <field name="period_id" invisible="1" />
+                                    <field name="fund_id" options="{'no_create': 1}" />
+                                    <field name="fund_group_id" optional="show" />
+                                    <field
+                                        name="program_id"
+                                        options="{'no_create': 1}"
+                                    />
                                     <field
                                         name="analytic_account_id"
                                         domain="[('budget_period_id', '=', period_id)]"
+                                        options="{'no_create': 1}"
                                     />
-                                    <field name="fund_id" />
+                                    <field name="name" invisible="1" />
+                                    <field name="description" />
+                                    <field name="period_id" invisible="1" />
                                     <field name="budget_control_id" optional="hide" />
-                                    <field name="budget_period_id" optional="show" />
+                                    <field name="budget_period_id" optional="hide" />
                                     <field name="fund_amount" sum="Total Amount" />
                                     <field
                                         name="active"

@@ -25,12 +25,12 @@
                             'B4': 'budget_period_id.display_name${value or ""}#{align=left;style=text}',
                         },
                         'fund_constraint_ids': {
-                            'A7': 'program_id.name${value or ""}#{style=text}',
-                            'B7': 'name${value or ""}#{style=text}',
-                            'C7': 'analytic_account_id.name${value or ""}#{style=text}',
-                            'D7': 'fund_id.name${value or ""}#{style=text}',
-                            'E7': 'fund_amount${value or 0}#{style=number}',
-                            'F7': 'active${value or "False"}#{style=text}',
+                            'A7': 'fund_id.name${value or ""}#{style=text}',
+                            'B7': 'program_id.name${value or ""}#{style=text}',
+                            'D7': 'analytic_account_id.name${value or ""}#{style=text}',
+                            'E7': 'description${value or ""}#{style=text}',
+                            'F7': 'fund_amount${value or 0}#{style=number}',
+                            'G7': 'active${value or "False"}#{style=text}',
                         }
                     },
                     'Program': {
@@ -52,12 +52,13 @@
                 '__IMPORT__': {
                     'ProgramAllocation': {
                         'fund_constraint_ids': {
-                            'A7': 'program_id',
-                            'B7': 'name',
-                            'C7': 'analytic_account_id',
-                            'D7': 'fund_id',
-                            'E7': 'fund_amount',
-                            'F7': 'active',
+                            'A7': 'fund_id',
+                            'B7': 'program_id',
+                            'C7': 'name',
+                            'D7': 'analytic_account_id',
+                            'E7': 'description',
+                            'F7': 'fund_amount',
+                            'G7': 'active',
                         }
                     }
                 },
