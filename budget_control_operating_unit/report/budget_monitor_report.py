@@ -34,5 +34,5 @@ class BudgetMonitorReport(models.Model):
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)
-        select_statement[30] = "b.operating_unit_id"
+        select_statement[30] = "a.operating_unit_id"
         return select_statement
