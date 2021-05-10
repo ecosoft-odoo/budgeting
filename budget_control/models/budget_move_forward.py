@@ -144,6 +144,7 @@ class BudgetMoveForward(models.Model):
         01/03/2020 | [2020] Analytic A   |       | 100.0
         01/01/2021 | [2021] Analytic A   | 100.0 |
         """
+        self = self.sudo()
         Line = self.env["budget.move.forward.line"]
         for rec in self:
             models = Line._fields["res_model"].selection

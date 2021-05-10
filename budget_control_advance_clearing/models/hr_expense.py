@@ -49,6 +49,14 @@ class HRExpense(models.Model):
         inverse_name="expense_id",
     )
 
+    def _filter_current_move(self, analytic):
+        self.ensure_one()
+        if self._context.get("advance", False):
+            return self.advance_budget_move_ids.filtered(
+                lambda l: l.analytic_account_id == analytic
+            )
+        return super()._filter_current_move(analytic)
+
     @api.depends("advance_budget_move_ids", "budget_move_ids")
     def _compute_commit(self):
         advances = self.filtered("advance")

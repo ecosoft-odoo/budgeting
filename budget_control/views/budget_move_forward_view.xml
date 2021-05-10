@@ -22,7 +22,6 @@
         <field name="arch" type="xml">
             <tree editable="bottom" create="0">
                 <field name="document_number" optional="show" />
-                <field name="document_id" optional="hide" />
                 <field name="date_commit" />
                 <field name="amount_commit" sum="Total Commitment" />
             </tree>

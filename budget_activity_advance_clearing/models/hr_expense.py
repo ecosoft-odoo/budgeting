@@ -21,15 +21,7 @@ class HRExpense(models.Model):
                 raise ValidationError(
                     _("Employee advance, selected activity is not valid.")
                 )
-            if expense.tax_ids:
-                raise ValidationError(
-                    _("Employee advance, all taxes must be removed.")
-                )
-            if expense.payment_mode != "own_account":
-                raise ValidationError(
-                    _("Employee advance, paid by must be employee.")
-                )
-        return True
+        return super()._check_advance()
 
     @api.onchange("advance")
     def onchange_advance(self):
