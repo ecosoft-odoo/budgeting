@@ -77,19 +77,26 @@ class BudgetTransferItem(models.Model):
                 target_budget_ctrl.amount_balance
             )
 
-    def transfer(self):
-        for transfer in self:
-            if (
-                transfer.source_budget_control_id
-                == transfer.target_budget_control_id
-            ):
-                raise UserError(
-                    _(
-                        "You can not transfer from the same budget control sheet!"
+    def _check_constraint_transfer(self):
+        self.ensure_one()
+        if self.source_budget_control_id == self.target_budget_control_id:
+            raise UserError(
+                _("You can not transfer from the same budget control sheet!")
+            )
+        if self.amount <= 0.0:
+            raise UserError(_("Transfer amount must be positive!"))
+        if self.amount > self.source_amount_available:
+            raise UserError(
+                _(
+                    "Transfer amount can not be exceeded {:,.2f}".format(
+                        self.source_amount_available
                     )
                 )
-            if transfer.amount < 0.0:
-                raise UserError(_("Transfer amount must be positive!"))
+            )
+
+    def transfer(self):
+        for transfer in self:
+            transfer._check_constraint_transfer()
             transfer.source_budget_control_id.released_amount -= (
                 transfer.amount
             )

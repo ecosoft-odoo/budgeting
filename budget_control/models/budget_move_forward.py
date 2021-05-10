@@ -109,6 +109,8 @@ class BudgetMoveForward(models.Model):
         """Get budget move forward for each new commit document type."""
         Line = self.env["budget.move.forward.line"]
         specific_model = self._context.get("res_model", False)
+        # Add permission admin to budget team
+        self = self.sudo()
         for rec in self:
             models = Line._fields["res_model"].selection
             for model in list(dict(models).keys()):

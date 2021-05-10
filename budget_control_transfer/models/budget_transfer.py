@@ -69,6 +69,9 @@ class BudgetTransfer(models.Model):
         self.write({"state": "cancel"})
 
     def action_submit(self):
+        item_ids = self.mapped("transfer_item_ids")
+        for transfer in item_ids:
+            transfer._check_constraint_transfer()
         self.write({"state": "submit"})
 
     def action_transfer(self):
