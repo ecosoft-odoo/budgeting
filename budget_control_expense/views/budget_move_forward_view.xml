@@ -4,7 +4,7 @@
         <field name="name">view.budget.move.forward.form</field>
         <field name="model">budget.move.forward</field>
         <field name="inherit_id" ref="budget_control.view_budget_move_forward_form" />
-        <field name="priority">30</field>
+        <field name="priority">40</field>
         <field name="arch" type="xml">
             <notebook position="inside">
                 <page string="Expense">
