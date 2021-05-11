@@ -94,6 +94,7 @@ class PurchaseRequestLine(models.Model):
         budget_vals.update(
             {
                 "purchase_request_line_id": self.id,
+                "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
             }
         )
         return super()._init_docline_budget_vals(budget_vals)

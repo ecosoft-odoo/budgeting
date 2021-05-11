@@ -1,1 +1,4 @@
-# generated from manifests external_dependencies
+pandas
+openpyxl
+xlrd
+xlwt
