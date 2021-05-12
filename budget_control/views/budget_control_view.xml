@@ -187,9 +187,18 @@
                             <div class="oe_right" name="buttons">
                                 <button
                                     name="prepare_budget_control_matrix"
+                                    class="btn-danger"
                                     type="object"
                                     string="Reset Plan"
                                     icon="fa-refresh"
+                                    confirm="This operation cannot be undone. Are you sure to continue?"
+                                />
+                                <button
+                                    name="prepare_budget_control_matrix"
+                                    type="object"
+                                    string="Refresh"
+                                    icon="fa-refresh"
+                                    context="{'keep_item_amount': True, 'edit_amount': True}"
                                     confirm="This operation cannot be undone. Are you sure to continue?"
                                 />
                             </div>
