@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="fund_constraint_view_tree" model="ir.ui.view">
+        <field name="name">fund.constraint.view.tree</field>
+        <field name="model">fund.constraint</field>
+        <field
+            name="inherit_id"
+            ref="res_program_allocation.fund_constraint_view_tree"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='program_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='program_id']" position="after">
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    options="{'no_create': True}"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="fund_constraint_view_form" model="ir.ui.view">
+        <field name="name">fund.constraint.view.form</field>
+        <field name="model">fund.constraint</field>
+        <field
+            name="inherit_id"
+            ref="res_program_allocation.fund_constraint_view_form"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='fund_constraint_left']" position="inside">
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    options="{'no_create': True}"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
