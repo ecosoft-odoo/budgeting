@@ -3,6 +3,7 @@
     <record id="budget_control_view_transfer_tree" model="ir.ui.view">
         <field name="name">budget.control.view.transfer.tree</field>
         <field name="model">budget.control</field>
+        <field name="priority" eval="35" />
         <field name="arch" type="xml">
             <tree string="Budget Control Sheet">
                 <field name="name" />

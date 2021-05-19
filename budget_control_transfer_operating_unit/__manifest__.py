@@ -10,7 +10,7 @@
     "depends": ["budget_control_transfer", "operating_unit"],
     "data": [
         "security/budget_transfer_security.xml",
-        "views/budget_control_view.xml",
+        # "views/budget_control_view.xml",
         "views/budget_transfer_view.xml",
         "views/budget_transfer_item_view.xml",
     ],
