@@ -8,9 +8,6 @@
             ref="res_program_allocation.fund_constraint_view_tree"
         />
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='program_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
             <xpath expr="//field[@name='analytic_account_id']" position="after">
                 <field
                     name="analytic_tag_ids"
