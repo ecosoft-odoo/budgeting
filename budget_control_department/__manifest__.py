@@ -9,8 +9,15 @@
     "category": "NxPO",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
-    "depends": ["budget_control", "res_project"],
+    "depends": [
+        "budget_control",
+        "res_project_analytic",
+        "analytic_base_department",
+        "hr_department_code",
+    ],
     "data": [
+        "data/analytic_group_data.xml",
+        "views/analytic_account_views.xml",
         "views/budget_control_view.xml",
         "report/budget_monitor_report_view.xml",
     ],
