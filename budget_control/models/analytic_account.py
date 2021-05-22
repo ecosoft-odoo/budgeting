@@ -66,23 +66,45 @@ class AccountAnalyticAccount(models.Model):
                 rec.budget_control_ids.mapped("amount_balance")
             )
 
+    def _find_next_analytic(self, next_date_range):
+        self.ensure_one()
+        Analytic = self.env["account.analytic.account"]
+        next_analytic = Analytic.search(
+            [("name", "=", self.name), ("bm_date_from", "=", next_date_range)]
+        )
+        return next_analytic
+
+    def _update_val_analytic(self, next_analytic, next_date_range):
+        BudgetPeriod = self.env["budget.period"]
+        period_id = BudgetPeriod.search(
+            [("bm_date_from", "=", next_date_range)]
+        )
+        next_analytic.write({"budget_period_id": period_id.id})
+
+    def _auto_create_next_analytic(self, next_date_range):
+        self.ensure_one()
+        next_analytic = self.copy()
+        self._update_val_analytic(next_analytic, next_date_range)
+        return next_analytic
+
     def next_year_analytic(self):
         """ Find next analytic from analytic date_to + 1 """
+        auto_create_analytic = self.env.company.budget_carry_forward_analytic
         next_analytics = self.env["account.analytic.account"]
         for rec in self:
-            dimension_analytic = rec.department_id or rec.project_id
             next_date_range = rec.bm_date_to + relativedelta(days=1)
-            next_analytic = dimension_analytic.analytic_account_ids.filtered(
-                lambda l: l.bm_date_from == next_date_range
-            )
+            next_analytic = rec._find_next_analytic(next_date_range)
             if not next_analytic:
-                raise UserError(
-                    _(
-                        "{}, No analytic for the next date {}.".format(
-                            rec.display_name, next_date_range
+                if not auto_create_analytic:
+                    raise UserError(
+                        _(
+                            "{}, No analytic for the next date {}.".format(
+                                rec.display_name, next_date_range
+                            )
                         )
                     )
-                )
+                # Auto create analytic next year
+                next_analytic = rec._auto_create_next_analytic(next_date_range)
             next_analytics |= next_analytic
         return next_analytics
 

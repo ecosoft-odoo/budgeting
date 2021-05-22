@@ -8,7 +8,7 @@ class ResCompany(models.Model):
     _inherit = "res.company"
 
     auto_post_journal = fields.Boolean(
-        string="Carry Forward Expense Auto Post",
+        string="Carry Forward - Expense Auto Post",
         help="If checked, After carry forward budget "
         "it still auto post journal when you click "
         "Post Journal Entries on Expense.",

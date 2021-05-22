@@ -9,7 +9,7 @@
     "category": "Project",
     "website": "https://github.com/OCA/account-budgeting",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "depends": ["analytic", "res_project"],
+    "depends": ["analytic", "res_project", "budget_control"],
     "data": ["views/analytic_account_view.xml", "views/res_project_views.xml"],
     "maintainers": ["Saran440"],
     "development_status": "Alpha",
