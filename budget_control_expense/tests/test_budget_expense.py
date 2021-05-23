@@ -28,6 +28,7 @@ class TestBudgetControl(BudgetControlCommon):
             }
         )
         # Test item created for 3 kpi x 4 quarters = 12 budget items
+        cls.budget_control.prepare_budget_control_matrix()
         assert len(cls.budget_control.item_ids) == 12
         # Assign budget.control amount: KPI1 = 100, KPI2=800, Total=300
         cls.budget_control.item_ids.filtered(

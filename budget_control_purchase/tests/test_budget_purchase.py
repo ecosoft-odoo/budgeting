@@ -29,6 +29,7 @@ class TestBudgetControl(BudgetControlCommon):
             }
         )
         # Test item created for 3 kpi x 4 quarters = 12 budget items
+        cls.budget_control.prepare_budget_control_matrix()
         assert len(cls.budget_control.item_ids) == 12
         # Assign budget.control amount: KPI1 = 100, KPI2=800, Total=300
         cls.budget_control.item_ids.filtered(
@@ -39,6 +40,9 @@ class TestBudgetControl(BudgetControlCommon):
         )[:1].write({"amount": 200})
         cls.budget_control.allocated_amount = 300
         cls.budget_control.action_done()
+        # Purchase method
+        cls.product1.product_tmpl_id.purchase_method = "purchase"
+        cls.product2.product_tmpl_id.purchase_method = "purchase"
 
     @freeze_time("2001-02-01")
     def _create_purchase(self, po_lines):
@@ -149,6 +153,7 @@ class TestBudgetControl(BudgetControlCommon):
         invoice.with_context(
             check_move_validity=False
         )._onchange_invoice_line_ids()
+        invoice.invoice_date = invoice.date
         invoice.action_post()
         # PO Commit = 20, INV Actual = 10, Balance = 270
         self.budget_control.invalidate_cache()
@@ -200,6 +205,7 @@ class TestBudgetControl(BudgetControlCommon):
         invoice.invoice_line_ids[0].quantity = 1
         invoice.invoice_line_ids[1].quantity = 3
         invoice._onchange_invoice_line_ids()
+        invoice.invoice_date = invoice.date
         invoice.action_post()
         # PO Commit = 25, INV Actual = 45
         self.budget_control.invalidate_cache()
