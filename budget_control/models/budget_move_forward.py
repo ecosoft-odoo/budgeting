@@ -58,7 +58,6 @@ class BudgetMoveForward(models.Model):
         inverse_name="forward_id",
         string="Forward Lines",
         readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     _sql_constraints = [
         ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
@@ -92,9 +91,11 @@ class BudgetMoveForward(models.Model):
             )
             if not current_commit_move:
                 continue
+            analytic_account = doc[doc._budget_analytic_field]
             value_dict.append(
                 {
                     "forward_id": self.id,
+                    "analytic_account_id": analytic_account.id,
                     "res_model": model,
                     "res_id": doc.id,
                     "document_id": "{},{}".format(model, doc.id),
@@ -180,29 +181,40 @@ class BudgetMoveForwardLine(models.Model):
     forward_id = fields.Many2one(
         comodel_name="budget.move.forward",
         index=True,
-        readonly=True,
         required=True,
+        readonly=True,
+    )
+    analytic_account_id = fields.Many2one(
+        comodel_name="account.analytic.account",
+        index=True,
+        required=True,
+        readonly=True,
     )
     res_model = fields.Selection(
         selection=[],
         string="Res Model",
         required=True,
+        readonly=True,
     )
     res_id = fields.Integer(
         string="Res ID",
         required=True,
+        readonly=True,
     )
     document_id = fields.Reference(
         selection=[],
         string="Document",
         required=True,
+        readonly=True,
     )
-    document_number = fields.Char(string="Document Number")
+    document_number = fields.Char(string="Document Number", readonly=True)
     date_commit = fields.Date(
         string="Date",
         required=True,
+        readonly=True,
     )
     amount_commit = fields.Float(
         string="Commitment",
         required=True,
+        readonly=True,
     )
