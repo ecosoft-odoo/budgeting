@@ -19,7 +19,10 @@ class ResProject(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
-    parent_project = fields.Char(readonly=True)
+    parent_project = fields.Char(
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
     active = fields.Boolean(
         default=True,
         help="If the active field is set to False, "
