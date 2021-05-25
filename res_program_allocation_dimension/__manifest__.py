@@ -14,6 +14,7 @@
         "res_program_allocation",
     ],
     "data": [
+        "views/budget_control_view.xml",
         "views/fund_constraint_view.xml",
         "views/res_program_allocation_view.xml",
     ],
