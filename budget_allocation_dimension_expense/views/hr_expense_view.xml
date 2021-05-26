@@ -9,6 +9,7 @@
                 expr="/form/sheet/group/group/field['analytic_tag_ids']"
                 position="before"
             >
+                <field name="domain_tag_ids" invisible="1" />
                 <field name="analytic_tag_all" invisible="1" />
             </xpath>
             <xpath
@@ -30,6 +31,7 @@
                 expr="//field[@name='expense_line_ids']/tree/field[@name='analytic_tag_ids']"
                 position="before"
             >
+                <field name="domain_tag_ids" invisible="1" />
                 <field name="analytic_tag_all" invisible="1" />
             </xpath>
             <xpath

@@ -9,7 +9,7 @@
                 expr="//field[@name='invoice_line_ids']//field[@name='analytic_tag_ids']"
                 position="before"
             >
-                <field name="analytic_tag_all" widget="many2many_tags" invisible="1" />
+                <field name="analytic_tag_all" invisible="1" />
             </xpath>
             <xpath
                 expr="//field[@name='invoice_line_ids']//field[@name='analytic_tag_ids']"
