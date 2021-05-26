@@ -91,7 +91,10 @@ class GenerateBudgetControl(models.TransientModel):
         self.analytic_account_ids = False
         if self.all_analytic_accounts:
             self.analytic_account_ids = AnalyticAccount.search(
-                [("group_id", "in", self.analytic_group_ids.ids)]
+                [
+                    ("group_id", "in", self.analytic_group_ids.ids),
+                    ("budget_period_id", "=", self.budget_period_id.id),
+                ]
             )
 
     def _get_budget_period_name(self):

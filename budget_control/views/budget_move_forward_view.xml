@@ -28,6 +28,48 @@
             </tree>
         </field>
     </record>
+    <record id="view_budget_move_forward_line_accumulate_tree" model="ir.ui.view">
+        <field name="name">view.budget.move.forward.line.accumulate.tree</field>
+        <field name="model">budget.move.forward.line.accumulate</field>
+        <field name="arch" type="xml">
+            <tree editable="bottom" create="0">
+                <field name="forward_id" invisible="1" />
+                <field name="company_currency_id" invisible="1" />
+                <field name="analytic_account_id" options="{'no_create': 1}" />
+                <field name="method_type" optional="show" />
+                <field
+                    name="date_extend"
+                    optional="show"
+                    attrs="{'invisible': [('method_type', '!=', 'extend')]}"
+                />
+                <field
+                    name="amount_balance"
+                    sum="Total Available"
+                    widget="monetary"
+                    options="{'currency_field': 'company_currency_id'}"
+                />
+                <field
+                    name="to_analytic_account_id"
+                    options="{'no_create': 1}"
+                    optional="show"
+                    attrs="{'invisible': [('method_type', '!=', 'new')]}"
+                />
+                <field
+                    name="amount_carry_forward"
+                    sum="Total Carry Forward"
+                    widget="monetary"
+                    options="{'currency_field': 'company_currency_id'}"
+                />
+                <field name="accumulate_analytic_account_id" optional="show" />
+                <field
+                    name="amount_accumulate"
+                    sum="Total Accumulate"
+                    widget="monetary"
+                    options="{'currency_field': 'company_currency_id'}"
+                />
+            </tree>
+        </field>
+    </record>
     <record id="view_budget_move_forward_form" model="ir.ui.view">
         <field name="name">view.budget.move.forward.form</field>
         <field name="model">budget.move.forward</field>
@@ -68,12 +110,34 @@
                     <group>
                         <group>
                             <field name="to_budget_id" />
+                            <field name="method_type" widget="radio" />
+                            <field name="accumulate_analytic_account_id" />
                         </group>
                         <group>
                             <field name="date_budget_move" />
                         </group>
                     </group>
-                    <notebook />
+                    <notebook>
+                        <page string="Available" name="available">
+                            <div class="oe_read_only oe_right" name="buttons">
+                                <button
+                                    type="object"
+                                    name="action_prepare_new_analytic_available"
+                                    string="Prepare carry forward analytic account"
+                                    icon="fa-list-ul"
+                                    states="draft"
+                                />
+                                <button
+                                    type="object"
+                                    name="action_get_analytic_available"
+                                    string="List analytic account"
+                                    icon="fa-refresh"
+                                    states="draft"
+                                />
+                            </div>
+                            <field name="forward_accumulate_ids" />
+                        </page>
+                    </notebook>
                 </sheet>
                 <div class="oe_chatter">
                     <field name="message_follower_ids" widget="mail_followers" />

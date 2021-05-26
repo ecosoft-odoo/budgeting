@@ -22,6 +22,7 @@ class AccountAnalyticAccount(models.Model):
         compute="_compute_bm_date",
         store=True,
         readonly=False,
+        tracking=True,
         help="Budget commit date must conform with this date",
     )
     bm_date_to = fields.Date(
@@ -29,6 +30,7 @@ class AccountAnalyticAccount(models.Model):
         compute="_compute_bm_date",
         store=True,
         readonly=False,
+        tracking=True,
         help="Budget commit date must conform with this date",
     )
     auto_adjust_date_commit = fields.Boolean(
@@ -52,6 +54,18 @@ class AccountAnalyticAccount(models.Model):
         string="Available",
         compute="_compute_amount_budget_info",
         help="Available = Total Budget - Consumed",
+    )
+    carry_forward_balance = fields.Monetary(
+        string="Carry Forward Balance",
+        copy=False,
+        help="Amount Balance after carry forward",
+    )
+    initial_balance = fields.Monetary(
+        string="Initial Balance",
+        copy=False,
+        readonly=True,
+        tracking=True,
+        help="Initial Balance come from carry forward",
     )
 
     def _compute_amount_budget_info(self):

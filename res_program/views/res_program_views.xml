@@ -5,8 +5,8 @@
         <field name="model">res.program</field>
         <field name="arch" type="xml">
             <tree sample="1">
-                <field name="name" />
                 <field name="code" optional="show" />
+                <field name="name" />
             </tree>
         </field>
     </record>

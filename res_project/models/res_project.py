@@ -59,6 +59,7 @@ class ResProject(models.Model):
     department_id = fields.Many2one(
         comodel_name="hr.department",
         readonly=True,
+        required=True,
         states={"draft": [("readonly", False)]},
     )
     member_ids = fields.Many2many(

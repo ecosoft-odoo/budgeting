@@ -117,6 +117,10 @@ class BudgetControl(models.Model):
         help="Total amount for transfer current",
     )
     # Total Amount
+    amount_initial = fields.Monetary(
+        string="Initial Balance",
+        related="analytic_account_id.initial_balance",
+    )
     amount_budget = fields.Monetary(
         string="Budget",
         compute="_compute_budget_info",
@@ -302,19 +306,19 @@ class BudgetControl(models.Model):
     def _onchange_init_budget_commit(self):
         self.do_init_budget_commit(self.init_budget_commit)
 
-    def _compare_plan_fund(self, plan_amount, fund_amount):
+    def _compare_plan_fund(self, amount_budget, released_amount):
         """ Check total amount plan have to equal released amount """
         amount_compare = (
             float_compare(
-                plan_amount,
-                fund_amount,
+                amount_budget,
+                released_amount,
                 precision_rounding=self.currency_id.rounding,
             )
             != 0
         )
         message = _(
             "Planning amount should equal to the released amount {:,.2f} {}".format(
-                fund_amount, self.currency_id.symbol
+                released_amount, self.currency_id.symbol
             )
         )
         return amount_compare, message
@@ -327,10 +331,19 @@ class BudgetControl(models.Model):
 
     def action_done(self):
         for rec in self:
-            plan_amount = rec.amount_budget
-            fund_amount = rec.released_amount
+            amount_budget = rec.amount_budget
+            released_amount = rec.released_amount
+            if rec.amount_initial > released_amount:
+                raise UserError(
+                    _(
+                        "Planning amount should more than "
+                        "initial balance {:,.2f} {}".format(
+                            rec.amount_initial, self.currency_id.symbol
+                        )
+                    )
+                )
             amount_compare, message = rec._compare_plan_fund(
-                plan_amount, fund_amount
+                amount_budget, released_amount
             )
             if amount_compare:
                 raise UserError(message)

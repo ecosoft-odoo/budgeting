@@ -1,7 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 
 
 class ResProgram(models.Model):
@@ -11,6 +11,15 @@ class ResProgram(models.Model):
     name = fields.Char(required=True)
     code = fields.Char()
     active = fields.Boolean(default=True)
+
+    _sql_constraints = [
+        ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
+    ]
+
+    def copy(self, default=None):
+        self.ensure_one()
+        default = dict(default or {}, name=_("%s (copy)") % self.name)
+        return super().copy(default)
 
     def name_get(self):
         res = []
