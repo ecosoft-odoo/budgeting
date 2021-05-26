@@ -158,6 +158,7 @@
                     <group>
                         <group name="budget_control_left">
                             <field name="analytic_account_id" />
+                            <field name="assignee_id" />
                         </group>
                         <group name="budget_control_right">
                             <field name="active" invisible="1" />
@@ -169,7 +170,6 @@
                             <div>
                                 <field name="date_from" /> - <field name="date_to" />
                             </div>
-                            <field name="assignee_id" />
                             <field
                                 name="company_id"
                                 groups="base.group_multi_company"
@@ -178,6 +178,7 @@
                                 name="currency_id"
                                 groups="base.group_multi_currency"
                             />
+                            <field name="amount_initial" />
                             <field name="allocated_amount" />
                             <field name="released_amount" />
                         </group>

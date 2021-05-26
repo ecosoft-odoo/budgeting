@@ -179,7 +179,7 @@
         id="budget_activity_menu"
         parent="budget_control.budget_config_menu"
         name="Activity"
-        sequence="20"
+        sequence="40"
     />
     <menuitem
         id="budget_budget_activity_menu"

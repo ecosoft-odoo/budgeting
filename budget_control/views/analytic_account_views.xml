@@ -33,6 +33,7 @@
                     widget="many2many_tags"
                     optional="show"
                 />
+                <field name="initial_balance" optional="show" />
             </field>
         </field>
     </record>
@@ -49,6 +50,8 @@
             </field>
             <xpath expr="//group[@name='main']/group[2]" position="inside">
                 <field name="auto_adjust_date_commit" />
+                <field name="initial_balance" />
+                <field name="carry_forward_balance" />
             </xpath>
         </field>
     </record>
@@ -68,9 +71,19 @@
                     widget="many2many_tags"
                     optional="show"
                 />
-                <field name="partner_id" />
+                <field name="partner_id" optional="show" />
                 <field name="active" invisible="1" />
-                <field name="company_id" groups="base.group_multi_company" />
+                <field
+                    name="company_id"
+                    groups="base.group_multi_company"
+                    optional="show"
+                />
+                <field
+                    name="currency_id"
+                    groups="base.group_multi_currency"
+                    optional="show"
+                />
+                <field name="initial_balance" sum="Total Initial" optional="show" />
                 <field name="amount_budget" sum="Total Budget" />
                 <field name="amount_consumed" sum="Total Consumed" />
                 <field name="amount_balance" sum="Balance" />

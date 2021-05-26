@@ -26,6 +26,7 @@
                                 name="analytic_account_ids"
                                 nolabel="1"
                                 states="choose"
+                                context="{'tree_view_ref': 'budget_control.view_budget_analytic_list'}"
                             />
                         </page>
                         <page

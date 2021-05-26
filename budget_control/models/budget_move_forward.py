@@ -1,6 +1,10 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+from odoo.tools import float_compare
+
+METHOD_TYPE = [("extend", "Extend"), ("new", "New Analytic")]
 
 
 class BudgetMoveForward(models.Model):
@@ -28,6 +32,12 @@ class BudgetMoveForward(models.Model):
         states={"draft": [("readonly", False)]},
         copy=False,
     )
+    budget_period_id = fields.Many2one(
+        comodel_name="budget.period",
+        string="From Budget Period",
+        default=lambda self: self._get_budget_period(),
+        required=True,
+    )
     to_budget_id = fields.Many2one(
         comodel_name="mis.budget",
         string="To Budget Period",
@@ -53,15 +63,52 @@ class BudgetMoveForward(models.Model):
         default="draft",
         tracking=True,
     )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        string="Company",
+        default=lambda self: self.env.company,
+        required=True,
+    )
+    company_currency_id = fields.Many2one(
+        comodel_name="res.currency", related="company_id.currency_id"
+    )
+    method_type = fields.Selection(
+        METHOD_TYPE,
+        string="Method",
+        required=True,
+    )
+    accumulate_analytic_account_id = fields.Many2one(
+        comodel_name="account.analytic.account",
+        string="Accumulated Analytic Account",
+    )
+    date_extend = fields.Date(
+        string="Extended Date",
+        related="to_budget_id.date_to",
+        store=True,
+    )
     forward_line_ids = fields.One2many(
         comodel_name="budget.move.forward.line",
         inverse_name="forward_id",
         string="Forward Lines",
         readonly=True,
     )
+    forward_accumulate_ids = fields.One2many(
+        comodel_name="budget.move.forward.line.accumulate",
+        inverse_name="forward_id",
+        string="Accumulate Lines",
+    )
     _sql_constraints = [
         ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
     ]
+
+    @api.onchange("method_type")
+    def _onchange_method_type(self):
+        self.forward_accumulate_ids._onchange_reset_method_type()
+
+    @api.model
+    def _get_budget_period(self):
+        budget_period = self.env["budget.period"]._get_eligible_budget_period()
+        return budget_period
 
     def _get_domain_search(self, model):
         self.ensure_one()
@@ -124,12 +171,85 @@ class BudgetMoveForward(models.Model):
                 vals = rec._prepare_vals_forward(docs, model)
                 Line.create(vals)
 
+    def _prepare_vals_forward_accumulate(self, analytic):
+        self.ensure_one()
+        amount_balance = (
+            analytic.amount_balance - analytic.carry_forward_balance
+        )
+        return {
+            "forward_id": self.id,
+            "analytic_account_id": analytic.id,
+            "method_type": self.method_type,
+            "amount_balance": amount_balance,
+            "amount_carry_forward": 0.0,
+            "amount_accumulate": 0.0,
+        }
+
+    def action_prepare_new_analytic_available(self):
+        for rec in self:
+            rec.forward_accumulate_ids._prepare_new_analytic()
+
+    def action_get_analytic_available(self):
+        Line = self.env["budget.move.forward.line.accumulate"]
+        AnalyticAccount = self.env["account.analytic.account"]
+        # Add permission admin to budget team
+        self = self.sudo()
+        for rec in self:
+            rec.forward_accumulate_ids.unlink()
+            analytics = AnalyticAccount.search(
+                [
+                    ("budget_period_id", "=", rec.budget_period_id.id),
+                ]
+            )
+            analytics_available = analytics.filtered(
+                lambda l: l.amount_balance > 0.0
+                and l.amount_balance - l.carry_forward_balance > 0.0
+            )
+            vals = [
+                rec._prepare_vals_forward_accumulate(analytic)
+                for analytic in analytics_available
+            ]
+            Line.create(vals)
+
     def _hooks_document_carry_forward(self, docline):
         return
 
+    def carry_forward_accumulate(self, accumulate_lines):
+        self.ensure_one()
+        for line in accumulate_lines:
+            if line.method_type == "extend":
+                line.analytic_account_id.write(
+                    {
+                        "bm_date_to": line.date_extend,
+                        "initial_balance": line.amount_carry_forward,
+                    }
+                )
+            if line.method_type == "new":
+                line._check_carry_forward_analytic()
+                line.to_analytic_account_id.write(
+                    {
+                        "initial_balance": line.amount_carry_forward,
+                    }
+                )
+            # Add accumulate amount
+            # it will sum amount and carry forward to accumulate analytic.
+            accumulate_analytic = line.accumulate_analytic_account_id
+            amount_accumulate = (
+                accumulate_analytic.initial_balance + line.amount_accumulate
+            )
+            accumulate_analytic.write(
+                {
+                    "initial_balance": amount_accumulate,
+                }
+            )
+            # Update Carry Forward Balance
+            line.analytic_account_id.carry_forward_balance += (
+                line.amount_carry_forward + line.amount_accumulate
+            )
+
     def action_budget_carry_forward(self):
         """
-        Concept carry forward
+        Concept carry forward commitment
             1. Reversed budget move each document line
             2. Commit new budget move for carry forward and Update it to next analytic
             3. Updated new budget move to next analytic
@@ -148,6 +268,9 @@ class BudgetMoveForward(models.Model):
         self = self.sudo()
         Line = self.env["budget.move.forward.line"]
         for rec in self:
+            # Available
+            rec.carry_forward_accumulate(rec.forward_accumulate_ids)
+            # Commitment
             models = Line._fields["res_model"].selection
             for model in list(dict(models).keys()):
                 doclines = Line.search(
@@ -218,3 +341,163 @@ class BudgetMoveForwardLine(models.Model):
         required=True,
         readonly=True,
     )
+
+
+class BudgetMoveForwardLineAccumulate(models.Model):
+    _name = "budget.move.forward.line.accumulate"
+    _description = "Budget Move Forward Line Accumulate"
+
+    forward_id = fields.Many2one(
+        comodel_name="budget.move.forward",
+        index=True,
+        readonly=True,
+        required=True,
+    )
+    company_id = fields.Many2one(
+        comodel_name="res.company", related="forward_id.company_id"
+    )
+    company_currency_id = fields.Many2one(
+        comodel_name="res.currency", related="forward_id.company_currency_id"
+    )
+    analytic_account_id = fields.Many2one(
+        comodel_name="account.analytic.account",
+        string="Analytic Account",
+        # domain=lambda self: self._get_domain_analytic_account_id(),
+        required=True,
+        index=True,
+    )
+    method_type = fields.Selection(
+        METHOD_TYPE,
+        string="Method",
+        compute="_compute_method_type",
+        readonly=False,
+        store=True,
+        required=True,
+    )
+    date_extend = fields.Date(
+        string="Extended Date",
+        related="forward_id.date_extend",
+        store=True,
+        readonly=False,
+    )
+    to_analytic_account_id = fields.Many2one(
+        comodel_name="account.analytic.account",
+        string="Carry Forward Analytic Account",
+        # domain=lambda self: self._get_domain_analytic_account_id(),
+        index=True,
+    )
+    amount_carry_forward = fields.Monetary(
+        string="Carry Forward Amount",
+        currency_field="company_currency_id",
+        required=True,
+    )
+    accumulate_analytic_account_id = fields.Many2one(
+        comodel_name="account.analytic.account",
+        compute="_compute_accumulate_analytic_account",
+        readonly=False,
+        store=True,
+    )
+    amount_accumulate = fields.Monetary(
+        string="Accumulated Amount",
+        currency_field="company_currency_id",
+        required=True,
+    )
+    amount_balance = fields.Monetary(
+        string="Available",
+        currency_field="company_currency_id",
+    )
+
+    _sql_constraints = [
+        (
+            "forward_analytic_account_unique",
+            "UNIQUE(forward_id, analytic_account_id)",
+            "Duplicate analytic account!",
+        ),
+        (
+            "valid_amount_carry_forward",
+            "CHECK(amount_carry_forward >= 0)",
+            "Carry forward amount must be greater than zero!",
+        ),
+        (
+            "valid_amount_accumulate",
+            "CHECK(amount_accumulate >= 0)",
+            "Accumulated amount must be greater than zero!",
+        ),
+    ]
+
+    @api.model
+    def _get_domain_analytic_account_id(self):
+        # for rec in self:
+        #     bm_date_to = rec.budget_period_id.bm_date_to
+        # return [("bm_date_to", "<=", bm_date_to)]
+        return []
+
+    @api.depends("forward_id.method_type")
+    def _compute_method_type(self):
+        for rec in self:
+            rec.method_type = rec.forward_id.method_type
+
+    @api.depends("forward_id.accumulate_analytic_account_id")
+    def _compute_accumulate_analytic_account(self):
+        for rec in self:
+            rec.accumulate_analytic_account_id = (
+                rec.forward_id.accumulate_analytic_account_id
+            )
+
+    @api.onchange("method_type")
+    def _onchange_reset_method_type(self):
+        """ Reset analytic account and extend date all"""
+        for line in self:
+            line.to_analytic_account_id = False
+            line.date_extend = line.forward_id.date_extend
+
+    # @api.constrains("budget_period_id", "date_commit")
+    # def _check_date_commit(self):
+    #     for rec in self:
+    #         budget_period = rec.budget_period_id
+    #         date_commit = rec.date_commit
+    #         if (
+    #             budget_period.bm_date_from > date_commit
+    #             or budget_period.bm_date_to < date_commit
+    #         ):
+    #             raise UserError(_("Invalid Date Commit!"))
+
+    @api.constrains("amount_carry_forward", "amount_accumulate")
+    def _check_amount_balance(self):
+        for rec in self:
+            amount_balance = rec.amount_carry_forward + rec.amount_accumulate
+            if (
+                float_compare(
+                    amount_balance,
+                    rec.amount_balance,
+                    precision_rounding=self.company_currency_id.rounding,
+                )
+                > 0
+            ):
+                raise UserError(
+                    _(
+                        "{} has sum of carry forward amount and "
+                        "accumulted amount more than available amount.".format(
+                            rec.analytic_account_id.name
+                        )
+                    )
+                )
+
+    def _prepare_new_analytic(self):
+        for line in self:
+            if line.method_type == "new":
+                analytic_account = (
+                    line.analytic_account_id.next_year_analytic()
+                )
+                line.write({"to_analytic_account_id": analytic_account})
+
+    def _check_carry_forward_analytic(self):
+        for line in self:
+            if line.method_type == "new" and not line.to_analytic_account_id:
+                raise UserError(
+                    _(
+                        "{} does not have Carry Forward Analytic Account.".format(
+                            line.analytic_account_id.name
+                        )
+                    )
+                )
