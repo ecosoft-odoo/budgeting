@@ -19,9 +19,9 @@ class BudgetMonitorReport(models.Model):
             ou = "= {}".format(operating_unit_ids.id)
         else:
             ou = "in {}".format(tuple(operating_unit_ids.ids))
-        domain_operating_unit = "{} a.operating_unit_id {}".format(
-            where_clause, ou
-        )
+        domain_operating_unit = (
+            "{} (a.operating_unit_id {} or a.operating_unit_id is null)"
+        ).format(where_clause, ou)
         where_query = " ".join([where_sql, domain_operating_unit])
         return where_query
 
