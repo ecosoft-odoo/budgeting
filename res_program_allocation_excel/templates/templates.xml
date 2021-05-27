@@ -30,7 +30,6 @@
                             'D7': 'analytic_account_id.name${value or ""}#{style=text}',
                             'E7': 'description${value or ""}#{style=text}',
                             'F7': 'fund_amount${value or 0}#{style=number}',
-                            'G7': 'active${value or "False"}#{style=text}',
                         }
                     },
                     'Program': {
@@ -58,7 +57,6 @@
                             'D7': 'analytic_account_id',
                             'E7': 'description',
                             'F7': 'fund_amount',
-                            'G7': 'active',
                         }
                     }
                 },

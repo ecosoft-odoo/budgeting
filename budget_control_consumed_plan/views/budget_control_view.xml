@@ -13,7 +13,6 @@
                     type="object"
                     states="draft,released,done"
                     context="{'edit_amount': 1}"
-                    groups="budget_control.group_budget_control_manager"
                 />
             </xpath>
         </field>
