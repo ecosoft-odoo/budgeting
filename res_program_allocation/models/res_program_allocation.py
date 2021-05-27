@@ -12,6 +12,7 @@ class ResProgramAllocation(models.Model):
         required=True,
         readonly=True,
         states={"draft": [("readonly", "=", False)]},
+        tracking=True,
     )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
@@ -21,6 +22,7 @@ class ResProgramAllocation(models.Model):
         ]._get_eligible_budget_period(),
         readonly=True,
         states={"draft": [("readonly", "=", False)]},
+        tracking=True,
     )
     fund_constraint_ids = fields.One2many(
         comodel_name="fund.constraint",
@@ -51,6 +53,7 @@ class ResProgramAllocation(models.Model):
         ],
         default="draft",
         copy=False,
+        tracking=True,
     )
 
     @api.depends("fund_constraint_ids")

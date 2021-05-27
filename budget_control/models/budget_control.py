@@ -116,6 +116,11 @@ class BudgetControl(models.Model):
         readonly=False,
         help="Total amount for transfer current",
     )
+    diff_amount = fields.Monetary(
+        string="Diff Amount",
+        compute="_compute_diff_amount",
+        help="Diff from Released - Budget",
+    )
     # Total Amount
     amount_initial = fields.Monetary(
         string="Initial Balance",
@@ -253,6 +258,11 @@ class BudgetControl(models.Model):
     def _compute_allocated_released_amount(self):
         for rec in self:
             rec.released_amount = rec.allocated_amount
+
+    @api.depends("released_amount", "amount_budget")
+    def _compute_diff_amount(self):
+        for rec in self:
+            rec.diff_amount = rec.released_amount - rec.amount_budget
 
     def _compute_budget_info(self):
         BudgetPeriod = self.env["budget.period"]

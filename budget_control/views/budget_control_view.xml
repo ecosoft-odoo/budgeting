@@ -4,18 +4,23 @@
         <field name="name">budget.control.view.tree</field>
         <field name="model">budget.control</field>
         <field name="arch" type="xml">
-            <tree string="Budget Control Sheet" create="0">
+            <tree
+                string="Budget Control Sheet"
+                create="0"
+                decoration-danger="diff_amount != 0.0"
+            >
                 <field name="name" />
                 <field name="analytic_account_id" />
                 <field name="analytic_group" optional="show" />
                 <field name="assignee_id" optional="show" />
+                <field name="allocated_amount" optional="show" />
+                <field name="released_amount" optional="show" />
+                <field name="diff_amount" optional="hide" />
                 <field name="amount_budget" optional="show" />
                 <field name="amount_commit" optional="show" />
                 <field name="amount_actual" optional="hide" />
                 <field name="amount_consumed" optional="show" />
                 <field name="amount_balance" optional="show" />
-                <field name="allocated_amount" optional="show" />
-                <field name="released_amount" optional="show" />
                 <field
                     name="state"
                     widget='badge'
@@ -181,6 +186,11 @@
                             <field name="amount_initial" />
                             <field name="allocated_amount" />
                             <field name="released_amount" />
+                            <field
+                                name="diff_amount"
+                                decoration-danger="diff_amount &lt; 0.0"
+                                decoration-success="diff_amount &gt; 0.0"
+                            />
                         </group>
                     </group>
                     <notebook>
