@@ -74,8 +74,9 @@ class BudgetControl(models.Model):
         if not date:
             date = fields.Date.context_today(self)
         for rec in self:
-            rec._get_consumed_plan(date)
-        return True
+            if rec.item_ids:
+                rec._get_consumed_plan(date)
+        return False
 
     def action_update_consumed_plan(self):
         if self.env.company.budget_manual_consumed_plan:

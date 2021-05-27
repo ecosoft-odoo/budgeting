@@ -8,15 +8,15 @@ class FundConstraint(models.Model):
     _inherit = "mail.thread"
     _description = "Fund Constraint"
 
-    name = fields.Char(required=True)
+    name = fields.Char(required=True, tracking=True)
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
         required=True,
         index=True,
+        tracking=True,
     )
     budget_control_id = fields.Many2one(
-        comodel_name="budget.control",
-        readonly=True,
+        comodel_name="budget.control", readonly=True, tracking=True
     )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
@@ -28,13 +28,14 @@ class FundConstraint(models.Model):
         required=True,
         index=True,
         ondelete="restrict",
+        tracking=True,
     )
     fund_group_id = fields.Many2one(
         comodel_name="budget.source.fund.group",
         related="fund_id.fund_group_id",
     )
-    fund_amount = fields.Monetary()
-    description = fields.Text()
+    fund_amount = fields.Monetary(tracking=True)
+    description = fields.Text(tracking=True)
     account_constraint_line = fields.One2many(
         comodel_name="account.constraint.line",
         inverse_name="fund_constraint_id",
