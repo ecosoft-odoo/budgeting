@@ -188,8 +188,7 @@
                             <field name="released_amount" />
                             <field
                                 name="diff_amount"
-                                decoration-danger="diff_amount &lt; 0.0"
-                                decoration-success="diff_amount &gt; 0.0"
+                                decoration-danger="diff_amount != 0.0"
                             />
                         </group>
                     </group>
