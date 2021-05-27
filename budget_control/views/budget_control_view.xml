@@ -4,7 +4,7 @@
         <field name="name">budget.control.view.tree</field>
         <field name="model">budget.control</field>
         <field name="arch" type="xml">
-            <tree string="Budget Control Sheet">
+            <tree string="Budget Control Sheet" create="0">
                 <field name="name" />
                 <field name="analytic_account_id" />
                 <field name="analytic_group" optional="show" />
@@ -78,7 +78,7 @@
         <field name="name">budget.control.view.form</field>
         <field name="model">budget.control</field>
         <field name="arch" type="xml">
-            <form string="Budget Control Sheet">
+            <form string="Budget Control Sheet" create="0">
                 <header>
                     <button
                         id="action_submit"
@@ -187,6 +187,7 @@
                         <page name="items" string="Plan">
                             <div class="oe_right" name="buttons">
                                 <button
+                                    id="reset_plan"
                                     name="prepare_budget_control_matrix"
                                     class="btn-danger"
                                     type="object"
@@ -195,6 +196,7 @@
                                     confirm="This operation cannot be undone. Are you sure to continue?"
                                 />
                                 <button
+                                    id="refresh"
                                     name="prepare_budget_control_matrix"
                                     type="object"
                                     string="Refresh"

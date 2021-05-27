@@ -71,7 +71,7 @@
                     widget="many2many_tags"
                     optional="show"
                 />
-                <field name="partner_id" optional="show" />
+                <field name="partner_id" optional="hide" />
                 <field name="active" invisible="1" />
                 <field
                     name="company_id"

@@ -153,11 +153,6 @@
                                     <field name="budget_control_id" optional="hide" />
                                     <field name="budget_period_id" optional="hide" />
                                     <field name="fund_amount" sum="Total Amount" />
-                                    <field
-                                        name="active"
-                                        widget="boolean_toggle"
-                                        optional="show"
-                                    />
                                 </tree>
                             </field>
                         </page>
