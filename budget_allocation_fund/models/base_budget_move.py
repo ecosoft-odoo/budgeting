@@ -42,3 +42,11 @@ class BudgetDoclineMixin(models.AbstractModel):
             if len(fund_ids) > 1 and doc.fund_id and doc.fund_id in fund_ids:
                 continue
             doc.fund_id = len(fund_ids) == 1 and fund_ids.id or False
+
+    def _update_budget_commitment(self, budget_vals, reverse=False):
+        budget_vals = super()._update_budget_commitment(
+            budget_vals, reverse=reverse
+        )
+        budget_vals["fund_id"] = self.fund_id.id
+        budget_vals["fund_group_id"] = self.fund_id.fund_group_id.id
+        return budget_vals

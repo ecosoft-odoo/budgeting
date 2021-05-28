@@ -76,7 +76,6 @@ class BudgetTransfer(models.Model):
 
     def action_transfer(self):
         self.mapped("transfer_item_ids").transfer()
-
         self._check_budget_control()
         self.write({"state": "transfer"})
 

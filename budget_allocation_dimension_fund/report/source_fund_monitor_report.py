@@ -4,8 +4,8 @@
 from odoo import models
 
 
-class BudgetMonitorReport(models.Model):
-    _inherit = "budget.monitor.report"
+class SourceFundMonitorReport(models.Model):
+    _inherit = "source.fund.monitor.report"
 
     def _get_dimension_fields(self):
         if self.env.context.get("update_custom_fields"):
@@ -18,9 +18,9 @@ class BudgetMonitorReport(models.Model):
     def _select_budget(self):
         select_budget_query = super()._select_budget()
         add_fields = self._get_dimension_fields()
-        add_fields = ["0 as {}".format(x) for x in add_fields]
+        add_fields = ["al.{0} as {0}".format(x) for x in add_fields]
         if add_fields:
-            select_budget_query[60] = ", ".join(add_fields)
+            select_budget_query[20] = ", ".join(add_fields)
         return select_budget_query
 
     # All consumed
@@ -29,5 +29,5 @@ class BudgetMonitorReport(models.Model):
         add_fields = self._get_dimension_fields()
         add_fields = ["a.{0} as {0}".format(x) for x in add_fields]
         if add_fields:
-            select_statement[60] = ", ".join(add_fields)
+            select_statement[20] = ", ".join(add_fields)
         return select_statement

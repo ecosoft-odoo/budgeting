@@ -1,7 +1,8 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class BudgetTransferItem(models.Model):
@@ -72,3 +73,24 @@ class BudgetTransferItem(models.Model):
             ):
                 continue
             doc.target_analytic_tag_ids = analytic_tag_ids
+
+    def transfer(self):
+        res = super().transfer()
+        for transfer in self:
+            source_line = (
+                transfer.source_budget_control_id.allocation_line_ids.filtered(
+                    lambda l: l.analytic_tag_ids
+                    == transfer.source_analytic_tag_ids
+                )
+            )
+            target_line = (
+                transfer.target_budget_control_id.allocation_line_ids.filtered(
+                    lambda l: l.analytic_tag_ids
+                    == transfer.target_analytic_tag_ids
+                )
+            )
+            if not (source_line and target_line):
+                raise UserError(_("Invalid analytic tags!"))
+            source_line[0].budget_amount -= transfer.amount
+            target_line[0].budget_amount += transfer.amount
+        return res
