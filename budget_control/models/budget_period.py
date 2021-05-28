@@ -263,12 +263,13 @@ class BudgetPeriod(models.Model):
         debit = sum(budget_moves.mapped("debit"))
         amount_credit = reverse and debit or credit
         amount_debit = reverse and credit or debit
+        # For now, when any over returned budget, make immediate adjustment
         if float_compare(amount_credit, amount_debit, 2) == 1:
-            docline.close_budget_move()
-            # raise ValidationError(
-            #     _("This operation will result in over returned budget on %s")
-            #     % doc.display_name
-            # )
+            docline.with_context(
+                use_amount_commit=True,
+                commit_note=_("Over returned auto adjustment, %s")
+                % docline.display_name,
+            ).commit_budget(reverse=True)
 
     @api.model
     def _get_eligible_budget_period(self, date=False, doc_type=False):
