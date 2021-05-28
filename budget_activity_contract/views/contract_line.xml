@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="contract_contract_supplier_form_view" model="ir.ui.view">
+        <field name="name">contract.contract.supplier.form.view</field>
+        <field name="model">contract.contract</field>
+        <field name="inherit_id" ref="contract.contract_contract_supplier_form_view" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='contract_line_fixed_ids']/tree//field[@name='product_id']"
+                position="after"
+            >
+                <field name="activity_id" />
+            </xpath>
+            <xpath
+                expr="//field[@name='contract_line_ids']/tree//field[@name='product_id']"
+                position="after"
+            >
+                <field name="activity_id" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="contract_line_form_view" model="ir.ui.view">
+        <field name="name">contract.line.form.view</field>
+        <field name="model">contract.line</field>
+        <field name="inherit_id" ref="contract.contract_line_form_view" />
+        <field name="arch" type="xml">
+            <field name="product_id" position="after">
+                <field name="activity_id" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

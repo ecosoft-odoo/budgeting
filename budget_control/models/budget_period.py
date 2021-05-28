@@ -264,10 +264,11 @@ class BudgetPeriod(models.Model):
         amount_credit = reverse and debit or credit
         amount_debit = reverse and credit or debit
         if float_compare(amount_credit, amount_debit, 2) == 1:
-            raise ValidationError(
-                _("This operation will result in over returned budget on %s")
-                % doc.display_name
-            )
+            docline.close_budget_move()
+            # raise ValidationError(
+            #     _("This operation will result in over returned budget on %s")
+            #     % doc.display_name
+            # )
 
     @api.model
     def _get_eligible_budget_period(self, date=False, doc_type=False):
