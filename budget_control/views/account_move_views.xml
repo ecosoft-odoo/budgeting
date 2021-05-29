@@ -47,6 +47,7 @@
                             />
                             <field name="write_uid" optional="show" />
                             <field name="write_date" optional="show" />
+                            <field name="note" optionl="hide" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
                         </tree>

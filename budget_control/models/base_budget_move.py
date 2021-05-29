@@ -59,6 +59,9 @@ class BaseBudgetMove(models.AbstractModel):
         default=lambda self: self.env.user.company_id.id,
         index=True,
     )
+    note = fields.Char(
+        readonly=True,
+    )
 
 
 class BudgetDoclineMixin(models.AbstractModel):
@@ -233,6 +236,8 @@ class BudgetDoclineMixin(models.AbstractModel):
             budget_vals = self._update_budget_commitment(
                 budget_vals, reverse=reverse
             )
+            # Final note
+            budget_vals["note"] = self.env.context.get("commit_note")
             # Create budget move
             if not budget_vals["amount_currency"]:
                 return False
@@ -314,6 +319,7 @@ class BudgetDoclineMixin(models.AbstractModel):
     def close_budget_move(self):
         """ Reverse commit with amount_commit/date_commit to zero budget """
         for docline in self:
-            docline.with_context(use_amount_commit=True).commit_budget(
-                reverse=True
-            )
+            docline.with_context(
+                use_amount_commit=True,
+                commit_note=_("Auto adjustment on close budget"),
+            ).commit_budget(reverse=True)
