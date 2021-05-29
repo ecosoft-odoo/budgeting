@@ -5,10 +5,10 @@
         <field name="model">budget.control</field>
         <field name="inherit_id" ref="budget_control.budget_control_view_form" />
         <field name="arch" type="xml">
-            <field name="use_all_kpis" position="after">
+            <field name="use_all_kpis" position="before">
                 <field name="use_all_job_order" widget="boolean_toggle" />
             </field>
-            <field name="kpi_ids" position="after">
+            <field name="kpi_ids" position="before">
                 <field
                     name="job_order_ids"
                     widget="many2many_tags"
@@ -18,16 +18,17 @@
             <xpath expr="//page[@name='options']" position="inside">
                 <group name="kpi_x_job_order" string="KPIs Description">
                     <field name="kpi_x_job_order" nolabel="1" colspan="2">
-                        <tree editable="bottom" create="0" delete="0">
+                        <tree editable="bottom">
                             <field name="analytic_account_id" invisible="1" />
+                            <field name="mis_report_id" invisible="1" />
                             <field
-                                name="kpi_ids"
+                                name="job_order_ids"
                                 force_save="1"
                                 widget="many2many_tags"
                                 options="{'no_open': True, 'no_create': True}"
                             />
                             <field
-                                name="job_order_ids"
+                                name="kpi_ids"
                                 widget="many2many_tags"
                                 options="{'no_open': True, 'no_create': True}"
                             />

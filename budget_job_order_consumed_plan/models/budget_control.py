@@ -8,41 +8,54 @@ class BudgetControl(models.Model):
     _inherit = "budget.control"
 
     def _update_kpi_reset_plan(self, kpis):
+        """
+        Check budget move (Commitment) and Plan (Budget)
+        if not plan, it will auto create new plan with commitment.
+        """
         self.ensure_one()
-        super()._update_kpi_reset_plan(kpis)
+        # NOT Update kpis, when you used Job Order
+        super()._update_kpi_reset_plan(False)
         KPIxJO = self.env["budget.control.kpi.x.job.order"]
-        domain = [
-            ("analytic_account_id", "=", self.analytic_account_id.id),
-            ("job_order_id", "!=", False),
-        ]
+        KPI = self.env["mis.report.kpi"]
+        domain = [("analytic_account_id", "=", self.analytic_account_id.id)]
         budget_move = self.get_move_commit(domain)
-        # Same AG, Difference Job
+        kpi_x_job = self.kpi_x_job_order
+        vals_kpixjob = []
         for move_obj in budget_move:
             for move in move_obj:
+                # TODO: Test without contract
+                if move._name == "contract.budget.move":
+                    continue
                 activity_group = move.activity_group_id.id
                 job_order = move.job_order_id.id
-                kpi_jo = self.kpi_x_job_order.filtered(
-                    lambda l: l.kpi_ids.activity_group_id.id == activity_group
-                    and job_order not in l.job_order_ids.ids
+                # There is Job Order in plan
+                kpi_plan_job = kpi_x_job.filtered(
+                    lambda l: l.job_order_ids.id == job_order
                 )
-                if kpi_jo:
-                    kpi_jo.job_order_ids = [(4, job_order)]
-        # New AG with job order
-        for kpi in list(set(kpis)):
-            move_job = [
-                move_obj.filtered(
-                    lambda l: l.activity_group_id == kpi.activity_group_id
+                ag_kpi = KPI.search(
+                    [("activity_group_id", "=", activity_group)]
                 )
-                for move_obj in budget_move
-            ]
-            self.kpi_x_job_order += KPIxJO.new(
-                {
-                    "kpi_ids": [kpi.id],
-                    "job_order_ids": [
-                        (4, x.job_order_id.id) for x in move_job
-                    ],
-                }
-            )
+                if kpi_plan_job:
+                    # There is Job Order, No AG in plan
+                    kpi_no_ag = kpi_plan_job.filtered(
+                        lambda l: activity_group
+                        not in l.kpi_ids.mapped("activity_group_id").ids
+                    )
+                    if kpi_no_ag:  # Add in job
+                        kpi_no_ag.kpi_ids = [(4, ag_kpi.id)]
+                    continue
+                # Case2: No Job Order in plan
+                vals_kpixjob.append(
+                    {
+                        "budget_control_id": self.id,
+                        "job_order_ids": job_order
+                        and [(6, 0, [job_order])]
+                        or False,
+                        "kpi_ids": [(6, 0, ag_kpi.ids)],
+                    }
+                )
+        if vals_kpixjob:
+            KPIxJO.create(vals_kpixjob)
 
     def _context_filter_budget_info(self, item, date_to, all_kpi_ids):
         ctx = super()._context_filter_budget_info(item, date_to, all_kpi_ids)

@@ -12,10 +12,19 @@ class MisBudgetItem(models.Model):
         ondelete="cascade",
         index=True,
     )
+    job_sequence = fields.Integer(
+        default=1,
+        help="This field help check same KPIs, diff job order",
+    )
 
     def _prepare_overlap_domain(self):
         domain = super()._prepare_overlap_domain()
-        domain.extend([("job_order_id", "=", self.job_order_id.id)])
+        domain.extend(
+            [
+                ("job_order_id", "=", self.job_order_id.id),
+                ("job_sequence", "=", self.job_sequence),
+            ]
+        )
         return domain
 
     def _compute_name(self):

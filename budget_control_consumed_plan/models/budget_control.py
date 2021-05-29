@@ -1,7 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, fields, models
+from odoo import _, models
 
 
 class BudgetControl(models.Model):
@@ -70,9 +70,13 @@ class BudgetControl(models.Model):
         item_ids = self.item_ids.filtered(lambda l: l.date_from <= date)
         self._update_consumed_value(item_ids, date)
 
+    def _get_last_date_period(self):
+        date_to = max(self.mapped("date_to"))
+        return date_to
+
     def update_consumed_plan(self, date=False):
         if not date:
-            date = fields.Date.context_today(self)
+            date = self._get_last_date_period()
         for rec in self:
             if rec.item_ids:
                 rec._get_consumed_plan(date)
