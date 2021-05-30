@@ -196,6 +196,12 @@ class BudgetControl(models.Model):
             self = self.sudo()
         return super().name_search(name, args, operator, limit)
 
+    @api.model
+    def search(self, args, offset=0, limit=None, order=None, count=False):
+        if self._context.get("access_sudo", False):
+            self = self.sudo()
+        return super().search(args, offset, limit, order, count)
+
     def _read(self, fields):
         """ Add permission to read budget control for do something. """
         if self._context.get("access_sudo", False):
