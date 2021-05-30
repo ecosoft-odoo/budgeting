@@ -28,11 +28,9 @@
                 expr="//tree/field[@name='source_budget_control_id']"
                 position="attributes"
             >
-                <!-- BUG: search more budget on transfer items -->
-                <!-- <attribute
+                <attribute
                     name="context"
-                >{'tree_view_ref': 'budget_control_transfer_operating_unit.budget_control_view_transfer_tree', 'access_sudo': 1}</attribute> -->
-                <attribute name="context">{'access_sudo': 1}</attribute>
+                >{'access_sudo': 1, 'tree_view_ref': 'budget_control_transfer_operating_unit.budget_control_view_transfer_tree'}</attribute>
                 <attribute
                     name="options"
                 >{'no_create_edit': True, 'no_open': True, 'no_create': True}</attribute>

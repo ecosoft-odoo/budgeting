@@ -7,12 +7,11 @@
             <tree sample="1">
                 <field name="code" optional="show" />
                 <field name="name" />
+                <field name="department_id" />
                 <field name="parent_project" optional="show" />
                 <field name="project_manager_id" optional="show" />
-                <field name="create_date" optional="show" />
                 <field name="date_from" />
                 <field name="date_to" />
-                <field name="department_id" />
                 <field
                     name="state"
                     widget="badge"
