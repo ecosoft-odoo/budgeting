@@ -19,6 +19,7 @@
         "views/res_project_split.xml",
         "views/hr_department_views.xml",
         "views/hr_employee_views.xml",
+        "wizard/split_project_wizard_view.xml",
     ],
     "maintainers": ["Saran440"],
     "development_status": "Alpha",
