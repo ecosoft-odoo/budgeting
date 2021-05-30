@@ -123,12 +123,16 @@ class BudgetDoclineMixin(models.AbstractModel):
         - Calc amount_commit from all budget_move_ids
         - Calc date_commit if not exists and on 1st budget_move_ids only or False
         """
+        period_id = self.env["budget.period"]._get_eligible_budget_period()
         for rec in self:
             debit = sum(rec.budget_move_ids.mapped("debit"))
             credit = sum(rec.budget_move_ids.mapped("credit"))
             rec.amount_commit = debit - credit
+            docline_period = rec[rec._budget_analytic_field].budget_period_id
             if rec.budget_move_ids:
                 rec.date_commit = min(rec.budget_move_ids.mapped("date"))
+            elif docline_period.bm_date_from > period_id.bm_date_from:
+                rec.date_commit = docline_period.bm_date_from
             else:
                 rec.date_commit = False
 

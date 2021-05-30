@@ -135,7 +135,7 @@ class AccountAnalyticAccount(models.Model):
             no_bc_analytics = self.browse(no_bc_analytic_ids)
             names = no_bc_analytics.mapped("display_name")
             raise UserError(
-                _("Following analytics has no budget control " "sheet:\n%s")
+                _("Following analytics has no budget control sheet:\n%s")
                 % ", ".join(names)
             )
         budget_not_controlled = budget_controls.filtered_domain(
