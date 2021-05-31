@@ -1,6 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class ResProject(models.Model):
@@ -118,13 +119,24 @@ class ResProject(models.Model):
         return super().copy(default)
 
     def action_split_project(self):
-        for project in self.browse(self.env.context["active_ids"]):
-            project_id = project.copy()
+        project = self.browse(self.env.context["active_ids"])
+        if len(project) != 1:
+            raise UserError(_("Please select one project."))
+        wizard = self.env.ref("res_project.split_project_wizard_form")
         return {
+            "name": _("Split Project"),
             "type": "ir.actions.act_window",
             "view_mode": "form",
-            "res_model": "res.project",
-            "res_id": project_id.id,
+            "res_model": "split.project.wizard",
+            "views": [(wizard.id, "form")],
+            "view_id": wizard.id,
+            "target": "new",
+            "context": {
+                "default_parent_project": project.parent_project,
+                "default_date_from": project.date_from,
+                "default_date_to": project.date_to,
+                "default_department_id": project.department_id.id,
+            },
         }
 
     def action_confirm(self):
