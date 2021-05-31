@@ -12,7 +12,7 @@
             <xpath expr="//separator[@orientation='vertical']" position="before">
                 <filter
                     string="Department"
-                    name="department_id"
+                    name="group_by_department_id"
                     context="{'group_by':'department_id'}"
                 />
             </xpath>

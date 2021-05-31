@@ -8,10 +8,10 @@
             ref="budget_control.view_budget_monitor_report_search"
         />
         <field name="arch" type="xml">
-            <xpath expr="//search//filter[@name='reference']" position="after">
+            <xpath expr="//search//filter[@name='group_by_reference']" position="after">
                 <filter
                     string="Job Order"
-                    name="job_order"
+                    name="group_by_job_order"
                     context="{'group_by':'job_order_id'}"
                 />
             </xpath>
