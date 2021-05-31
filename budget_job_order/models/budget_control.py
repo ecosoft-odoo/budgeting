@@ -96,6 +96,11 @@ class BudgetControl(models.Model):
                 append(new_item)
         return new_items
 
+    def _get_context_budget_monitoring(self):
+        ctx = super()._get_context_budget_monitoring()
+        ctx.update({"search_default_group_by_job_order": 1})
+        return ctx
+
 
 class BudgetControlKPIxJobOrder(models.Model):
     _name = "budget.control.kpi.x.job.order"

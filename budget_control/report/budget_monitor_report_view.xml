@@ -70,26 +70,30 @@
                 <group expand="1" string="Group By">
                     <filter
                         string="Resource ID"
-                        name="res_id"
+                        name="group_by_res_id"
                         context="{'group_by':'res_id'}"
                     />
                     <filter
                         string="Analytic Group"
-                        name="analytic_group"
+                        name="group_by_analytic_group"
                         context="{'group_by':'analytic_group'}"
                     />
                     <filter
                         string="Analytic Account"
-                        name="analytic_account_id"
+                        name="group_by_analytic_account"
                         context="{'group_by':'analytic_account_id'}"
                     />
                     <filter
                         string="Reference"
-                        name="reference"
+                        name="group_by_reference"
                         context="{'group_by':'reference'}"
                     />
                     <separator orientation="vertical" />
-                    <filter string="Date" name="date" context="{'group_by':'date'}" />
+                    <filter
+                        string="Date"
+                        name="group_by_date"
+                        context="{'group_by':'date'}"
+                    />
                 </group>
             </search>
         </field>

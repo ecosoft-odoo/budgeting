@@ -425,6 +425,25 @@ class BudgetControl(models.Model):
             # Also reset the carry over budget
             plan.init_budget_commit = False
 
+    def _get_domain_budget_monitoring(self):
+        return [("analytic_account_id", "=", self.analytic_account_id.id)]
+
+    def _get_context_budget_monitoring(self):
+        ctx = {"search_default_group_by_analytic_account": 1}
+        return ctx
+
+    def action_view_monitoring(self):
+        ctx = self._get_context_budget_monitoring()
+        domain = self._get_domain_budget_monitoring()
+        return {
+            "name": _("Budget Monitoring"),
+            "res_model": "budget.monitor.report",
+            "view_mode": "pivot,tree,graph",
+            "domain": domain,
+            "context": ctx,
+            "type": "ir.actions.act_window",
+        }
+
     def _report_instance(self):
         self.ensure_one()
         budget_period = self.env["budget.period"].search(

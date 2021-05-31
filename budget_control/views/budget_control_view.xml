@@ -128,6 +128,15 @@
                         bg_color="bg-danger"
                         attrs="{'invisible': [('active', '=', True)]}"
                     />
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_monitoring"
+                            class="oe_stat_button"
+                            string="Monitoring"
+                            icon="fa-bar-chart-o"
+                            type="object"
+                        />
+                    </div>
                     <div class="oe_right" name="buttons">
                         <button
                             name="preview"

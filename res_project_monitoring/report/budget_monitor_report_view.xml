@@ -21,7 +21,7 @@
             ref="budget_control.view_budget_monitor_report_search"
         />
         <field name="arch" type="xml">
-            <xpath expr="//filter[@name='analytic_account_id']" position="after">
+            <xpath expr="//filter[@name='group_by_analytic_account']" position="after">
                 <filter
                     string="Parent Project"
                     name="parent_project"
