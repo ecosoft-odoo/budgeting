@@ -22,6 +22,18 @@
         <field name="arch" type="xml">
             <tree editable="bottom" create="0">
                 <field name="analytic_account_id" />
+                <field name="method_type" optional="show" />
+                <field
+                    name="date_extend"
+                    optional="show"
+                    attrs="{'invisible': [('method_type', '!=', 'extend')]}"
+                />
+                <field
+                    name="to_analytic_account_id"
+                    options="{'no_create': 1}"
+                    optional="show"
+                    attrs="{'invisible': [('method_type', '!=', 'new')]}"
+                />
                 <field name="document_number" optional="show" />
                 <field name="date_commit" />
                 <field name="amount_commit" sum="Total Commitment" />
@@ -90,6 +102,12 @@
                         type="object"
                         states="draft"
                     />
+                    <button
+                        type="object"
+                        name="action_prepare_new_analytic_available"
+                        string="Prepare carry forward analytic account"
+                        states="draft"
+                    />
                     <field
                         name="state"
                         widget="statusbar"
@@ -120,13 +138,6 @@
                     <notebook>
                         <page string="Available" name="available">
                             <div class="oe_read_only oe_right" name="buttons">
-                                <button
-                                    type="object"
-                                    name="action_prepare_new_analytic_available"
-                                    string="Prepare carry forward analytic account"
-                                    icon="fa-list-ul"
-                                    states="draft"
-                                />
                                 <button
                                     type="object"
                                     name="action_get_analytic_available"
