@@ -19,10 +19,13 @@ class BudgetControl(models.Model):
         )
         return ctx
 
+    def _get_kpis(self):
+        return self.kpi_ids
+
     def _update_consumed_value(self, item_ids, date):
         analytic_id = [self.analytic_account_id.id]
         budget_period = self.budget_period_id
-        all_kpi_ids = self.kpi_ids
+        all_kpi_ids = self._get_kpis()
         for item in item_ids:
             date_to = item.date_to
             if item.date_from <= date <= item.date_to:
