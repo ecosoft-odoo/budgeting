@@ -89,6 +89,11 @@ class BudgetDoclineMixin(models.AbstractModel):
         copy=False,
         readonly=False,  # Allow manual entry of this field
     )
+    auto_adjust_date_commit = fields.Boolean(
+        string="Auto Adjust Date Commit",
+        compute="_compute_auto_adjust_date_commit",
+        readonly=True,
+    )
 
     def _budget_model(self):
         return (
@@ -104,6 +109,13 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     def _valid_commit_state(self):
         raise ValidationError(_("No implementation error!"))
+
+    @api.depends(lambda self: [self._budget_analytic_field])
+    def _compute_auto_adjust_date_commit(self):
+        for docline in self:
+            docline.auto_adjust_date_commit = docline[
+                self._budget_analytic_field
+            ].auto_adjust_date_commit
 
     @api.depends()
     def _compute_can_commit(self):
