@@ -37,7 +37,10 @@ class BaseBudgetMove(models.AbstractModel):
         )
 
     def _get_move_commit(self, obj, obj_group):
-        return obj.filtered(lambda l: l.fund_id.id == obj_group["fund_id"][0])
+        move_commit = super()._get_move_commit(obj, obj_group)
+        return move_commit.filtered(
+            lambda l: l.fund_id.id == obj_group["fund_id"][0]
+        )
 
 
 class BudgetDoclineMixin(models.AbstractModel):

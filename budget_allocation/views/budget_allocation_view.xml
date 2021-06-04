@@ -149,6 +149,13 @@
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <button
+                            name="button_open_analytic"
+                            class="oe_stat_button"
+                            string="Analytic Account"
+                            icon="fa-file-text"
+                            type="object"
+                        />
+                        <button
                             name="button_open_allocation"
                             class="oe_stat_button"
                             string="Allocation"

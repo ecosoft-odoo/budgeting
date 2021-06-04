@@ -91,9 +91,33 @@ class BudgetAllocation(models.Model):
         plan_id.action_generate_plan()
         return plan_id
 
+    def _get_domain_open_analytic(self):
+        self.ensure_one()
+        return [
+            ("bm_date_to", ">=", self.budget_period_id.bm_date_from),
+            ("bm_date_from", "<=", self.budget_period_id.bm_date_to),
+        ]
+
     def _get_domain_open_allocation(self):
         self.ensure_one()
         return [("budget_allocation_id", "=", self.id)]
+
+    def button_open_analytic(self):
+        self.ensure_one()
+        domain = self._get_domain_open_analytic()
+        list_view = self.env.ref("budget_control.view_budget_analytic_list").id
+        form_view = self.env.ref(
+            "budget_control.view_account_analytic_account_form"
+        ).id
+        return {
+            "name": _("Analytic Accounts"),
+            "type": "ir.actions.act_window",
+            "res_model": "account.analytic.account",
+            "views": [[list_view, "list"], [form_view, "form"]],
+            "view_mode": "list",
+            "context": self.env.context,
+            "domain": domain,
+        }
 
     def button_open_allocation(self):
         self.ensure_one()

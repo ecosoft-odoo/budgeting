@@ -9,6 +9,43 @@ class BaseBudgetMove(models.AbstractModel):
     _inherit = ["analytic.dimension.line", "base.budget.move"]
     _analytic_tag_field_name = "analytic_tag_ids"
 
+    def _get_dimension_fields(self):
+        if self.env.context.get("update_custom_fields"):
+            return []  # Avoid to report these columns when not yet created
+        return [
+            x for x in self.fields_get().keys() if x.startswith("x_dimension_")
+        ]
+
+    def _get_fields_read_group(self):
+        fields = super()._get_fields_read_group()
+        fields.extend(self._get_dimension_fields())
+        return fields
+
+    def _get_groupby_read_group(self):
+        groupby = super()._get_fields_read_group()
+        groupby.extend(self._get_dimension_fields())
+        return groupby
+
+    def _get_ba_line_group(self, budget_allocation_lines, obj_group):
+        ba_line_group = super()._get_ba_line_group(
+            budget_allocation_lines, obj_group
+        )
+        dimensions = self._get_dimension_fields()
+        for x in dimensions:
+            ba_line_group = ba_line_group.filtered(
+                lambda l: l[x].id == obj_group[x][0]
+            )
+        return ba_line_group
+
+    def _get_move_commit(self, obj, obj_group):
+        move_commit = super()._get_move_commit(obj, obj_group)
+        dimensions = self._get_dimension_fields()
+        for x in dimensions:
+            move_commit = move_commit.filtered(
+                lambda l: l[x].id == obj_group[x][0]
+            )
+        return move_commit
+
 
 class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
