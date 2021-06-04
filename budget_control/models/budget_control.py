@@ -219,7 +219,6 @@ class BudgetControl(models.Model):
             <object of purchase_request_budget_move>,
         ]
         """
-        self.ensure_one()
         budget_move = []
         AccountBudgetMove = self.env["account.budget.move"]
         account_move = AccountBudgetMove.search(domain)

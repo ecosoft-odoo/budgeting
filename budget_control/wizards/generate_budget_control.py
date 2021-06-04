@@ -93,7 +93,8 @@ class GenerateBudgetControl(models.TransientModel):
             self.analytic_account_ids = AnalyticAccount.search(
                 [
                     ("group_id", "in", self.analytic_group_ids.ids),
-                    ("budget_period_id", "=", self.budget_period_id.id),
+                    ("bm_date_to", ">=", self.budget_period_id.bm_date_from),
+                    ("bm_date_from", "<=", self.budget_period_id.bm_date_to),
                 ]
             )
 
