@@ -57,9 +57,7 @@ class BudgetAllocation(models.Model):
     def _compute_total_amount(self):
         for rec in self:
             rec.total_amount = sum(
-                rec.allocation_line_ids.filtered("active").mapped(
-                    "budget_amount"
-                )
+                rec.allocation_line_ids.mapped("budget_amount")
             )
 
     def action_done(self):
@@ -122,6 +120,14 @@ class BudgetAllocationLine(models.Model):
         related="budget_allocation_id.budget_period_id",
         store=True,
     )
+    date_from = fields.Date(
+        related="budget_period_id.bm_date_from",
+        store=True,
+    )
+    date_to = fields.Date(
+        related="budget_period_id.bm_date_to",
+        store=True,
+    )
     budget_control_id = fields.Many2one(
         comodel_name="budget.control",
         readonly=True,
@@ -142,4 +148,3 @@ class BudgetAllocationLine(models.Model):
     currency_id = fields.Many2one(
         comodel_name="res.currency", related="company_id.currency_id"
     )
-    active = fields.Boolean(default=True)

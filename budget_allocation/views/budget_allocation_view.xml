@@ -4,10 +4,17 @@
         <field name="name">budget.allocation.line.view.tree</field>
         <field name="model">budget.allocation.line</field>
         <field name="arch" type="xml">
-            <tree string="Budget Allocation Line">
-                <field name="name" />
-                <field name="analytic_account_id" optional="show" />
-                <field name="budget_amount" optional="show" />
+            <tree string="Budget Allocation Line" editable="bottom">
+                <field name="budget_allocation_id" invisible="1" />
+                <field name="date_from" invisible="1" />
+                <field name="date_to" invisible="1" />
+                <field
+                    name="analytic_account_id"
+                    domain="[('bm_date_to', '&gt;=', date_from), ('bm_date_from', '&lt;=', date_to)]"
+                    options="{'no_create': 1}"
+                />
+                <field name="name" optional="show" />
+                <field name="budget_amount" sum="Total Amount" />
                 <field
                     name="company_id"
                     optional="show"
@@ -18,7 +25,6 @@
                     optional="show"
                     groups="base.group_multi_currency"
                 />
-                <field name="active" optional="hide" />
             </tree>
         </field>
     </record>
@@ -31,11 +37,6 @@
                     name="name"
                     string="Allocation"
                     filter_domain="['|', ('name', 'ilike', self), ('analytic_account_id', 'ilike', self)]"
-                />
-                <filter
-                    name="inactive"
-                    string="Archived"
-                    domain="[('active', '=', False)]"
                 />
                 <group string="Group By" name="groupby" expand="1">
                     <filter
@@ -179,24 +180,7 @@
                     </group>
                     <notebook>
                         <page name="allocation" string="Allocation">
-                            <field name="allocation_line_ids">
-                                <tree editable="bottom">
-                                    <field name="budget_allocation_id" invisible="1" />
-                                    <field name="budget_period_id" invisible="1" />
-                                    <field
-                                        name="analytic_account_id"
-                                        domain="[('budget_period_id', '=', budget_period_id)]"
-                                        options="{'no_create': 1}"
-                                    />
-                                    <field name="name" optional="show" />
-                                    <field name="budget_amount" sum="Total Amount" />
-                                    <field
-                                        name="active"
-                                        widget="boolean_toggle"
-                                        optional="show"
-                                    />
-                                </tree>
-                            </field>
+                            <field name="allocation_line_ids" />
                         </page>
                     </notebook>
                 </sheet>

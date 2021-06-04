@@ -8,13 +8,8 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     def action_post(self):
+        """ Check commitment From Budget Allocation """
         res = super().action_post()
-        self.flush()
-        for move in self._filtered_move_check_budget():
-            move.line_ids.check_allocation_constraint()
+        for doc in self:
+            doc.budget_move_ids.check_budget_constraint(doc.invoice_line_ids)
         return res
-
-
-class AccountMoveLine(models.Model):
-    _inherit = "account.move.line"
-    _amount_balance_field = "balance"

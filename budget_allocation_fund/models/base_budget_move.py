@@ -18,6 +18,27 @@ class BaseBudgetMove(models.AbstractModel):
         index=True,
     )
 
+    def _get_fields_read_group(self):
+        fields = super()._get_fields_read_group()
+        fields.append("fund_id")
+        return fields
+
+    def _get_groupby_read_group(self):
+        groupby = super()._get_fields_read_group()
+        groupby.append("fund_id")
+        return groupby
+
+    def _get_ba_line_group(self, budget_allocation_lines, obj_group):
+        ba_line_group = super()._get_ba_line_group(
+            budget_allocation_lines, obj_group
+        )
+        return ba_line_group.filtered(
+            lambda l: l.fund_id.id == obj_group["fund_id"][0]
+        )
+
+    def _get_move_commit(self, obj, obj_group):
+        return obj.filtered(lambda l: l.fund_id.id == obj_group["fund_id"][0])
+
 
 class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
