@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_source_fund_monitor_report_search" model="ir.ui.view">
+        <field name="name">source.fund.monitor.report.search</field>
+        <field name="model">source.fund.monitor.report</field>
+        <field
+            name="inherit_id"
+            ref="budget_source_fund.view_source_fund_monitor_report_search"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//search/separator" position="after">
+                <filter
+                    name="current_period"
+                    string="Current Period"
+                    domain="[('date_to', '&gt;=', context_today().strftime('%Y-%m-%d')), ('date_from', '&lt;=', context_today().strftime('%Y-%m-%d'))]"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record
+        id="budget_source_fund.action_source_fund_monitor_report_all"
+        model="ir.actions.act_window"
+    >
+        <field name="context">{
+            'group_by':[],
+            'group_by_no_leaf':1,
+            'search_default_current_period': 1,
+        }</field>
+    </record>
+</odoo>
