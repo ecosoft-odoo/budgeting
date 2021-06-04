@@ -5,7 +5,7 @@
         <field name="name">budget.allocation.line.view.tree</field>
         <field name="model">budget.allocation.line</field>
         <field name="arch" type="xml">
-            <tree string="Budget Allocation Line" editable="bottom" create="0" edit="0">
+            <tree string="Budget Allocation Line" editable="bottom">
                 <field name="budget_allocation_id" invisible="1" />
                 <field name="date_from" invisible="1" />
                 <field name="date_to" invisible="1" />
@@ -26,6 +26,7 @@
                     optional="show"
                     groups="base.group_multi_currency"
                 />
+                <field name="active" invisible="1" />
             </tree>
         </field>
     </record>

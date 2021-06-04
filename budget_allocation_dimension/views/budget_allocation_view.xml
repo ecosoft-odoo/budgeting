@@ -9,10 +9,12 @@
         />
         <field name="arch" type="xml">
             <xpath expr="//tree/field[@name='analytic_account_id']" position="after">
+                <field name="domain_tag_ids" invisible="1" />
                 <field
                     name="analytic_tag_ids"
                     widget="many2many_tags"
                     options="{'no_create': True}"
+                    domain="['|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
                     groups="analytic.group_analytic_tags"
                 />
             </xpath>

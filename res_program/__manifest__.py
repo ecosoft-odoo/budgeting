@@ -9,7 +9,7 @@
     "category": "Accounting",
     "website": "https://github.com/OCA/account-budgeting",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "depends": ["budget_source_fund"],
+    "depends": ["budget_control"],
     "data": [
         "security/ir.model.access.csv",
         "data/program_data.xml",

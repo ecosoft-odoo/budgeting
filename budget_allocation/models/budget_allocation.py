@@ -27,6 +27,7 @@ class BudgetAllocation(models.Model):
         comodel_name="budget.allocation.line",
         inverse_name="budget_allocation_id",
         readonly=True,
+        context={"active_test": False},
         states={"draft": [("readonly", "=", False)]},
     )
     plan_id = fields.Many2one(comodel_name="budget.plan", copy=False)
@@ -90,14 +91,22 @@ class BudgetAllocation(models.Model):
         plan_id.action_generate_plan()
         return plan_id
 
+    def _get_domain_open_allocation(self):
+        self.ensure_one()
+        return [("budget_allocation_id", "=", self.id)]
+
     def button_open_allocation(self):
         self.ensure_one()
+        context = self.env.context.copy()
+        context["active_test"] = False
+        domain = self._get_domain_open_allocation()
         return {
             "name": _("Budget Allocation Line"),
             "type": "ir.actions.act_window",
             "res_model": "budget.allocation.line",
             "view_mode": "tree",
-            "context": self.env.context,
+            "context": context,
+            "domain": domain,
         }
 
     def button_open_budget_plan(self):
@@ -158,3 +167,4 @@ class BudgetAllocationLine(models.Model):
     currency_id = fields.Many2one(
         comodel_name="res.currency", related="company_id.currency_id"
     )
+    active = fields.Boolean(related="budget_allocation_id.active")

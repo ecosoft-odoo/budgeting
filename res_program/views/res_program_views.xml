@@ -69,8 +69,14 @@
         </field>
     </record>
     <menuitem
+        id="res_program_main_menu"
+        parent="budget_control.budget_config_menu"
+        name="Program"
+        sequence="20"
+    />
+    <menuitem
         id="res_program_menu"
-        parent="budget_source_fund.budget_source_of_fund_menu"
+        parent="res_program.res_program_main_menu"
         name="Program"
         action="res_program_action"
         sequence="70"
