@@ -90,6 +90,16 @@ class BudgetAllocation(models.Model):
         plan_id.action_generate_plan()
         return plan_id
 
+    def button_open_allocation(self):
+        self.ensure_one()
+        return {
+            "name": _("Budget Allocation Line"),
+            "type": "ir.actions.act_window",
+            "res_model": "budget.allocation.line",
+            "view_mode": "tree",
+            "context": self.env.context,
+        }
+
     def button_open_budget_plan(self):
         self.ensure_one()
         return {

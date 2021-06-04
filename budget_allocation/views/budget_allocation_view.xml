@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
+    <!-- Budget Allocation Line -->
     <record id="budget_allocation_line_view_tree" model="ir.ui.view">
         <field name="name">budget.allocation.line.view.tree</field>
         <field name="model">budget.allocation.line</field>
         <field name="arch" type="xml">
-            <tree string="Budget Allocation Line" editable="bottom">
+            <tree string="Budget Allocation Line" editable="bottom" create="0" edit="0">
                 <field name="budget_allocation_id" invisible="1" />
                 <field name="date_from" invisible="1" />
                 <field name="date_to" invisible="1" />
@@ -54,6 +55,13 @@
             </search>
         </field>
     </record>
+    <record id="budget_allocation_line_action" model="ir.actions.act_window">
+        <field name="name">Budget Allocation Line</field>
+        <field name="res_model">budget.allocation.line</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Budget Allocation -->
     <record id="budget_allocation_view_tree" model="ir.ui.view">
         <field name="name">budget.allocation.view.tree</field>
         <field name="model">budget.allocation</field>
@@ -139,6 +147,13 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
+                        <button
+                            name="button_open_allocation"
+                            class="oe_stat_button"
+                            string="Allocation"
+                            icon="fa-bar-chart-o"
+                            type="object"
+                        />
                         <button
                             name="button_open_budget_plan"
                             string="Budget Plan"

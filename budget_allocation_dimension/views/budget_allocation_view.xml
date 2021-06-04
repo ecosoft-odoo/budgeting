@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <record id="budget_allocation_view_form" model="ir.ui.view">
-        <field name="name">budget.allocation.view.form</field>
-        <field name="model">budget.allocation</field>
-        <field name="inherit_id" ref="budget_allocation.budget_allocation_view_form" />
+    <record id="budget_allocation_line_view_tree" model="ir.ui.view">
+        <field name="name">budget.allocation.line.view.tree</field>
+        <field name="model">budget.allocation.line</field>
+        <field
+            name="inherit_id"
+            ref="budget_allocation.budget_allocation_line_view_tree"
+        />
         <field name="arch" type="xml">
-            <xpath
-                expr="//field[@name='allocation_line_ids']/tree/field[@name='analytic_account_id']"
-                position="after"
-            >
+            <xpath expr="//tree/field[@name='analytic_account_id']" position="after">
                 <field
                     name="analytic_tag_ids"
                     widget="many2many_tags"

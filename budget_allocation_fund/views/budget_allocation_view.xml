@@ -14,4 +14,26 @@
             </xpath>
         </field>
     </record>
+    <record id="budget_allocation_line_view_search" model="ir.ui.view">
+        <field name="name">budget.allocation.line.view.search</field>
+        <field name="model">budget.allocation.line</field>
+        <field
+            name="inherit_id"
+            ref="budget_allocation.budget_allocation_line_view_search"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//search/group[@name='groupby']" position="inside">
+                <filter
+                    name="groupby_fund_group_id"
+                    string="Fund Group"
+                    context="{'group_by': 'fund_group_id'}"
+                />
+                <filter
+                    name="groupby_fund_id"
+                    string="Fund"
+                    context="{'group_by': 'fund_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
 </odoo>

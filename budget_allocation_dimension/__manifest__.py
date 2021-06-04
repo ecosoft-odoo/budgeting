@@ -10,10 +10,11 @@
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
     "depends": [
-        "analytic_tag_dimension",
+        "analytic_tag_dimension_enhanced",
         "budget_allocation",
     ],
     "data": [
+        "views/analytic_view.xml",
         "views/account_move_view.xml",
         "views/budget_allocation_view.xml",
         "views/budget_control_view.xml",
