@@ -8,7 +8,6 @@ class PurchaseOrderLine(models.Model):
     _name = "purchase.order.line"
     _inherit = ["analytic.dimension.line", "purchase.order.line"]
     _analytic_tag_field_name = "analytic_tag_ids"
-    _amount_balance_field = "price_total"
 
     # Trigger analytic
     @api.depends("account_analytic_id")
