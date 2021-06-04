@@ -49,7 +49,6 @@ class BaseBudgetMove(models.AbstractModel):
 
 class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
-    _amount_balance_field = False
 
     analytic_tag_all = fields.Many2many(
         comodel_name="account.analytic.tag",

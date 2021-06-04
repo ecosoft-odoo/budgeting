@@ -186,7 +186,7 @@
         parent="budget_activity.budget_activity_menu"
         name="Budget Activity"
         action="budget_activity_action"
-        sequence="20"
+        sequence="30"
     />
     <menuitem
         id="budget_budget_activity_tag_menu"

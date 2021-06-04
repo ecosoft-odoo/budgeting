@@ -6,7 +6,6 @@ from odoo import api, models
 
 class PurchaseRequestLine(models.Model):
     _inherit = "purchase.request.line"
-    _amount_balance_field = "estimated_cost"
 
     # Trigger analytic
     @api.depends("analytic_account_id")

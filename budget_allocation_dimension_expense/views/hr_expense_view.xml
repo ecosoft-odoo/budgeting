@@ -12,14 +12,6 @@
                 <field name="domain_tag_ids" invisible="1" />
                 <field name="analytic_tag_all" invisible="1" />
             </xpath>
-            <xpath
-                expr="/form/sheet/group/group/field['analytic_tag_ids']"
-                position="attributes"
-            >
-                <attribute
-                    name="domain"
-                >['|', ('analytic_dimension_id.by_sequence', '=', False), ('id', 'in', analytic_tag_all and domain_tag_ids or [])]</attribute>
-            </xpath>
         </field>
     </record>
     <record id="view_hr_expense_sheet_form" model="ir.ui.view">
@@ -40,7 +32,7 @@
             >
                 <attribute
                     name="domain"
-                >['|', ('analytic_dimension_id.by_sequence', '=', False), ('id', 'in', analytic_tag_all and domain_tag_ids or [])]</attribute>
+                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
             </xpath>
         </field>
     </record>
