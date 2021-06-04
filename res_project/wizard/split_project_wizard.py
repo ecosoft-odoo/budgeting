@@ -9,13 +9,23 @@ class SplitProjectWizard(models.TransientModel):
     _description = "Split Project Wizard"
 
     parent_project = fields.Char(readonly=True)
+    project_manager_id = fields.Many2one(
+        comodel_name="hr.employee",
+        string="Project Manager",
+        readonly=True,
+    )
     department_id = fields.Many2one(
-        string="Department",
         comodel_name="hr.department",
+        string="Department",
         readonly=True,
     )
     date_from = fields.Date(string="Project Start", readonly=True)
     date_to = fields.Date(string="Project End", readonly=True)
+    member_ids = fields.Many2many(
+        comodel_name="hr.employee",
+        string="Member",
+        readonly=True,
+    )
     line_ids = fields.One2many(
         string="Lines",
         comodel_name="split.project.wizard.line",
@@ -25,15 +35,22 @@ class SplitProjectWizard(models.TransientModel):
     def split_project(self):
         self.ensure_one()
         ResProject = self.env["res.project"]
+        parent_project = ResProject.search(
+            [
+                ("name", "=", self.parent_project),
+                ("active", "in", [True, False]),
+            ]
+        )
+        ctx = self._context.copy()
+        ctx.update(
+            {"split_project": True, "parent_project": parent_project.ids}
+        )
+        # Archive parent project record
+        if parent_project:
+            parent_project.action_archive()
         # Create new project record
         vals = [line._prepare_project_val() for line in self.line_ids]
-        projects = ResProject.create(vals)
-        # Delete parent project record
-        parent_project = ResProject.search(
-            [("name", "=", self.parent_project)]
-        )
-        if parent_project:
-            parent_project.unlink()
+        projects = ResProject.with_context(ctx).create(vals)
         return {
             "name": _("Project"),
             "type": "ir.actions.act_window",
@@ -53,11 +70,14 @@ class SplitProjectWizardLine(models.TransientModel):
 
     def _prepare_project_val(self):
         self.ensure_one()
+        wizard = self.wizard_id
         return {
             "name": self.project_name,
-            "parent_project": self.wizard_id.parent_project,
-            "date_from": self.wizard_id.date_from,
-            "date_to": self.wizard_id.date_to,
-            "department_id": self.wizard_id.department_id.id,
+            "parent_project": wizard.parent_project,
+            "date_from": wizard.date_from,
+            "date_to": wizard.date_to,
+            "project_manager_id": wizard.project_manager_id.id,
+            "department_id": wizard.department_id.id,
             "company_id": self.env.company.id,
+            "member_ids": [(6, 0, wizard.member_ids.ids)],
         }
