@@ -135,7 +135,9 @@ class ResProject(models.Model):
                 "default_parent_project": project.parent_project,
                 "default_date_from": project.date_from,
                 "default_date_to": project.date_to,
+                "default_project_manager_id": project.project_manager_id.id,
                 "default_department_id": project.department_id.id,
+                "default_member_ids": [(6, 0, project.member_ids.ids)],
             },
         }
 
