@@ -55,21 +55,10 @@ class BudgetTransferItem(models.Model):
                 continue
             doc.target_fund_id = len(fund_ids) == 1 and fund_ids.id or False
 
-    def transfer(self):
-        res = super().transfer()
-        for transfer in self:
-            source_line = (
-                transfer.source_budget_control_id.allocation_line_ids.filtered(
-                    lambda l: l.fund_id == transfer.source_fund_id
-                )
-            )
-            target_line = (
-                transfer.target_budget_control_id.allocation_line_ids.filtered(
-                    lambda l: l.fund_id == transfer.target_fund_id
-                )
-            )
-            if not (source_line and target_line):
-                raise UserError(_("Invalid source of fund!"))
-            source_line[0].budget_amount -= transfer.amount
-            target_line[0].budget_amount += transfer.amount
-        return res
+    def _get_domain_source_allocation_line(self):
+        res = super()._get_domain_source_allocation_line()
+        return res + [("fund_id", "=", self.source_fund_id.id)]
+
+    def _get_domain_target_allocation_line(self):
+        res = super()._get_domain_target_allocation_line()
+        return res + [("fund_id", "=", self.target_fund_id.id)]

@@ -160,7 +160,7 @@ class BudgetTransferItem(models.Model):
             ):
                 continue
             doc.source_analytic_tag_ids = (
-                len(analytic_tag_ids) == 1 and analytic_tag_ids or False
+                len(analytic_tag_ids) == len(dimension_fields) and analytic_tag_ids or False
             )
 
     @api.depends("target_budget_control_id")
@@ -179,40 +179,17 @@ class BudgetTransferItem(models.Model):
             ):
                 continue
             doc.target_analytic_tag_ids = (
-                len(analytic_tag_ids) == 1 and analytic_tag_ids or False
+                len(analytic_tag_ids) == len(dimension_fields) and analytic_tag_ids or False
             )
 
-    def _get_budget_allocation_line(self):
-        """ bypass permission admin for find budget allocation line """
-        source_line = (
-            self.source_budget_control_id.sudo().allocation_line_ids.filtered(
-                lambda l: l.analytic_tag_ids == self.source_analytic_tag_ids
-            )
-        )
-        target_line = (
-            self.target_budget_control_id.sudo().allocation_line_ids.filtered(
-                lambda l: l.analytic_tag_ids == self.target_analytic_tag_ids
-            )
-        )
-        return source_line, target_line
+    def _get_domain_source_allocation_line(self):
+        res = super()._get_domain_source_allocation_line()
+        dimension_fields = self._get_dimension_fields()
+        tags_list = [(dimension_field, "in", self.source_analytic_tag_ids.ids) for dimension_field in dimension_fields]
+        return res + tags_list
 
-    def _check_constraint_transfer(self):
-        super()._check_constraint_transfer()
-        source_line, target_line = self._get_budget_allocation_line()
-        if not (source_line and target_line):
-            raise UserError(_("Invalid analytic tags!"))
-
-    def transfer(self):
-        res = super().transfer()
-        for transfer in self:
-            source_line, target_line = transfer._get_budget_allocation_line()
-            transfer_amount = transfer.amount
-            # Transfer amount more than budget allocation per line
-            for ba_line in source_line:
-                if ba_line.budget_amount < transfer.amount:
-                    transfer_amount -= ba_line.budget_amount
-                    ba_line.budget_amount = 0.0
-                else:
-                    ba_line.budget_amount -= transfer_amount
-            target_line[0].budget_amount += transfer.amount
-        return res
+    def _get_domain_target_allocation_line(self):
+        res = super()._get_domain_target_allocation_line()
+        dimension_fields = self._get_dimension_fields()
+        tags_list = [(dimension_field, "in", self.target_analytic_tag_ids.ids) for dimension_field in dimension_fields]
+        return res + tags_list
