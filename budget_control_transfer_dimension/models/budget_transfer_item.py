@@ -183,13 +183,14 @@ class BudgetTransferItem(models.Model):
             )
 
     def _get_budget_allocation_line(self):
+        """ bypass permission admin for find budget allocation line """
         source_line = (
-            self.source_budget_control_id.allocation_line_ids.filtered(
+            self.source_budget_control_id.sudo().allocation_line_ids.filtered(
                 lambda l: l.analytic_tag_ids == self.source_analytic_tag_ids
             )
         )
         target_line = (
-            self.target_budget_control_id.allocation_line_ids.filtered(
+            self.target_budget_control_id.sudo().allocation_line_ids.filtered(
                 lambda l: l.analytic_tag_ids == self.target_analytic_tag_ids
             )
         )
@@ -205,6 +206,13 @@ class BudgetTransferItem(models.Model):
         res = super().transfer()
         for transfer in self:
             source_line, target_line = transfer._get_budget_allocation_line()
-            source_line[0].budget_amount -= transfer.amount
+            transfer_amount = transfer.amount
+            # Transfer amount more than budget allocation per line
+            for ba_line in source_line:
+                if ba_line.budget_amount < transfer.amount:
+                    transfer_amount -= ba_line.budget_amount
+                    ba_line.budget_amount = 0.0
+                else:
+                    ba_line.budget_amount -= transfer_amount
             target_line[0].budget_amount += transfer.amount
         return res
