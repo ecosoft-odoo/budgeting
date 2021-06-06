@@ -76,5 +76,7 @@ class BudgetDoclineMixin(models.AbstractModel):
             ):
                 continue
             doc.analytic_tag_ids = (
-                len(analytic_tag_ids) == 1 and analytic_tag_ids or False
+                len(analytic_tag_ids) == len(dimension_fields)
+                and analytic_tag_ids
+                or False
             )
