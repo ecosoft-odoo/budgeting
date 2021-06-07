@@ -51,7 +51,6 @@
             <xpath expr="//group[@name='main']/group[2]" position="inside">
                 <field name="auto_adjust_date_commit" />
                 <field name="initial_balance" />
-                <field name="carry_forward_balance" />
             </xpath>
         </field>
     </record>

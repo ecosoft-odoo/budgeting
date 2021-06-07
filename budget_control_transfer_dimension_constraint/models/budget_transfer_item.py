@@ -27,7 +27,7 @@ class BudgetTransferItem(models.Model):
                 source_analytic_tag.analytic_tag_constraint_ids
             )
             can_transfer = tags.filtered(
-                lambda l: l.id == cross_transfer_constraint.id
+                lambda l: l.id in cross_transfer_constraint.ids
             )
             if can_transfer:
                 continue
