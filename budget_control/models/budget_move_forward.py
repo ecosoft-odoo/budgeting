@@ -106,6 +106,26 @@ class BudgetMoveForward(models.Model):
     def _onchange_method_type(self):
         self.forward_accumulate_ids._onchange_reset_method_type()
 
+    @api.constrains("to_budget_id", "state")
+    def check_to_budget_already(self):
+        """ Carry Forward can do 1 time / budget period """
+        MoveForward = self.env["budget.move.forward"]
+        for rec in self:
+            forward_id = MoveForward.search(
+                [
+                    ("to_budget_id", "=", rec.to_budget_id.id),
+                    ("state", "=", "done"),
+                ]
+            )
+            if len(forward_id) > 1:
+                raise UserError(
+                    _(
+                        "{} carry forward already.".format(
+                            rec.to_budget_id.name
+                        )
+                    )
+                )
+
     @api.model
     def _get_budget_period(self):
         budget_period = self.env["budget.period"]._get_eligible_budget_period()
@@ -175,14 +195,11 @@ class BudgetMoveForward(models.Model):
 
     def _prepare_vals_forward_accumulate(self, analytic):
         self.ensure_one()
-        amount_balance = (
-            analytic.amount_balance - analytic.carry_forward_balance
-        )
         return {
             "forward_id": self.id,
             "analytic_account_id": analytic.id,
             "method_type": self.method_type,
-            "amount_balance": amount_balance,
+            "amount_balance": analytic.amount_balance,
             "amount_carry_forward": 0.0,
             "amount_accumulate": 0.0,
         }
@@ -211,8 +228,7 @@ class BudgetMoveForward(models.Model):
                 ]
             )
             analytics_available = analytics.filtered(
-                lambda l: l.amount_balance > 0.0
-                and l.amount_balance - l.carry_forward_balance > 0.0
+                lambda l: l.amount_balance > 0.0 and l.amount_balance > 0.0
             )
             vals = [
                 rec._prepare_vals_forward_accumulate(analytic)
@@ -250,10 +266,6 @@ class BudgetMoveForward(models.Model):
                 {
                     "initial_balance": amount_accumulate,
                 }
-            )
-            # Update Carry Forward Balance
-            line.analytic_account_id.carry_forward_balance += (
-                line.amount_carry_forward + line.amount_accumulate
             )
 
     def action_budget_carry_forward(self):
@@ -301,6 +313,7 @@ class BudgetMoveForward(models.Model):
                             "date": rec.date_budget_move,
                         }
                     )
+                    next_analytic.initial_balance += line.amount_commit
                     rec._hooks_document_carry_forward(docline)
         self.write({"state": "done"})
 

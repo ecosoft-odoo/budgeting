@@ -13,11 +13,12 @@
                 position="after"
             >
                 <field name="source_analytic_tag_all" invisible="1" />
+                <field name="source_domain_tag_ids" invisible="1" />
                 <field
                     name="source_analytic_tag_ids"
                     widget="many2many_tags"
                     options="{'no_create': True, 'no_open': True}"
-                    domain="[('id', 'in', source_analytic_tag_all)]"
+                    domain="[('id', 'in', source_analytic_tag_all or []), '|', ('id', 'in', source_domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
                 />
             </xpath>
             <xpath
@@ -25,11 +26,12 @@
                 position="after"
             >
                 <field name="target_analytic_tag_all" invisible="1" />
+                <field name="target_domain_tag_ids" invisible="1" />
                 <field
                     name="target_analytic_tag_ids"
                     widget="many2many_tags"
                     options="{'no_create': True, 'no_open': True}"
-                    domain="[('id', 'in', target_analytic_tag_all)]"
+                    domain="[('id', 'in', target_analytic_tag_all or []), '|', ('id', 'in', target_domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
                 />
             </xpath>
         </field>

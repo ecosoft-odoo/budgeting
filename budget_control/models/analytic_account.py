@@ -55,11 +55,6 @@ class AccountAnalyticAccount(models.Model):
         compute="_compute_amount_budget_info",
         help="Available = Total Budget - Consumed",
     )
-    carry_forward_balance = fields.Monetary(
-        string="Carry Forward Balance",
-        copy=False,
-        help="Amount Balance after carry forward",
-    )
     initial_balance = fields.Monetary(
         string="Initial Balance",
         copy=False,

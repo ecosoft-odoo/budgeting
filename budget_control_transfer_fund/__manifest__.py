@@ -9,7 +9,7 @@
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
-    "depends": ["budget_allocation_fund", "budget_control_transfer"],
+    "depends": ["budget_allocation_fund", "budget_allocation_transfer"],
     "data": [
         "views/budget_transfer_item_view.xml",
     ],
