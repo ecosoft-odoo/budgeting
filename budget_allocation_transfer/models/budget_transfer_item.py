@@ -16,23 +16,25 @@ class BudgetTransferItem(models.Model):
 
     def _get_budget_allocation_line(self):
         """ bypass permission admin for find budget allocation line """
-        source_lines = (
-            self.source_budget_control_id.sudo().allocation_line_ids.filtered_domain(
-                self._get_domain_source_allocation_line()
-            )
+        source_ba_line = (
+            self.source_budget_control_id.sudo().allocation_line_ids
         )
-        target_lines = (
-            self.target_budget_control_id.sudo().allocation_line_ids.filtered_domain(
-                self._get_domain_target_allocation_line()
-            )
+        target_ba_line = (
+            self.target_budget_control_id.sudo().allocation_line_ids
+        )
+        source_lines = source_ba_line.filtered_domain(
+            self._get_domain_source_allocation_line()
+        )
+        target_lines = target_ba_line.filtered_domain(
+            self._get_domain_target_allocation_line()
         )
         return source_lines, target_lines
-    
+
     def _check_constraint_transfer(self):
         super()._check_constraint_transfer()
         source_lines, target_lines = self._get_budget_allocation_line()
         if not (source_lines and target_lines):
-            raise UserError(_("Budget allocation lines with conditions not found!"))
+            raise UserError(_("Not found budget allocation lines!"))
 
     def transfer(self):
         res = super().transfer()
@@ -40,11 +42,13 @@ class BudgetTransferItem(models.Model):
             source_lines, target_lines = transfer._get_budget_allocation_line()
             transfer_amount = transfer.amount
             # Transfer amount more than budget allocation per line
-            for ba_line in source_lines:
+            for i, ba_line in enumerate(source_lines):
                 if ba_line.budget_amount < transfer.amount:
                     transfer_amount -= ba_line.budget_amount
-                    ba_line.budget_amount = 0.0
+                    ba_line.budget_amount -= transfer.amount
                 else:
                     ba_line.budget_amount -= transfer_amount
+                if i > 0:
+                    source_lines[i - 1] = 0.0
             target_lines[0].budget_amount += transfer.amount
         return res

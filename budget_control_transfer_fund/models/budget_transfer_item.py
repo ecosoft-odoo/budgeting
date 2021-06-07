@@ -12,6 +12,7 @@ class BudgetTransferItem(models.Model):
         comodel_name="budget.source.fund",
         string="Source Fund",
         ondelete="restrict",
+        required=True,
     )
     source_fund_all = fields.Many2many(
         comodel_name="budget.source.fund",
@@ -22,6 +23,7 @@ class BudgetTransferItem(models.Model):
         comodel_name="budget.source.fund",
         string="Target Fund",
         ondelete="restrict",
+        required=True,
     )
     target_fund_all = fields.Many2many(
         comodel_name="budget.source.fund",
@@ -62,3 +64,18 @@ class BudgetTransferItem(models.Model):
     def _get_domain_target_allocation_line(self):
         res = super()._get_domain_target_allocation_line()
         return res + [("fund_id", "=", self.target_fund_id.id)]
+
+    def _check_constraint_transfer(self):
+        super()._check_constraint_transfer()
+        source_lines, target_lines = self._get_budget_allocation_line()
+        source_line_amount = sum(source_lines.mapped("budget_amount"))
+        if source_line_amount < self.amount:
+            raise UserError(
+                _(
+                    "{} Fund {} can transfer amount not be exceeded {:,.2f}".format(
+                        self.source_budget_control_id.name,
+                        self.source_fund_id.name,
+                        source_line_amount,
+                    )
+                )
+            )

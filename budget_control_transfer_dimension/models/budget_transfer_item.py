@@ -137,18 +137,11 @@ class BudgetTransferItem(models.Model):
         domain = [("id", "in", tag_ids)]
         return {"domain": {analytic_tag_field_name: domain}}
 
-    def _get_dimension_fields(self):
-        if self.env.context.get("update_custom_fields"):
-            return []  # Avoid to report these columns when not yet created
-        return [
-            x for x in self.fields_get().keys() if x.startswith("x_dimension_")
-        ]
-
     @api.depends("source_budget_control_id")
     def _compute_source_analytic_tag_all(self):
         for doc in self:
-            dimension_fields = doc._get_dimension_fields()
             analytic_tag_ids = doc.source_budget_control_id.analytic_tag_ids
+            dimension_fields = analytic_tag_ids.mapped("analytic_dimension_id")
             doc.source_analytic_tag_all = analytic_tag_ids
             if (
                 len(analytic_tag_ids) != len(dimension_fields)
@@ -160,14 +153,16 @@ class BudgetTransferItem(models.Model):
             ):
                 continue
             doc.source_analytic_tag_ids = (
-                len(analytic_tag_ids) == len(dimension_fields) and analytic_tag_ids or False
+                len(analytic_tag_ids) == len(dimension_fields)
+                and analytic_tag_ids
+                or False
             )
 
     @api.depends("target_budget_control_id")
     def _compute_target_analytic_tag_all(self):
         for doc in self:
-            dimension_fields = doc._get_dimension_fields()
             analytic_tag_ids = doc.target_budget_control_id.analytic_tag_ids
+            dimension_fields = analytic_tag_ids.mapped("analytic_dimension_id")
             doc.target_analytic_tag_all = analytic_tag_ids
             if (
                 len(analytic_tag_ids) != len(dimension_fields)
@@ -179,17 +174,55 @@ class BudgetTransferItem(models.Model):
             ):
                 continue
             doc.target_analytic_tag_ids = (
-                len(analytic_tag_ids) == len(dimension_fields) and analytic_tag_ids or False
+                len(analytic_tag_ids) == len(dimension_fields)
+                and analytic_tag_ids
+                or False
             )
 
     def _get_domain_source_allocation_line(self):
         res = super()._get_domain_source_allocation_line()
-        dimension_fields = self._get_dimension_fields()
-        tags_list = [(dimension_field, "in", self.source_analytic_tag_ids.ids) for dimension_field in dimension_fields]
+        source_analytic_tag = self.source_analytic_tag_ids
+        dimensions = source_analytic_tag.mapped("analytic_dimension_id")
+        tags_list = [
+            (
+                dimension.get_field_name(dimension.code),
+                "=",
+                source_analytic_tag.filtered(
+                    lambda l: l.analytic_dimension_id == dimension
+                ).id,
+            )
+            for dimension in dimensions
+        ]
         return res + tags_list
 
     def _get_domain_target_allocation_line(self):
         res = super()._get_domain_target_allocation_line()
-        dimension_fields = self._get_dimension_fields()
-        tags_list = [(dimension_field, "in", self.target_analytic_tag_ids.ids) for dimension_field in dimension_fields]
+        target_analytic_tag = self.target_analytic_tag_ids
+        dimensions = target_analytic_tag.mapped("analytic_dimension_id")
+        tags_list = [
+            (
+                dimension.get_field_name(dimension.code),
+                "=",
+                target_analytic_tag.filtered(
+                    lambda l: l.analytic_dimension_id == dimension
+                ).id,
+            )
+            for dimension in dimensions
+        ]
         return res + tags_list
+
+    def _check_constraint_transfer(self):
+        super()._check_constraint_transfer()
+        source_lines, target_lines = self._get_budget_allocation_line()
+        # Filtered with dimension,
+        # for case user not selected analytic tag on budget transfer.
+        source_line = source_lines.mapped("analytic_tag_ids").filtered(
+            lambda l: l.id in self.source_analytic_tag_ids.ids
+        )
+        target_line = target_lines.mapped("analytic_tag_ids").filtered(
+            lambda l: l.id in self.target_analytic_tag_ids.ids
+        )
+        if not (source_line and target_line):
+            raise UserError(
+                _("Source / Target Analytic Tags is not selected.")
+            )
