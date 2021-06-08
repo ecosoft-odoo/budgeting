@@ -7,7 +7,7 @@
         <field name="priority">20</field>
         <field name="arch" type="xml">
             <notebook position="inside">
-                <page string="Purchase">
+                <page string="Purchase Order">
                     <div class="oe_read_only oe_right" name="buttons">
                         <button
                             type="object"
