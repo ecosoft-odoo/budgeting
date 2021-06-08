@@ -12,7 +12,7 @@ class HRExpense(models.Model):
         for expense in self:
             fund_dict = {"fund_id": expense.fund_id.id}
             for ml in move_line_values_by_expense[expense.id]:
-                if ml.get("product_id"):
+                if ml.get("product_id", False):
                     ml.update(fund_dict)
         return move_line_values_by_expense
 
