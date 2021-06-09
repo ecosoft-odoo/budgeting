@@ -225,6 +225,8 @@ class BudgetPlanLine(models.Model):
     budget_period_id = fields.Many2one(
         comodel_name="budget.period", related="plan_id.budget_period_id"
     )
+    date_from = fields.Date(related="plan_id.date_from")
+    date_to = fields.Date(related="plan_id.date_to")
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
         required=True,

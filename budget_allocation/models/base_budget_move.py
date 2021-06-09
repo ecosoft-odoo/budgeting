@@ -75,7 +75,7 @@ class BaseBudgetMove(models.AbstractModel):
                     ba_line_group = self._get_ba_line_group(
                         budget_allocation_lines, obj_group
                     )
-                    ba_amount = sum(ba_line_group.mapped("budget_amount"))
+                    ba_amount = sum(ba_line_group.mapped("released_amount"))
                     if obj_group["debit"] > ba_amount:
                         raise UserError(
                             _(

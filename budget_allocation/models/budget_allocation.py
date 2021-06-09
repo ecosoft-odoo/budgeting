@@ -58,13 +58,17 @@ class BudgetAllocation(models.Model):
     def _compute_total_amount(self):
         for rec in self:
             rec.total_amount = sum(
-                rec.allocation_line_ids.mapped("budget_amount")
+                rec.allocation_line_ids.mapped("allocated_amount")
             )
 
     def action_done(self):
         for rec in self:
+            # Write initail on budget plan
             if rec.plan_id:
                 rec.plan_id.write({"init_amount": rec.total_amount})
+            # Update released amount
+            for line in rec.allocation_line_ids:
+                line.write({"released_amount": line._get_released_amount()})
         return self.write({"state": "done"})
 
     def action_draft(self):
@@ -181,7 +185,14 @@ class BudgetAllocationLine(models.Model):
         required=True,
         index=True,
     )
-    budget_amount = fields.Monetary(string="Amount")
+    allocated_amount = fields.Monetary(
+        string="Allocated",
+        help="Initial allocated amount",
+    )
+    released_amount = fields.Monetary(
+        string="Released",
+        help="Total current amount",
+    )
     company_id = fields.Many2one(
         comodel_name="res.company",
         default=lambda self: self.env.user.company_id,
@@ -192,3 +203,8 @@ class BudgetAllocationLine(models.Model):
         comodel_name="res.currency", related="company_id.currency_id"
     )
     active = fields.Boolean(related="budget_allocation_id.active")
+
+    def _get_released_amount(self):
+        self.ensure_one()
+        return self.allocated_amount
+

@@ -39,5 +39,5 @@ class BudgetPlan(models.Model):
             ba_line_period = allocation_line.filtered(
                 lambda l: l.budget_period_id == period_id
             )
-            line.amount = sum(ba_line_period.mapped("budget_amount"))
+            line.amount = sum(ba_line_period.mapped("allocated_amount"))
         return res
