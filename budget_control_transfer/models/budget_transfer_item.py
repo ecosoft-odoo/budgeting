@@ -58,6 +58,7 @@ class BudgetTransferItem(models.Model):
     amount = fields.Float(
         string="Transfer Amount",
     )
+    state = fields.Selection(related="transfer_id.state", store=True)
 
     def _get_budget_balance(self, budget_ctrl, kpi_name):
         balance = budget_ctrl and budget_ctrl.get_report_amount(

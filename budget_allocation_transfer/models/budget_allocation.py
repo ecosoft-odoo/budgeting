@@ -7,12 +7,12 @@ from odoo import fields, models
 class BudgetAllocationLine(models.Model):
     _inherit = "budget.allocation.line"
 
-    transfered_amount = fields.Monetary(
-        string="Transfered",
+    transferred_amount = fields.Monetary(
+        string="Transferred",
         default=0.0,
-        help="Total transfered amount",
+        help="Total transferred amount",
     )
 
     def _get_released_amount(self):
         res = super()._get_released_amount()
-        return res + self.transfered_amount
+        return res + self.transferred_amount

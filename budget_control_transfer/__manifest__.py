@@ -16,6 +16,7 @@
         "security/ir.model.access.csv",
         "views/budget_transfer_item_view.xml",
         "views/budget_transfer_view.xml",
+        "views/budget_control_view.xml",
     ],
     "installable": True,
     "maintainers": ["kittiu"],
