@@ -22,7 +22,7 @@ class HrExpense(models.Model):
             '|', ('company_id', '=', False), ('company_id', '=', company_id)
         ]"""
         return domain
-    
+
     def _get_account_move_line_values(self):
         move_line_values_by_expense = super()._get_account_move_line_values()
         for expense in self:
