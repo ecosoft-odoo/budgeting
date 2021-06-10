@@ -8,8 +8,7 @@
     <record id="ir_rule_budget_control_allowed_operating_units" model="ir.rule">
         <field name="model_id" ref="budget_control.model_budget_control" />
         <field name="domain_force">
-            ['|',('operating_unit_id','=',False),('operating_unit_id','in',[g.id for g
-            in user.operating_unit_ids])]
+            ['|',('operating_unit_id','=',False),('operating_unit_id','in',user.operating_unit_ids.ids)]
         </field>
         <field name="name">Budget Control from allowed operating units</field>
         <field name="global" eval="True" />
