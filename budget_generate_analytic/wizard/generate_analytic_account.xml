@@ -19,7 +19,12 @@
                         </group>
                     </group>
                     <group name="analytic_created" string="Already exists, not created">
-                        <field name="analytic_ids" nolabel="1" />
+                        <field
+                            name="analytic_ids"
+                            context="{'tree_view_ref': 'budget_control.view_budget_analytic_list'}"
+                            widget="many2many"
+                            nolabel="1"
+                        />
                     </group>
                     <footer>
                         <button
