@@ -55,25 +55,39 @@ class AccountAnalyticAccount(models.Model):
         compute="_compute_amount_budget_info",
         help="Available = Total Budget - Consumed",
     )
-    initial_balance = fields.Monetary(
-        string="Initial Balance",
+    initial_available = fields.Monetary(
+        string="Initial Available",
         copy=False,
         readonly=True,
         tracking=True,
-        help="Initial Balance come from carry forward",
+        help="Initial Balance come from carry forward available accumulated",
+    )
+    initial_commit = fields.Monetary(
+        string="Initial Commitment",
+        copy=False,
+        readonly=True,
+        tracking=True,
+        help="Initial Balance from carry forward commitment",
     )
 
     def _compute_amount_budget_info(self):
+        """ Find amount info from date """
+        BudgetPeriod = self.env["budget.period"]
         for rec in self:
-            rec.amount_budget = sum(
-                rec.budget_control_ids.mapped("amount_budget")
+            budget_period_ids = BudgetPeriod.search(
+                [
+                    ("bm_date_to", ">=", rec.bm_date_from),
+                    ("bm_date_from", "<=", rec.bm_date_to),
+                ]
             )
-            rec.amount_consumed = sum(
-                rec.budget_control_ids.mapped("amount_consumed")
-            )
-            rec.amount_balance = sum(
-                rec.budget_control_ids.mapped("amount_balance")
-            )
+            consumed = budget = 0.0
+            for period_id in budget_period_ids:
+                info = period_id.get_budget_info(rec.id)
+                budget += info["amount_budget"]
+                consumed += info["amount_commit"] + info["amount_actual"]
+            rec.amount_budget = budget
+            rec.amount_consumed = consumed
+            rec.amount_balance = budget - consumed
 
     def _find_next_analytic(self, next_date_range):
         self.ensure_one()

@@ -124,7 +124,7 @@ class BudgetControl(models.Model):
     # Total Amount
     amount_initial = fields.Monetary(
         string="Initial Balance",
-        related="analytic_account_id.initial_balance",
+        related="analytic_account_id.initial_available",
     )
     amount_budget = fields.Monetary(
         string="Budget",
