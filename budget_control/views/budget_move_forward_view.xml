@@ -47,6 +47,8 @@
             <tree editable="bottom" create="0">
                 <field name="forward_id" invisible="1" />
                 <field name="company_currency_id" invisible="1" />
+                <field name="date_from" invisible="1" />
+                <field name="date_to" invisible="1" />
                 <field name="analytic_account_id" options="{'no_create': 1}" />
                 <field name="method_type" optional="show" />
                 <field
@@ -65,6 +67,7 @@
                     options="{'no_create': 1}"
                     optional="show"
                     attrs="{'invisible': [('method_type', '!=', 'new')]}"
+                    domain="[('bm_date_to', '&gt;=', date_from), ('bm_date_from', '&lt;=', date_to)]"
                 />
                 <field
                     name="amount_carry_forward"
@@ -132,7 +135,7 @@
                             <field name="accumulate_analytic_account_id" />
                         </group>
                         <group>
-                            <field name="date_budget_move" />
+                            <field name="date_from" />
                         </group>
                     </group>
                     <notebook>

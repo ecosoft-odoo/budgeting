@@ -24,7 +24,7 @@ class BudgetMoveForward(models.Model):
         if model == "contract.line":
             domain_search.extend(
                 [
-                    ("analytic_account", "!=", False),
+                    ("analytic_account_id", "!=", False),
                     ("state", "!=", "cancel"),
                 ]
             )

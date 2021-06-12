@@ -33,7 +33,8 @@
                     widget="many2many_tags"
                     optional="show"
                 />
-                <field name="initial_balance" optional="show" />
+                <field name="initial_available" optional="show" />
+                <field name="initial_commit" optional="show" />
             </field>
         </field>
     </record>
@@ -50,7 +51,8 @@
             </field>
             <xpath expr="//group[@name='main']/group[2]" position="inside">
                 <field name="auto_adjust_date_commit" />
-                <field name="initial_balance" />
+                <field name="initial_available" />
+                <field name="initial_commit" />
             </xpath>
         </field>
     </record>
@@ -82,7 +84,16 @@
                     groups="base.group_multi_currency"
                     optional="show"
                 />
-                <field name="initial_balance" sum="Total Initial" optional="show" />
+                <field
+                    name="initial_available"
+                    sum="Total Available Initial"
+                    optional="show"
+                />
+                <field
+                    name="initial_commit"
+                    sum="Total Commit Initial"
+                    optional="show"
+                />
                 <field name="amount_budget" sum="Total Budget" />
                 <field name="amount_consumed" sum="Total Consumed" />
                 <field name="amount_balance" sum="Balance" />
