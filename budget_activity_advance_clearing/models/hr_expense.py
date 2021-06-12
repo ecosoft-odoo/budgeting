@@ -9,16 +9,17 @@ class HRExpenseSheet(models.Model):
 
     def action_submit_sheet(self):
         """ As advance clearing, Employee Advance as activity not allowed """
-        activity_advance = self.env.ref(
-            "budget_activity_advance_clearing.activity_advance"
-        )
-        if activity_advance in self.mapped("expense_line_ids.activity_id"):
-            raise UserError(
-                _(
-                    "For clearing expenes, activity 'Employee Advance' not allowed.\n"
-                    "Please change activity."
-                )
+        if self.mapped("advance_sheet_id"):
+            activity_advance = self.env.ref(
+                "budget_activity_advance_clearing.activity_advance"
             )
+            if activity_advance in self.mapped("expense_line_ids.activity_id"):
+                raise UserError(
+                    _(
+                        "For clearing expenes, activity 'Employee Advance' "
+                        "is not allowed.\nPlease change activity."
+                    )
+                )
         return super().action_submit_sheet()
 
 
