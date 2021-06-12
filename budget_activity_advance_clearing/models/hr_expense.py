@@ -1,7 +1,25 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import _, api, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
+
+
+class HRExpenseSheet(models.Model):
+    _inherit = "hr.expense.sheet"
+
+    def action_submit_sheet(self):
+        """ As advance clearing, Employee Advance as activity not allowed """
+        activity_advance = self.env.ref(
+            "budget_activity_advance_clearing.activity_advance"
+        )
+        if activity_advance in self.mapped("expense_line_ids.activity_id"):
+            raise UserError(
+                _(
+                    "For clearing expenes, activity 'Employee Advance' not allowed.\n"
+                    "Please change activity."
+                )
+            )
+        return super().action_submit_sheet()
 
 
 class HRExpense(models.Model):
