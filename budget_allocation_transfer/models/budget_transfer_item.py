@@ -34,7 +34,7 @@ class BudgetTransferItem(models.Model):
         super()._check_constraint_transfer()
         source_lines, target_lines = self._get_budget_allocation_line()
         if not (source_lines and target_lines):
-            raise UserError(_("Not found budget allocation lines!"))
+            raise UserError(_("Not found related budget allocation lines!"))
 
     def transfer(self):
         res = super().transfer()
@@ -43,12 +43,15 @@ class BudgetTransferItem(models.Model):
             transfer_amount = transfer.amount
             # Transfer amount more than budget allocation per line
             for i, ba_line in enumerate(source_lines):
-                if ba_line.budget_amount < transfer.amount:
-                    transfer_amount -= ba_line.budget_amount
-                    ba_line.budget_amount -= transfer.amount
+                if ba_line.released_amount < transfer.amount:
+                    transfer_amount -= ba_line.released_amount
+                    ba_line.released_amount -= transfer.amount
+                    ba_line.transferred_amount -= transfer.amount
                 else:
-                    ba_line.budget_amount -= transfer_amount
+                    ba_line.released_amount -= transfer_amount
+                    ba_line.transferred_amount -= transfer.amount
                 if i > 0:
                     source_lines[i - 1] = 0.0
-            target_lines[0].budget_amount += transfer.amount
+            target_lines[0].released_amount += transfer.amount
+            target_lines[0].transferred_amount += transfer.amount
         return res

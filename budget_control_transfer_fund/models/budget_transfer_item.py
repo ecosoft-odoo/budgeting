@@ -68,7 +68,7 @@ class BudgetTransferItem(models.Model):
     def _check_constraint_transfer(self):
         super()._check_constraint_transfer()
         source_lines, target_lines = self._get_budget_allocation_line()
-        source_line_amount = sum(source_lines.mapped("budget_amount"))
+        source_line_amount = sum(source_lines.mapped("released_amount"))
         if source_line_amount < self.amount:
             raise UserError(
                 _(

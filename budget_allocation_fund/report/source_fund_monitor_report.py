@@ -20,7 +20,7 @@ class SourceFundMonitorReport(models.Model):
                 "null::integer as analytic_account_id,",
                 "aa.id as analytic_account_id,",
             )
-            .replace("null::integer as amount", "al.budget_amount as amount")
+            .replace("null::integer as amount", "al.released_amount as amount")
         )
         select_budget_query[0] = budget_query
         select_budget_query[

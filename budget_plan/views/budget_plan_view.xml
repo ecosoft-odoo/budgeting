@@ -6,9 +6,11 @@
         <field name="arch" type="xml">
             <tree editable="bottom">
                 <field name="budget_period_id" optional="hide" />
+                <field name="date_from" invisible="True" />
+                <field name="date_to" invisible="True" />
                 <field
                     name="analytic_account_id"
-                    domain="[('budget_period_id', '=', budget_period_id)]"
+                    domain="[('bm_date_to', '&gt;=', date_from), ('bm_date_from', '&lt;=', date_to)]"
                     options="{'no_create': True, 'no_open': True}"
                 />
                 <field
