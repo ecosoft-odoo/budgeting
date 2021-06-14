@@ -26,9 +26,12 @@ class ContractContract(models.Model):
         # Do check after done the budget moves
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
-            BudgetPeriod.with_context(
-                doc_currency=doc.journal_id.currency_id
-            ).check_budget(doc.contract_line_ids, doc_type="contract")
+            currency = (
+                doc.journal_id.currency_id or self.env.company.currency_id
+            )
+            BudgetPeriod.with_context(doc_currency=currency).check_budget(
+                doc.contract_line_ids, doc_type="contract"
+            )
 
     def close_budget_move(self):
         self.mapped("contract_line_ids").close_budget_move()
