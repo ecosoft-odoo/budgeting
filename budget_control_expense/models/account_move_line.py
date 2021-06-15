@@ -2,8 +2,6 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import models
 
-# from odoo.addons.budget_control.tools import filtered_can_commit
-
 
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"

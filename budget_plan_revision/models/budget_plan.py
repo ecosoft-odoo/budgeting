@@ -93,9 +93,7 @@ class BudgetPlan(models.Model):
             if prev_control:
                 # Check state budget control for user manual cancel.
                 if prev_control.state != "cancel" and prev_control.active:
-                    raise UserError(
-                        _("{} must be cancelled.".format(prev_control.name))
-                    )
+                    raise UserError(_("Some budget control is not cancelled."))
                 prev_control.with_context(
                     revision_number=self.revision_number
                 ).create_revision()

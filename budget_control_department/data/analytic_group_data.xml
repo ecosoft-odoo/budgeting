@@ -3,7 +3,4 @@
     <record id="analytic_department_group" model="account.analytic.group">
         <field name="name">Department</field>
     </record>
-    <record id="analytic_project_group" model="account.analytic.group">
-        <field name="name">Project</field>
-    </record>
 </odoo>
