@@ -5,7 +5,7 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import float_compare
 
-METHOD_TYPE = [("extend", "Extend"), ("new", "New Analytic")]
+METHOD_TYPE = [("new", "New Analytic"), ("extend", "Extend")]
 
 
 class BudgetMoveForward(models.Model):
@@ -77,6 +77,7 @@ class BudgetMoveForward(models.Model):
     method_type = fields.Selection(
         METHOD_TYPE,
         string="Method",
+        default="new",
         required=True,
     )
     accumulate_analytic_account_id = fields.Many2one(
@@ -208,7 +209,7 @@ class BudgetMoveForward(models.Model):
     def _get_domain_prepare_new_analytic(self):
         return [("forward_id", "in", self.ids)]
 
-    def action_prepare_new_analytic_available(self):
+    def action_prepare_new_analytic(self):
         BudgetForwardLine = self.env["budget.move.forward.line"]
         domain = self._get_domain_prepare_new_analytic()
         forward_line = BudgetForwardLine.search(domain)

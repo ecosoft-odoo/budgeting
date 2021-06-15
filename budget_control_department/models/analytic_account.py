@@ -15,9 +15,7 @@ class AccountAnalyticAccount(models.Model):
         department = self.env.ref(
             "budget_control_department.analytic_department_group"
         )
-        project = self.env.ref(
-            "budget_control_department.analytic_project_group"
-        )
+        project = self.env.ref("res_project_analytic.analytic_project_group")
         for rec in self:
             rec.is_required_department = (
                 rec.group_id.id == department.id and True or False

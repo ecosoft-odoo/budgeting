@@ -12,6 +12,7 @@
     "depends": ["analytic", "res_project", "budget_control"],
     "data": [
         "security/ir.model.access.csv",
+        "data/analytic_group_data.xml",
         "views/analytic_account_view.xml",
         "views/res_project_views.xml",
     ],

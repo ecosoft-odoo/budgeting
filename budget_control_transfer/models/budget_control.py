@@ -25,14 +25,19 @@ class BudgetControl(models.Model):
 
     def _get_domain_transfer_item_ids(self):
         self.ensure_one()
-        return [("state", "=", "transfer"), "|", ("source_budget_control_id", "=", self.id), ("target_budget_control_id", "=", self.id)]
+        return [
+            ("state", "=", "transfer"),
+            "|",
+            ("source_budget_control_id", "=", self.id),
+            ("target_budget_control_id", "=", self.id),
+        ]
 
     def _compute_transfer_item_ids(self):
         TransferItem = self.env["budget.transfer.item"]
         for rec in self:
             items = TransferItem.search(rec._get_domain_transfer_item_ids())
             rec.transfer_item_ids = items
-    
+
     @api.depends("transfer_item_ids")
     def _compute_transferred_amount(self):
         for rec in self:

@@ -107,7 +107,7 @@
                     />
                     <button
                         type="object"
-                        name="action_prepare_new_analytic_available"
+                        name="action_prepare_new_analytic"
                         string="Prepare carry forward analytic account"
                         states="draft"
                     />

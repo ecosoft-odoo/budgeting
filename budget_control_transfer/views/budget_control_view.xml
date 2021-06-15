@@ -6,13 +6,20 @@
         <field name="inherit_id" ref="budget_control.budget_control_view_form" />
         <field name="arch" type="xml">
              <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
-                <button type="object"
+                <button
+                    type="object"
                     name="action_open_budget_transfer_item"
-                    class="oe_stat_button" icon="fa-exchange">
+                    class="oe_stat_button"
+                    icon="fa-exchange"
+                >
                     <div class="o_field_widget o_stat_info">
                         <span class="o_stat_value">
-                            <field name="currency_id" invisible="1"/>
-                            <field name="transferred_amount" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                            <field name="currency_id" invisible="1" />
+                            <field
+                                name="transferred_amount"
+                                widget='monetary'
+                                options="{'currency_field': 'currency_id'}"
+                            />
                         </span>
                         <span class="o_stat_text">Transferred</span>
                     </div>

@@ -207,4 +207,3 @@ class BudgetAllocationLine(models.Model):
     def _get_released_amount(self):
         self.ensure_one()
         return self.allocated_amount
-
