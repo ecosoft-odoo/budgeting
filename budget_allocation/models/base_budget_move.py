@@ -38,6 +38,19 @@ class BaseBudgetMove(models.AbstractModel):
         3. Find all budget move from analytic account
         4. Group by budget move
         5. Check amount commitment and budget allocation amount
+        ==============================================================
+        Condition constraint (Ex. Invoice Lines)
+            - Allocation Analytic A = 100.0
+        --------------------------------------------------------------
+        Document | Line | Analytic Account |  Amount |
+        --------------------------------------------------------------
+        INV001   |    1 |             A    |   130.0 | >>>>> Over Limit
+        ----------------------------NEXT----------------------------
+        INV002   |    1 |             A    |    10.0 |
+        INV002   |    2 |             A    |    60.0 | >>>>> Pass, balance 30
+        ----------------------------NEXT----------------------------
+        INV003   |    1 |             A    |    10.0 |
+        INV003   |    2 |             A    |    60.0 | >>>>> Over Limit
         """
         BudgetControl = self.env["budget.control"]
         BudgetPeriod = self.env["budget.period"]
@@ -76,6 +89,8 @@ class BaseBudgetMove(models.AbstractModel):
                         budget_allocation_lines, obj_group
                     )
                     ba_amount = sum(ba_line_group.mapped("released_amount"))
+                    # Group by analytic in move commit must less than or
+                    # equal budget allocation amount.
                     if obj_group["debit"] > ba_amount:
                         raise UserError(
                             _(
@@ -88,6 +103,8 @@ class BaseBudgetMove(models.AbstractModel):
                         )
                     move_commit = self._get_move_commit(obj, obj_group)
                     amount_commit = sum(move_commit.mapped("debit"))
+                    # Total spent move commit with the same group analytic account
+                    # must less than or equal budget allocation amount.
                     if amount_commit > ba_amount:
                         raise UserError(
                             _(
