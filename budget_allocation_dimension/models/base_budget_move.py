@@ -32,8 +32,10 @@ class BaseBudgetMove(models.AbstractModel):
         )
         dimensions = self._get_dimension_fields()
         for x in dimensions:
+            # check case no dimension
+            obj_group_id = obj_group[x] and obj_group[x][0] or False
             ba_line_group = ba_line_group.filtered(
-                lambda l: l[x].id == obj_group[x][0]
+                lambda l: l[x].id == obj_group_id
             )
         return ba_line_group
 
@@ -41,8 +43,10 @@ class BaseBudgetMove(models.AbstractModel):
         move_commit = super()._get_move_commit(obj, obj_group)
         dimensions = self._get_dimension_fields()
         for x in dimensions:
+            # check case no dimension
+            obj_group_id = obj_group[x] and obj_group[x][0] or False
             move_commit = move_commit.filtered(
-                lambda l: l[x].id == obj_group[x][0]
+                lambda l: l[x].id == obj_group_id
             )
         return move_commit
 
