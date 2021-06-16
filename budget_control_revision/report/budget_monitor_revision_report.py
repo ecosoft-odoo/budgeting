@@ -16,6 +16,8 @@ class BudgetMonitorRevisionReport(models.Model):
         comodel_name="account.analytic.account",
     )
     date = fields.Date()
+    budget_date_from = fields.Date()
+    budget_date_to = fields.Date()
     amount = fields.Float()
     amount_type = fields.Selection(
         selection=[("1_budget", "Budget"), ("8_actual", "Actual")],
@@ -33,6 +35,8 @@ class BudgetMonitorRevisionReport(models.Model):
             1000000000 + a.id as id,
             a.analytic_account_id,
             a.date_from as date,  -- approx date
+            mb.date_from as budget_date_from,
+            mb.date_to as budget_date_to,
             '1_budget' as amount_type,
             a.amount as amount,
             bc.name as reference,
@@ -44,10 +48,12 @@ class BudgetMonitorRevisionReport(models.Model):
         return """
             from mis_budget_item a
             left outer join budget_control bc on a.budget_control_id = bc.id
+            left outer join mis_budget mb on bc.budget_id = mb.id
         """
 
     def _where_budget(self):
-        return """ where a.state != 'draft' """
+        return ""
+        # return """ where a.state != 'draft' """
 
     def _get_sql(self):
         select_budget_query = self._select_budget()

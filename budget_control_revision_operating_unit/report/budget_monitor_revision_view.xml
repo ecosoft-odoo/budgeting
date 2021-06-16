@@ -23,6 +23,8 @@
     >
         <field
             name="context"
-        >{'search_default_group_by_operating_unit': 1, 'search_default_group_by_analytic': 1, 'search_default_group_by_revision': 1}</field>
+        >{'pivot_column_groupby': ['revision_number', 'date:quarter'],
+          'search_default_group_by_operating_unit': 1,
+          'search_default_group_by_analytic': 1}</field>
     </record>
 </odoo>

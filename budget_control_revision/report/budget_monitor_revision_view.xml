@@ -1,46 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <!-- <record id="view_budget_monitor_report_tree" model="ir.ui.view">
-         <field name="name">budget.monitor.revision.report.tree</field>
-         <field name="model">budget.monitor.revision.report</field>
-         <field name="arch" type="xml">
-             <tree string="Budget Monitoring">
-                 <field name="amount_type" />
-                 <field name="res_id" />
-                 <field name="date" />
-                 <field name="amount" />
-             </tree>
-         </field>
-    </record> -->
     <record id="view_budget_monitor_report_pivot" model="ir.ui.view">
         <field name="name">budget.monitor.revision.report.pivot</field>
         <field name="model">budget.monitor.revision.report</field>
         <field name="arch" type="xml">
-            <pivot string="Budget Monitoring">
+            <pivot string="Budget Revision Monitoring">
                 <field name="analytic_account_id" type="row" />
-                <field name="amount_type" type="col" />
-                <field name="date" type="col" />
+                <field name="revision_number" type="col" />
                 <field name="amount" type="measure" />
             </pivot>
         </field>
-    </record>
-    <!-- <record id="view_budget_monitor_report_graph" model="ir.ui.view">
-         <field name="name">budget.monitor.revision.report.graph</field>
-         <field name="model">budget.monitor.revision.report</field>
-         <field name="arch" type="xml">
-             <graph string="Budget Monitoring">
-                 <field name="analytic_account_id" />
-                 <field name="amount" type="measure" />
-             </graph>
-         </field>
-    </record> -->
-    <!-- Custom reports (aka filters) -->
-    <record id="filter_budget_report_quarterly" model="ir.filters">
-        <field name="name">By Quarter</field>
-        <field name="model_id">budget.monitor.revision.report</field>
-        <field name="domain">[]</field>
-        <field name="user_id" eval="False" />
-        <field name="context">{'pivot_column_groupby': ['date:quarter']}</field>
     </record>
     <record id="view_budget_monitor_revision_report_search" model="ir.ui.view">
         <field name="name">budget.monitor.revision.report.search</field>
@@ -48,6 +17,11 @@
         <field name="arch" type="xml">
             <search string="Budget Revision Monitoring">
                 <field name="reference" />
+                <filter
+                    name="current_period"
+                    string="Current Period"
+                    domain="[('budget_date_to', '&gt;=', context_today().strftime('%Y-%m-%d')), ('budget_date_from', '&lt;=', context_today().strftime('%Y-%m-%d'))]"
+                />
                 <group expand="1" string="Group By">
                     <filter
                         string="Analytic Account"
@@ -75,7 +49,7 @@
         <field name="search_view_id" ref="view_budget_monitor_revision_report_search" />
         <field
             name="context"
-        >{'search_default_group_by_analytic': 1, 'search_default_group_by_revision': 1}</field>
+        >{'pivot_column_groupby': ['revision_number', 'date:quarter']}</field>
     </record>
     <menuitem
         name="Budget Revision Monitoring"

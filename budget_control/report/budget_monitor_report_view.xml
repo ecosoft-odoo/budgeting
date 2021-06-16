@@ -33,14 +33,6 @@
             </graph>
         </field>
     </record>
-    <!-- Custom reports (aka filters) -->
-    <record id="filter_budget_report_quarterly" model="ir.filters">
-        <field name="name">By Quarter</field>
-        <field name="model_id">budget.monitor.report</field>
-        <field name="domain">[]</field>
-        <field name="user_id" eval="False" />
-        <field name="context">{'pivot_column_groupby': ['date:quarter']}</field>
-    </record>
     <record id="view_budget_monitor_report_search" model="ir.ui.view">
         <field name="name">budget.monitor.report.search</field>
         <field name="model">budget.monitor.report</field>
@@ -67,11 +59,27 @@
                     string="Budget Cancelled"
                     domain="[('budget_state', 'in', ['cancel', False])]"
                 />
+                <separator orientation="vertical" />
+                <filter
+                    name="active"
+                    string="Unarchived"
+                    domain="[('active', '!=', False)]"
+                />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
                 <group expand="1" string="Group By">
                     <filter
                         string="Resource ID"
                         name="group_by_res_id"
                         context="{'group_by':'res_id'}"
+                    />
+                    <filter
+                        string="Budget Period"
+                        name="group_by_res_id"
+                        context="{'group_by':'budget_period_id'}"
                     />
                     <filter
                         string="Analytic Group"
