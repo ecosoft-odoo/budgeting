@@ -203,7 +203,7 @@ class BudgetMoveForward(models.Model):
             "method_type": self.method_type,
             "amount_balance": analytic.amount_balance,
             "amount_carry_forward": 0.0,
-            "amount_accumulate": 0.0,
+            "amount_accumulate": analytic.amount_balance,
         }
 
     def _get_domain_prepare_new_analytic(self):
@@ -533,6 +533,16 @@ class BudgetMoveForwardLineAccumulate(models.Model):
         for line in self:
             line.to_analytic_account_id = False
             line.date_extend = line.forward_id.date_extend
+    
+    @api.onchange("amount_carry_forward")
+    def _onchange_amount_carry_forward(self):
+        for line in self:
+            line.amount_accumulate = line.amount_balance - line.amount_carry_forward
+
+    @api.onchange("amount_accumulate")
+    def _onchange_amount_accumulate(self):
+        for line in self:
+            line.amount_carry_forward = line.amount_balance - line.amount_accumulate
 
     @api.constrains("amount_carry_forward", "amount_accumulate")
     def _check_amount_balance(self):
