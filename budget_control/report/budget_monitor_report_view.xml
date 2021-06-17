@@ -72,11 +72,6 @@
                 />
                 <group expand="1" string="Group By">
                     <filter
-                        string="Resource ID"
-                        name="group_by_res_id"
-                        context="{'group_by':'res_id'}"
-                    />
-                    <filter
                         string="Budget Period"
                         name="group_by_res_id"
                         context="{'group_by':'budget_period_id'}"
@@ -96,7 +91,7 @@
                         name="group_by_reference"
                         context="{'group_by':'reference'}"
                     />
-                    <separator orientation="vertical" />
+                    <separator orientation="vertical_groupby" />
                     <filter
                         string="Date"
                         name="group_by_date"
