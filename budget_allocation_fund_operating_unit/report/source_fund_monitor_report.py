@@ -1,10 +1,10 @@
-# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import fields, models
 
 
-class BudgetMonitorReport(models.Model):
-    _inherit = "budget.monitor.report"
+class SourceFundMonitorReport(models.Model):
+    _inherit = "source.fund.monitor.report"
 
     operating_unit_id = fields.Many2one(comodel_name="operating.unit")
 
@@ -31,11 +31,11 @@ class BudgetMonitorReport(models.Model):
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query[30] = "b.operating_unit_id"
+        select_budget_query[40] = "bc.operating_unit_id as operating_unit_id"
         return select_budget_query
 
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)
-        select_statement[30] = "a.operating_unit_id"
+        select_statement[40] = "a.operating_unit_id as operating_unit_id"
         return select_statement

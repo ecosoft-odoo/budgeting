@@ -13,9 +13,9 @@
                 position="before"
             >
                 <filter
-                    string="Operating Unit"
-                    name="group_by_operating_unit_id"
-                    context="{'group_by':'operating_unit_id'}"
+                    string="Revision Number"
+                    name="group_by_revision_number"
+                    context="{'group_by':'revision_number'}"
                 />
             </xpath>
         </field>

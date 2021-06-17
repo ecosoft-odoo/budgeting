@@ -9,7 +9,10 @@
             ref="budget_control.view_budget_monitor_report_search"
         />
         <field name="arch" type="xml">
-            <xpath expr="//separator[@orientation='vertical']" position="before">
+            <xpath
+                expr="//separator[@orientation='vertical_groupby']"
+                position="before"
+            >
                 <filter
                     string="Department"
                     name="group_by_department_id"

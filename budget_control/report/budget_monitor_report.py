@@ -51,6 +51,7 @@ class BudgetMonitorReport(models.Model):
         ],
         string="Budget State",
     )
+    active = fields.Boolean()
 
     @property
     def _table_query(self):
@@ -102,7 +103,8 @@ class BudgetMonitorReport(models.Model):
                 a.product_id,
                 a.account_id,
                 b.name as reference,
-                null::char as budget_state
+                null::char as budget_state,
+                1::boolean as active
                 """
                 % (amount_type[:1], res_model, res_field, amount_type)
             }
@@ -136,13 +138,14 @@ class BudgetMonitorReport(models.Model):
             'mis.budget.item,' || a.id as res_id,
             a.analytic_account_id,
             b.analytic_group,
-            a.date_from as date,  -- approx date
+            a.date_to as date,  -- approx date
             '1_budget' as amount_type,
             a.amount as amount,
             null::integer as product_id,
             null::integer as account_id,
             b.name as reference,
-            b.state as budget_state
+            b.state as budget_state,
+            a.active as active
         """
         }
 
@@ -153,7 +156,8 @@ class BudgetMonitorReport(models.Model):
         """
 
     def _where_budget(self):
-        return """ where a.active = true """
+        return ""
+        # return """ where a.active = true """
 
     def _select_statement(self, amount_type):
         return self._get_select_amount_types()[amount_type]

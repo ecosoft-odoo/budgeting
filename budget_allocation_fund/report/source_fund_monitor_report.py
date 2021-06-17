@@ -9,6 +9,28 @@ class SourceFundMonitorReport(models.Model):
 
     date_from = fields.Date()
     date_to = fields.Date()
+    active = fields.Boolean()
+    budget_period_id = fields.Many2one(comodel_name="budget.period")
+
+    @property
+    def _table_query(self):
+        return """
+            select a.*, d.id as date_range_id, p.id as budget_period_id
+            from ({}) a {} {}
+        """.format(
+            self._get_sql(), self._get_join_sql(), self._get_where_sql()
+        )
+
+    def _get_join_sql(self):
+        join_sql = super()._get_join_sql()
+        new_join_sql = """
+        left outer join date_range d
+            on a.date_to between d.date_start and d.date_end
+        left outer join budget_period p
+            on a.date_to between p.bm_date_from and p.bm_date_to
+        """
+        join_sql = "\n".join([join_sql, new_join_sql])
+        return join_sql
 
     # Budget
     def _select_budget(self):
@@ -27,7 +49,8 @@ class SourceFundMonitorReport(models.Model):
             10
         ] = """
             aa.bm_date_from as date_from,
-            aa.bm_date_to as date_to
+            aa.bm_date_to as date_to,
+            bc.active as active
         """
         return select_budget_query
 
@@ -49,13 +72,6 @@ class SourceFundMonitorReport(models.Model):
         )
         return from_budget_query
 
-    def _where_budget(self):
-        where_budget_query = super()._where_budget()
-        where_budget_query = "and ".join(
-            [where_budget_query, "bc.active is true"]
-        )
-        return where_budget_query
-
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)
@@ -75,7 +91,8 @@ class SourceFundMonitorReport(models.Model):
             10
         ] = """
             aa.bm_date_from as date_from,
-            aa.bm_date_to as date_to
+            aa.bm_date_to as date_to,
+            1::boolean as active
         """
         return select_statement
 

@@ -30,9 +30,9 @@ class SourceFundMonitorReport(models.Model):
     @property
     def _table_query(self):
         return """
-            select a.* from ({}) a {}
+            select a.* from ({}) a {} {}
         """.format(
-            self._get_sql(), self._get_where_sql()
+            self._get_sql(), self._get_join_sql(), self._get_where_sql()
         )
 
     def _get_consumed_sources(self):
@@ -149,6 +149,9 @@ class SourceFundMonitorReport(models.Model):
             self._from_statement("8_actual"),
             self._where_actual(),
         )
+
+    def _get_join_sql(self):
+        return ""
 
     def _get_where_sql(self):
         return ""

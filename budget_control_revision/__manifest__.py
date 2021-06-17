@@ -16,6 +16,7 @@
         "views/res_config_settings_views.xml",
         "views/budget_control_view.xml",
         "report/budget_monitor_revision_view.xml",
+        "report/budget_monitor_report_view.xml",
     ],
     "installable": True,
     "maintainers": ["Saran440"],
