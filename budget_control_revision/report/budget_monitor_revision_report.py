@@ -53,7 +53,6 @@ class BudgetMonitorRevisionReport(models.Model):
 
     def _where_budget(self):
         return ""
-        # return """ where a.state != 'draft' """
 
     def _get_sql(self):
         select_budget_query = self._select_budget()

@@ -8,13 +8,16 @@ class BudgetMonitorReport(models.Model):
 
     operating_unit_id = fields.Many2one(comodel_name="operating.unit")
 
+    def _get_operating_unit(self):
+        return self.env.user.operating_unit_ids
+
     def _get_where_sql(self):
         where_sql = super()._get_where_sql()
         if where_sql:
             where_clause = "and"
         else:
             where_clause = "where"
-        operating_unit_ids = self.env.user.operating_unit_ids
+        operating_unit_ids = self._get_operating_unit()
         if len(operating_unit_ids) == 1:
             ou = "= {}".format(operating_unit_ids.id)
         else:
