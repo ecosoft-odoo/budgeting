@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="base_substate_type_budget_plan" model="base.substate.type">
+        <field name="name">Budget Plan Substate</field>
+        <field name="model">budget.plan</field>
+        <field name="target_state_field">state</field>
+    </record>
+    <!-- Budget plan related substate to state (draft, confirm) -->
+    <record id="target_state_value_draft" model="target.state.value">
+        <field name="name">Draft</field>
+        <field name="base_substate_type_id" ref="base_substate_type_budget_plan" />
+        <field name="target_state_value">draft</field>
+    </record>
+    <record id="target_state_value_confirm" model="target.state.value">
+        <field name="name">Confirmed</field>
+        <field name="base_substate_type_id" ref="base_substate_type_budget_plan" />
+        <field name="target_state_value">confirm</field>
+    </record>
+</odoo>
