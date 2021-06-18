@@ -12,10 +12,13 @@
                     </p>
                     <group name="criteria">
                         <group>
-                            <field name="budget_period" widget="many2many_tags" />
+                            <field name="budget_period_id" />
+                            <field name="bm_date_from" />
+                            <field name="bm_date_to" />
                         </group>
                         <group>
                             <field name="group_id" invisible="1" />
+                            <field name="auto_adjust_date_commit" />
                         </group>
                     </group>
                     <group name="analytic_created" string="Already exists, not created">

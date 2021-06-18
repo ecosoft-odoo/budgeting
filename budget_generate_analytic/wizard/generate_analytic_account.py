@@ -5,7 +5,6 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 ALLOW_MODEL_CREATE = ["hr.department", "res.project"]
-MODEL_GROUP = {"res.project": "Project", "hr.department": "Department"}
 DICT_FIELD_MODEL = {
     "res.project": "project_id",
     "hr.department": "department_id",
@@ -16,12 +15,29 @@ class GenerateAnalyticAccount(models.TransientModel):
     _name = "generate.analytic.account"
     _description = "Generate Analytic Account"
 
-    budget_period = fields.Many2many(
-        comodel_name="budget.period",
-        relation="generate_analytic_period_rel",
-        column1="analytic_id",
-        column2="budget_period_id",
-        string="Budget Period",
+    budget_period_id = fields.Many2one(comodel_name="budget.period")
+    bm_date_from = fields.Date(
+        string="Date From",
+        compute="_compute_bm_date",
+        store=True,
+        readonly=False,
+        required=True,
+        help="Budget commit date must conform with this date",
+    )
+    bm_date_to = fields.Date(
+        string="Date To",
+        compute="_compute_bm_date",
+        store=True,
+        readonly=False,
+        required=True,
+        help="Budget commit date must conform with this date",
+    )
+    auto_adjust_date_commit = fields.Boolean(
+        string="Auto Adjust Commit Date",
+        help="Date From and Date To is used to determine valid date range of "
+        "this analytic account when using with budgeting system. If this data range "
+        "is setup, but the budget system set date_commit out of this date range "
+        "it it can be adjusted automatically.",
     )
     group_id = fields.Many2one(
         comodel_name="account.analytic.group",
@@ -35,17 +51,24 @@ class GenerateAnalyticAccount(models.TransientModel):
         string="Analytic Account",
     )
 
-    @api.depends("budget_period")
+    @api.depends("budget_period_id")
+    def _compute_bm_date(self):
+        """Default effective date, but changable"""
+        for rec in self:
+            rec.bm_date_from = rec.budget_period_id.bm_date_from
+            rec.bm_date_to = rec.budget_period_id.bm_date_to
+
+    @api.depends("bm_date_from", "bm_date_to")
     def _compute_analytic_already_create(self):
         self.ensure_one()
         analytics = self.env["account.analytic.account"]
         model, active_ids = self._check_model_allow()
         objects = self.env[model].browse(active_ids)
         analytic_account_ids = objects.mapped("analytic_account_ids")
-        period_ids = self.budget_period._origin
-        for period_id in period_ids:
-            analytics += analytic_account_ids.filtered(
-                lambda l: l.budget_period_id == period_id
+        if self.bm_date_from and self.bm_date_to:
+            analytics = analytic_account_ids.filtered(
+                lambda l: l.bm_date_to >= self.bm_date_from
+                and l.bm_date_from <= self.bm_date_to
             )
         self.analytic_ids = analytics
 
@@ -67,10 +90,15 @@ class GenerateAnalyticAccount(models.TransientModel):
             projects = self.env[model].browse(active_ids)
             if any(project.state != "confirm" for project in projects):
                 raise UserError(_("Project must be state Confirmed."))
-        # Default group_id from model
-        name_group = MODEL_GROUP.get(model, False)
-        analytic_group = self.env["account.analytic.group"].search(
-            [("name", "=", name_group)]
+            analytic_group_id = self.env.ref(
+                "res_project_analytic.analytic_project_group"
+            )
+        elif model == "hr.department":
+            analytic_group_id = self.env.ref(
+                "budget_control_department.analytic_department_group"
+            )
+        analytic_group = self.env["account.analytic.group"].browse(
+            analytic_group_id.id
         )
         values["group_id"] = analytic_group.id
         return values
@@ -78,29 +106,24 @@ class GenerateAnalyticAccount(models.TransientModel):
     def _prepare_analytic_vals(self, objects):
         self.ensure_one()
         analytic_account_ids = objects.mapped("analytic_account_ids")
-        budget_period = self.budget_period
         group_id = self.group_id
         analytic_vals = []
         field_model = DICT_FIELD_MODEL[objects._name]
         for obj in objects:
-            if not budget_period:
-                existing_analytic = analytic_account_ids.filtered(
-                    lambda l: not l.budget_period_id
-                    and l[field_model].id == obj.id
-                )
-                if existing_analytic:
-                    continue
-                val = obj._prepare_analytic_dict_vals(group_id)
-                analytic_vals.append(val)
-            for period in budget_period:
-                existing_analytic = analytic_account_ids.filtered(
-                    lambda l: l.budget_period_id == period
-                    and l[field_model].id == obj.id
-                )
-                if existing_analytic:
-                    continue
-                val = obj._prepare_analytic_dict_vals(group_id, period=period)
-                analytic_vals.append(val)
+            existing_analytic = analytic_account_ids.filtered(
+                lambda l: l.id in self.analytic_ids.ids
+                and l[field_model].id == obj.id
+            )
+            if existing_analytic:
+                continue
+            val = obj._prepare_analytic_dict_vals(
+                group_id,
+                self.bm_date_from,
+                self.bm_date_to,
+                self.auto_adjust_date_commit,
+                period=self.budget_period_id,
+            )
+            analytic_vals.append(val)
         return analytic_vals
 
     def action_create_analytic(self):
