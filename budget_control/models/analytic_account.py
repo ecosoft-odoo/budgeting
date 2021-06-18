@@ -74,6 +74,7 @@ class AccountAnalyticAccount(models.Model):
         """ Find amount info from date """
         BudgetPeriod = self.env["budget.period"]
         for rec in self:
+            rec_id = rec._origin.id  # support with compute new wizard
             budget_period_ids = BudgetPeriod.search(
                 [
                     ("bm_date_to", ">=", rec.bm_date_from),
@@ -82,7 +83,7 @@ class AccountAnalyticAccount(models.Model):
             )
             consumed = budget = 0.0
             for period_id in budget_period_ids:
-                info = period_id.get_budget_info(rec.id)
+                info = period_id.get_budget_info(rec_id)
                 budget += info["amount_budget"]
                 consumed += info["amount_commit"] + info["amount_actual"]
             rec.amount_budget = budget
