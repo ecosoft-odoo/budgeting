@@ -1,5 +1,8 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
+from dateutil.relativedelta import relativedelta
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
@@ -13,6 +16,10 @@ class MisBudgetItem(models.Model):
     def _compute_amount_readonly(self, date=False):
         if not date:
             date = fields.Date.context_today(self)
+        # change current month to previous month
+        readonly_to = self.env.company.budget_control_plan_readonly
+        if readonly_to == "last":
+            date = date.replace(day=1) - relativedelta(days=1)
         for rec in self:
             rec.is_readonly = False
             if (
