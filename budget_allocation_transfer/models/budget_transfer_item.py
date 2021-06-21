@@ -46,12 +46,9 @@ class BudgetTransferItem(models.Model):
                 if ba_line.released_amount < transfer.amount:
                     transfer_amount -= ba_line.released_amount
                     ba_line.released_amount -= transfer.amount
-                    ba_line.transferred_amount -= transfer.amount
                 else:
                     ba_line.released_amount -= transfer_amount
-                    ba_line.transferred_amount -= transfer.amount
                 if i > 0:
                     source_lines[i - 1] = 0.0
             target_lines[0].released_amount += transfer.amount
-            target_lines[0].transferred_amount += transfer.amount
         return res

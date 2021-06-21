@@ -13,3 +13,9 @@ class ContractLine(models.Model):
             invoice_line_vals["activity_id"] = self.activity_id.id
             invoice_line_vals["account_id"] = self.activity_id.account_id.id
         return invoice_line_vals
+
+    def _get_contract_line_account(self):
+        account = super()._get_contract_line_account()
+        if self.activity_id:
+            account = self.activity_id.account_id
+        return account
