@@ -79,3 +79,11 @@ class BudgetTransferItem(models.Model):
                     )
                 )
             )
+
+    def _get_message_source_transfer(self):
+        source_transfer = super()._get_message_source_transfer()
+        return "<br/>Fund: ".join([source_transfer, self.source_fund_id.name])
+
+    def _get_message_target_transfer(self):
+        target_transfer = super()._get_message_target_transfer()
+        return "<br/>Fund: ".join([target_transfer, self.target_fund_id.name])

@@ -226,3 +226,21 @@ class BudgetTransferItem(models.Model):
             raise UserError(
                 _("Source / Target Analytic Tags is not selected.")
             )
+
+    def _get_message_source_transfer(self):
+        source_transfer = super()._get_message_source_transfer()
+        analytic_tag_name = ", ".join(
+            self.source_analytic_tag_ids.mapped("name")
+        )
+        return "<br/>Analytic Tags: ".join(
+            [source_transfer, analytic_tag_name]
+        )
+
+    def _get_message_target_transfer(self):
+        target_transfer = super()._get_message_target_transfer()
+        analytic_tag_name = ", ".join(
+            self.target_analytic_tag_ids.mapped("name")
+        )
+        return "<br/>Analytic Tags: ".join(
+            [target_transfer, analytic_tag_name]
+        )
