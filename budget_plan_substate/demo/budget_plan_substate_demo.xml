@@ -19,7 +19,7 @@
         <field name="target_state_value_id" ref="target_state_value_draft" />
         <field
             name="mail_template_id"
-            ref="budget_control_plan_substate.mail_template_data_budget_plan_substate_verified"
+            ref="budget_plan_substate.mail_template_data_budget_plan_substate_verified"
         />
         <field name="active" eval="False" />
     </record>

@@ -92,12 +92,12 @@
             <form string="Budget Carry Forward">
                 <header>
                     <button
-                        name="action_budget_carry_forward"
+                        name="action_budget_carry_forward_info"
                         string="Carry Budget Forward"
                         class="btn-primary"
                         type="object"
                         states="draft"
-                        confirm="This operation cannot be undone. Are you sure to continue?"
+                        context="{'forward_id': id}"
                     />
                     <button
                         name="action_cancel"

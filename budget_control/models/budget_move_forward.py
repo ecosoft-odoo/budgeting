@@ -255,7 +255,7 @@ class BudgetMoveForward(models.Model):
             elif line.method_type == "new":
                 line.to_analytic_account_id.write(
                     {
-                        "initial_commit": line.amount_carry_forward,
+                        "initial_available": line.amount_carry_forward,
                     }
                 )
             # Add accumulate amount
@@ -269,6 +269,39 @@ class BudgetMoveForward(models.Model):
                     "initial_available": amount_accumulate,
                 }
             )
+
+    def _get_domain_analytic_account_ids(self):
+        return []
+
+    def _get_relate_analytic_account_ids(self):
+        analytic_account_ids = self.env["account.analytic.account"].search(
+            self._get_domain_analytic_account_ids()
+        )
+        return analytic_account_ids
+
+    def action_budget_carry_forward_info(self):
+        self.ensure_one()
+        wizard = self.env.ref(
+            "budget_control.view_budget_move_forward_info_form"
+        )
+        forward_id = self._context.get("forward_id", False)
+        analytic_account_ids = self._get_relate_analytic_account_ids()
+        return {
+            "name": _("View Budget Info"),
+            "type": "ir.actions.act_window",
+            "view_mode": "form",
+            "res_model": "budget.move.forward.info",
+            "views": [(wizard.id, "form")],
+            "view_id": wizard.id,
+            "target": "new",
+            "context": {
+                "default_forward_id": forward_id,
+                "default_forward_info_line_ids": [
+                    (0, 0, {"analytic_account_id": aa.id})
+                    for aa in analytic_account_ids
+                ],
+            },
+        }
 
     def action_budget_carry_forward(self):
         """
