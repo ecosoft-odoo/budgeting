@@ -36,6 +36,12 @@ class BudgetTransferItem(models.Model):
         if not (source_lines and target_lines):
             raise UserError(_("Not found related budget allocation lines!"))
 
+    def _get_message_source_transfer(self):
+        return "Source Budget: {}".format(self.source_budget_control_id.name)
+
+    def _get_message_target_transfer(self):
+        return "Target Budget: {}".format(self.target_budget_control_id.name)
+
     def transfer(self):
         res = super().transfer()
         for transfer in self:
@@ -51,4 +57,19 @@ class BudgetTransferItem(models.Model):
                 if i > 0:
                     source_lines[i - 1] = 0.0
             target_lines[0].released_amount += transfer.amount
+            # Log message to budget allocation
+            allocation_line = source_lines + target_lines
+            budget_allocation_ids = allocation_line.mapped(
+                "budget_allocation_id"
+            )
+            message = _(
+                "{}<br/><b>transfer to</b><br/>{}<br/>with amount {:,.2f} {}".format(
+                    transfer._get_message_source_transfer(),
+                    transfer._get_message_target_transfer(),
+                    self.amount,
+                    self.env.company.currency_id.symbol,
+                )
+            )
+            budget_allocation_ids.message_post(body=message)
+
         return res
