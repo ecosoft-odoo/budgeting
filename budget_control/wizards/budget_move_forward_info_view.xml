@@ -7,24 +7,13 @@
         <field name="model">budget.move.forward.info</field>
         <field name="arch" type="xml">
             <form>
-                <!-- <group>
-                    <group>
-                        <field
-                            name="budget_period_ids"
-                            widget="many2many_tags"
-                            options="{'no_create_edit': True}"
-                        />
-                        <field name="budget_control_ids" invisible="1" />
-                    </group>
-                    <group />
-                </group> -->
                 <group>
                     <field name="forward_info_line_ids" nolabel="1" readonly="1">
                         <tree>
                             <field name="analytic_account_id" />
                             <field name="analytic_group" optional="hide" />
-                            <field name="amount_budget" optional="show" sum="Total" />
-                            <field name="amount_consumed" optional="show" sum="Total" />
+                            <field name="initial_available" optional="show" sum="Total" />
+                            <field name="initial_commit" optional="show" sum="Total" />
                             <field name="amount_balance" optional="show" sum="Total" />
                         </tree>
                     </field>

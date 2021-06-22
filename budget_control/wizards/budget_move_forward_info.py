@@ -52,17 +52,17 @@ class BudgetMoveForwardInfoLine(models.TransientModel):
         string="Analytic Group",
         related="analytic_account_id.group_id",
     )
-    amount_budget = fields.Monetary(
-        string="Budget",
+    initial_available = fields.Monetary(
+        string="Initial Available",
         compute="_compute_budget_info",
         currency_field="company_currency_id",
-        help="Sum of amount plan",
+        help="Initial Balance come from carry forward available accumulated",
     )
-    amount_consumed = fields.Monetary(
-        string="Consumed",
+    initial_commit = fields.Monetary(
+        string="Initial Commitment",
         compute="_compute_budget_info",
         currency_field="company_currency_id",
-        help="Consumed = Total Commitments + Actual",
+        help="Initial Balance from carry forward commitment",
     )
     amount_balance = fields.Monetary(
         string="Available",
@@ -86,19 +86,19 @@ class BudgetMoveForwardInfoLine(models.TransientModel):
             commitment_vals = rec._get_amount_from_commitment(
                 rec.forward_info_id.forward_id
             )
-            rec.amount_budget = (
-                available_vals[rec.analytic_account_id.id]["amount_budget"]
+            rec.initial_available = (
+                available_vals[rec.analytic_account_id.id]["initial_available"]
                 if available_vals
                 and rec.analytic_account_id.id in available_vals.keys()
                 else 0.0
             )
-            rec.amount_consumed = (
-                commitment_vals[rec.analytic_account_id.id]["amount_consumed"]
+            rec.initial_commit = (
+                commitment_vals[rec.analytic_account_id.id]["initial_commit"]
                 if commitment_vals
                 and rec.analytic_account_id.id in commitment_vals.keys()
                 else 0.0
             )
-            rec.amount_balance = rec.amount_budget - rec.amount_consumed
+            rec.amount_balance = rec.initial_available - rec.initial_commit
 
     def _get_amount_from_available(self, forward_id):
         available_vals = {}
@@ -113,29 +113,36 @@ class BudgetMoveForwardInfoLine(models.TransientModel):
                 analytic = line.to_analytic_account_id
             if analytic and analytic.id not in available_vals.keys():
                 available_vals[analytic.id] = {
-                    "amount_budget": line.amount_carry_forward
+                    "initial_available": line.amount_carry_forward
                 }
-            else:
-                amount_budget = available_vals[analytic.id]["amount_budget"]
-                amount_budget += line.amount_carry_forward
+            elif analytic and analytic.id in available_vals.keys():
+                initial_available = available_vals[analytic.id][
+                    "initial_available"
+                ]
+                initial_available += line.amount_carry_forward
                 available_vals[analytic.id].update(
-                    {"amount_budget": amount_budget}
+                    {"initial_available": initial_available}
                 )
             # Accumulate
             if (
-                line.accumulate_analytic_account_id.id
+                line.accumulate_analytic_account_id
+                and line.accumulate_analytic_account_id.id
                 not in available_vals.keys()
             ):
                 available_vals[line.accumulate_analytic_account_id.id] = {
-                    "amount_budget": line.amount_accumulate
+                    "initial_available": line.amount_accumulate
                 }
-            else:
-                amount_budget = available_vals[
+            elif (
+                line.accumulate_analytic_account_id
+                and line.accumulate_analytic_account_id.id
+                in available_vals.keys()
+            ):
+                initial_available = available_vals[
                     line.accumulate_analytic_account_id.id
-                ]["amount_budget"]
-                amount_budget += line.amount_accumulate
+                ]["initial_available"]
+                initial_available += line.amount_accumulate
                 available_vals[line.accumulate_analytic_account_id.id].update(
-                    {"amount_budget": amount_budget}
+                    {"initial_available": initial_available}
                 )
         return available_vals
 
@@ -146,12 +153,15 @@ class BudgetMoveForwardInfoLine(models.TransientModel):
         for line in forward_lines:
             line._check_carry_forward_analytic()
             next_analytic = line._get_next_analytic()
-            if next_analytic.id not in commitment_vals.keys():
+            if (
+                next_analytic
+                and next_analytic.id not in commitment_vals.keys()
+            ):
                 commitment_vals[next_analytic.id] = {
-                    "amount_consumed": line.amount_commit
+                    "initial_commit": line.amount_commit
                 }
-            else:
+            elif next_analytic and next_analytic.id in commitment_vals.keys():
                 commitment_vals[next_analytic.id][
-                    "amount_consumed"
+                    "initial_commit"
                 ] += line.amount_commit
         return commitment_vals

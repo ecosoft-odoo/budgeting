@@ -121,8 +121,8 @@ class BudgetPlan(models.Model):
         plan_analytic = self.plan_line.mapped("analytic_account_id")
         analytic_ids = Analytic.search(
             [
-                ("bm_date_from", "<=", self.budget_period_id.bm_date_from),
-                ("bm_date_to", ">=", self.budget_period_id.bm_date_to),
+                ("bm_date_from", "<=", self.date_to),
+                ("bm_date_to", ">=", self.date_from),
                 ("id", "not in", plan_analytic.ids),
             ]
         )

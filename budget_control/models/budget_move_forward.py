@@ -433,17 +433,18 @@ class BudgetMoveForwardLine(models.Model):
                 rec.write({"to_analytic_account_id": analytic_account})
 
     def _get_next_analytic(self):
-        for rec in self:
-            if rec.method_type == "extend":
-                rec.analytic_account_id.write(
-                    {
-                        "bm_date_to": rec.date_extend,
-                    }
-                )
-                # extend not change analytic account
-                next_analytic = rec.analytic_account_id
-            elif rec.method_type == "new":
-                next_analytic = rec.to_analytic_account_id
+        self.ensure_one()
+        next_analytic = False
+        if self.method_type == "extend":
+            self.analytic_account_id.write(
+                {
+                    "bm_date_to": self.date_extend,
+                }
+            )
+            # extend not change analytic account
+            next_analytic = self.analytic_account_id
+        elif self.method_type == "new":
+            next_analytic = self.to_analytic_account_id
         return next_analytic
 
     def _check_carry_forward_analytic(self):
@@ -610,7 +611,9 @@ class BudgetMoveForwardLineAccumulate(models.Model):
 
     def _check_constraint_analytic(self):
         for rec in self:
-            if rec.method_type == "new" and not rec.to_analytic_account_id:
+            # There is amount carry forward but no carry forward analytic
+            if rec.method_type == "new" and rec.amount_carry_forward \
+                and not rec.to_analytic_account_id:
                 raise UserError(
                     _(
                         "{} does not have Carry Forward Analytic Account.".format(
@@ -625,7 +628,7 @@ class BudgetMoveForwardLineAccumulate(models.Model):
                 raise UserError(
                     _(
                         "{} does not have Accumulate Analytic Account.".format(
-                            rec.analytic_account_id.name
+                            rec.accumulate_analytic_account_id.name
                         )
                     )
                 )
