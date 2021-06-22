@@ -15,7 +15,7 @@ class BudgetMoveForward(models.Model):
 
     def _get_document_number(self, doc):
         if doc._name == "contract.line":
-            return doc.contract.name
+            return doc.contract_id.name
         return super()._get_document_number(doc)
 
     def _get_domain_search(self, model):
@@ -25,7 +25,6 @@ class BudgetMoveForward(models.Model):
             domain_search.extend(
                 [
                     ("analytic_account_id", "!=", False),
-                    ("state", "!=", "cancel"),
                 ]
             )
         return domain_search
