@@ -249,7 +249,7 @@ class BudgetMoveForward(models.Model):
                 line.analytic_account_id.write(
                     {
                         "bm_date_to": line.date_extend,
-                        "initial_commit": line.amount_carry_forward,
+                        "initial_available": line.amount_carry_forward,
                     }
                 )
             elif line.method_type == "new":
