@@ -213,7 +213,7 @@ class BudgetTransferItem(models.Model):
 
     def _check_constraint_transfer(self):
         super()._check_constraint_transfer()
-        source_lines, target_lines = self._get_budget_allocation_line()
+        source_lines, target_lines = self._get_budget_allocation_lines()
         # Filtered with dimension,
         # for case user not selected analytic tag on budget transfer.
         source_line = source_lines.mapped("analytic_tag_ids").filtered(
