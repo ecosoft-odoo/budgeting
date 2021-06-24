@@ -612,8 +612,11 @@ class BudgetMoveForwardLineAccumulate(models.Model):
     def _check_constraint_analytic(self):
         for rec in self:
             # There is amount carry forward but no carry forward analytic
-            if rec.method_type == "new" and rec.amount_carry_forward \
-                and not rec.to_analytic_account_id:
+            if (
+                rec.method_type == "new"
+                and rec.amount_carry_forward
+                and not rec.to_analytic_account_id
+            ):
                 raise UserError(
                     _(
                         "{} does not have Carry Forward Analytic Account.".format(

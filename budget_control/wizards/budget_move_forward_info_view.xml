@@ -12,7 +12,11 @@
                         <tree>
                             <field name="analytic_account_id" />
                             <field name="analytic_group" optional="hide" />
-                            <field name="initial_available" optional="show" sum="Total" />
+                            <field
+                                name="initial_available"
+                                optional="show"
+                                sum="Total"
+                            />
                             <field name="initial_commit" optional="show" sum="Total" />
                             <field name="amount_balance" optional="show" sum="Total" />
                         </tree>
