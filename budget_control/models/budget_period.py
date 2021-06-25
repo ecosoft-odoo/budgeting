@@ -202,6 +202,8 @@ class BudgetPeriod(models.Model):
         self = self.sudo()
         # Find active budget.period based on latest doclines date_commit
         date_commit = doclines.filtered("date_commit").mapped("date_commit")
+        if not date_commit:
+            return
         date_commit = max(date_commit)
         budget_period = self._get_eligible_budget_period(
             date_commit, doc_type=doc_type
