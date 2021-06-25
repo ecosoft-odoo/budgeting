@@ -1,7 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 
 
 class BudgetTransfer(models.Model):
@@ -54,6 +54,16 @@ class BudgetTransfer(models.Model):
                 self.env["ir.sequence"].next_by_code("budget.transfer") or "/"
             )
         return super().create(vals)
+
+    def unlink(self):
+        """Check state draft can delete only."""
+        if any(rec.state != "draft" for rec in self):
+            raise UserError(
+                _(
+                    "You are trying to delete a record that is still referenced!"
+                )
+            )
+        return super().unlink()
 
     @api.model
     def _get_budget_period(self):

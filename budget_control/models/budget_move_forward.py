@@ -57,6 +57,7 @@ class BudgetMoveForward(models.Model):
         [
             ("draft", "Draft"),
             ("done", "Done"),
+            ("cancel", "Cancelled"),
         ],
         string="Status",
         readonly=True,
@@ -353,7 +354,7 @@ class BudgetMoveForward(models.Model):
         self.write({"state": "done"})
 
     def action_cancel(self):
-        self.write({"state": "draft"})
+        self.write({"state": "cancel"})
 
 
 class BudgetMoveForwardLine(models.Model):

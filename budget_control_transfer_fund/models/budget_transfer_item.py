@@ -1,8 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo import api, fields, models
 
 
 class BudgetTransferItem(models.Model):
@@ -57,6 +56,11 @@ class BudgetTransferItem(models.Model):
                 continue
             doc.target_fund_id = len(fund_ids) == 1 and fund_ids.id or False
 
+    def _filter_context_amount_available(self):
+        ctx = super()._filter_context_amount_available()
+        ctx["filter_fund_id"] = self.source_fund_id.id
+        return ctx
+
     def _get_domain_source_allocation_line(self):
         res = super()._get_domain_source_allocation_line()
         return res + [("fund_id", "=", self.source_fund_id.id)]
@@ -64,21 +68,6 @@ class BudgetTransferItem(models.Model):
     def _get_domain_target_allocation_line(self):
         res = super()._get_domain_target_allocation_line()
         return res + [("fund_id", "=", self.target_fund_id.id)]
-
-    def _check_constraint_transfer(self):
-        super()._check_constraint_transfer()
-        source_lines, target_lines = self._get_budget_allocation_lines()
-        source_line_amount = sum(source_lines.mapped("released_amount"))
-        if source_line_amount < self.amount:
-            raise UserError(
-                _(
-                    "{} Fund {} can transfer amount not be exceeded {:,.2f}".format(
-                        self.source_budget_control_id.name,
-                        self.source_fund_id.name,
-                        source_line_amount,
-                    )
-                )
-            )
 
     def _get_message_source_transfer(self):
         source_transfer = super()._get_message_source_transfer()

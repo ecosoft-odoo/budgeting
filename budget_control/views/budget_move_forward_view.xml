@@ -9,9 +9,9 @@
                 <field name="to_budget_id" />
                 <field
                     name="state"
-                    widget='badge'
+                    widget="badge"
                     decoration-success="state == 'done'"
-                    decoration-info="state != 'done'"
+                    decoration-info="state == 'draft'"
                 />
             </tree>
         </field>

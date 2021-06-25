@@ -22,3 +22,9 @@ class BudgetTransferItem(models.Model):
         store=True,
         index=True,
     )
+
+    def _read(self, fields):
+        """ Add permission to read difference operating unit. """
+        if self._context.get("access_sudo", False):
+            self = self.sudo()
+        return super()._read(fields)

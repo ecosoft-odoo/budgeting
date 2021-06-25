@@ -8,6 +8,23 @@ from odoo.exceptions import UserError
 class BudgetTransferItem(models.Model):
     _inherit = "budget.transfer.item"
 
+    def _filter_context_amount_available(self):
+        return self._context.copy()
+
+    def _get_consumed_amount_filter(self, budget_control):
+        analytic_id = [budget_control.analytic_account_id.id]
+        budget_period_id = self.transfer_id.budget_period_id
+        # ctx = self._context.copy()
+        ctx = self._filter_context_amount_available()
+        info = budget_period_id.with_context(ctx).get_budget_info(analytic_id)
+        return info
+
+    def _get_source_line_available(self, source_lines):
+        """ Find amount available from allocation released - consumed """
+        source_line_available = sum(source_lines.mapped("released_amount"))
+        info = self._get_consumed_amount_filter(self.source_budget_control_id)
+        return source_line_available - info["amount_consumed"]
+
     def _get_domain_source_allocation_line(self):
         return []
 
@@ -35,6 +52,16 @@ class BudgetTransferItem(models.Model):
         source_lines, target_lines = self._get_budget_allocation_lines()
         if not (source_lines and target_lines):
             raise UserError(_("Not found related budget allocation lines!"))
+        source_line_avaiable = self._get_source_line_available(source_lines)
+        if source_line_avaiable < self.amount:
+            raise UserError(
+                _(
+                    "{} can transfer amount not be exceeded {:,.2f}".format(
+                        self.source_budget_control_id.name,
+                        source_line_avaiable,
+                    )
+                )
+            )
 
     def _get_message_source_transfer(self):
         return "Source Budget: {}".format(self.source_budget_control_id.name)
@@ -57,7 +84,7 @@ class BudgetTransferItem(models.Model):
                     ba_line.released_amount = 0.0
                 else:
                     ba_line.released_amount -= transfer_amount
-            target_lines[0].released_amount += transfer_amount
+            target_lines[0].released_amount += transfer.amount
             # Log message to budget allocation
             allocation_lines = source_lines + target_lines
             budget_allocation_ids = allocation_lines.mapped(
@@ -72,7 +99,6 @@ class BudgetTransferItem(models.Model):
                 )
             )
             budget_allocation_ids.message_post(body=message)
-
         return res
 
     def reverse(self):
@@ -100,5 +126,4 @@ class BudgetTransferItem(models.Model):
                 )
             )
             budget_allocation_ids.message_post(body=message)
-
         return res
