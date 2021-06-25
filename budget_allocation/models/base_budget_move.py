@@ -88,6 +88,14 @@ class BaseBudgetMove(models.AbstractModel):
                     ba_line_group = self._get_ba_line_group(
                         budget_allocation_lines, obj_group
                     )
+                    # Spent budget is not allocated
+                    if not ba_line_group:
+                        raise UserError(
+                            _(
+                                "Can not spent amount becase budget is not "
+                                "allocated on budget allocation"
+                            )
+                        )
                     ba_amount = sum(ba_line_group.mapped("released_amount"))
                     # Group by analytic in move commit must less than or
                     # equal budget allocation amount.
