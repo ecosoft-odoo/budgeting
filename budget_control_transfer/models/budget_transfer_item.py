@@ -144,5 +144,9 @@ class BudgetTransferItem(models.Model):
             budget_not_draft = ", ".join(budget_not_draft.mapped("name"))
             if state_transfer and budget_not_draft:
                 raise UserError(
-                    _("Change state {} to Draft. ".format(budget_not_draft))
+                    _(
+                        "{} in process transfer, state must be Draft. ".format(
+                            budget_not_draft
+                        )
+                    )
                 )
