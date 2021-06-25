@@ -179,6 +179,11 @@ class BudgetTransferItem(models.Model):
                 or False
             )
 
+    def _filter_context_amount_available(self):
+        ctx = super()._filter_context_amount_available()
+        ctx["filter_analytic_tag_ids"] = self.source_analytic_tag_ids.ids
+        return ctx
+
     def _get_domain_source_allocation_line(self):
         res = super()._get_domain_source_allocation_line()
         source_analytic_tag = self.source_analytic_tag_ids
