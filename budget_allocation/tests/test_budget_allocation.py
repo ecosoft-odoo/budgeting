@@ -194,7 +194,7 @@ class TestBudgetAllocation(BudgetControlCommon):
         budget_control.item_ids.filtered(
             lambda x: x.kpi_expression_id == self.kpi3.expression_ids[0]
         ).write({"amount": 300})
-        # KPI spent over limit budget allocation -> lock
+        # KPI spend over limit budget allocation -> lock
         bill1 = self._create_simple_bill(
             self.costcenter1, self.account_kpiX, 100
         )
