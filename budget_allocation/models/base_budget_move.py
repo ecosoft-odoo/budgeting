@@ -38,6 +38,9 @@ class BaseBudgetMove(models.AbstractModel):
         3. Find all budget move from analytic account
         4. Group by budget move
         5. Check amount commitment and budget allocation amount
+
+        Note: This is a base functional, you can used function by automation action
+        or manual call function.
         ==============================================================
         Condition constraint (Ex. Invoice Lines)
             - Allocation Analytic A = 100.0
@@ -88,11 +91,11 @@ class BaseBudgetMove(models.AbstractModel):
                     ba_line_group = self._get_ba_line_group(
                         budget_allocation_lines, obj_group
                     )
-                    # Spent budget is not allocated
+                    # Spend budget is not allocated
                     if not ba_line_group:
                         raise UserError(
                             _(
-                                "Can not spent amount becase budget is not "
+                                "Can not spend amount because budget is not "
                                 "allocated on budget allocation"
                             )
                         )
@@ -102,7 +105,7 @@ class BaseBudgetMove(models.AbstractModel):
                     if obj_group["debit"] > ba_amount:
                         raise UserError(
                             _(
-                                "{} spent amount over budget allocation "
+                                "{} spend amount over budget allocation "
                                 "limit {:,.2f}".format(
                                     aa.display_name,
                                     (obj_group["debit"] - ba_amount),
@@ -111,12 +114,12 @@ class BaseBudgetMove(models.AbstractModel):
                         )
                     move_commit = self._get_move_commit(obj, obj_group)
                     amount_commit = sum(move_commit.mapped("debit"))
-                    # Total spent move commit with the same group analytic account
+                    # Total spend move commit with the same group analytic account
                     # must less than or equal budget allocation amount.
                     if amount_commit > ba_amount:
                         raise UserError(
                             _(
-                                "{} spent total amount over "
+                                "{} spend total amount over "
                                 "budget allocation limit {:,.2f}".format(
                                     aa.display_name,
                                     (amount_commit - ba_amount),

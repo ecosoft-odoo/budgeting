@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record
+        id="constraint_invoice_over_limit_budget_allocation"
+        model="base.automation"
+    >
+        <field name="name">Spend invoice over limit budget allocation</field>
+        <field name="model_id" ref="account.model_account_move" />
+        <field name="trigger">on_write</field>
+        <field
+            name="trigger_field_ids"
+            eval="[(4, ref('account.field_account_move__state'))]"
+        />
+        <field name="filter_domain">[["state","=","posted"]]</field>
+        <field name="state">code</field>
+        <field name="code">
+record.budget_move_ids.check_budget_constraint(record.invoice_line_ids)
+        </field>
+    </record>
+</odoo>

@@ -5,4 +5,3 @@ from . import budget_plan
 from . import budget_control
 from . import analytic_account
 from . import base_budget_move
-from . import account_move
