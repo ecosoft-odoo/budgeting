@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <record id="view_budget_monitor_report_tree" model="ir.ui.view">
+    <record id="view_budget_monitor_revision_report_tree" model="ir.ui.view">
         <field name="name">budget.monitor.revision.report.tree</field>
         <field name="model">budget.monitor.revision.report</field>
         <field name="arch" type="xml">
             <tree string="Budget Revision Monitoring">
+                <field name="amount_type" />
+                <field name="reference" optional="hide" />
+                <field name="date" />
                 <field name="analytic_account_id" />
                 <field name="revision_number" />
                 <field name="amount" />
             </tree>
         </field>
     </record>
-    <record id="view_budget_monitor_report_pivot" model="ir.ui.view">
+    <record id="view_budget_monitor_revision_report_pivot" model="ir.ui.view">
         <field name="name">budget.monitor.revision.report.pivot</field>
         <field name="model">budget.monitor.revision.report</field>
         <field name="arch" type="xml">
@@ -22,7 +25,7 @@
             </pivot>
         </field>
     </record>
-    <record id="view_budget_monitor_report_graph" model="ir.ui.view">
+    <record id="view_budget_monitor_revision_report_graph" model="ir.ui.view">
         <field name="name">budget.monitor.revision.report.graph</field>
         <field name="model">budget.monitor.revision.report</field>
         <field name="arch" type="xml">

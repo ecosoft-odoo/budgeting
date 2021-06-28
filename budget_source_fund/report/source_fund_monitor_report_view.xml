@@ -8,6 +8,8 @@
                 <field name="amount_type" />
                 <field name="res_id" />
                 <field name="fund_id" />
+                <field name="fund_group_id" optional="hide" />
+                <field name="analytic_account_id" />
                 <field name="amount" />
             </tree>
         </field>
