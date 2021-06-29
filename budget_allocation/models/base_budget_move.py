@@ -65,10 +65,16 @@ class BaseBudgetMove(models.AbstractModel):
         fields_readgroup = self._get_fields_read_group()
         groupby_readgroup = self._get_groupby_read_group()
         analytic_account = self.mapped("analytic_account_id")
+        document = docline._doc_rel
+        # check budget move name for filter
+        if doc._name == "purchase.order":
+            document = "purchase_id"
+        elif doc._name == "purchase.request":
+            document = "purchase_request_id"
         for aa in analytic_account:
             domain_readgroup = [
                 ("analytic_account_id", "=", aa.id),
-                (docline._doc_rel, "=", doc.id),
+                (document, "=", doc.id),
             ]
             # Find allocation line group by
             budget_allocation_lines = self._get_budget_allocation_lines(
