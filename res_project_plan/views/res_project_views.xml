@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_res_project_form" model="ir.ui.view">
+        <field name="name">res.project.form</field>
+        <field name="model">res.project</field>
+        <field name="inherit_id" ref="res_project.view_res_project_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet//group[@name='main_right_project']" position="inside">
+                <field name="currency_id" groups="base.group_multi_currency" />
+                <field name="plan_amount" />
+            </xpath>
+            <xpath expr="/form/sheet/notebook" position="inside">
+                <page name="project_plan" string="Plan">
+                    <field name="project_plan_ids">
+                        <tree editable="bottom">
+                            <field name="budget_period_id" />
+                            <field name="amount" />
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
