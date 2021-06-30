@@ -49,8 +49,8 @@ class SourceFundMonitorReport(models.Model):
         select_budget_query[
             10
         ] = """
-            aa.bm_date_from as date_from,
-            aa.bm_date_to as date_to,
+            al.date_from as date_from,
+            al.date_to as date_to,
             bc.active as active
         """
         return select_budget_query
