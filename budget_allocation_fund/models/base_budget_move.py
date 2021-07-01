@@ -32,9 +32,9 @@ class BaseBudgetMove(models.AbstractModel):
         ba_line_group = super()._get_ba_line_group(
             budget_allocation_lines, obj_group
         )
-        return ba_line_group.filtered(
-            lambda l: l.fund_id.id == obj_group["fund_id"][0]
-        )
+        # check case no fund
+        obj_group = obj_group["fund_id"] and obj_group["fund_id"][0] or False
+        return ba_line_group.filtered(lambda l: l.fund_id.id == obj_group)
 
     def _get_move_commit(self, obj, obj_group):
         move_commit = super()._get_move_commit(obj, obj_group)
