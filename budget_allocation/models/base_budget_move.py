@@ -4,6 +4,15 @@
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
+BUDGET_MOVE = {
+    "account.budget.move": "account",
+    "purchase.request.budget.move": "purchase_request",
+    "purchase.budget.move": "purchase",
+    "advance.budget.move": "advance",
+    "expense.budget.move": "expense",
+    "contract.budget.move": "contract",
+}
+
 
 class BaseBudgetMove(models.AbstractModel):
     _inherit = "base.budget.move"
@@ -57,11 +66,12 @@ class BaseBudgetMove(models.AbstractModel):
         """
         BudgetControl = self.env["budget.control"]
         BudgetPeriod = self.env["budget.period"]
-        date_commit = docline.mapped(docline._budget_date_commit_fields[0])
         doc = docline[docline._doc_rel]
-        period_id = BudgetPeriod._get_eligible_budget_period(
-            date=date_commit[0]
-        )
+        # check budget period config following budget control
+        period_id = BudgetPeriod._get_eligible_budget_period(date=self.date)
+        config_allocation = period_id[BUDGET_MOVE[self._name]] or False
+        if not config_allocation:
+            return
         fields_readgroup = self._get_fields_read_group()
         groupby_readgroup = self._get_groupby_read_group()
         analytic_account = self.mapped("analytic_account_id")

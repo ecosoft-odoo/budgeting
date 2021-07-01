@@ -37,12 +37,11 @@ class BudgetMoveForward(models.Model):
         """ Filter case expense and advance """
         domain_search = super()._get_domain_search(model)
         if model == "hr.expense":
-            domain_search = [
-                ("amount_commit", ">", 0.0),
-                ("analytic_account_id", "!=", False),
-                ("state", "!=", "cancel"),
-                ("advance", "=", self._context.get("advance", False)),
-            ]
+            domain_search.extend(
+                [
+                    ("advance", "=", self._context.get("advance", False)),
+                ]
+            )
         return domain_search
 
 
