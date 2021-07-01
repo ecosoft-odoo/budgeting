@@ -136,7 +136,10 @@ class BudgetMoveForward(models.Model):
 
     def _get_domain_search(self, model):
         self.ensure_one()
-        domain_search = [("amount_commit", ">", 0.0)]
+        domain_search = [
+            ("amount_commit", ">", 0.0),
+            ("date_commit", "<", self.date_from),
+        ]
         return domain_search
 
     def _get_domain_unlink(self, model):
