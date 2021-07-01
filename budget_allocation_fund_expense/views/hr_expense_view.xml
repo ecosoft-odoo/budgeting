@@ -7,7 +7,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='analytic_account_id']" position="after">
                 <field name="fund_all" invisible="1" />
-                <field name="fund_id" domain="[('id', 'in', fund_all)]" />
+                <field name="fund_id" />
             </xpath>
         </field>
     </record>
@@ -21,11 +21,7 @@
                 position="after"
             >
                 <field name="fund_all" invisible="1" />
-                <field
-                    name="fund_id"
-                    domain="[('id', 'in', fund_all)]"
-                    optional="show"
-                />
+                <field name="fund_id" optional="show" />
             </xpath>
         </field>
     </record>

@@ -10,18 +10,14 @@
                 position="after"
             >
                 <field name="fund_all" invisible="1" />
-                <field
-                    name="fund_id"
-                    domain="[('id', 'in', fund_all)]"
-                    optional="show"
-                />
+                <field name="fund_id" optional="show" />
             </xpath>
             <xpath
                 expr="//field[@name='order_line']/form//field[@name='account_analytic_id']"
                 position="after"
             >
                 <field name="fund_all" invisible="1" />
-                <field name="fund_id" domain="[('id', 'in', fund_all)]" />
+                <field name="fund_id" />
             </xpath>
         </field>
     </record>
