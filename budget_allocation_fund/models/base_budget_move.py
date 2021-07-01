@@ -48,9 +48,6 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
-        compute="_compute_fund_id",
-        store=True,
-        readonly=False,
         index=True,
         ondelete="restrict",
         domain="[('id', 'in', fund_all)]",
@@ -61,8 +58,8 @@ class BudgetDoclineMixin(models.AbstractModel):
         compute_sudo=True,
     )
 
-    @api.depends("fund_all")
-    def _compute_fund_id(self):
+    @api.onchange("fund_all")
+    def _onchange_fund_all(self):
         for rec in self:
             rec.fund_id = (
                 rec.fund_all._origin.id if len(rec.fund_all) == 1 else False
