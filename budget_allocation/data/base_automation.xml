@@ -9,7 +9,7 @@
         <field name="trigger">on_create_or_write</field>
         <field name="state">code</field>
         <field name="code">
-records.check_budget_constraint(records.mapped("purchase_request_line_id"))
+records.check_budget_constraint(records.mapped("move_line_id"))
         </field>
     </record>
 </odoo>
