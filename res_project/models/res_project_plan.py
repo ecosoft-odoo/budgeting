@@ -14,12 +14,10 @@ class ResProjectPlan(models.Model):
         index=True,
         ondelete="cascade",
     )
-    budget_period_id = fields.Many2one(
-        comodel_name="budget.period",
-        required=True,
-    )
     currency_id = fields.Many2one(
         comodel_name="res.currency",
         related="project_id.currency_id",
     )
+    date_from = fields.Date(required=True)
+    date_to = fields.Date(required=True)
     amount = fields.Monetary()
