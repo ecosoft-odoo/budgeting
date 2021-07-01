@@ -19,10 +19,12 @@ class ResProject(models.Model):
     code = fields.Char(
         readonly=True,
         states={"draft": [("readonly", False)]},
+        tracking=True,
     )
     parent_project = fields.Char(readonly=True)
     active = fields.Boolean(
         default=True,
+        tracking=True,
         help="If the active field is set to False, "
         "it will allow you to hide the project without removing it.",
     )
@@ -35,6 +37,13 @@ class ResProject(models.Model):
         required=True,
         readonly=True,
         default=lambda self: self.env.company,
+    )
+    currency_id = fields.Many2one(
+        comodel_name="res.currency",
+        string="Currency",
+        required=True,
+        related="company_id.currency_id",
+        states={"done": [("readonly", "=", True)]},
     )
     project_manager_id = fields.Many2one(
         comodel_name="hr.employee",
@@ -72,6 +81,17 @@ class ResProject(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
+    plan_amount = fields.Monetary(
+        string="Plan Amount",
+        compute="_compute_plan_amount",
+        currency_field="currency_id",
+        help="Total Plan Amount for this project",
+    )
+    project_plan_ids = fields.One2many(
+        comodel_name="res.project.plan",
+        inverse_name="project_id",
+    )
+
     state = fields.Selection(
         [
             ("draft", "Draft"),
@@ -88,6 +108,11 @@ class ResProject(models.Model):
     )
 
     _sql_constraints = [("unique_name", "UNIQUE(name)", "name must be unique")]
+
+    @api.depends("project_plan_ids")
+    def _compute_plan_amount(self):
+        for rec in self:
+            rec.plan_amount = sum(rec.project_plan_ids.mapped("amount"))
 
     @api.model
     def create(self, vals):
