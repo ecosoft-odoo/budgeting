@@ -1,7 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class BaseBudgetMove(models.AbstractModel):
@@ -48,8 +48,12 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
+        compute="_compute_fund_id",
+        store=True,
+        readonly=False,
         index=True,
         ondelete="restrict",
+        domain="[('id', 'in', fund_all)]",
     )
     fund_all = fields.Many2many(
         comodel_name="budget.source.fund",
@@ -57,15 +61,23 @@ class BudgetDoclineMixin(models.AbstractModel):
         compute_sudo=True,
     )
 
+    @api.depends("fund_all")
+    def _compute_fund_id(self):
+        for rec in self:
+            rec.fund_id = (
+                rec.fund_all._origin.id if len(rec.fund_all) == 1 else False
+            )
+
+    @api.depends(
+        lambda self: (self._budget_analytic_field,)
+        if self._budget_analytic_field
+        else ()
+    )
     def _compute_fund_all(self):
         for doc in self:
-            fund_ids = doc[
+            doc.fund_all = doc[
                 doc._budget_analytic_field
             ].allocation_line_ids.mapped("fund_id")
-            doc.fund_all = fund_ids
-            if len(fund_ids) > 1 and doc.fund_id and doc.fund_id in fund_ids:
-                continue
-            doc.fund_id = len(fund_ids) == 1 and fund_ids.id or False
 
     def _update_budget_commitment(self, budget_vals, reverse=False):
         budget_vals = super()._update_budget_commitment(
