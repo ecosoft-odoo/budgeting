@@ -73,6 +73,7 @@ class BudgetDoclineMixin(models.AbstractModel):
     _budget_move_model = False  # account.budget.move
     _budget_move_field = "budget_move_ids"
     _doc_rel = False  # Reference to header object of docline
+    _no_date_commit_states = ["draft"]  # Never set date commit states
 
     can_commit = fields.Boolean(
         compute="_compute_can_commit",
@@ -292,8 +293,10 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     def prepare_commit(self):
         self.ensure_one()
-        self._set_date_commit()
-        self._check_date_commit()  # Testing only, can be removed when stable
+        # No date_commit on states, i.e., draft
+        if self[self._doc_rel].state not in self._no_date_commit_states:
+            self._set_date_commit()
+            self._check_date_commit()  # Testing only, can be removed when stable
 
     def _check_date_commit(self):
         """ Commit date must inline with analytic account """
