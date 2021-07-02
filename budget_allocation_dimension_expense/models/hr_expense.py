@@ -1,7 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import fields, models
 
 
 class HrExpense(models.Model):
@@ -30,8 +30,3 @@ class HrExpense(models.Model):
                 if not ml.get("product_id", False):
                     ml.update({"exclude_from_invoice_tab": True})
         return move_line_values_by_expense
-
-    # Trigger analytic
-    @api.depends("analytic_account_id")
-    def _compute_analytic_tag_all(self):
-        super()._compute_analytic_tag_all()
