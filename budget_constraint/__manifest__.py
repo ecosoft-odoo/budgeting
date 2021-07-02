@@ -2,20 +2,19 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 {
-    "name": "Budget Allocation",
-    "summary": "Helper create budget plan",
+    "name": "Budget Constraint",
     "version": "14.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
-    "depends": ["budget_plan"],
+    "depends": ["budget_control"],
     "data": [
+        "data/server_action.xml",
         "security/ir.model.access.csv",
-        "views/budget_allocation_view.xml",
-        "views/budget_plan_view.xml",
+        "views/budget_period_view.xml",
+        "views/budget_constraint_view.xml",
     ],
     "installable": True,
-    "maintainers": ["ps-tubtim"],
     "development_status": "Alpha",
 }

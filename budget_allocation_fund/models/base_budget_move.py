@@ -18,29 +18,10 @@ class BaseBudgetMove(models.AbstractModel):
         index=True,
     )
 
-    def _get_fields_read_group(self):
-        fields = super()._get_fields_read_group()
-        fields.append("fund_id")
-        return fields
-
-    def _get_groupby_read_group(self):
-        groupby = super()._get_fields_read_group()
-        groupby.append("fund_id")
-        return groupby
-
-    def _get_ba_line_group(self, budget_allocation_lines, obj_group):
-        ba_line_group = super()._get_ba_line_group(
-            budget_allocation_lines, obj_group
-        )
-        # check case no fund
-        obj_group = obj_group["fund_id"] and obj_group["fund_id"][0] or False
-        return ba_line_group.filtered(lambda l: l.fund_id.id == obj_group)
-
-    def _get_move_commit(self, obj, obj_group):
-        move_commit = super()._get_move_commit(obj, obj_group)
-        return move_commit.filtered(
-            lambda l: l.fund_id.id == obj_group["fund_id"][0]
-        )
+    def _where_query_source_fund(self, docline):
+        where_query = super()._where_query_source_fund(docline)
+        where_fund = "fund_id = {}".format(docline.fund_id.id)
+        return " and ".join([where_query, where_fund])
 
 
 class BudgetDoclineMixin(models.AbstractModel):
