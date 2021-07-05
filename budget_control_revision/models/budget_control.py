@@ -41,3 +41,12 @@ class BudgetControl(models.Model):
             editable = True
         self.update({"enable_revision_number": editable})
         return True
+
+    def _filter_by_budget_control(self, val):
+        res = super()._filter_by_budget_control(val)
+        if val["amount_type"] != "1_budget":
+            return res
+        revision_number = (
+            0 if not val["revision_number"] else int(val["revision_number"])
+        )
+        return res and revision_number == self.revision_number

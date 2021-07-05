@@ -560,3 +560,61 @@ class BudgetPeriod(models.Model):
         self._set_budget_info_amount(
             "amount_balance", [("source", "=", "sumcol")], kwargs
         )
+
+    @api.model
+    def get_budget_info_from_dataset(self, query, dataset):
+        """Get budget overview from a budget monitor dataset, i.e.,
+        budget_info = {
+            "amount_budget": 100,
+            "amount_actual": 70,
+            "amount_balance": 30
+        }
+        Note: based on installed modules
+        """
+        budget_info = {col: 0 for col in query["info_cols"].keys()}
+        budget_info["amount_commit"] = 0
+        for col, (amount_type, is_commit) in query["info_cols"].items():
+            info = list(
+                filter(lambda l: l["amount_type"] == amount_type, dataset)
+            )
+            if len(info) > 1:
+                raise ValidationError(_("Error retrieving budget info!"))
+            if info:
+                if is_commit:
+                    budget_info[col] = -info[0]["amount"]  # Negate
+                    budget_info["amount_commit"] += budget_info[col]
+                    continue
+                if amount_type == "8_actual":  # Negate consumed
+                    budget_info[col] = -info[0]["amount"]
+                    continue
+                budget_info[col] = info[0]["amount"]
+        budget_info["amount_consumed"] = (
+            budget_info["amount_commit"] + budget_info["amount_actual"]
+        )
+        budget_info["amount_balance"] = (
+            budget_info["amount_budget"] - budget_info["amount_consumed"]
+        )
+        return budget_info
+
+    def _budget_info_query(self):
+        query = {
+            "info_cols": {
+                "amount_budget": (
+                    "1_budget",
+                    False,
+                ),  # (amount_type, is_commit)
+                "amount_actual": ("8_actual", False),
+            },
+            "fields": [
+                "analytic_account_id",
+                "budget_period_id",
+                "amount_type",
+                "amount",
+            ],
+            "groupby": [
+                "analytic_account_id",
+                "budget_period_id",
+                "amount_type",
+            ],
+        }
+        return query

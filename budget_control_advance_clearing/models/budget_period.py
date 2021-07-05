@@ -34,6 +34,11 @@ class BudgetPeriod(models.Model):
             periods.update({advance: "-"})
         return periods
 
+    def _budget_info_query(self):
+        query = super()._budget_info_query()
+        query["info_cols"]["amount_advance"] = ("4_av_commit", True)
+        return query
+
     def _compute_budget_info(self, **kwargs):
         """ Add more data info budget_info, based on installed modules """
         super()._compute_budget_info(**kwargs)

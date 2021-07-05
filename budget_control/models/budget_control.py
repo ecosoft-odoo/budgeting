@@ -269,17 +269,40 @@ class BudgetControl(models.Model):
         for rec in self:
             rec.diff_amount = rec.released_amount - rec.amount_budget
 
+    def _filter_by_budget_control(self, val):
+        if (
+            val["analytic_account_id"][0] == self.analytic_account_id.id
+            and val["budget_period_id"][0] == self.budget_period_id.id
+        ):
+            return True
+        return False
+
     def _compute_budget_info(self):
         BudgetPeriod = self.env["budget.period"]
+        MonitorReport = self.env["budget.monitor.report"]
+        query = BudgetPeriod._budget_info_query()
+        analytic_ids = self.mapped("analytic_account_id").ids
+        budget_period_ids = self.mapped("budget_period_id").ids
+        # Retrieve budgeting data for a list of budget_control
+        dataset_all = MonitorReport.read_group(
+            domain=[
+                ("analytic_account_id", "in", analytic_ids),
+                ("budget_period_id", "in", budget_period_ids),
+            ],
+            fields=query["fields"],
+            groupby=query["groupby"],
+            lazy=False,
+        )
         for rec in self:
-            budget_period = BudgetPeriod.search(
-                [("mis_budget_id", "=", rec.budget_id.id)]
+            # Filter according to budget_control parameter
+            dataset = list(
+                filter(lambda l: rec._filter_by_budget_control(l), dataset_all)
             )
-            analytic_ids = [rec.analytic_account_id.id]
-            info = budget_period.get_budget_info(analytic_ids)
-            for key, value in info.items():
-                rec[key] = value
-            rec.amount_consumed = rec.amount_commit + rec.amount_actual
+            # Get data from dataset
+            budget_info = BudgetPeriod.get_budget_info_from_dataset(
+                query, dataset
+            )
+            rec.update(budget_info)
 
     @api.model
     def _get_mis_budget_domain(self):

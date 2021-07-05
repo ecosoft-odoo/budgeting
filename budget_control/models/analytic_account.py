@@ -70,25 +70,40 @@ class AccountAnalyticAccount(models.Model):
         help="Initial Balance from carry forward commitment",
     )
 
+    def _filter_by_analytic_account(self, val):
+        if val["analytic_account_id"][0] == self.id:
+            return True
+        return False
+
     def _compute_amount_budget_info(self):
-        """ Find amount info from date """
+        """ Note: This method is similar to BCS._compute_budget_info """
         BudgetPeriod = self.env["budget.period"]
+        MonitorReport = self.env["budget.monitor.report"]
+        query = BudgetPeriod._budget_info_query()
+        analytic_ids = self.ids
+        # Retrieve budgeting data for a list of budget_control
+        dataset_all = MonitorReport.read_group(
+            domain=[
+                ("analytic_account_id", "in", analytic_ids),
+            ],
+            fields=["analytic_account_id", "amount_type", "amount"],
+            groupby=["analytic_account_id", "amount_type"],
+            lazy=False,
+        )
         for rec in self:
-            rec_id = rec._origin.id  # support with compute new wizard
-            budget_period_ids = BudgetPeriod.search(
-                [
-                    ("bm_date_to", ">=", rec.bm_date_from),
-                    ("bm_date_from", "<=", rec.bm_date_to),
-                ]
+            # Filter according to budget_control parameter
+            dataset = list(
+                filter(
+                    lambda l: rec._filter_by_analytic_account(l), dataset_all
+                )
             )
-            consumed = budget = 0.0
-            for period_id in budget_period_ids:
-                info = period_id.get_budget_info(rec_id)
-                budget += info["amount_budget"]
-                consumed += info["amount_commit"] + info["amount_actual"]
-            rec.amount_budget = budget
-            rec.amount_consumed = consumed
-            rec.amount_balance = budget - consumed
+            # Get data from dataset
+            budget_info = BudgetPeriod.get_budget_info_from_dataset(
+                query, dataset
+            )
+            rec.amount_budget = budget_info["amount_budget"]
+            rec.amount_consumed = budget_info["amount_consumed"]
+            rec.amount_balance = rec.amount_budget - rec.amount_consumed
 
     def _find_next_analytic(self, next_date_range):
         self.ensure_one()
