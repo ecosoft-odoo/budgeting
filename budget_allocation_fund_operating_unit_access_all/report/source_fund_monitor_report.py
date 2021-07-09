@@ -11,6 +11,6 @@ class SourceFundMonitorReport(models.Model):
         all_ou = self.env.user.has_group(
             "budget_control_operating_unit_access_all.group_all_ou_budget_control"
         )
-        if all_ou:
+        if all_ou or self._context.get("force_all_ou", False):
             ou_id = self.env["operating.unit"].sudo().search([])
         return ou_id
