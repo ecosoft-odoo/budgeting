@@ -43,7 +43,7 @@ class ResProject(models.Model):
         string="Currency",
         required=True,
         related="company_id.currency_id",
-        states={"done": [("readonly", "=", True)]},
+        states={"done": [("readonly", True)]},
     )
     project_manager_id = fields.Many2one(
         comodel_name="hr.employee",
