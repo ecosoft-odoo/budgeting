@@ -47,6 +47,7 @@ class BudgetPeriod(models.Model):
     @api.model
     def check_budget(self, doclines, doc_type="account"):
         super().check_budget(doclines, doc_type)
-        message = self.check_budget_constraint(doclines, doc_type)
+        # Call function check budget with permission admin
+        message = self.sudo().check_budget_constraint(doclines, doc_type)
         if message:
             raise UserError(_("\n".join(message)))
