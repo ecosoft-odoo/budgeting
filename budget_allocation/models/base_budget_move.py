@@ -22,7 +22,9 @@ class BaseBudgetMove(models.AbstractModel):
             WHERE {where_source_fund}""".format(
                     source_fund_monitoring=self.env[
                         "source.fund.monitor.report"
-                    ]._table_query,
+                    ]
+                    .with_context(force_all_ou=1)
+                    ._table_query,
                     where_source_fund=self._where_query_source_fund(docline),
                 )
             )
