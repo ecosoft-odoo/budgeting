@@ -16,4 +16,5 @@ class BudgetAllocationLine(models.Model):
     fund_group_id = fields.Many2one(
         comodel_name="budget.source.fund.group",
         related="fund_id.fund_group_id",
+        store=True,
     )
