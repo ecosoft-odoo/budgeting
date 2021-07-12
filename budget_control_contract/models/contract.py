@@ -97,3 +97,9 @@ class ContractLine(models.Model):
         ):
             return False
         return True
+
+    def prepare_commit(self):
+        self.ensure_one()
+        if self._name == "contract.line":
+            return
+        return super().prepare_commit()

@@ -28,7 +28,11 @@ class BaseBudgetMove(models.AbstractModel):
             for x in dimensions
         ]
         where_dimensions = " and ".join(where_dimensions)
-        return " and ".join([where_query, where_dimensions])
+        return (
+            where_dimensions
+            and " and ".join([where_query, where_dimensions])
+            or where_query
+        )
 
 
 class BudgetDoclineMixin(models.AbstractModel):
