@@ -20,7 +20,9 @@ class BaseBudgetMove(models.AbstractModel):
 
     def _where_query_source_fund(self, docline):
         where_query = super()._where_query_source_fund(docline)
-        where_fund = "fund_id = {}".format(docline.fund_id.id)
+        where_fund = "fund_id {} {}".format(
+            docline.fund_id and "=" or "is", docline.fund_id.id or "null"
+        )
         return " and ".join([where_query, where_fund])
 
 
