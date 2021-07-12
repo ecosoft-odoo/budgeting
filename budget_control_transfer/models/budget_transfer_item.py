@@ -66,11 +66,18 @@ class BudgetTransferItem(models.Model):
         )
         return balance
 
+    def _get_source_transfer_budget_control(self):
+        source_budget_ctrl = self.source_budget_control_id
+        target_budget_ctrl = self.target_budget_control_id
+        return source_budget_ctrl, target_budget_ctrl
+
     @api.depends("source_budget_control_id", "target_budget_control_id")
     def _compute_amount_available(self):
         for transfer in self:
-            source_budget_ctrl = transfer.source_budget_control_id
-            target_budget_ctrl = transfer.target_budget_control_id
+            (
+                source_budget_ctrl,
+                target_budget_ctrl,
+            ) = transfer._get_source_transfer_budget_control()
             transfer.source_amount_available = (
                 source_budget_ctrl.amount_balance
             )

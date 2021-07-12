@@ -1,5 +1,6 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 from odoo import fields, models
 
 
@@ -28,3 +29,11 @@ class BudgetTransferItem(models.Model):
         if self._context.get("access_sudo", False):
             self = self.sudo()
         return super()._read(fields)
+
+    def _get_source_transfer_budget_control(self):
+        (
+            source_budget_ctrl,
+            target_budget_ctrl,
+        ) = super()._get_source_transfer_budget_control()
+        source_budget_ctrl = source_budget_ctrl.with_context(force_all_ou=1)
+        return source_budget_ctrl, target_budget_ctrl
