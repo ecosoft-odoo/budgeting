@@ -19,6 +19,7 @@
         "data/analytic_group_data.xml",
         "views/analytic_account_views.xml",
         "views/budget_control_view.xml",
+        "views/hr_views.xml",
         "report/budget_monitor_report_view.xml",
     ],
     "maintainers": ["Saran440"],
