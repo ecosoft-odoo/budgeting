@@ -35,8 +35,8 @@ class BaseBudgetMove(models.AbstractModel):
         )
 
 
-class BudgetDoclineMixin(models.AbstractModel):
-    _inherit = "budget.docline.mixin"
+class BudgetDoclineMixinBase(models.AbstractModel):
+    _inherit = "budget.docline.mixin.base"
 
     analytic_tag_all = fields.Many2many(
         comodel_name="account.analytic.tag",
@@ -46,21 +46,20 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     @api.onchange("analytic_tag_all")
     def _onchange_analytic_tag_all(self):
-        for doc in self:
-            dimension_fields = doc._get_dimension_fields()
-            analytic_tag_ids = doc[
-                doc._budget_analytic_field
-            ].allocation_line_ids.mapped(doc._analytic_tag_field_name)
-            if (
-                len(analytic_tag_ids) != len(dimension_fields)
-                and doc.analytic_tag_ids
-            ):
-                continue
-            doc.analytic_tag_ids = (
-                len(analytic_tag_ids) == len(dimension_fields)
-                and analytic_tag_ids
-                or False
-            )
+        dimension_fields = self._get_dimension_fields()
+        analytic_tag_ids = self[
+            self._budget_analytic_field
+        ].allocation_line_ids.mapped(self._analytic_tag_field_name)
+        if (
+            len(analytic_tag_ids) != len(dimension_fields)
+            and self.analytic_tag_ids
+        ):
+            return
+        self.analytic_tag_ids = (
+            len(analytic_tag_ids) == len(dimension_fields)
+            and analytic_tag_ids
+            or False
+        )
 
     def _get_dimension_fields(self):
         if self.env.context.get("update_custom_fields"):
