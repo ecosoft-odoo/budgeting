@@ -14,8 +14,8 @@ class BaseBudgetMove(models.AbstractModel):
     )
 
 
-class BudgetDoclineMixin(models.AbstractModel):
-    _inherit = "budget.docline.mixin"
+class BudgetDoclineMixinBase(models.AbstractModel):
+    _inherit = "budget.docline.mixin.base"
 
     job_order_id = fields.Many2one(
         comodel_name="budget.job.order",
@@ -23,6 +23,10 @@ class BudgetDoclineMixin(models.AbstractModel):
         index=True,
         ondelete="restrict",
     )
+
+
+class BudgetDoclineMixin(models.AbstractModel):
+    _inherit = "budget.docline.mixin"
 
     def _update_budget_commitment(self, budget_vals, reverse=False):
         budget_vals = super()._update_budget_commitment(

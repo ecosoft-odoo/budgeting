@@ -64,11 +64,13 @@ class BaseBudgetMove(models.AbstractModel):
     )
 
 
-class BudgetDoclineMixin(models.AbstractModel):
-    _name = "budget.docline.mixin"
-    _description = "Mixin used in each document line model that commit budget"
-    # Budget related variables
+class BudgetDoclineMixinBase(models.AbstractModel):
+    _name = "budget.docline.mixin.base"
+    _description = (
+        "Base of budget.docline.mixin, used for non budgeting model extension"
+    )
     _budget_analytic_field = "analytic_account_id"
+    # Budget related variables
     _budget_date_commit_fields = []  # Date used for budget commitment
     _budget_move_model = False  # account.budget.move
     _budget_move_field = "budget_move_ids"
@@ -78,6 +80,12 @@ class BudgetDoclineMixin(models.AbstractModel):
         "cancel",
         "rejected",
     ]  # Never set date commit states
+
+
+class BudgetDoclineMixin(models.AbstractModel):
+    _name = "budget.docline.mixin"
+    _inherit = ["budget.docline.mixin.base"]
+    _description = "Mixin used in each document line model that commit budget"
 
     can_commit = fields.Boolean(
         compute="_compute_can_commit",

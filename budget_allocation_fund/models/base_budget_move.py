@@ -26,8 +26,8 @@ class BaseBudgetMove(models.AbstractModel):
         return " and ".join([where_query, where_fund])
 
 
-class BudgetDoclineMixin(models.AbstractModel):
-    _inherit = "budget.docline.mixin"
+class BudgetDoclineMixinBase(models.AbstractModel):
+    _inherit = "budget.docline.mixin.base"
 
     fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
@@ -58,6 +58,10 @@ class BudgetDoclineMixin(models.AbstractModel):
             doc.fund_all = doc[
                 doc._budget_analytic_field
             ].allocation_line_ids.mapped("fund_id")
+
+
+class BudgetDoclineMixin(models.AbstractModel):
+    _inherit = "budget.docline.mixin"
 
     def _update_budget_commitment(self, budget_vals, reverse=False):
         budget_vals = super()._update_budget_commitment(
