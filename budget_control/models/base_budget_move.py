@@ -158,7 +158,7 @@ class BudgetDoclineMixin(models.AbstractModel):
             if rec.budget_move_ids:
                 rec.date_commit = min(rec.budget_move_ids.mapped("date"))
             else:
-                rec.date_commit = False
+                rec.date_commit = rec.date_commit
 
     def _set_date_commit(self):
         """Default implementation, use date from _doc_date_field

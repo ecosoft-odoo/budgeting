@@ -1,6 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class PurchaseOrder(models.Model):
@@ -12,6 +12,8 @@ class PurchaseOrder(models.Model):
         string="Purchase Budget Moves",
     )
 
+    # Allow trigger, because purchase order line is editable even when approved.
+    @api.constrains("order_line")
     def recompute_budget_move(self):
         self.mapped("order_line").recompute_budget_move()
 
@@ -25,8 +27,10 @@ class PurchaseOrder(models.Model):
         """
         res = super().write(vals)
         if vals.get("state") in ("purchase", "cancel", "draft"):
-            for purchase_line in self.mapped("order_line"):
-                purchase_line.commit_budget()
+            doclines = self.mapped("order_line")
+            if vals.get("state") in ("cancel", "draft"):
+                doclines.write({"date_commit": False})
+            doclines.recompute_budget_move()
         return res
 
     def button_confirm(self):

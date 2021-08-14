@@ -31,10 +31,10 @@ class AccountMove(models.Model):
         """
         res = super().write(vals)
         if vals.get("state") in ("posted", "cancel", "draft"):
-            for move in self:
-                invoice_lines = move.mapped("invoice_line_ids")
-                for line in invoice_lines:
-                    line.commit_budget()
+            doclines = self.mapped("invoice_line_ids")
+            if vals.get("state") in ("cancel", "draft"):
+                doclines.write({"date_commit": False})
+            doclines.recompute_budget_move()
         return res
 
     def _filtered_move_check_budget(self):

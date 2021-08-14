@@ -1,6 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class HRExpenseSheet(models.Model):
@@ -11,6 +11,7 @@ class HRExpenseSheet(models.Model):
         inverse_name="sheet_id",
     )
 
+    @api.constrains("expense_line_ids")
     def recompute_budget_move(self):
         self.mapped("expense_line_ids").recompute_budget_move()
 
@@ -24,8 +25,10 @@ class HRExpenseSheet(models.Model):
         """
         res = super().write(vals)
         if vals.get("state") in ("approve", "cancel", "draft"):
-            for expense in self.mapped("expense_line_ids"):
-                expense.commit_budget()
+            doclines = self.mapped("expense_line_ids")
+            if vals.get("state") in ("cancel", "draft"):
+                doclines.write({"date_commit": False})
+            doclines.recompute_budget_move()
         return res
 
     def approve_expense_sheets(self):
