@@ -25,9 +25,10 @@ class PurchaseRequest(models.Model):
         """
         res = super().write(vals)
         if vals.get("state") in ("approved", "rejected", "draft"):
-            pr_lines = self.mapped("line_ids")
-            for pr_line in pr_lines:
-                pr_line.commit_budget()
+            doclines = self.mapped("line_ids")
+            if vals.get("state") in ("rejected", "draft"):
+                doclines.write({"date_commit": False})
+            doclines.recompute_budget_move()
         return res
 
     def button_approved(self):
