@@ -147,9 +147,6 @@ class BudgetPlan(models.Model):
                 "active_ids": self.ids,
             }
         )
-        # Used active_id from generate budget control
-        if ctx.get("active_id", False):
-            del ctx["active_id"]
         return ctx
 
     def _generate_budget_control(self, analytic_plan):
