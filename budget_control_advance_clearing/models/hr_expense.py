@@ -20,18 +20,17 @@ class HRExpenseSheet(models.Model):
         """ To clear advance, analytic must equal to the clear advance's """
         for sheet in self.filtered("advance_sheet_id"):
             advance = sheet.advance_sheet_id
+            clearing = sheet.expense_line_ids
             adv_analytic = advance.expense_line_ids.mapped(
                 "analytic_account_id"
             )
             if (
-                sheet.expense_line_ids.mapped("analytic_account_id")
-                != adv_analytic
+                clearing.mapped("analytic_account_id") not in adv_analytic
+                and clearing.mapped("analytic_account_id") != adv_analytic
             ):
                 raise UserError(
-                    _(
-                        "All selected analytic must equal to its clearing advance: %s"
-                    )
-                    % adv_analytic.display_name
+                    _("All selected analytic must in its clearing advance: %s")
+                    % ", ".join(adv_analytic.mapped("display_name"))
                 )
 
     def write(self, vals):
@@ -123,7 +122,7 @@ class HRExpense(models.Model):
     def uncommit_advance_budget(self):
         """For clearing in valid state, do uncommit for related Advance."""
         budget_moves = self.env["advance.budget.move"]
-        for clearing in self.filtered("can_commit"):
+        for i, clearing in enumerate(self.filtered("can_commit")):
             cl_state = clearing.sheet_id.state
             if self.env.context.get("force_commit") or cl_state in (
                 "approve",
@@ -131,13 +130,20 @@ class HRExpense(models.Model):
             ):
                 # !!! There is no direct reference between advance and clearing !!!
                 advance = clearing.sheet_id.advance_sheet_id.expense_line_ids
-                advance.ensure_one()
                 clearing_amount = (
                     clearing.total_amount
                     if self.env.company.budget_include_tax
                     else clearing.untaxed_amount
                 )
-                budget_move = advance.with_context(
+                # case: filter advance by analytic account
+                adv_analytic = advance.filtered(
+                    lambda l: l.analytic_account_id
+                    == clearing.analytic_account_id
+                )
+                if len(adv_analytic) > 1:
+                    # advance return 1 commit / 1 clearing
+                    adv_analytic = adv_analytic[i]
+                budget_move = adv_analytic.with_context(
                     uncommit=True
                 ).commit_budget(
                     reverse=True,
