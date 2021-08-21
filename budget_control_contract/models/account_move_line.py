@@ -17,7 +17,7 @@ class AccountMoveLine(models.Model):
                     contract_line = ml.contract_line_id
                     if not contract_line:
                         continue
-                    contract_line.with_context(uncommit=True).commit_budget(
+                    contract_line.commit_budget(
                         reverse=rev, move_line_id=ml.id
                     )
                 else:  # Cancel or draft, not commitment line
