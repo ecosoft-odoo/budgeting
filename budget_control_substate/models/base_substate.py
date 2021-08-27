@@ -10,10 +10,10 @@ class BaseSubstateType(models.Model):
     model = fields.Selection(
         selection_add=[
             ("budget.control", "Budget Control"),
-            ("budget.move.forward", "Budget Carry Forward"),
+            ("budget.commit.forward", "Budget Commit Forward"),
         ],
         ondelete={
             "budget.control": "cascade",
-            "budget.move.forward": "cascade",
+            "budget.commit.forward": "cascade",
         },
     )

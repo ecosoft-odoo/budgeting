@@ -3,11 +3,11 @@
 from odoo import fields, models
 
 
-class BudgetMoveForward(models.Model):
-    _inherit = "budget.move.forward"
+class BudgetCommitForward(models.Model):
+    _inherit = "budget.commit.forward"
 
     forward_advance_ids = fields.One2many(
-        comodel_name="budget.move.forward.line",
+        comodel_name="budget.commit.forward.line",
         inverse_name="forward_id",
         string="Advance / Clearing",
         domain=[("res_model", "=", "hr.expense.advance")],
@@ -45,8 +45,8 @@ class BudgetMoveForward(models.Model):
         return domain_search
 
 
-class BudgetMoveForwardLine(models.Model):
-    _inherit = "budget.move.forward.line"
+class BudgetCommitForwardLine(models.Model):
+    _inherit = "budget.commit.forward.line"
 
     res_model = fields.Selection(
         selection_add=[("hr.expense.advance", "Advance")],
