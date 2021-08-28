@@ -17,11 +17,9 @@ class ResProject(models.Model):
     ):
         self.ensure_one()
         return {
-            "name": "{}{}".format(
-                period and period.name + ": " or "", self.name
-            ),
+            "name": self.name,
             "code": self.code,
-            "project_id": self.id,
+            "project_id": self.id,  # Project
             "group_id": group_id and group_id.id or False,
             "budget_period_id": period and period.id,
             "bm_date_from": date_from,
