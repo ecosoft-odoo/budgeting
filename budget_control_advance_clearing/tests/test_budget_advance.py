@@ -4,7 +4,7 @@
 
 from freezegun import freeze_time
 
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tests.common import Form
 
@@ -52,6 +52,7 @@ class TestBudgetControl(BudgetControlCommon):
         cls.budget_control.item_ids.filtered(
             lambda x: x.kpi_expression_id == cls.kpi2.expression_ids[0]
         )[:1].write({"amount": 200})
+        cls.budget_control.flush()  # Need to flush data into table, so it can be sql
         cls.budget_control.allocated_amount = 300
         cls.budget_control.action_done()
         # Set advance account
@@ -214,8 +215,9 @@ class TestBudgetControl(BudgetControlCommon):
         self.assertEqual(self.budget_control.amount_expense, 0)
         self.assertEqual(self.budget_control.amount_balance, 200)
         # Change line 1 amount to exceed
-        clearing.expense_line_ids[:1].unit_amount = 100
-        with self.assertRaises(ValidationError):
+        clearing.expense_line_ids[:1].unit_amount = 200
+        self.budget_control.flush()
+        with self.assertRaises(UserError):
             clearing.action_submit_sheet()
 
     @freeze_time("2001-02-01")

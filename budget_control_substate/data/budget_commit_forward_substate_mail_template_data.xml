@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo noupdate="1">
     <record
-        id="mail_template_data_budget_move_forward_substate_verified"
+        id="mail_template_data_budget_commit_forward_substate_verified"
         model="mail.template"
     >
         <field name="name">Verified</field>
-        <field name="model_id" ref="budget_control.model_budget_move_forward" />
+        <field name="model_id" ref="budget_control.model_budget_commit_forward" />
         <field
             name="subject"
         >Your budget carry forward ${object.name} is verified</field>

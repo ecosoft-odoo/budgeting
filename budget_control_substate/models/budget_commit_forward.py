@@ -4,7 +4,7 @@
 from odoo import models
 
 
-class BudgetMoveForward(models.Model):
-    _inherit = ["budget.move.forward", "base.substate.mixin"]
-    _name = "budget.move.forward"
+class BudgetCommitForward(models.Model):
+    _inherit = ["budget.commit.forward", "base.substate.mixin"]
+    _name = "budget.commit.forward"
     _state_field = "state"

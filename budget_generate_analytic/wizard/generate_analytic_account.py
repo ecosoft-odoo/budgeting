@@ -64,9 +64,9 @@ class GenerateAnalyticAccount(models.TransientModel):
         analytics = self.env["account.analytic.account"]
         model, active_ids = self._check_model_allow()
         objects = self.env[model].browse(active_ids)
-        analytic_account_ids = objects.mapped("analytic_account_ids")
+        analytic_accounts = objects.mapped("analytic_account_ids")
         if self.bm_date_from and self.bm_date_to:
-            analytics = analytic_account_ids.filtered(
+            analytics = analytic_accounts.filtered(
                 lambda l: l.bm_date_to >= self.bm_date_from
                 and l.bm_date_from <= self.bm_date_to
             )
@@ -77,7 +77,7 @@ class GenerateAnalyticAccount(models.TransientModel):
         active_ids = self._context.get("active_ids", False)
         if model not in ALLOW_MODEL_CREATE:
             raise UserError(
-                _("Model {} is not allow to create analytic.".format(model))
+                _("Model {} is not allowed to create analytic.".format(model))
             )
         return model, active_ids
 
@@ -105,12 +105,12 @@ class GenerateAnalyticAccount(models.TransientModel):
 
     def _prepare_analytic_vals(self, objects):
         self.ensure_one()
-        analytic_account_ids = objects.mapped("analytic_account_ids")
+        analytic_accounts = objects.mapped("analytic_account_ids")
         group_id = self.group_id
         analytic_vals = []
         field_model = DICT_FIELD_MODEL[objects._name]
         for obj in objects:
-            existing_analytic = analytic_account_ids.filtered(
+            existing_analytic = analytic_accounts.filtered(
                 lambda l: l.id in self.analytic_ids.ids
                 and l[field_model].id == obj.id
             )

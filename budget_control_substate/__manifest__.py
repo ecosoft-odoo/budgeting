@@ -12,14 +12,14 @@
     "data": [
         "data/budget_control_substate_mail_template_data.xml",
         "data/budget_control_substate_data.xml",
-        "data/budget_move_forward_substate_mail_template_data.xml",
-        "data/budget_move_forward_substate_data.xml",
+        "data/budget_commit_forward_substate_mail_template_data.xml",
+        "data/budget_commit_forward_substate_data.xml",
         "views/budget_control_view.xml",
-        "views/budget_move_forward_view.xml",
+        "views/budget_commit_forward_view.xml",
     ],
     "demo": [
         "demo/budget_control_substate_demo.xml",
-        "demo/budget_move_forward_substate_demo.xml",
+        "demo/budget_commit_forward_substate_demo.xml",
     ],
     "installable": True,
 }

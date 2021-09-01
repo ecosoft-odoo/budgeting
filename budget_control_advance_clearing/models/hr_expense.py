@@ -38,8 +38,10 @@ class HRExpenseSheet(models.Model):
         """ Clearing for its Advance """
         res = super().write(vals)
         if vals.get("state") in ("approve", "cancel"):
-            clearings = self.filtered("advance_sheet_id")
-            clearings.mapped("expense_line_ids").uncommit_advance_budget()
+            # If this is a clearing, return commit to the advance
+            advances = self.mapped("advance_sheet_id.expense_line_ids")
+            if advances:
+                advances.recompute_budget_move()
         return res
 
 
@@ -100,6 +102,7 @@ class HRExpense(models.Model):
             [("sheet_id.advance_sheet_id", "in", adv_sheets.ids)]
         )
         clearings.uncommit_advance_budget()
+        adv_sheets.mapped("expense_line_ids").forward_commit()
 
     def close_budget_move(self):
         # Expenses
@@ -129,20 +132,35 @@ class HRExpense(models.Model):
                 "approve",
                 "done",
             ):
-                # !!! There is no direct reference between advance and clearing !!!
-                advance = clearing.sheet_id.advance_sheet_id.expense_line_ids
-                advance.ensure_one()
-                clearing_amount = (
+                # With possibility to have multiple advance lines,
+                # just return amount line by line
+                origin_clearing_amount = (
                     clearing.total_amount
                     if self.env.company.budget_include_tax
                     else clearing.untaxed_amount
                 )
-                budget_move = advance.commit_budget(
-                    reverse=True,
-                    clearing_id=clearing.id,
-                    amount_currency=clearing_amount,
-                )
-                budget_moves |= budget_move
+                while origin_clearing_amount > 0:
+                    advance_sheet = clearing.sheet_id.advance_sheet_id
+                    advances = advance_sheet.expense_line_ids.filtered(
+                        "amount_commit"
+                    )
+                    if not advances:
+                        break
+                    for advance in advances:
+                        clearing_amount = (
+                            advance.amount_commit
+                            if advance.amount_commit < origin_clearing_amount
+                            else origin_clearing_amount
+                        )
+                        origin_clearing_amount -= clearing_amount
+                        budget_move = advance.commit_budget(
+                            reverse=True,
+                            clearing_id=clearing.id,
+                            amount_currency=clearing_amount,
+                        )
+                        budget_moves |= budget_move
+                        if origin_clearing_amount <= 0:
+                            break
             else:
                 # Cancel or draft, not commitment line
                 self.env["advance.budget.move"].search(
