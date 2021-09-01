@@ -11,6 +11,24 @@
             >
                 <field name="commit_budget" />
             </xpath>
+            <xpath
+                expr="//field[@name='contract_line_fixed_ids']/tree//field[last()]"
+                position="after"
+            >
+                <field name="auto_adjust_date_commit" optional="hide" />
+                <field name="amount_commit" optional="hide" readonly="1" />
+                <field name="date_commit" optional="hide" />
+                <field
+                    name="fwd_analytic_account_id"
+                    optional="hide"
+                    groups="budget_control.group_budget_control_manager"
+                />
+                <field
+                    name="fwd_date_commit"
+                    optional="hide"
+                    groups="budget_control.group_budget_control_manager"
+                />
+            </xpath>
             <xpath expr="/form/sheet/notebook/page[last()]" position="after">
                 <page
                     string="Budget Commitment"
