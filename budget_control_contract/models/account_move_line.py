@@ -14,7 +14,9 @@ class AccountMoveLine(models.Model):
             if move_type in ("in_invoice", "in_refund"):
                 if inv_state == "posted":
                     rev = move_type == "in_invoice" and True or False
-                    contract_line = ml.contract_line_id
+                    contract_line = ml.contract_line_id.filtered(
+                        "amount_commit"
+                    )
                     if not contract_line:
                         continue
                     contract_line.commit_budget(

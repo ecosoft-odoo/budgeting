@@ -6,21 +6,25 @@
         <field name="inherit_id" ref="budget_control.view_budget_commit_forward_form" />
         <field name="priority">20</field>
         <field name="arch" type="xml">
+            <div name="docs" position="inside">
+                <div>
+                    <field
+                        name="contract"
+                        attrs="{'readonly': [('state', '!=', 'draft')]}"
+                    />
+                    <label for="contract" />
+                </div>
+            </div>
             <notebook position="inside">
-                <page string="Contract">
-                    <div class="oe_read_only oe_right" name="buttons">
-                        <button
-                            type="object"
-                            name="get_budget_commit_forward"
-                            string="List contract commitment"
-                            icon="fa-refresh"
-                            context="{'res_model': 'contract.line'}"
-                            states="draft"
-                        />
-                    </div>
+                <page
+                    string="Contract"
+                    attrs="{'invisible': [('contract', '=', False)]}"
+                >
                     <field
                         name="forward_contract_ids"
+                        attrs="{'readonly': [('state', '!=', 'review')]}"
                         tree_view_ref="budget_control.view_budget_commit_forward_line_tree"
+                        form_view_ref="budget_control.view_budget_commit_forward_line_form"
                     />
                 </page>
             </notebook>

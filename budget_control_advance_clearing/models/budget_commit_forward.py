@@ -6,40 +6,36 @@ from odoo import fields, models
 class BudgetCommitForward(models.Model):
     _inherit = "budget.commit.forward"
 
+    advance = fields.Boolean(
+        string="Advance",
+        default=True,
+        help="If checked, click review budget commitment will pull advance commitment",
+    )
     forward_advance_ids = fields.One2many(
         comodel_name="budget.commit.forward.line",
         inverse_name="forward_id",
-        string="Advance / Clearing",
+        string="Advance",
         domain=[("res_model", "=", "hr.expense.advance")],
     )
 
+    def _get_budget_docline_model(self):
+        res = super()._get_budget_docline_model()
+        if self.advance:
+            res.append("hr.expense.advance")
+        return res
+
     def _get_document_number(self, doc):
         if doc._name == "hr.expense.advance":
-            return doc.name
+            return ("{},{}".format(doc.sheet_id._name, doc.sheet_id.id),)
         return super()._get_document_number(doc)
 
-    def _prepare_vals_forward(self, docs, model):
-        value_dict = super()._prepare_vals_forward(docs, model)
-        if model == "hr.expense" and self._context.get("advance", False):
-            for val in value_dict:
-                val["res_model"] = "hr.expense.advance"
-        return value_dict
-
-    def _get_domain_unlink(self, model):
-        if model == "hr.expense" and self._context.get("advance", False):
-            return [
-                ("forward_id", "=", self.id),
-                ("res_model", "=", "hr.expense.advance"),
-            ]
-        return super()._get_domain_unlink(model)
-
     def _get_domain_search(self, model):
-        """ Filter case expense and advance """
         domain_search = super()._get_domain_search(model)
-        if model == "hr.expense":
+        if model == "hr.expense.advance":
             domain_search.extend(
                 [
-                    ("advance", "=", self._context.get("advance", False)),
+                    ("analytic_account_id", "!=", False),
+                    ("state", "!=", "cancel"),
                 ]
             )
         return domain_search
