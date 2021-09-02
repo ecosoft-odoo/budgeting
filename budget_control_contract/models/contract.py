@@ -70,6 +70,7 @@ class ContractLine(models.Model):
                 [("contract_line_id", "=", contract_line.id)]
             )
             move_lines.uncommit_contract_budget()
+            contract_line.forward_commit()
 
     def _get_contract_line_account(self):
         fpos = self.contract_id.fiscal_position_id

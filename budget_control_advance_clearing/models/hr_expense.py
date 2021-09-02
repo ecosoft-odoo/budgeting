@@ -102,7 +102,6 @@ class HRExpense(models.Model):
             [("sheet_id.advance_sheet_id", "in", adv_sheets.ids)]
         )
         clearings.uncommit_advance_budget()
-        adv_sheets.mapped("expense_line_ids").forward_commit()
 
     def close_budget_move(self):
         # Expenses

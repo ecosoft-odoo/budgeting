@@ -15,7 +15,7 @@
                     <label for="advance" />
                 </div>
             </div>
-            <notebook position="inside">
+            <page name="help" position="before">
                 <page string="Advance" attrs="{'invisible': [('advance', '=', False)]}">
                     <field
                         name="forward_advance_ids"
@@ -24,7 +24,7 @@
                         form_view_ref="budget_control.view_budget_commit_forward_line_form"
                     />
                 </page>
-            </notebook>
+            </page>
         </field>
     </record>
 </odoo>
