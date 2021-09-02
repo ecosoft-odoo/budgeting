@@ -11,9 +11,11 @@ class BaseSubstateType(models.Model):
         selection_add=[
             ("budget.control", "Budget Control"),
             ("budget.commit.forward", "Budget Commit Forward"),
+            ("budget.balance.forward", "Budget Balance Forward"),
         ],
         ondelete={
             "budget.control": "cascade",
             "budget.commit.forward": "cascade",
+            "budget.balance.forward": "cascade",
         },
     )

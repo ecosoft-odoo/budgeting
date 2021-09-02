@@ -1,30 +1,30 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <record id="base_substate_type_budget_commit_forward" model="base.substate.type">
-        <field name="name">Budget Commit Forward Substate</field>
-        <field name="model">budget.commit.forward</field>
+    <record id="base_substate_type_budget_balance_forward" model="base.substate.type">
+        <field name="name">Budget Balance Forward Substate</field>
+        <field name="model">budget.balance.forward</field>
         <field name="target_state_field">state</field>
     </record>
-    <!-- Budget commit forward related substate to state (draft, done) -->
+    <!-- Budget balance forward related substate to state (draft, done) -->
     <record
-        id="target_state_value_draft_budget_commit_forward"
+        id="target_state_value_draft_budget_balance_forward"
         model="target.state.value"
     >
         <field name="name">Draft</field>
         <field
             name="base_substate_type_id"
-            ref="base_substate_type_budget_commit_forward"
+            ref="base_substate_type_budget_balance_forward"
         />
         <field name="target_state_value">draft</field>
     </record>
     <record
-        id="target_state_value_done_budget_commit_forward"
+        id="target_state_value_done_budget_balance_forward"
         model="target.state.value"
     >
         <field name="name">Done</field>
         <field
             name="base_substate_type_id"
-            ref="base_substate_type_budget_commit_forward"
+            ref="base_substate_type_budget_balance_forward"
         />
         <field name="target_state_value">done</field>
     </record>
