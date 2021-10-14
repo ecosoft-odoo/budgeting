@@ -143,8 +143,8 @@ class BudgetPlan(models.Model):
         ctx = self._context.copy()
         ctx.update(
             {
-                "active_model": "budget.plan",
-                "active_ids": self.ids,
+                "active_model": "budget.period",
+                "active_id": self.budget_period_id.id,
             }
         )
         return ctx
