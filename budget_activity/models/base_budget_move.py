@@ -17,6 +17,24 @@ class BaseBudgetMove(models.AbstractModel):
         string="Activity Group",
         related="activity_id.activity_group_id",
     )
+    account_id = fields.Many2one(
+        compute="_compute_activity_account",
+        store=True,
+        help="When activity is selected, always use activity's account to "
+        "enusre that the KPI budgeting which rely on account is valid. "
+        "Because in some case, i.e., perpetual inventory, "
+        "account in account.move.line can be different with "
+        "account in account.budget.move.",
+    )
+
+    @api.depends("activity_id")
+    def _compute_activity_account(self):
+        for rec in self:
+            rec.account_id = (
+                rec.activity_id.account_id
+                if rec.activity_id
+                else rec.account_id
+            )
 
     @api.constrains("activity_id", "account_id")
     def _check_activity_account(self):

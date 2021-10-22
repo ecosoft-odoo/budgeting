@@ -8,7 +8,7 @@
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
-    "depends": ["mis_builder_budget", "budget_activity"],
+    "depends": ["budget_activity"],
     "data": [
         "views/mis_report.xml",
         "views/mis_report_kpi.xml",
