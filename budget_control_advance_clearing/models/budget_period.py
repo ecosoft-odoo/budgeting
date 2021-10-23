@@ -8,7 +8,8 @@ class BudgetPeriod(models.Model):
 
     advance = fields.Boolean(
         string="On Advance",
-        default=False,
+        default=True,
+        readonly=True,
         help="Control budget on advance approved",
     )
 

@@ -8,7 +8,8 @@ class BudgetPeriod(models.Model):
 
     contract = fields.Boolean(
         string="On Contract (non-recurring)",
-        default=False,
+        default=True,
+        readonly=True,
         help="Control budget on non-recurring contract confirmation",
     )
 

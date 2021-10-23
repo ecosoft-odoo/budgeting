@@ -5,9 +5,13 @@
         <field name="model">budget.period</field>
         <field name="inherit_id" ref="budget_control.budget_period_view_form" />
         <field name="arch" type="xml">
-            <field name="account" position="after">
-                <field name="advance" widget="boolean_toggle" />
-            </field>
+            <div name="account" position="after">
+                <label for="advance" invisible="1" />
+                <div name="advance" class="o_row">
+                    <field name="advance" />
+                    <span>On Advance</span>
+                </div>
+            </div>
         </field>
     </record>
 </odoo>
