@@ -22,4 +22,6 @@
     "auto_install": True,
     "maintainers": ["kittiu"],
     "development_status": "Alpha",
+    "uninstall_hook": "uninstall_hook",
+    "post_init_hook": "post_init_hook",
 }
