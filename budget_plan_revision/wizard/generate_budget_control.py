@@ -9,10 +9,9 @@ class GenerateBudgetControl(models.TransientModel):
     def _hook_budget_controls(self, budget_controls):
         """ Update budget control for case new budget in year """
         budget_controls = super()._hook_budget_controls(budget_controls)
-        model = self._context.get("active_model", False)
         revision_number = self._context.get("revision_number", False)
         init_revision = self._context.get("init_revision", False)
-        if model == "budget.plan" and revision_number:
+        if revision_number:
             budget_controls.write(
                 {
                     "revision_number": revision_number,

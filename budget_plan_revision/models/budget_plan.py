@@ -93,7 +93,12 @@ class BudgetPlan(models.Model):
             if prev_control:
                 # Check state budget control for user manual cancel.
                 if prev_control.state != "cancel" and prev_control.active:
-                    raise UserError(_("Some budget control is not cancelled."))
+                    raise UserError(
+                        _(
+                            "In order to create new budget control version, "
+                            "all current ones must be cancelled."
+                        )
+                    )
                 prev_control.with_context(
                     revision_number=self.revision_number
                 ).create_revision()
@@ -135,7 +140,5 @@ class BudgetPlanLine(models.Model):
 
     def _domain_budget_control(self):
         domain = super()._domain_budget_control()
-        # Since we use revision, ensure having both active/inactive
-        domain.remove(("active", "=", True))
         domain.extend([("revision_number", "=", self.revision_number)])
         return domain
