@@ -30,9 +30,8 @@ class BudgetCommitForward(models.Model):
         return super()._get_document_number(doc)
 
     def _get_commit_docline(self, res_model):
-        if (
-            res_model == "hr.expense.advance"
-        ):  # Special case, model = hr.expense
+        # Special case, model = hr.expense with advance
+        if res_model == "hr.expense.advance":
             model = "hr.expense"
             domain = self._get_base_domain()
             domain.extend(
@@ -43,6 +42,16 @@ class BudgetCommitForward(models.Model):
                 ]
             )
             return self.env[model].search(domain)
+        if res_model == "hr.expense":
+            domain = self._get_base_domain()
+            domain.extend(
+                [
+                    ("advance", "=", False),  # Additional criteria
+                    ("analytic_account_id", "!=", False),
+                    ("state", "!=", "cancel"),
+                ]
+            )
+            return self.env[res_model].search(domain)
         return super()._get_commit_docline(res_model)
 
 

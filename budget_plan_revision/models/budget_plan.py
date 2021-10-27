@@ -33,12 +33,12 @@ class BudgetPlan(models.Model):
         self.update({"enable_revision_number": group_enable_revision})
         return True
 
-    def action_update_amount_consumed(self):
+    def action_update_amount(self):
         """
         Update consumed amount plan,
         For case new revision budget plan but not created budget control.
         """
-        super().action_update_amount_consumed()
+        super().action_update_amount()
         for rec in self:
             if not (rec.init_revision or rec.budget_control_ids):
                 analytics = rec.plan_line.mapped("analytic_account_id")
@@ -61,6 +61,7 @@ class BudgetPlan(models.Model):
                     ).sorted("revision_number")[-1:]
                     if prev_control:
                         line.amount_consumed = prev_control.amount_consumed
+                        line.released_amount = prev_control.released_amount
 
     def button_open_budget_control(self):
         # Beacuse we want to use revision number, and inactive should be shown
