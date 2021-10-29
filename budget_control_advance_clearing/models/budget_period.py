@@ -59,7 +59,7 @@ class BudgetPeriod(models.Model):
             sheet.ensure_one()
             if sheet.advance:
                 doc_type = "advance"
-                self = self.with_context(
+                doclines = doclines.with_context(
                     alt_budget_move_model="advance.budget.move",
                     alt_budget_move_field="advance_budget_move_ids",
                 )
