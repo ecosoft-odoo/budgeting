@@ -1,7 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo import api, fields, models
 
 
 class HRExpenseSheet(models.Model):
@@ -11,28 +10,6 @@ class HRExpenseSheet(models.Model):
         comodel_name="advance.budget.move",
         inverse_name="sheet_id",
     )
-
-    def action_submit_sheet(self):
-        self._check_analtyic_advance()
-        return super().action_submit_sheet()
-
-    def _check_analtyic_advance(self):
-        """ To clear advance, analytic must equal to the clear advance's """
-        for sheet in self.filtered("advance_sheet_id"):
-            advance = sheet.advance_sheet_id
-            adv_analytic = advance.expense_line_ids.mapped(
-                "analytic_account_id"
-            )
-            if (
-                sheet.expense_line_ids.mapped("analytic_account_id")
-                != adv_analytic
-            ):
-                raise UserError(
-                    _(
-                        "All selected analytic must equal to its clearing advance: %s"
-                    )
-                    % adv_analytic.display_name
-                )
 
     def write(self, vals):
         """ Clearing for its Advance """
