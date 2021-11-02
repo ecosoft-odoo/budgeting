@@ -1,6 +1,6 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import _, api, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
 
@@ -22,9 +22,30 @@ class HRExpenseSheet(models.Model):
                 )
         return super().action_submit_sheet()
 
+    @api.onchange("advance_sheet_id")
+    def _onchange_advance_sheet_id(self):
+        """ Add additional activity clearing line that wasn't added before """
+        super()._onchange_advance_sheet_id()
+        # Get only persistent lines
+        lines = self.advance_sheet_id.expense_line_ids.filtered("id")
+        for line in lines.filtered(
+            lambda l: not l.clearing_product_id and l.clearing_activity_id
+        ):
+            clear_advance = self._prepare_clear_advance(line)
+            self.expense_line_ids += self.env["hr.expense"].new(clear_advance)
+
 
 class HRExpense(models.Model):
     _inherit = "hr.expense"
+
+    clearing_activity_id = fields.Many2one(
+        comodel_name="budget.activity",
+        string="Clearing Activity",
+        tracking=True,
+        ondelete="restrict",
+        help="Optional: On the clear advance, the clearing "
+        "activity will create default activity line.",
+    )
 
     @api.constrains("advance")
     def _check_advance(self):
