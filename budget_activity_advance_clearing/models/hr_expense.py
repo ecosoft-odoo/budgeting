@@ -32,6 +32,7 @@ class HRExpenseSheet(models.Model):
             lambda l: not l.clearing_product_id and l.clearing_activity_id
         ):
             clear_advance = self._prepare_clear_advance(line)
+            clear_advance["activity_id"] = line.clearing_activity_id.id
             self.expense_line_ids += self.env["hr.expense"].new(clear_advance)
 
 
