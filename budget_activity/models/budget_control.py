@@ -11,3 +11,10 @@ class BudgetControl(models.Model):
         ctx = super()._get_context_budget_monitoring()
         ctx.update({"search_default_group_by_activity_group": 1})
         return ctx
+
+    def _get_value_items(self, date_range, kpi_expression):
+        items = super()._get_value_items(date_range, kpi_expression)
+        activity_group_id = kpi_expression.kpi_id.activity_group_id.id
+        for item in items:
+            item["activity_group_id"] = activity_group_id
+        return items
