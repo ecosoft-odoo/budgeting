@@ -65,11 +65,10 @@ class TestBudgetControl(BudgetControlCommon):
     def _create_advance_sheet(self, amount, analytic):
         Expense = self.env["hr.expense"]
         view_id = "hr_expense_advance_clearing.hr_expense_view_form"
-        ctx = {}
+        ctx = {"default_advance": True}
         user = self.env.ref("base.user_admin")
         with Form(Expense.with_context(ctx), view=view_id) as ex:
             ex.employee_id = user.employee_id
-            ex.advance = True
             ex.unit_amount = amount
             ex.analytic_account_id = analytic
         advance = ex.save()
@@ -129,7 +128,7 @@ class TestBudgetControl(BudgetControlCommon):
         advance.action_submit_sheet()  # No budget check no error
         # (2) Check Budget with analytic_kpi -> Error
         advance.reset_expense_sheets()
-        self.budget_period.advance = True  # Set to check budget
+        self.budget_period.control_budget = True  # Set to check budget
         # kpi 1 (kpi1) & CostCenter1, will result in $ -1.00
         with self.assertRaises(UserError):
             advance.action_submit_sheet()
@@ -169,8 +168,7 @@ class TestBudgetControl(BudgetControlCommon):
         self.assertEqual(300, self.budget_control.amount_budget)
         # Create advance = 100
         advance = self._create_advance_sheet(100, self.costcenter1)
-        self.budget_period.advance = True
-        self.budget_period.expense = True
+        self.budget_period.control_budget = True
         self.budget_period.control_level = "analytic"
         advance = advance.with_context(
             force_date_commit=advance.expense_line_ids[:1].date
@@ -231,8 +229,7 @@ class TestBudgetControl(BudgetControlCommon):
         self.assertEqual(300, self.budget_control.amount_budget)
         # Create advance = 100
         advance = self._create_advance_sheet(100, self.costcenter1)
-        self.budget_period.advance = True
-        self.budget_period.expense = True
+        self.budget_period.control_budget = True
         self.budget_period.control_level = "analytic"
         advance = advance.with_context(
             force_date_commit=advance.expense_line_ids[:1].date

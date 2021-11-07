@@ -94,13 +94,13 @@ class TestBudgetControl(BudgetControlCommon):
         )
 
         # (1) No budget check first
-        self.budget_period.contract = False
+        self.budget_period.control_budget = False
         self.budget_period.control_level = "analytic_kpi"
         # force date commit, as freeze_time not work for write_date
         contract = contract.with_context(force_date_commit=contract.date_start)
         contract.recompute_budget_move()  # No budget check no error
         # (2) Check Budget with analytic_kpi -> Error
-        self.budget_period.contract = True  # Set to check budget
+        self.budget_period.control_budget = True  # Set to check budget
         # kpi 1 (kpi1) & CostCenter1, will result in $ -1.00
         with self.assertRaises(UserError):
             contract.recompute_budget_move()
@@ -134,7 +134,7 @@ class TestBudgetControl(BudgetControlCommon):
                 },
             ]
         )
-        self.budget_period.contract = True
+        self.budget_period.control_budget = True
         self.budget_period.control_level = "analytic"
         contract = contract.with_context(force_date_commit=contract.date_start)
         contract.recompute_budget_move()
@@ -191,7 +191,7 @@ class TestBudgetControl(BudgetControlCommon):
                 },
             ]
         )
-        self.budget_period.contract = True
+        self.budget_period.control_budget = True
         self.budget_period.control_level = "analytic"
         contract = contract.with_context(force_date_commit=contract.date_start)
         contract.recompute_budget_move()
