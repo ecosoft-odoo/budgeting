@@ -4,4 +4,3 @@ from . import budget_period
 from . import budget_control
 from . import hr_expense
 from . import budget_commit_forward
-from . import account_move

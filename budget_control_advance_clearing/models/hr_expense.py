@@ -21,16 +21,6 @@ class HRExpenseSheet(models.Model):
                 advances.recompute_budget_move()
         return res
 
-    def recompute_budget_move(self):
-        super().recompute_budget_move()
-        # Case return advance, when advance is cleared to zero, close budget move
-        # Note: only support case cleared to zero, not partial
-        advance_sheets = self.filtered("advance")
-        advance_sheets = advance_sheets.filtered(
-            lambda l: not l.clearing_residual
-        )
-        advance_sheets.close_budget_move()
-
 
 class HRExpense(models.Model):
     _inherit = "hr.expense"
@@ -112,7 +102,7 @@ class HRExpense(models.Model):
     def uncommit_advance_budget(self):
         """For clearing in valid state, do uncommit for related Advance."""
         budget_moves = self.env["advance.budget.move"]
-        for clearing in self.filtered("can_commit"):
+        for clearing in self:
             cl_state = clearing.sheet_id.state
             if self.env.context.get("force_commit") or cl_state in (
                 "approve",

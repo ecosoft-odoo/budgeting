@@ -4,6 +4,7 @@
 
 from freezegun import freeze_time
 
+from odoo import fields
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tests.common import Form
@@ -281,3 +282,56 @@ class TestBudgetControl(BudgetControlCommon):
         self.budget_control.invalidate_cache()
         self.assertEqual(self.budget_control.amount_advance, 0)
         self.assertEqual(self.budget_control.amount_expense, 0)
+
+    @freeze_time("2001-02-01")
+    def test_04_return_advance(self):
+        """
+        Create Advance 100, balance is 200
+        - Return Advance 30
+        - Balance should be 230
+        """
+        # KPI1 = 100, KPI2 = 200, Total = 300
+        self.assertEqual(300, self.budget_control.amount_budget)
+        # Create advance = 100
+        advance = self._create_advance_sheet(100, self.costcenter1)
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        advance = advance.with_context(
+            force_date_commit=advance.expense_line_ids[:1].date
+        )
+        advance.action_submit_sheet()
+        advance.approve_expense_sheets()
+        advance.action_sheet_move_create()
+        # Make payment full amount = 100
+        advance.action_register_payment()
+        f = Form(
+            self.env["account.payment.register"].with_context(
+                active_model="account.move",
+                active_ids=[advance.account_move_id.id],
+            )
+        )
+        wizard = f.save()
+        wizard.action_create_payments()
+        self.assertEqual(advance.clearing_residual, 100)
+        self.assertEqual(self.budget_control.amount_advance, 100)
+        self.assertEqual(self.budget_control.amount_balance, 200)
+        # Return advance = 30
+        advance.with_context(
+            hr_return_advance=True,
+        ).action_register_payment()
+        with Form(
+            self.env["account.payment.register"].with_context(
+                active_model="account.move",
+                active_ids=[advance.account_move_id.id],
+                hr_return_advance=True,
+            )
+        ) as f:
+            f.payment_date = fields.Date.today()
+            f.amount = 30
+        wizard = f.save()
+        wizard.with_context(
+            hr_return_advance=True,
+        ).action_create_payments()
+        self.assertEqual(advance.clearing_residual, 70)
+        self.assertEqual(self.budget_control.amount_advance, 70)
+        self.assertEqual(self.budget_control.amount_balance, 230)
