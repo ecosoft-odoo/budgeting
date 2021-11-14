@@ -26,6 +26,7 @@ class HRExpenseSheet(models.Model):
     def _onchange_advance_sheet_id(self):
         """ Add additional activity clearing line that wasn't added before """
         super()._onchange_advance_sheet_id()
+        Expense = self.env["hr.expense"]
         # Get only persistent lines
         lines = self.advance_sheet_id.expense_line_ids.filtered("id")
         for line in lines.filtered(
@@ -33,11 +34,9 @@ class HRExpenseSheet(models.Model):
         ):
             clear_advance = self._prepare_clear_advance(line)
             clear_advance["activity_id"] = line.clearing_activity_id.id
-            if line.clearing_activity_id.account_id:
-                clear_advance[
-                    "account_id"
-                ] = line.clearing_activity_id.account_id.id
-            self.expense_line_ids += self.env["hr.expense"].new(clear_advance)
+            clearing_line = Expense.new(clear_advance)
+            clearing_line._onchange_activity_id()
+            self.expense_line_ids += clearing_line
 
 
 class HRExpense(models.Model):
