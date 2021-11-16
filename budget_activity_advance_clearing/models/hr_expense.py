@@ -34,6 +34,7 @@ class HRExpenseSheet(models.Model):
         ):
             clear_advance = self._prepare_clear_advance(line)
             clear_advance["activity_id"] = line.clearing_activity_id.id
+            clear_advance["name"] = line.clearing_activity_id.name
             clearing_line = Expense.new(clear_advance)
             clearing_line._onchange_activity_id()
             self.expense_line_ids += clearing_line
