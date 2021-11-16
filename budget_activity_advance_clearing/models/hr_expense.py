@@ -22,19 +22,30 @@ class HRExpenseSheet(models.Model):
                 )
         return super().action_submit_sheet()
 
+    def _update_activity_clearing(self, clear_advance, line):
+        clear_advance["activity_id"] = line.clearing_activity_id.id
+        clear_advance["name"] = line.clearing_activity_id.name
+        return clear_advance
+
     @api.onchange("advance_sheet_id")
     def _onchange_advance_sheet_id(self):
-        """ Add additional activity clearing line that wasn't added before """
-        super()._onchange_advance_sheet_id()
+        """
+        Overwrite: Add additional activity clearing line
+        that wasn't added before
+        """
         Expense = self.env["hr.expense"]
+        self.expense_line_ids -= self.expense_line_ids.filtered("av_line_id")
+        self.advance_sheet_id.expense_line_ids.sudo().read()  # prefetch
         # Get only persistent lines
         lines = self.advance_sheet_id.expense_line_ids.filtered("id")
         for line in lines.filtered(
-            lambda l: not l.clearing_product_id and l.clearing_activity_id
+            lambda l: l.clearing_product_id or l.clearing_activity_id
         ):
             clear_advance = self._prepare_clear_advance(line)
-            clear_advance["activity_id"] = line.clearing_activity_id.id
-            clear_advance["name"] = line.clearing_activity_id.name
+            if line.clearing_activity_id:
+                clear_advance = self._update_activity_clearing(
+                    clear_advance, line
+                )
             clearing_line = Expense.new(clear_advance)
             clearing_line._onchange_activity_id()
             self.expense_line_ids += clearing_line
