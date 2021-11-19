@@ -45,6 +45,15 @@ class HRExpense(models.Model):
     clearing_activity_id = fields.Many2one(
         comodel_name="budget.activity",
         string="Clearing Activity",
+        domain=lambda self: [
+            (
+                "id",
+                "!=",
+                self.env.ref(
+                    "budget_activity_advance_clearing.activity_advance", 0
+                ).id,
+            )
+        ],
         tracking=True,
         ondelete="restrict",
         help="Optional: On the clear advance, the clearing "
