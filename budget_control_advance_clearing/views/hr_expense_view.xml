@@ -13,11 +13,13 @@
                 <attribute name="attrs">
                     {'readonly': [('is_editable', '=', False)]}
                 </attribute>
+                <attribute name="force_save">1</attribute>
             </field>
             <field name="analytic_tag_ids" position="attributes">
                 <attribute name="attrs">
                     {'readonly': [('is_editable', '=', False)]}
                 </attribute>
+                <attribute name="force_save">1</attribute>
             </field>
         </field>
     </record>
