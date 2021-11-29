@@ -24,6 +24,15 @@ class BudgetControl(models.Model):
         compute="_compute_group_revision_number"
     )
 
+    # Add budget_period_id for check constrains
+    _sql_constraints = [
+        (
+            "revision_unique",
+            "unique(unrevisioned_name, revision_number, budget_period_id)",
+            "Reference and revision must be unique.",
+        )
+    ]
+
     def _get_permission_edit_revision(self):
         # Default by Budget Manager
         return self.env.user.has_group(
