@@ -24,14 +24,14 @@
                 position="before"
             >
                 <filter
-                    string="Activity"
-                    name="group_by_activity"
-                    context="{'group_by':'activity'}"
-                />
-                <filter
                     string="Activity Group"
                     name="group_by_activity_group"
                     context="{'group_by':'activity_group'}"
+                />
+                <filter
+                    string="Activity"
+                    name="group_by_activity"
+                    context="{'group_by':'activity'}"
                 />
             </xpath>
         </field>
