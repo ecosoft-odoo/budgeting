@@ -5,9 +5,9 @@
         <field name="model">budget.monitor.report</field>
         <field name="inherit_id" ref="budget_control.view_budget_monitor_report_tree" />
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='analytic_account_id']" position="after">
-                <field name="activity" />
-                <field name="activity_group" optional="hide" />
+            <xpath expr="//field[@name='analytic_account_id']" position="before">
+                <field name="fund_id" />
+                <field name="fund_group_id" optional="hide" />
             </xpath>
         </field>
     </record>
@@ -24,14 +24,14 @@
                 position="before"
             >
                 <filter
-                    string="Activity Group"
-                    name="group_by_activity_group"
-                    context="{'group_by':'activity_group'}"
+                    string="Fund Group"
+                    name="group_by_fund_group"
+                    context="{'group_by':'fund_group_id'}"
                 />
                 <filter
-                    string="Activity"
-                    name="group_by_activity"
-                    context="{'group_by':'activity'}"
+                    string="Fund"
+                    name="group_by_fund"
+                    context="{'group_by':'fund_id'}"
                 />
             </xpath>
         </field>
