@@ -9,7 +9,7 @@
     "summary": "Update consumed amount in plan",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
-    "depends": ["budget_control", "mis_builder_budget_activity_group"],
+    "depends": ["budget_activity"],
     "data": [
         "security/ir.model.access.csv",
         "views/res_config_settings_views.xml",
