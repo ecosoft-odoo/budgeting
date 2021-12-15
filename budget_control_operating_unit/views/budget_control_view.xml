@@ -36,4 +36,26 @@
             </xpath>
         </field>
     </record>
+
+    <record id="budget_control_view_transfer_tree" model="ir.ui.view">
+        <field name="name">budget.control.view.transfer.tree</field>
+        <field name="model">budget.control</field>
+        <field name="priority" eval="35" />
+        <field name="arch" type="xml">
+            <tree string="Budget Control Sheet">
+                <field name="name" />
+                <field name="analytic_account_id" />
+                <field name="operating_unit_id" optional="show" />
+                <field name="analytic_group" optional="show" />
+                <field name="amount_balance" optional="show" />
+                <field
+                    name="state"
+                    widget='badge'
+                    decoration-success="state == 'done'"
+                    decoration-info="state in ['draft', 'submit']"
+                />
+            </tree>
+        </field>
+    </record>
+
 </odoo>

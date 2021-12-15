@@ -10,7 +10,7 @@
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "license": "AGPL-3",
     "installable": True,
-    "depends": ["budget_control_transfer", "base_tier_validation"],
+    "depends": ["budget_control", "base_tier_validation"],
     "data": [
         "views/budget_transfer_view.xml",
     ],

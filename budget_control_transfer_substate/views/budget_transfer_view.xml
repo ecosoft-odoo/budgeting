@@ -4,10 +4,7 @@
     <record id="view_budget_transfer_form" model="ir.ui.view">
         <field name="name">view.budget.transfer.form</field>
         <field name="model">budget.transfer</field>
-        <field
-            name="inherit_id"
-            ref="budget_control_transfer.view_budget_transfer_form"
-        />
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_form" />
         <field name="arch" type="xml">
             <xpath expr="//header/field[@name='state']" position="before">
                 <field

@@ -11,6 +11,7 @@
     "depends": ["budget_control_operating_unit"],
     "data": [
         "security/budget_control_security.xml",
+        "security/budget_transfer_security.xml",
     ],
     "installable": True,
     "maintainers": ["Saran440"],
