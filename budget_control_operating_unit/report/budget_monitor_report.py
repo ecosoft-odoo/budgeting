@@ -9,7 +9,10 @@ class BudgetMonitorReport(models.Model):
     operating_unit_id = fields.Many2one(comodel_name="operating.unit")
 
     def _get_operating_unit(self):
-        return self.env.user.operating_unit_ids
+        ou_id = self.env.user.operating_unit_ids
+        if self._context.get("force_all_ou", False):
+            ou_id = self.env["operating.unit"].sudo().search([])
+        return ou_id
 
     def _get_where_sql(self):
         where_sql = super()._get_where_sql()
