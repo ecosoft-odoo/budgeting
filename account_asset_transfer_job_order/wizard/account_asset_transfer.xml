@@ -9,13 +9,13 @@
         />
         <field name="arch" type="xml">
             <xpath expr="//group/field[@name='analytic_tag_ids']" position="after">
-                <field name="fund_id" invisible="1" />
+                <field name="job_order_id" invisible="1" />
             </xpath>
             <xpath
                 expr="//field[@name='to_asset_ids']/tree/field[@name='analytic_tag_ids']"
                 position="after"
             >
-                <field name="fund_id" optional="show" />
+                <field name="job_order_id" optional="show" />
             </xpath>
         </field>
     </record>
