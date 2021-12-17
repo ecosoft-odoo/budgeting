@@ -7,7 +7,7 @@ from odoo import fields, models
 class AccountAsset(models.Model):
     _inherit = "account.asset"
 
-    fund_id = fields.Many2one(
-        comodel_name="budget.source.fund",
-        string="Fund",
+    job_order_id = fields.Many2one(
+        comodel_name="budget.job.order",
+        string="Job Order",
     )

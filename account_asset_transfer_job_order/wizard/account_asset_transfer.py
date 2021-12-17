@@ -7,9 +7,9 @@ from odoo import api, fields, models
 class AccountAssetTransfer(models.TransientModel):
     _inherit = "account.asset.transfer"
 
-    fund_id = fields.Many2one(
-        comodel_name="budget.source.fund",
-        string="Fund",
+    job_order_id = fields.Many2one(
+        comodel_name="budget.job.order",
+        string="Job Order",
     )
 
     @api.model
@@ -18,27 +18,29 @@ class AccountAssetTransfer(models.TransientModel):
         from_asset_ids = self.env.context.get("active_ids")
         assets = self.env["account.asset"].browse(from_asset_ids)
         # Prepare default values
-        fund_id = assets.mapped("fund_id")
-        res["fund_id"] = fund_id[0].id if len(fund_id) == 1 else False
+        job_order_id = assets.mapped("job_order_id")
+        res["job_order_id"] = (
+            job_order_id[0].id if len(job_order_id) == 1 else False
+        )
         return res
 
     def _get_move_line_from_asset(self, move_line):
         move_lines = super()._get_move_line_from_asset(move_line)
-        move_lines["fund_id"] = move_line.fund_id.id
+        move_lines["job_order_id"] = move_line.job_order_id.id
         return move_lines
 
     def _get_move_line_to_asset(self, to_asset):
         move_lines = super()._get_move_line_to_asset(to_asset)
-        move_lines["fund_id"] = (to_asset.fund_id.id,)
+        move_lines["job_order_id"] = (to_asset.job_order_id.id,)
         return move_lines
 
 
 class AccountAssetTransferLine(models.TransientModel):
     _inherit = "account.asset.transfer.line"
 
-    fund_id = fields.Many2one(
-        comodel_name="budget.source.fund",
-        string="Fund",
+    job_order_id = fields.Many2one(
+        comodel_name="budget.job.order",
+        string="Job Order",
     )
 
     @api.model
@@ -47,6 +49,8 @@ class AccountAssetTransferLine(models.TransientModel):
         from_asset_ids = self.env.context.get("active_ids")
         assets = self.env["account.asset"].browse(from_asset_ids)
         # Prepare default values
-        fund_id = assets.mapped("fund_id")
-        res["fund_id"] = fund_id[0].id if len(fund_id) == 1 else False
+        job_order_id = assets.mapped("job_order_id")
+        res["job_order_id"] = (
+            job_order_id[0].id if len(job_order_id) == 1 else False
+        )
         return res
