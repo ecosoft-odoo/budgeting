@@ -17,6 +17,7 @@
         "views/job_order_view.xml",
         "views/budget_control_view.xml",
         "views/mis_budget_item.xml",
+        "views/budget_move_adjustment_view.xml",
     ],
     "installable": True,
     "maintainers": ["kittiu"],

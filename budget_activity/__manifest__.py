@@ -19,6 +19,7 @@
         "views/account_move_views.xml",
         "views/budget_activity_view.xml",
         "views/budget_activity_group_view.xml",
+        "views/budget_move_adjustment_view.xml",
     ],
     "installable": True,
     "maintainers": ["kittiu"],
