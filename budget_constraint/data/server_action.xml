@@ -11,10 +11,9 @@
         <field name="code">
 if record:
     doclines = record._context.get("doclines", False)
-    if not(doclines._name == "account.move.line" and all(doclines.mapped("move_id.not_affect_budget"))):
-        message_error = doclines.budget_move_ids.check_budget_allocation_limit(doclines)
-        if message_error:
-            action = message_error
+    message_error = doclines.budget_move_ids.check_budget_allocation_limit(doclines)
+    if message_error:
+        action = message_error
         </field>
     </record>
 </odoo>
