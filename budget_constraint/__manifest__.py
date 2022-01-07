@@ -12,7 +12,6 @@
     "data": [
         "data/server_action.xml",
         "security/ir.model.access.csv",
-        "views/budget_period_view.xml",
         "views/budget_constraint_view.xml",
     ],
     "installable": True,
