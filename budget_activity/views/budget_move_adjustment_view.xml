@@ -9,10 +9,16 @@
         />
         <field name="arch" type="xml">
             <xpath
-                expr="//page[@name='adjust_item_ids']//tree/field[@name='analytic_tag_ids']"
-                position="after"
+                expr="//page[@name='adjust_item_ids']//tree/field[@name='account_id']"
+                position="before"
             >
                 <field name="activity_id" optional="show" />
+            </xpath>
+            <xpath
+                expr="//page[@name='adjust_item_ids']//form//field[@name='account_id']"
+                position="before"
+            >
+                <field name="activity_id" />
             </xpath>
         </field>
     </record>

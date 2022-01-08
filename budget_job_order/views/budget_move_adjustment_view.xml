@@ -9,11 +9,18 @@
         />
         <field name="arch" type="xml">
             <xpath
-                expr="//page[@name='adjust_item_ids']//tree/field[@name='analytic_tag_ids']"
+                expr="//page[@name='adjust_item_ids']//tree/field[@name='json_budget_popover']"
                 position="after"
             >
                 <field name="job_order_id" optional="show" />
             </xpath>
+            <xpath
+                expr="//page[@name='adjust_item_ids']//form//field[@name='analytic_account_id']"
+                position="after"
+            >
+                <field name="job_order_id" />
+            </xpath>
+
         </field>
     </record>
 </odoo>

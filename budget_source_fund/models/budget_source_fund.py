@@ -13,7 +13,6 @@ class BudgetSourceFund(models.Model):
     fund_group_id = fields.Many2one(
         comodel_name="budget.source.fund.group",
         string="Fund Group",
-        required=True,
         tracking=True,
     )
     objective = fields.Html()

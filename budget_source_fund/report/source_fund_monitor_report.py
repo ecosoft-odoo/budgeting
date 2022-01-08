@@ -64,8 +64,8 @@ class SourceFundMonitorReport(models.Model):
                 %s000000000 + a.id as id,
                 '%s,' || a.%s as res_id,
                 a.reference as reference,
-                null::integer as fund_id,
-                null::integer as fund_group_id,
+                a.fund_id as fund_id,
+                a.fund_group_id as fund_group_id,
                 a.analytic_account_id,
                 '%s' as amount_type,
                 a.credit-a.debit as amount

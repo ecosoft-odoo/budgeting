@@ -10,6 +10,7 @@ class BudgetControl(models.Model):
     fund_ids = fields.Many2many(
         comodel_name="budget.source.fund",
         compute="_compute_allocation_line_ids",
+        states={"draft": [("readonly", True)]},  # readonly all state
     )
 
     @api.depends("analytic_account_id")

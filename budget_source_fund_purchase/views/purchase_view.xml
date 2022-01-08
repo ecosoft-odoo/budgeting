@@ -9,17 +9,15 @@
                 expr="//field[@name='order_line']/tree//field[@name='json_budget_popover']"
                 position="after"
             >
-                <field
-                    name="job_order_id"
-                    options="{'no_create': True}"
-                    context="{'default_account_analytic_id': account_analytic_id}"
-                />
+                <field name="fund_all" invisible="1" />
+                <field name="fund_id" optional="show" />
             </xpath>
             <xpath
                 expr="//field[@name='order_line']/form//field[@name='account_analytic_id']"
                 position="after"
             >
-                <field name="job_order_id" />
+                <field name="fund_all" invisible="1" />
+                <field name="fund_id" />
             </xpath>
         </field>
     </record>

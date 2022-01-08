@@ -2,21 +2,19 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 {
-    "name": "Budget Allocation Fund",
-    "summary": "Allocate budget by source of fund",
+    "name": "Budget Source Fund - Contract",
     "version": "14.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
     "depends": [
-        "budget_allocation",
         "budget_source_fund",
+        "budget_control_contract",
     ],
     "data": [
-        "views/budget_allocation_view.xml",
-        "views/budget_transfer_item_view.xml",
-        "report/source_fund_monitor_report_view.xml",
+        "views/contract_line.xml",
     ],
     "installable": True,
+    "auto_install": True,
 }

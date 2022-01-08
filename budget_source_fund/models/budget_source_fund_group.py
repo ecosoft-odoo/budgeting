@@ -17,5 +17,6 @@ class BudgetSourceFundGroup(models.Model):
         readonly=True,
     )
     fund_line = fields.One2many(
-        comodel_name="budget.source.fund", inverse_name="fund_group_id"
+        comodel_name="budget.source.fund",
+        inverse_name="fund_group_id",
     )
