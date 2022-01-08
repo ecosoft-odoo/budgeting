@@ -3,10 +3,7 @@
     <record id="view_budget_transfer_search" model="ir.ui.view">
         <field name="name">view.budget.transfer.search</field>
         <field name="model">budget.transfer</field>
-        <field
-            name="inherit_id"
-            ref="budget_control_transfer.view_budget_transfer_search"
-        />
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_search" />
         <field name="arch" type="xml">
             <search position="inside">
                 <group expand="0" string="Need actions">

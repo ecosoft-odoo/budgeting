@@ -3,10 +3,7 @@
     <record id="view_budget_transfer_item_tree" model="ir.ui.view">
         <field name="name">view.budget.transfer.item.tree</field>
         <field name="model">budget.transfer.item</field>
-        <field
-            name="inherit_id"
-            ref="budget_control_transfer.view_budget_transfer_item_tree"
-        />
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_item_tree" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='source_budget_control_id']" position="after">
                 <field
@@ -30,7 +27,7 @@
             >
                 <attribute
                     name="context"
-                >{'access_sudo': 1, 'tree_view_ref': 'budget_control_transfer_operating_unit.budget_control_view_transfer_tree'}</attribute>
+                >{'access_sudo': 1, 'tree_view_ref': 'budget_control_operating_unit.budget_control_view_transfer_tree'}</attribute>
                 <attribute
                     name="options"
                 >{'no_create_edit': True, 'no_open': True, 'no_create': True}</attribute>
@@ -49,10 +46,7 @@
     <record id="view_budget_transfer_item_form" model="ir.ui.view">
         <field name="name">view.budget.transfer.item.form</field>
         <field name="model">budget.transfer.item</field>
-        <field
-            name="inherit_id"
-            ref="budget_control_transfer.view_budget_transfer_item_form"
-        />
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_item_form" />
         <field name="arch" type="xml">
             <xpath expr="//group[@name='budget_transfer_item_left']" position="inside">
                 <field

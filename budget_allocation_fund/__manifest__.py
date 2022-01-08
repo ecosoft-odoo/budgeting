@@ -16,6 +16,7 @@
     "data": [
         "views/account_move_view.xml",
         "views/budget_allocation_view.xml",
+        "views/budget_transfer_item_view.xml",
         "report/source_fund_monitor_report_view.xml",
     ],
     "installable": True,

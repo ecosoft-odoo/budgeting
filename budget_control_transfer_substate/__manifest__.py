@@ -8,7 +8,7 @@
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
     "license": "AGPL-3",
-    "depends": ["base_substate", "budget_control_transfer"],
+    "depends": ["base_substate", "budget_control"],
     "data": [
         "data/budget_transfer_substate_mail_template_data.xml",
         "data/budget_transfer_substate_data.xml",

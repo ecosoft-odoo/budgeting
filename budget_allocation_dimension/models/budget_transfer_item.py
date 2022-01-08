@@ -231,6 +231,35 @@ class BudgetTransferItem(models.Model):
             raise UserError(
                 _("Source / Target Analytic Tags is not selected.")
             )
+        # TODO: refacter code
+        analytic_tag = (
+            self.source_analytic_tag_ids + self.target_analytic_tag_ids
+        )
+        dimension_constraints = analytic_tag.mapped(
+            "analytic_dimension_id"
+        ).filtered(lambda l: l.budget_transfer_constraint)
+        for dimension in dimension_constraints:
+            tags = analytic_tag.filtered(
+                lambda l: l.analytic_dimension_id.id == dimension.id
+            )
+            source_analytic_tag = self.source_analytic_tag_ids.filtered(
+                lambda l: l.analytic_dimension_id.id == dimension.id
+            )
+            cross_transfer_constraint = (
+                source_analytic_tag.analytic_tag_constraint_ids
+            )
+            can_transfer = tags.filtered(
+                lambda l: l.id in cross_transfer_constraint.ids
+            )
+            if can_transfer:
+                continue
+            if len(set(tags.ids)) != 1:
+                raise UserError(
+                    _(
+                        "Can not transfer because dimension '{}' is "
+                        "not same analytic tag.".format(dimension.name)
+                    )
+                )
 
     def _get_message_source_transfer(self):
         source_transfer = super()._get_message_source_transfer()
