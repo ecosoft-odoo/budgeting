@@ -12,7 +12,7 @@
                 expr="//page[@name='adjust_item_ids']//tree/field[@name='json_budget_popover']"
                 position="after"
             >
-                <field name="fund_all" />
+                <field name="fund_all" invisible="1" />
                 <field name="fund_id" optional="show" />
             </xpath>
             <xpath
