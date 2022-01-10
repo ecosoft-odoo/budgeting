@@ -18,6 +18,7 @@
         "views/account_move_view.xml",
         "views/budget_allocation_view.xml",
         "views/budget_control_view.xml",
+        "views/budget_move_adjustment_view.xml",
         "views/budget_transfer_item_view.xml",
     ],
     "installable": True,
