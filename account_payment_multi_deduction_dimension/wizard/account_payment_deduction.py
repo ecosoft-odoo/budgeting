@@ -22,7 +22,9 @@ class AccountPaymentDeduction(models.TransientModel):
     @api.onchange("analytic_tag_all")
     def _onchange_analytic_tag_all(self):
         dimension_fields = self._get_dimension_fields()
-        analytic_tag_ids = self.analytic_account_id.allocation_line_ids.mapped("analytic_tag_ids")
+        analytic_tag_ids = self.analytic_account_id.allocation_line_ids.mapped(
+            "analytic_tag_ids"
+        )
         if (
             len(analytic_tag_ids) != len(dimension_fields)
             and self.analytic_tag_ids
@@ -36,11 +38,17 @@ class AccountPaymentDeduction(models.TransientModel):
 
     def _get_dimension_fields(self):
         return [
-            x for x in self.fields_get().keys() if x.startswith("x_dimension_")
+            x
+            for x in self.env["account.move.line"].fields_get().keys()
+            if x.startswith("x_dimension_")
         ]
 
     @api.depends("analytic_account_id")
     def _compute_analytic_tag_all(self):
         for rec in self:
-            analytic_tag_ids = rec.analytic_account_id.allocation_line_ids.mapped("analytic_tag_ids")
+            analytic_tag_ids = (
+                rec.analytic_account_id.allocation_line_ids.mapped(
+                    "analytic_tag_ids"
+                )
+            )
             rec.analytic_tag_all = analytic_tag_ids

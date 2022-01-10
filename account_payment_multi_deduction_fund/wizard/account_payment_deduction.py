@@ -29,4 +29,6 @@ class AccountPaymentDeduction(models.TransientModel):
     @api.depends("analytic_account_id")
     def _compute_fund_all(self):
         for rec in self:
-            rec.fund_all = rec.analytic_account_id.allocation_line_ids.mapped("fund_id")
+            rec.fund_all = rec.analytic_account_id.allocation_line_ids.mapped(
+                "fund_id"
+            )

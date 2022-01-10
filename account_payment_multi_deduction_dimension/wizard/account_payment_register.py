@@ -10,5 +10,7 @@ class AccountPaymentRegister(models.TransientModel):
     def _prepare_deduct_move_line(self, deduct):
         vals = super()._prepare_deduct_move_line(deduct)
         if deduct.analytic_tag_ids:
-            vals.update({"analytic_tag_ids": [(6, 0, deduct.analytic_tag_ids.ids)]})
+            vals.update(
+                {"analytic_tag_ids": [(6, 0, deduct.analytic_tag_ids.ids)]}
+            )
         return vals
