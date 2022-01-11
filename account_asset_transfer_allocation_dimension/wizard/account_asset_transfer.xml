@@ -15,8 +15,8 @@
                 expr="//field[@name='to_asset_ids']/tree/field[@name='analytic_tag_ids']"
                 position="after"
             >
-                <field name="analytic_tag_all" />
-                <field name="domain_tag_ids" />
+                <field name="analytic_tag_all" invisible="1" />
+                <field name="domain_tag_ids" invisible="1" />
             </xpath>
             <xpath
                 expr="//field[@name='to_asset_ids']/tree/field[@name='analytic_tag_ids']"
