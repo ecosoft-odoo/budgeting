@@ -1,10 +1,8 @@
 operating-unit
-operating-unit-4 https://github.com/ecosoft-odoo/operating-unit 14.0-mig-purchase_request_operating_unit
+operating-unit-1 https://github.com/ecosoft-odoo/operating-unit 14.0-add-account_asset_management_operating_unit
 account-analytic
 server-ux
-server-ux-1 https://github.com/akretion/server-ux.git 14.0-mig-base_substate
 server-tools
-server-tools-1 https://github.com/ecosoft-odoo/server-tools 14.0-mig-excel_import_export
 hr-expense
 mis-builder
 purchase-workflow
@@ -12,3 +10,8 @@ purchase-workflow-1 https://github.com/ecosoft-odoo/purchase-workflow 14.0-mig-p
 web
 contract
 hr
+account-financial-tools
+account-financial-tools-1 https://github.com/ecosoft-odoo/account-financial-tools 14.0-add-account_asset_transfer
+account-budgeting
+account-budgeting-1 https://github.com/ecosoft-odoo/account-budgeting 14.0-add-budget_control_basic
+account-payment
