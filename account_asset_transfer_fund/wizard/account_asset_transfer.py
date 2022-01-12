@@ -29,7 +29,7 @@ class AccountAssetTransfer(models.TransientModel):
 
     def _get_move_line_to_asset(self, to_asset):
         move_lines = super()._get_move_line_to_asset(to_asset)
-        move_lines["fund_id"] = (to_asset.fund_id.id,)
+        move_lines["fund_id"] = to_asset.fund_id.id
         return move_lines
 
 
