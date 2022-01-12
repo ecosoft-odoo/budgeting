@@ -7,7 +7,7 @@
     "license": "AGPL-3",
     "depends": [
         "account_asset_transfer",
-        "account_asset_allocation_job_order",
+        "account_asset_job_order",
     ],
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
