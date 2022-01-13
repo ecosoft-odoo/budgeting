@@ -9,7 +9,7 @@
     "website": "https://github.com/OCA/account-budgeting",
     "category": "Warehouse Management",
     "license": "AGPL-3",
-    "depends": ["stock_account", "budget_allocation_fund"],
+    "depends": ["stock_account", "budget_source_fund"],
     "data": ["views/stock_move_views.xml"],
     "maintainers": ["Saran440"],
     "installable": True,

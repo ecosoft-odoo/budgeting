@@ -9,16 +9,19 @@
         />
         <field name="arch" type="xml">
             <xpath
-                expr="//page[@name='adjust_item_ids']//tree/field[@name='account_id']"
+                expr="//field[@name='adjust_item_ids']/tree/field[@name='analytic_tag_ids']"
                 position="before"
             >
-                <field name="activity_id" optional="show" />
+                <field name="domain_tag_ids" invisible="1" />
+                <field name="analytic_tag_all" invisible="1" />
             </xpath>
             <xpath
-                expr="//page[@name='adjust_item_ids']//form//field[@name='account_id']"
-                position="before"
+                expr="//field[@name='adjust_item_ids']/tree/field[@name='analytic_tag_ids']"
+                position="attributes"
             >
-                <field name="activity_id" />
+                <attribute
+                    name="domain"
+                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
             </xpath>
         </field>
     </record>

@@ -6,11 +6,8 @@
         <field name="inherit_id" ref="hr_expense.hr_expense_view_form" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='analytic_account_id']" position="after">
-                <field
-                    name="job_order_id"
-                    options="{'no_create': True}"
-                    context="{'default_analytic_account_id': analytic_account_id}"
-                />
+                <field name="fund_all" invisible="1" />
+                <field name="fund_id" />
             </xpath>
         </field>
     </record>
@@ -26,7 +23,8 @@
                 expr="//field[@name='expense_line_ids']/tree/field[@name='json_budget_popover']"
                 position="after"
             >
-                <field name="job_order_id" />
+                <field name="fund_all" invisible="1" />
+                <field name="fund_id" optional="show" />
             </xpath>
         </field>
     </record>

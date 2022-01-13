@@ -13,4 +13,6 @@ class BudgetControl(models.Model):
         column1="budget_control_id",
         column2="fund_id",
         string="Funds",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
