@@ -29,17 +29,24 @@ class AccountAssetTransfer(models.TransientModel):
 
     def _get_move_line_to_asset(self, to_asset):
         move_lines = super()._get_move_line_to_asset(to_asset)
-        move_lines["fund_id"] = (to_asset.fund_id.id,)
+        move_lines["fund_id"] = to_asset.fund_id.id
         return move_lines
 
 
 class AccountAssetTransferLine(models.TransientModel):
-    _inherit = "account.asset.transfer.line"
+    _name = "account.asset.transfer.line"
+    _inherit = ["account.asset.transfer.line", "budget.docline.mixin.base"]
 
-    fund_id = fields.Many2one(
-        comodel_name="budget.source.fund",
-        string="Fund",
+    trigger = fields.Boolean(
+        help="for case first default it will not onchange fund."
     )
+
+    @api.onchange("fund_all")
+    def _onchange_fund_all(self):
+        for rec in self:
+            if rec.trigger:
+                super()._onchange_fund_all()
+            rec.trigger = True
 
     @api.model
     def default_get(self, field_list):

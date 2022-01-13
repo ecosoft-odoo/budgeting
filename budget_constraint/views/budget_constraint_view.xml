@@ -26,6 +26,7 @@
             <tree string="Budget Constraint">
                 <field name="sequence" />
                 <field name="name" />
+                <field name="server_action_id" optional="show" />
             </tree>
         </field>
     </record>
