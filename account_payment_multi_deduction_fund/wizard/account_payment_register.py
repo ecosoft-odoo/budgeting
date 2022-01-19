@@ -11,3 +11,12 @@ class AccountPaymentRegister(models.TransientModel):
         vals = super()._prepare_deduct_move_line(deduct)
         vals.update({"fund_id": deduct.fund_id and deduct.fund_id.id or False})
         return vals
+
+    def _create_payment_vals_from_wizard(self):
+        payment_vals = super()._create_payment_vals_from_wizard()
+        if (
+            not self.currency_id.is_zero(self.payment_difference)
+            and self.payment_difference_handling == "reconcile"
+        ):
+            payment_vals["write_off_line_vals"]["fund_id"] = self.fund_id.id
+        return payment_vals

@@ -6,8 +6,4 @@ from odoo import models
 
 class AccountPaymentDeduction(models.TransientModel):
     _name = "account.payment.deduction"
-    _inherit = [
-        "analytic.dimension.line",
-        "account.payment.deduction",
-    ]
-    _analytic_tag_field_name = "analytic_tag_ids"
+    _inherit = ["account.payment.deduction", "budget.docline.mixin.base"]
