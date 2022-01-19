@@ -6,7 +6,7 @@
     "version": "14.0.1.0.0",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/ecosoft-odoo/ecosoft-addons",
+    "website": "https://github.com/OCA/account-budgeting",
     "depends": [
         "purchase_operating_unit",
         "purchase_work_acceptance_late_fines",
