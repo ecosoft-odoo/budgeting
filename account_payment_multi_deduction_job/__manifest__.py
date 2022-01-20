@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html)
 
 {
-    "name": "Payment Register Diff - Activity",
+    "name": "Payment Register Diff - Job Order",
     "version": "14.0.1.0.0",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "license": "AGPL-3",
@@ -10,7 +10,7 @@
     "category": "Accounting",
     "depends": [
         "base_budget_account_payment_multi_deduction",
-        "budget_activity",
+        "budget_job_order",
     ],
     "data": [
         "wizard/account_payment_register_views.xml",
