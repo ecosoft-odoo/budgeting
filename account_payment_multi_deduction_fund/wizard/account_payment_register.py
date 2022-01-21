@@ -20,3 +20,7 @@ class AccountPaymentRegister(models.TransientModel):
         ):
             payment_vals["write_off_line_vals"]["fund_id"] = self.fund_id.id
         return payment_vals
+
+    def _update_vals_deduction(self, moves):
+        super()._update_vals_deduction(moves)
+        self._onchange_fund_all()
