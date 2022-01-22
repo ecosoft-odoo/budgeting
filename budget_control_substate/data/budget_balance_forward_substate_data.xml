@@ -18,6 +18,17 @@
         <field name="target_state_value">draft</field>
     </record>
     <record
+        id="target_state_value_review_budget_balance_forward"
+        model="target.state.value"
+    >
+        <field name="name">Review</field>
+        <field
+            name="base_substate_type_id"
+            ref="base_substate_type_budget_balance_forward"
+        />
+        <field name="target_state_value">review</field>
+    </record>
+    <record
         id="target_state_value_done_budget_balance_forward"
         model="target.state.value"
     >
