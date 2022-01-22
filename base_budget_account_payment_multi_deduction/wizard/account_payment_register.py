@@ -6,8 +6,5 @@ from odoo import models
 
 class AccountPaymentRegister(models.TransientModel):
     _name = "account.payment.register"
-    _inherit = [
-        "analytic.dimension.line",
-        "account.payment.register",
-    ]
-    _analytic_tag_field_name = "writeoff_analytic_tag_ids"
+    _inherit = ["account.payment.register", "budget.docline.mixin.base"]
+    _budget_analytic_field = "writeoff_analytic_account_id"

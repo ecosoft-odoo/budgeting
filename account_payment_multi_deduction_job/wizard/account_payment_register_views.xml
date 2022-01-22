@@ -8,12 +8,15 @@
             ref="account_payment_deduction_analytic.view_account_payment_register_form"
         />
         <field name="arch" type="xml">
-            <xpath expr="//label[@for='writeoff_account_id']" position="before">
+            <xpath expr="//label[@for='writeoff_label']" position="before">
                 <div
                     attrs="{'invisible': [('payment_difference_handling', '!=', 'reconcile')]}"
                 >
-                    <label for="activity_id" class="oe_edit_only" />
-                    <field name="activity_id" />
+                    <label for="job_order_id" class="oe_edit_only" />
+                    <field
+                        name="job_order_id"
+                        context="{'default_analytic_account_id': writeoff_analytic_account_id}"
+                    />
                 </div>
             </xpath>
         </field>
@@ -28,11 +31,25 @@
             ref="account_payment_multi_deduction_analytic.view_account_payment_register_form"
         />
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='deduction_ids']" position="before">
+                <field name="deduct_job_order_id" invisible="1" />
+            </xpath>
+            <xpath expr="//field[@name='deduction_ids']" position="attributes">
+                <attribute name="context">{
+                    'default_amount': deduct_residual,
+                    'default_analytic_account_id': deduct_analytic_account_id,
+                    'default_job_order_id': deduct_job_order_id,
+                    'default_analytic_tag_ids': deduct_analytic_tag_ids}
+                </attribute>
+            </xpath>
             <xpath
-                expr="//field[@name='deduction_ids']/tree/field[@name='account_id']"
+                expr="//field[@name='deduction_ids']/tree/field[@name='name']"
                 position="before"
             >
-                <field name="activity_id" />
+                <field
+                    name="job_order_id"
+                    context="{'default_analytic_account_id': analytic_account_id}"
+                />
             </xpath>
         </field>
     </record>

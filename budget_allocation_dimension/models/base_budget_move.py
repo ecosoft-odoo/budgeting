@@ -49,13 +49,13 @@ class BudgetDoclineMixinBase(models.AbstractModel):
         dimension_fields = self._get_dimension_fields()
         analytic_tag_ids = self[
             self._budget_analytic_field
-        ].allocation_line_ids.mapped(self._analytic_tag_field_name)
+        ].allocation_line_ids.mapped("analytic_tag_ids")
         if (
             len(analytic_tag_ids) != len(dimension_fields)
-            and self.analytic_tag_ids
+            and self[self._analytic_tag_field_name]
         ):
             return
-        self.analytic_tag_ids = (
+        self[self._analytic_tag_field_name] = (
             len(analytic_tag_ids) == len(dimension_fields)
             and analytic_tag_ids
             or False
@@ -77,5 +77,5 @@ class BudgetDoclineMixinBase(models.AbstractModel):
         for doc in self:
             analytic_tag_ids = doc[
                 doc._budget_analytic_field
-            ].allocation_line_ids.mapped(doc._analytic_tag_field_name)
+            ].allocation_line_ids.mapped("analytic_tag_ids")
             doc.analytic_tag_all = analytic_tag_ids

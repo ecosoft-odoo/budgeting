@@ -2,14 +2,14 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html)
 
 {
-    "name": "Analytic Tags on Payment Register with Multiple Deduction",
+    "name": "Payment Register Diff - Tag Dimension",
     "version": "14.0.1.0.0",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "license": "AGPL-3",
     "website": "https://github.com/OCA/account-budgeting",
     "category": "Accounting",
     "depends": [
-        "account_payment_multi_deduction_analytic",
+        "base_budget_account_payment_multi_deduction",
         "budget_allocation_dimension",
     ],
     "data": [

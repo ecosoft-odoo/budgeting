@@ -10,3 +10,7 @@ class AccountPayment(models.Model):
     def _get_update_key_list(self):
         res = super()._get_update_key_list()
         return res + ["activity_id"]
+
+    def _get_update_key_multi_list(self):
+        res = super()._get_update_key_multi_list()
+        return res + ["activity_id"]
