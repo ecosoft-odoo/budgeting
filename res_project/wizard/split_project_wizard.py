@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import _, fields, models
+from odoo.exceptions import UserError
 
 
 class SplitProjectWizard(models.TransientModel):
@@ -34,30 +35,33 @@ class SplitProjectWizard(models.TransientModel):
 
     def split_project(self):
         self.ensure_one()
+        if not self.line_ids:
+            raise UserError(_("Please add a new project name"))
         ResProject = self.env["res.project"]
-        parent_project = ResProject.search(
-            [
-                ("name", "=", self.parent_project),
-                ("active", "in", [True, False]),
-            ]
+        # Search all state parent project
+        parent_project = ResProject.with_context(active_test=False).search(
+            [("name", "=", self.parent_project)]
         )
         ctx = self._context.copy()
         ctx.update(
-            {"split_project": True, "parent_project": parent_project.ids}
+            {
+                "split_project": True,
+                "parent_project": parent_project.ids,
+            }
         )
         # Archive parent project record
         if parent_project:
             parent_project.action_archive()
         # Create new project record
         vals = [line._prepare_project_val() for line in self.line_ids]
-        projects = ResProject.with_context(ctx).create(vals)
+        new_projects = ResProject.with_context(ctx).create(vals)
         return {
             "name": _("Project"),
             "type": "ir.actions.act_window",
             "res_model": "res.project",
             "view_mode": "tree,form",
             "context": self.env.context,
-            "domain": [("id", "in", projects.ids)],
+            "domain": [("id", "in", new_projects.ids)],
         }
 
 
