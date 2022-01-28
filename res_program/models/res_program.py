@@ -13,7 +13,11 @@ class ResProgram(models.Model):
     active = fields.Boolean(default=True)
 
     _sql_constraints = [
-        ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
+        (
+            "name_code_uniq",
+            "UNIQUE(name, code)",
+            "Name and Code must be unique!",
+        ),
     ]
 
     def copy(self, default=None):
