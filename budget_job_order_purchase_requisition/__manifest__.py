@@ -11,7 +11,7 @@
     "depends": [
         "budget_job_order_purchase_request",
         "budget_job_order_purchase",
-        "purchase_request_to_requisition",
+        "budget_control_purchase_requisition",
     ],
     "data": [
         "wizard/purchase_request_line_make_purchase_requisition_view.xml",
