@@ -1,10 +1,21 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import models
+
+from odoo import fields, models
+
+READONLY_STATES = {
+    "post": [("readonly", True)],
+    "done": [("readonly", True)],
+    "cancel": [("readonly", True)],
+}
 
 
 class HRExpense(models.Model):
     _inherit = "hr.expense"
+
+    job_order_id = fields.Many2one(
+        comodel_name="budget.job.order", states=READONLY_STATES
+    )
 
     def _get_account_move_line_values(self):
         move_line_values_by_expense = super()._get_account_move_line_values()
