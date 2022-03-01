@@ -14,6 +14,7 @@
         "views/budget_control_view.xml",
         "views/budget_transfer_view.xml",
         "views/budget_transfer_item_view.xml",
+        "views/budget_move_adjustment_view.xml",
     ],
     "installable": True,
 }
