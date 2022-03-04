@@ -5,7 +5,7 @@
         <field name="model">account.payment.register</field>
         <field
             name="inherit_id"
-            ref="account_payment_deduction_analytic.view_account_payment_register_form"
+            ref="account_payment_multi_deduction.view_account_payment_register_form"
         />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='writeoff_analytic_tag_ids']" position="before">
@@ -20,18 +20,7 @@
                     name="domain"
                 >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
             </xpath>
-        </field>
-    </record>
-
-    <!-- Multi Deduction -->
-    <record id="view_account_payment_multi_register_form" model="ir.ui.view">
-        <field name="name">account.payment.multi.register.form</field>
-        <field name="model">account.payment.register</field>
-        <field
-            name="inherit_id"
-            ref="account_payment_multi_deduction_analytic.view_account_payment_register_form"
-        />
-        <field name="arch" type="xml">
+            <!-- Multi Deduction -->
             <xpath
                 expr="//field[@name='deduction_ids']/tree/field[@name='analytic_tag_ids']"
                 position="before"
