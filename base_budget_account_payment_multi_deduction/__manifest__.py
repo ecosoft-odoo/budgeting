@@ -9,8 +9,7 @@
     "website": "https://github.com/OCA/account-budgeting",
     "category": "Accounting",
     "depends": [
-        "account_payment_deduction_analytic",
-        "account_payment_multi_deduction_analytic",
+        "account_payment_multi_deduction",
         "budget_control",
     ],
     "data": [],
