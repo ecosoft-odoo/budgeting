@@ -73,8 +73,8 @@ class ResProject(models.Model):
         states={"draft": [("readonly", False)]},
     )
     member_ids = fields.Many2many(
-        comodel_name="hr.employee",
-        relation="employee_project_member_rel",
+        comodel_name="hr.employee.public",
+        relation="project_employee_rel",
         column1="project_id",
         column2="employee_id",
         string="Member",

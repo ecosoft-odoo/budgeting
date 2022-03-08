@@ -3,12 +3,12 @@
 from odoo import fields, models
 
 
-class HrEmployeePrivate(models.Model):
-    _inherit = "hr.employee"
+class HrEmployeeBase(models.AbstractModel):
+    _inherit = "hr.employee.base"
 
     project_ids = fields.Many2many(
         comodel_name="res.project",
-        relation="employee_project_member_rel",
+        relation="project_employee_rel",
         column1="employee_id",
         column2="project_id",
         string="Project",
