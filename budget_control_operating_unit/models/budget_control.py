@@ -19,3 +19,35 @@ class BudgetControl(models.Model):
                 rec.operating_unit_id = (
                     rec.analytic_account_id.operating_unit_ids.id
                 )
+
+    def check_budget_transfer_permission(self):
+        source_budget_all_ou = (
+            self.env.user.company_id.budget_transfer_source_all_ou
+        )
+        target_budget_all_ou = (
+            self.env.user.company_id.budget_transfer_target_all_ou
+        )
+        if self._context.get("source_budget", False) and source_budget_all_ou:
+            return True
+        if self._context.get("target_budget", False) and target_budget_all_ou:
+            return True
+        return False
+
+    @api.model
+    def name_search(self, name, args=None, operator="ilike", limit=100):
+        if self.check_budget_transfer_permission():
+            self = self.sudo()
+        return super().name_search(name, args, operator, limit)
+
+    # @api.model
+    # def search(self, args, offset=0, limit=None, order=None, count=False):
+    #     print(self._context)
+    #     print("=============x===================")
+    #     if self._context.get("access_sudo", False):
+    #         self = self.sudo()
+    #     return super().search(args, offset, limit, order, count)
+
+    def _read(self, fields):
+        if self.check_budget_transfer_permission():
+            self = self.sudo()
+        return super()._read(fields)
