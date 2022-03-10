@@ -1,4 +1,4 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from . import wizard
-from . import models
+from . import res_config_settings
+from . import base_budget_move

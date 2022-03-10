@@ -13,7 +13,10 @@
         "budget_purchase_deposit",
     ],
     "data": [
+        "data/purchase_deposit_activity_data.xml",
+        "data/purchase_deposit_product.xml",
         "wizard/purchase_make_invoice_advance_views.xml",
+        "views/res_config_settings_views.xml",
     ],
     "installable": True,
     "maintainers": ["Saran440"],
