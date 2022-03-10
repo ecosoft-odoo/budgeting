@@ -52,8 +52,12 @@ class BudgetDoclineMixinBase(models.AbstractModel):
     activity_id = fields.Many2one(
         comodel_name="budget.activity",
         string="Activity",
+        domain=lambda self: self._domain_activity(),
         index=True,
     )
+
+    def _domain_activity(self):
+        return []
 
 
 class BudgetDoclineMixin(models.AbstractModel):

@@ -8,8 +8,10 @@ class BudgetDoclineMixinBase(models.AbstractModel):
 
     def _domain_activity(self):
         domain = super()._domain_activity()
-        advance = self.env.ref(
-            "budget_activity_advance_clearing.activity_advance"
+        activity_purchase_deposit = self.env.ref(
+            "budget_activity_purchase_deposit.activity_purchase_deposit"
         )
-        advance and domain.append(("id", "!=", advance.id)) or domain
+        activity_purchase_deposit and domain.append(
+            ("id", "!=", activity_purchase_deposit.id)
+        ) or domain
         return domain
