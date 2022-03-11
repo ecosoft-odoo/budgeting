@@ -29,4 +29,7 @@
             </xpath>
         </field>
     </record>
+    <record id="budget_control.action_budget_transfer" model="ir.actions.act_window">
+        <field name="context">{"access_sudo": 1}</field>
+    </record>
 </odoo>

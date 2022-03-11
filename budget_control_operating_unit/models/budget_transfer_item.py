@@ -22,11 +22,33 @@ class BudgetTransferItem(models.Model):
         index=True,
     )
 
-    # def _read(self, fields):
-    #     """ Add permission to read difference operating unit. """
-    #     if self._context.get("access_sudo", False):
-    #         self = self.sudo()
-    #     return super()._read(fields)
+    def check_budget_transfer_permission(self):
+        source_budget_all_ou = (
+            self.env.user.company_id.budget_transfer_source_all_ou
+        )
+        target_budget_all_ou = (
+            self.env.user.company_id.budget_transfer_target_all_ou
+        )
+        if (
+            (
+                self._context.get("source_budget", False)
+                and source_budget_all_ou
+            )
+            or (
+                self._context.get("target_budget", False)
+                and target_budget_all_ou
+            )
+            or self._context.get("access_sudo", False)
+            or self._context.get("from_review_systray", False)
+        ):  # support with tier validation
+            return True
+        return False
+
+    def _read(self, fields):
+        """ Add permission to read difference operating unit. """
+        if self.check_budget_transfer_permission():
+            self = self.sudo().with_context(force_all_ou=1)
+        return super()._read(fields)
 
     def _get_budget_control_transfer(self):
         """ Make sure that user can see available with other OU """

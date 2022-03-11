@@ -32,7 +32,7 @@ class BudgetTransfer(models.Model):
         "transfer_item_ids.target_operating_unit_id",
     )
     def _compute_operating_unit_ids(self):
-        for rec in self:
+        for rec in self.sudo():
             source = rec.transfer_item_ids.mapped("source_operating_unit_id")
             target = rec.transfer_item_ids.mapped("target_operating_unit_id")
             rec.operating_unit_ids = (source + target).ids

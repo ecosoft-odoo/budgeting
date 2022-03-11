@@ -1,11 +1,11 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
-# License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models
 
 
-class OperatingUnit(models.Model):
-    _inherit = "operating.unit"
+class AccountAnalyticAccount(models.Model):
+    _inherit = "account.analytic.account"
 
     def _read(self, fields):
         """ Make sure that user can reverse with other OU """
