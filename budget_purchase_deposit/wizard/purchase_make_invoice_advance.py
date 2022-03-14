@@ -94,16 +94,17 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
         """
         res = super().default_get(field_list)
         order = self._get_purchase_order()
-        if order:
+        if order and order.order_line:
             order_line = order.order_line
-            if len(order_line.filtered(lambda l: l.account_analytic_id)) == 1:
-                res.update(
-                    {
-                        "account_analytic_id": order_line.account_analytic_id.id,
-                        "fund_id": order_line.fund_id.id,
-                        "analytic_tag_ids": order_line.analytic_tag_ids.ids,
-                    }
-                )
+            account_analytics = order_line.mapped("account_analytic_id")
+            if len(account_analytics) == 1:
+                res.update({"account_analytic_id": account_analytics.id})
+            funds = order_line.mapped("fund_id")
+            if len(funds) == 1:
+                res.update({"fund_id": funds.id})
+            analytic_tags = order_line.mapped("analytic_tag_ids")
+            if analytic_tags == order_line[0].analytic_tag_ids:
+                res.update({"analytic_tag_ids": analytic_tags.ids})
         return res
 
     def _prepare_advance_purchase_line(self, order, product, tax_ids, amount):
