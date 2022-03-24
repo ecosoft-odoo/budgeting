@@ -14,23 +14,18 @@ class SourceFundMonitorReport(models.Model):
 
     @property
     def _table_query(self):
+        """ Overwrite query table on source of fund monitoring """
         return """
             select a.*, d.id as date_range_id, p.id as budget_period_id
-            from ({}) a {} {}
+            from ({}) a
+            left outer join date_range d
+                on a.date_to between d.date_start and d.date_end
+            left outer join budget_period p
+                on a.date_to between p.bm_date_from and p.bm_date_to
+            {}
         """.format(
-            self._get_sql(), self._get_join_sql(), self._get_where_sql()
+            self._get_sql(), self._get_where_sql()
         )
-
-    def _get_join_sql(self):
-        join_sql = super()._get_join_sql()
-        new_join_sql = """
-        left outer join date_range d
-            on a.date_to between d.date_start and d.date_end
-        left outer join budget_period p
-            on a.date_to between p.bm_date_from and p.bm_date_to
-        """
-        join_sql = "\n".join([join_sql, new_join_sql])
-        return join_sql
 
     # Budget
     def _select_budget(self):
@@ -97,3 +92,6 @@ class SourceFundMonitorReport(models.Model):
             ]
         )
         return from_statment
+
+    def _get_where_sql(self):
+        return "where d.type_id = p.plan_date_range_type_id"

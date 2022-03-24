@@ -10,7 +10,7 @@ class BaseBudgetMove(models.AbstractModel):
     _inherit = "base.budget.move"
 
     def _where_query_source_fund(self, docline):
-        return "analytic_account_id = {}".format(
+        return "analytic_account_id = {} and active = True".format(
             docline[docline._budget_analytic_field].id
         )
 
@@ -84,4 +84,4 @@ class BaseBudgetMove(models.AbstractModel):
                         "limit {:,.2f}".format(docline.name, total_spend)
                     )
                 )
-        return message_error
+        return message_error or False
