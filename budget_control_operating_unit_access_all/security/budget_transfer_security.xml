@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<odoo>
+<odoo noupdate="1">
 
+    <!-- Access all budget transfer from permission budget control -->
     <function model="ir.rule" name="write">
         <value
             eval="[ref('budget_control_operating_unit.ir_rule_budget_transfer_allowed_operating_units')]"

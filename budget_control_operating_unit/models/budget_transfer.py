@@ -9,13 +9,11 @@ class BudgetTransfer(models.Model):
     source_operating_unit = fields.Char(
         string="Operating Unit From",
         compute="_compute_operating_unit_ids",
-        compute_sudo=True,
         store=True,
     )
     target_operating_unit = fields.Char(
         string="Operating Unit To",
         compute="_compute_operating_unit_ids",
-        compute_sudo=True,
         store=True,
     )
     operating_unit_ids = fields.Many2many(
@@ -23,7 +21,6 @@ class BudgetTransfer(models.Model):
         string="Operating Units",
         relation="budget_transfer_operating_unit_rel",
         compute="_compute_operating_unit_ids",
-        compute_sudo=True,
         store=True,
         domain="[('user_ids', '=', uid)]",
         column1="transfer_id",
@@ -35,10 +32,9 @@ class BudgetTransfer(models.Model):
         "transfer_item_ids.target_operating_unit_id",
     )
     def _compute_operating_unit_ids(self):
-        for rec in self:
+        for rec in self.sudo():
             source = rec.transfer_item_ids.mapped("source_operating_unit_id")
             target = rec.transfer_item_ids.mapped("target_operating_unit_id")
-            ou = source + target
-            rec.operating_unit_ids = ou.ids
+            rec.operating_unit_ids = (source + target).ids
             rec.source_operating_unit = ", ".join(source.mapped("name"))
             rec.target_operating_unit = ", ".join(target.mapped("name"))

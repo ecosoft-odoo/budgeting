@@ -9,7 +9,6 @@
                 <field
                     name="source_operating_unit_id"
                     options="{'no_create_edit': True, 'no_open': True}"
-                    context="{'access_sudo': 1}"
                     optional="show"
                 />
             </xpath>
@@ -17,7 +16,6 @@
                 <field
                     name="target_operating_unit_id"
                     options="{'no_create_edit': True, 'no_open': True}"
-                    context="{'access_sudo': 1}"
                     optional="show"
                 />
             </xpath>
@@ -27,19 +25,15 @@
             >
                 <attribute
                     name="context"
-                >{'access_sudo': 1, 'tree_view_ref': 'budget_control_operating_unit.budget_control_view_transfer_tree'}</attribute>
-                <attribute
-                    name="options"
-                >{'no_create_edit': True, 'no_open': True, 'no_create': True}</attribute>
+                >{'source_budget': 1, 'tree_view_ref': 'budget_control_operating_unit.budget_control_view_transfer_tree'}</attribute>
             </xpath>
             <xpath
                 expr="//tree/field[@name='target_budget_control_id']"
                 position="attributes"
             >
-                <attribute name="context">{'access_sudo': 1}</attribute>
                 <attribute
-                    name="options"
-                >{'no_create_edit': True, 'no_open': True, 'no_create': True}</attribute>
+                    name="context"
+                >{'target_budget': 1, 'tree_view_ref': 'budget_control_operating_unit.budget_control_view_transfer_tree'}</attribute>
             </xpath>
         </field>
     </record>
@@ -52,21 +46,18 @@
                 <field
                     name="source_operating_unit_id"
                     options="{'no_create_edit': True, 'no_open': True}"
-                    context="{'access_sudo': 1}"
                 />
             </xpath>
             <xpath expr="//group[@name='budget_transfer_item_right']" position="inside">
                 <field
                     name="target_operating_unit_id"
                     options="{'no_create_edit': True, 'no_open': True}"
-                    context="{'access_sudo': 1}"
                 />
             </xpath>
             <xpath
                 expr="//group[@name='budget_transfer_item_left']//field[@name='source_budget_control_id']"
                 position="attributes"
             >
-                <attribute name="context">{'access_sudo': 1}</attribute>
                 <attribute
                     name="options"
                 >{'no_create_edit': True, 'no_open': True}</attribute>
@@ -75,7 +66,6 @@
                 expr="//group[@name='budget_transfer_item_right']//field[@name='target_budget_control_id']"
                 position="attributes"
             >
-                <attribute name="context">{'access_sudo': 1}</attribute>
                 <attribute
                     name="options"
                 >{'no_create_edit': True, 'no_open': True}</attribute>
