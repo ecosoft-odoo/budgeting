@@ -21,7 +21,21 @@ class ResProject(models.Model):
         states={"draft": [("readonly", False)]},
         tracking=True,
     )
-    parent_project = fields.Char(readonly=True)
+    parent_project_id = fields.Many2one(
+        comodel_name="res.project",
+        string="Parent",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+        tracking=True,
+    )
+    parent_project = fields.Char(
+        comodel_name="res.project",
+        related="parent_project_id.name",
+        string="Parent Project",
+        store=True,
+        readonly=False,
+        tracking=True,
+    )
     active = fields.Boolean(
         default=True,
         tracking=True,
@@ -116,7 +130,7 @@ class ResProject(models.Model):
 
     @api.model
     def create(self, vals):
-        if not vals.get("parent_project", False):
+        if not vals.get("parent_project_id", False):
             vals["parent_project"] = vals["name"]
         return super().create(vals)
 
@@ -157,6 +171,9 @@ class ResProject(models.Model):
             "view_id": wizard.id,
             "target": "new",
             "context": {
+                "default_parent_project_id": project.parent_project_id
+                and project.parent_project_id.id
+                or project.id,
                 "default_parent_project": project.parent_project,
                 "default_date_from": project.date_from,
                 "default_date_to": project.date_to,

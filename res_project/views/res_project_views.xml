@@ -79,7 +79,16 @@
                     <group name="main_project">
                         <field name="active" invisible="1" />
                         <group name="main_left_project">
-                            <field name="parent_project" />
+                            <field
+                                name="parent_project_id"
+                                string="Parent Project"
+                                attrs="{'invisible': [('state', '!=', 'draft')]}"
+                            />
+                            <field
+                                name="parent_project"
+                                readonly="1"
+                                attrs="{'invisible': [('state', '=', 'draft')]}"
+                            />
                             <field name="project_manager_id" />
                             <field name="department_id" />
                         </group>

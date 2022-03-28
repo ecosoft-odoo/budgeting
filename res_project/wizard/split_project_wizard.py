@@ -9,7 +9,15 @@ class SplitProjectWizard(models.TransientModel):
     _name = "split.project.wizard"
     _description = "Split Project Wizard"
 
-    parent_project = fields.Char(readonly=True)
+    parent_project_id = fields.Many2one(
+        comodel_name="res.project",
+        string="Parent",
+        readonly=True,
+    )
+    parent_project = fields.Char(
+        string="Parent Project",
+        readonly=True,
+    )
     project_manager_id = fields.Many2one(
         comodel_name="hr.employee",
         string="Project Manager",
@@ -38,20 +46,17 @@ class SplitProjectWizard(models.TransientModel):
         if not self.line_ids:
             raise UserError(_("Please add a new project name"))
         ResProject = self.env["res.project"]
-        # Search all state parent project
-        parent_project = ResProject.with_context(active_test=False).search(
-            [("name", "=", self.parent_project)]
-        )
         ctx = self._context.copy()
-        ctx.update(
-            {
-                "split_project": True,
-                "parent_project": parent_project.ids,
-            }
-        )
-        # Archive parent project record
-        if parent_project:
-            parent_project.action_archive()
+        if self.parent_project_id:
+            # Archive parent project record
+            self.parent_project_id.action_archive()
+            # Update context
+            ctx.update(
+                {
+                    "split_project": True,
+                    "parent_project_id": self.parent_project_id.id,
+                }
+            )
         # Create new project record
         vals = [line._prepare_project_val() for line in self.line_ids]
         new_projects = ResProject.with_context(ctx).create(vals)
@@ -77,6 +82,7 @@ class SplitProjectWizardLine(models.TransientModel):
         wizard = self.wizard_id
         return {
             "name": self.project_name,
+            "parent_project_id": wizard.parent_project_id.id,
             "parent_project": wizard.parent_project,
             "date_from": wizard.date_from,
             "date_to": wizard.date_to,
