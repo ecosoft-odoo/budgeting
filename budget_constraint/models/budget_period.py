@@ -5,35 +5,35 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 
-class BudgetDoclineMixin(models.AbstractModel):
-    _inherit = "budget.docline.mixin"
+class BudgetPeriod(models.Model):
+    _inherit = "budget.period"
 
     def _get_budget_constraint(self):
         return self.env["budget.constraint"].search([], order="sequence")
 
     @api.model
-    def check_budget_constraint(self, budget_constraints):
-        message = []
+    def check_budget_constraint(self, budget_constraints, doclines):
+        all_msg_error = ""
         for budget_constraint in budget_constraints:
-            result = (
+            msg_error = (
                 budget_constraint.server_action_id.with_context(
                     active_model=budget_constraint._name,
                     active_id=budget_constraint.id,
-                    doclines=self,
+                    doclines=doclines,
                 )
                 .sudo()
                 .run()
             )
-            if result:
-                message.extend(result)
-        return message
+            if msg_error:
+                all_msg_error += "\n".join(msg_error)
+        if all_msg_error:
+            raise UserError(_(all_msg_error))
+        return True
 
-    def commit_budget(self, reverse=False, **vals):
+    @api.model
+    def check_budget(self, doclines, doc_type="account"):
         """Create budget commit for each docline"""
-        budget_move = super().commit_budget(reverse=reverse, **vals)
         budget_constraints = self._get_budget_constraint()
-        if budget_move and budget_constraints:
-            message = self.check_budget_constraint(budget_constraints)
-            if message:
-                raise UserError(_("\n".join(message)))
-        return budget_move
+        if doclines and budget_constraints:
+            self.check_budget_constraint(budget_constraints, doclines)
+        return super().check_budget(doclines, doc_type)
