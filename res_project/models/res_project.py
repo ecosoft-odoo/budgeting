@@ -28,7 +28,7 @@ class ResProject(models.Model):
         states={"draft": [("readonly", False)]},
         tracking=True,
     )
-    parent_project = fields.Char(
+    parent_project_name = fields.Char(
         comodel_name="res.project",
         related="parent_project_id.name",
         string="Parent Project",
@@ -131,7 +131,7 @@ class ResProject(models.Model):
     @api.model
     def create(self, vals):
         if not vals.get("parent_project_id", False):
-            vals["parent_project"] = vals["name"]
+            vals["parent_project_name"] = vals["name"]
         return super().create(vals)
 
     @api.model
@@ -174,7 +174,7 @@ class ResProject(models.Model):
                 "default_parent_project_id": project.parent_project_id
                 and project.parent_project_id.id
                 or project.id,
-                "default_parent_project": project.parent_project,
+                "default_parent_project_name": project.parent_project_name,
                 "default_date_from": project.date_from,
                 "default_date_to": project.date_to,
                 "default_project_manager_id": project.project_manager_id.id,

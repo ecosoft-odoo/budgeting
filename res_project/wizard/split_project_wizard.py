@@ -14,7 +14,7 @@ class SplitProjectWizard(models.TransientModel):
         string="Parent",
         readonly=True,
     )
-    parent_project = fields.Char(
+    parent_project_name = fields.Char(
         string="Parent Project",
         readonly=True,
     )
@@ -83,7 +83,7 @@ class SplitProjectWizardLine(models.TransientModel):
         return {
             "name": self.project_name,
             "parent_project_id": wizard.parent_project_id.id,
-            "parent_project": wizard.parent_project,
+            "parent_project_name": wizard.parent_project_name,
             "date_from": wizard.date_from,
             "date_to": wizard.date_to,
             "project_manager_id": wizard.project_manager_id.id,

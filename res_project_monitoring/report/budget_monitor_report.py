@@ -10,12 +10,12 @@ class BudgetMonitorReport(models.Model):
     project_id = fields.Many2one(
         comodel_name="res.project",
     )
-    parent_project = fields.Char(string="Parent Project")
+    parent_project_name = fields.Char(string="Parent Project")
 
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query[50] = "aa.project_id, rp.parent_project"
+        select_budget_query[50] = "aa.project_id, rp.parent_project_name"
         return select_budget_query
 
     def _from_budget(self):
@@ -33,7 +33,7 @@ class BudgetMonitorReport(models.Model):
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)
-        select_statement[50] = "aa.project_id, rp.parent_project"
+        select_statement[50] = "aa.project_id, rp.parent_project_name"
         return select_statement
 
     def _from_statement(self, amount_type):

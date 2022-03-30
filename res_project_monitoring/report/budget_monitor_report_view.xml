@@ -24,8 +24,8 @@
             <xpath expr="//filter[@name='group_by_analytic_account']" position="after">
                 <filter
                     string="Parent Project"
-                    name="parent_project"
-                    context="{'group_by':'parent_project'}"
+                    name="parent_project_name"
+                    context="{'group_by':'parent_project_name'}"
                 />
                 <filter
                     string="Project"

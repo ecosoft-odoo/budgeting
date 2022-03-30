@@ -8,7 +8,7 @@
                 <field name="code" optional="show" />
                 <field name="name" />
                 <field name="department_id" />
-                <field name="parent_project" optional="show" />
+                <field name="parent_project_name" optional="show" />
                 <field name="project_manager_id" optional="show" />
                 <field name="date_from" />
                 <field name="date_to" />
@@ -85,7 +85,7 @@
                                 attrs="{'invisible': [('state', '!=', 'draft')]}"
                             />
                             <field
-                                name="parent_project"
+                                name="parent_project_name"
                                 readonly="1"
                                 attrs="{'invisible': [('state', '=', 'draft')]}"
                             />
@@ -137,7 +137,7 @@
         <field name="arch" type="xml">
             <search string="Search Project">
                 <field name="name" string="Project" />
-                <field name="parent_project" string="Parent Project" />
+                <field name="parent_project_name" string="Parent Project" />
                 <field name="project_manager_id" string="Project Manager" />
                 <separator name="filter_state" />
                 <filter
@@ -176,9 +176,9 @@
                         context="{'group_by': 'project_manager_id'}"
                     />
                     <filter
-                        name="parent_project"
+                        name="parent_project_name"
                         string="Parent Project"
-                        context="{'group_by': 'parent_project'}"
+                        context="{'group_by': 'parent_project_name'}"
                     />
                     <filter
                         name="department"
