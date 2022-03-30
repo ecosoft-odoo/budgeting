@@ -31,8 +31,10 @@ class BaseBudgetMove(models.AbstractModel):
         - Install module `budget_source_fund`,
           install module `budget_allocation_dimension_fund` -> query dimension
         """
-        dimension_fund = self.env["ir.module.module"].search(
-            [("name", "=", "budget_allocation_dimension_fund")]
+        dimension_fund = (
+            self.env["ir.module.module"]
+            .sudo()
+            .search([("name", "=", "budget_allocation_dimension_fund")])
         )
         # Skip query dimension
         if (
