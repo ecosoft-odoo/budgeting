@@ -36,7 +36,8 @@ class BaseBudgetMove(models.AbstractModel):
         )
         # Skip query dimension
         if (
-            self.env.get("source.fund.monitor.report", "/") != "/"
+            self.env["budget.monitor.report"].is_budget_source_fund_installed()
+            and dimension_fund
             and dimension_fund.state != "installed"
         ):
             return True
