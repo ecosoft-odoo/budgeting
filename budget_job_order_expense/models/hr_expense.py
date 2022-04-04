@@ -3,18 +3,14 @@
 
 from odoo import fields, models
 
-READONLY_STATES = {
-    "post": [("readonly", True)],
-    "done": [("readonly", True)],
-    "cancel": [("readonly", True)],
-}
-
 
 class HRExpense(models.Model):
     _inherit = "hr.expense"
 
     job_order_id = fields.Many2one(
-        comodel_name="budget.job.order", states=READONLY_STATES
+        readonly=True,
+        comodel_name="budget.job.order",
+        state={"draft": [("readonly", False)]},
     )
 
     def _get_account_move_line_values(self):
