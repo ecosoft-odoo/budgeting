@@ -14,5 +14,6 @@
         "budget_allocation_fund",
     ],
     "data": [],
+    "auto_install": True,
     "installable": True,
 }

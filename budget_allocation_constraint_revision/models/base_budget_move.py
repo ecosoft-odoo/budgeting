@@ -7,9 +7,9 @@ from odoo import models
 class BaseBudgetMove(models.AbstractModel):
     _inherit = "base.budget.move"
 
-    def _where_query_source_fund(self, docline):
+    def _get_where_commitment(self, docline):
         """ Find max revision number from budget_control """
-        where_query = super()._where_query_source_fund(docline)
+        where_query = super()._get_where_commitment(docline)
         bc_max_revision = self.env["budget.control"].search(
             [], order="revision_number", limit=1
         )

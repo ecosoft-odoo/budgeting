@@ -8,7 +8,11 @@
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
-    "depends": ["budget_allocation", "budget_constraint"],
+    "depends": [
+        "budget_allocation",
+        "budget_constraint",
+        "budget_control_revision",
+    ],
     "data": [],
     "installable": True,
     "auto_install": True,

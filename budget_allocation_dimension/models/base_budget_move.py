@@ -16,11 +16,43 @@ class BaseBudgetMove(models.AbstractModel):
             x for x in self.fields_get().keys() if x.startswith("x_dimension_")
         ]
 
-    def _where_query_source_fund(self, docline):
-        where_query = super()._where_query_source_fund(docline)
+    def _get_condition_skip_dimension(self):
+        """
+        This function will check state 2 module
+            1. budget_source_fund
+            2. budget_allocation_dimension_fund
+
+        ============ budget.monitor.report ============
+        - Not install module `budget_source_fund` -> query dimension
+
+        ============ source.fund.monitor.report ============
+        - Install module `budget_source_fund`,
+          Not install module `budget_allocation_dimension_fund` -> skip dimension
+        - Install module `budget_source_fund`,
+          install module `budget_allocation_dimension_fund` -> query dimension
+        """
+        dimension_fund = (
+            self.env["ir.module.module"]
+            .sudo()
+            .search([("name", "=", "budget_allocation_dimension_fund")])
+        )
+        # Skip query dimension
+        if (
+            self.env["budget.monitor.report"].is_budget_source_fund_installed()
+            and dimension_fund
+            and dimension_fund.state != "installed"
+        ):
+            return True
+        return False
+
+    def _get_where_commitment(self, docline):
+        where_query = super()._get_where_commitment(docline)
+        skip_query_dimension = self._get_condition_skip_dimension()
+        if skip_query_dimension:
+            return where_query
         dimensions = docline._get_dimension_fields()
         where_dimensions = [
-            "{} {} {}".format(
+            "({0} {1} {2} or {0} = 999999990)".format(
                 x,
                 docline[x] and "=" or "is",
                 docline[x] and docline[x].id or "null",

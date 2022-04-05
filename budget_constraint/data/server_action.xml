@@ -11,7 +11,7 @@
         <field name="code">
 if record:
     doclines = record._context.get("doclines", False)
-    message_error = doclines.budget_move_ids.check_budget_allocation_limit(doclines)
+    message_error = doclines.mapped("budget_move_ids").check_budget_allocation_limit(doclines)
     if message_error:
         action = message_error
         </field>
