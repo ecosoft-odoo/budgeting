@@ -10,7 +10,7 @@ class HRExpense(models.Model):
     job_order_id = fields.Many2one(
         readonly=True,
         comodel_name="budget.job.order",
-        state={"draft": [("readonly", False)]},
+        states={"draft": [("readonly", False)]},
     )
 
     def _get_account_move_line_values(self):
