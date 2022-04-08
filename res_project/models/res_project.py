@@ -29,12 +29,17 @@ class ResProject(models.Model):
         tracking=True,
     )
     parent_project_name = fields.Char(
-        comodel_name="res.project",
-        related="parent_project_id.name",
+        compute="_compute_parent_project_name",
         string="Parent Project",
         store=True,
         readonly=False,
         tracking=True,
+    )
+    child_ids = fields.One2many(
+        comodel_name="res.project",
+        inverse_name="parent_project_id",
+        string="Child Projects",
+        check_company=True,
     )
     active = fields.Boolean(
         default=True,
@@ -122,6 +127,15 @@ class ResProject(models.Model):
     )
 
     _sql_constraints = [("unique_name", "UNIQUE(name)", "name must be unique")]
+
+    @api.depends("parent_project_id", "name")
+    def _compute_parent_project_name(self):
+        for rec in self:
+            rec.parent_project_name = (
+                rec.parent_project_id
+                and rec.parent_project_id.name
+                or rec.name
+            )
 
     @api.depends("project_plan_ids")
     def _compute_plan_amount(self):
