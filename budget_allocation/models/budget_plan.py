@@ -30,14 +30,15 @@ class BudgetPlan(models.Model):
         ):
             raise UserError(_("Total Amount is not equal Initial Amount."))
 
-    def action_generate_plan(self):
+    def _update_plan(self):
         """ Update amount budget allocation to budget plan """
-        res = super().action_generate_plan()
-        period_id = self.budget_period_id
-        for line in self.plan_line:
-            allocation_line = line.analytic_account_id.allocation_line_ids
-            ba_line_period = allocation_line.filtered(
-                lambda l: l.budget_period_id == period_id
-            )
-            line.amount = sum(ba_line_period.mapped("allocated_amount"))
+        res = super()._update_plan()
+        for rec in self:
+            period_id = rec.budget_period_id
+            for line in rec.plan_line:
+                allocation_line = line.analytic_account_id.allocation_line_ids
+                ba_line_period = allocation_line.filtered(
+                    lambda l: l.budget_period_id == period_id
+                )
+                line.amount = sum(ba_line_period.mapped("allocated_amount"))
         return res

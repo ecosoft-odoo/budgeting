@@ -148,7 +148,7 @@ class TestBudgetAllocation(BudgetControlCommon):
         with self.assertRaises(UserError):
             plan_id.action_confirm()
         # Update plan from budget allocation
-        plan_id.action_generate_plan()
+        plan_id.action_update_plan()
         self.assertEqual(plan_id.init_amount, plan_id.total_amount)
         self.assertEqual(plan_id.state, "draft")
         plan_id.action_confirm()
