@@ -34,13 +34,18 @@ class BaseBudgetMove(models.AbstractModel):
         dimension_fund = (
             self.env["ir.module.module"]
             .sudo()
-            .search([("name", "=", "budget_allocation_dimension_fund")])
+            .search(
+                [
+                    ("name", "=", "budget_allocation_dimension_fund"),
+                    ("state", "!=", "installed"),
+                ],
+                limit=1,
+            )
         )
         # Skip query dimension
         if (
             self.env["budget.monitor.report"].is_budget_source_fund_installed()
             and dimension_fund
-            and dimension_fund.state != "installed"
         ):
             return True
         return False

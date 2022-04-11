@@ -33,12 +33,12 @@ class BudgetPlan(models.Model):
         self.update({"enable_revision_number": group_enable_revision})
         return True
 
-    def action_update_amount(self):
+    def action_update_plan(self):
         """
         Update consumed amount plan,
         For case new revision budget plan but not created budget control.
         """
-        super().action_update_amount()
+        super().action_update_plan()
         for rec in self:
             if not (rec.init_revision or rec.budget_control_ids):
                 analytics = rec.plan_line.mapped("analytic_account_id")

@@ -92,7 +92,7 @@ class BudgetAllocation(models.Model):
         vals = self._prepare_vals_budget_plan()
         plan_id = BudgetPlan.create(vals)
         self.write({"plan_id": plan_id.id})
-        plan_id.action_generate_plan()
+        plan_id.action_update_plan()
         return plan_id
 
     def _get_domain_open_analytic(self):
