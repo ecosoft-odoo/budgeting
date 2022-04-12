@@ -15,7 +15,16 @@
                     options="{'no_create': 1}"
                 />
                 <field name="name" optional="show" />
-                <field name="allocated_amount" optional="show" sum="Total Amount" />
+                <field
+                    name="estimated_amount"
+                    optional="show"
+                    sum="Total Esitmated Amount"
+                />
+                <field
+                    name="allocated_amount"
+                    optional="show"
+                    sum="Total Allocated Amount"
+                />
                 <field
                     name="released_amount"
                     optional="show"

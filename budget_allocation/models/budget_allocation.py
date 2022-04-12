@@ -185,6 +185,12 @@ class BudgetAllocationLine(models.Model):
         required=True,
         index=True,
     )
+    estimated_amount = fields.Monetary(
+        compute="_compute_estimated_amount",
+        store=True,
+        readonly=False,
+        help="Estimated amount to be received this year",
+    )
     allocated_amount = fields.Monetary(
         string="Allocated",
         help="Initial allocated amount",
@@ -203,6 +209,11 @@ class BudgetAllocationLine(models.Model):
         comodel_name="res.currency", related="company_id.currency_id"
     )
     active = fields.Boolean(related="budget_allocation_id.active")
+
+    @api.depends("allocated_amount")
+    def _compute_estimated_amount(self):
+        for rec in self:
+            rec.estimated_amount = rec.estimated_amount or rec.allocated_amount
 
     def _get_released_amount(self):
         self.ensure_one()
