@@ -12,12 +12,14 @@
                 expr="//field[@name='line_ids']/tree//field[@name='account_analytic_id']"
                 position="after"
             >
-                <field name="fund_id" />
+                <field name="fund_all" invisible="1" />
+                <field name="fund_id" optional="show" />
             </xpath>
             <xpath
                 expr="//field[@name='line_ids']/form//field[@name='account_analytic_id']"
                 position="after"
             >
+                <field name="fund_all" invisible="1" />
                 <field name="fund_id" />
             </xpath>
         </field>

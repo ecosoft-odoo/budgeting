@@ -5,7 +5,9 @@ from odoo import models
 
 
 class PurchaseRequisitionLine(models.Model):
-    _inherit = "purchase.requisition.line"
+    _name = "purchase.requisition.line"
+    _inherit = ["purchase.requisition.line", "budget.docline.mixin.base"]
+    _budget_analytic_field = "account_analytic_id"
 
     def _prepare_purchase_order_line(
         self, name, product_qty=0.0, price_unit=0.0, taxes_ids=False
