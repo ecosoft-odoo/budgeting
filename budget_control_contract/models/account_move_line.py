@@ -19,8 +19,17 @@ class AccountMoveLine(models.Model):
                     )
                     if not contract_line:
                         continue
+                    qty = ml.product_uom_id._compute_quantity(
+                        ml.quantity, contract_line.uom_id
+                    )
+                    # Confirm vendor bill, do uncommit budget
+                    qty_bf_invoice = contract_line.qty_invoiced - qty
+                    qty_balance = contract_line.quantity - qty_bf_invoice
+                    qty = qty > qty_balance and qty_balance or qty
+                    if qty <= 0:
+                        continue
                     contract_line.commit_budget(
-                        reverse=rev, move_line_id=ml.id
+                        reverse=rev, move_line_id=ml.id, quantity=qty
                     )
                 else:  # Cancel or draft, not commitment line
                     self.env["contract.budget.move"].search(

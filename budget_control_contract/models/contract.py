@@ -23,7 +23,7 @@ class ContractContract(models.Model):
 
     def recompute_budget_move(self):
         self.mapped("contract_line_ids").recompute_budget_move()
-        # Do check after done the budget moves
+        # As there is no state changes, check_budget after done the budget moves
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
             currency = (
@@ -96,16 +96,10 @@ class ContractLine(models.Model):
             rec.account_id = rec._get_contract_line_account()
 
     def recompute_budget_move(self):
-        MoveLine = self.env["account.move.line"]
         for contract_line in self:
             contract_line.budget_move_ids.unlink()
-            # Commit on contract
             contract_line.commit_budget()
-            # Uncommitted on invoice confirm
-            move_lines = MoveLine.search(
-                [("contract_line_id", "=", contract_line.id)]
-            )
-            move_lines.uncommit_contract_budget()
+            contract_line.invoice_lines.uncommit_contract_budget()
             contract_line.forward_commit()
 
     def _get_contract_line_account(self):
@@ -117,7 +111,10 @@ class ContractLine(models.Model):
 
     def _init_docline_budget_vals(self, budget_vals):
         self.ensure_one()
-        budget_vals["amount_currency"] = self.price_unit * self.quantity
+        quantity = self.quantity
+        if "quantity" in budget_vals and budget_vals.get("quantity"):
+            quantity = budget_vals.pop("quantity")
+        budget_vals["amount_currency"] = self.price_unit * quantity
         # Document specific vals
         budget_vals.update(
             {
@@ -128,6 +125,7 @@ class ContractLine(models.Model):
         return super()._init_docline_budget_vals(budget_vals)
 
     def _valid_commit_state(self):
+        # Contract has no state, watch commit_budget
         if (
             not self.contract_id.commit_budget
             or self.contract_id.journal_id.type != "purchase"

@@ -17,7 +17,8 @@ class BudgetMonitorReport(models.Model):
         ]
 
     def is_budget_source_fund_installed(self):
-        return self.env.get("source.fund.monitor.report", "/") != "/"
+        is_installed = self.env.get("source.fund.monitor.report") is not None
+        return is_installed
 
     # Budget
     def _select_budget(self):
