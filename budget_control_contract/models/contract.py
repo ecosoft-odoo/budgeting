@@ -1,6 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class ContractContract(models.Model):
@@ -54,6 +54,42 @@ class ContractLine(models.Model):
         comodel_name="account.account",
         compute="_compute_account_id",
     )
+    invoice_lines = fields.One2many(
+        comodel_name="account.move.line",
+        inverse_name="contract_line_id",
+        copy=False,
+    )
+    qty_invoiced = fields.Float(
+        compute="_compute_qty_invoiced",
+        string="Billed Qty",
+        digits="Product Unit of Measure",
+        store=True,
+    )
+
+    @api.depends(
+        "invoice_lines.move_id.state", "invoice_lines.quantity", "quantity"
+    )
+    def _compute_qty_invoiced(self):
+        for line in self:
+            # compute qty_invoiced
+            qty = 0.0
+            for inv_line in line.invoice_lines:
+                if inv_line.move_id.state not in ["cancel"]:
+                    if inv_line.move_id.move_type in [
+                        "in_invoice",
+                        "out_invoice",
+                    ]:
+                        qty += inv_line.product_uom_id._compute_quantity(
+                            inv_line.quantity, line.uom_id
+                        )
+                    elif inv_line.move_id.move_type in [
+                        "in_refund",
+                        "out_refund",
+                    ]:
+                        qty -= inv_line.product_uom_id._compute_quantity(
+                            inv_line.quantity, line.uom_id
+                        )
+            line.qty_invoiced = qty
 
     def _compute_account_id(self):
         for rec in self:
