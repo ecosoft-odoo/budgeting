@@ -36,6 +36,16 @@ class ContractContract(models.Model):
     def close_budget_move(self):
         self.mapped("contract_line_ids").close_budget_move()
 
+    def write(self, vals):
+        res = super().write(vals)
+        if "active" not in vals:
+            return res
+        elif vals.get("active"):
+            self.recompute_budget_move()
+        else:
+            self.with_context(active_test=False).close_budget_move()
+        return res
+
 
 class ContractLine(models.Model):
     _name = "contract.line"
