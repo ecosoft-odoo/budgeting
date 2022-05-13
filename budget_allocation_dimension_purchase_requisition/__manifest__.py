@@ -10,6 +10,7 @@
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-budgeting",
     "depends": [
+        "budget_control_purchase_requisition",
         "budget_allocation_dimension",
         "purchase_request_to_requisition",
     ],
