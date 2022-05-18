@@ -21,6 +21,8 @@ class ContractContract(models.Model):
         "- Enable commit budget only when dealing with non-recurring invoices.",
     )
 
+    # Allow trigger, because contract line is always editable.
+    @api.constrains("contract_line_ids")
     def recompute_budget_move(self):
         self.mapped("contract_line_ids").recompute_budget_move()
         # As there is no state changes, check_budget after done the budget moves
@@ -44,6 +46,14 @@ class ContractContract(models.Model):
             self.recompute_budget_move()
         else:
             self.with_context(active_test=False).close_budget_move()
+        # Special for contract, as line can always change
+        # make sure budget is checked when line changes
+        if "contract_line_ids" in vals:
+            BudgetPeriod = self.env["budget.period"]
+            for doc in self:
+                BudgetPeriod.check_budget(
+                    doc.contract_line_ids, doc_type="contract"
+                )
         return res
 
 
