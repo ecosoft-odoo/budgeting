@@ -57,7 +57,7 @@ class MisReportKpi(models.Model):
                 if not activity_ids:
                     raise UserError(
                         _(
-                            "Activity Group {} is not activity.".format(
+                            "Activity Group {} has no activities".format(
                                 kpi.activity_group_id.name
                             )
                         )
