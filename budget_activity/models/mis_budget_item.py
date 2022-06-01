@@ -8,6 +8,6 @@ class MisBudgetItem(models.Model):
 
     activity_group_id = fields.Many2one(
         comodel_name="budget.activity.group",
-        ondelete="cascade",
+        ondelete="restrict",
         index=True,
     )

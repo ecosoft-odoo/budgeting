@@ -38,6 +38,7 @@ class BudgetActivity(models.Model):
     activity_group_id = fields.Many2one(
         comodel_name="budget.activity.group",
         index=True,
+        ondelete="restrict",
     )
     account_id = fields.Many2one(
         comodel_name="account.account",
