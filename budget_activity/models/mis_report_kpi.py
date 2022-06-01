@@ -1,8 +1,8 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
-
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class MisReportKpi(models.Model):
@@ -54,6 +54,14 @@ class MisReportKpi(models.Model):
         for kpi in self:
             if kpi.activity_expression and kpi.activity_group_id:
                 activity_ids = kpi.activity_group_id.activity_ids
+                if not activity_ids:
+                    raise UserError(
+                        _(
+                            "Activity Group {} is not activity.".format(
+                                kpi.activity_group_id.name
+                            )
+                        )
+                    )
                 accounts = activity_ids.mapped("account_id")
                 account_str = "[%s]" % ",".join([acc.code for acc in accounts])
                 kpi.expression = "bal{}{}[{}]".format(
