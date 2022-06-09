@@ -152,6 +152,7 @@ class BudgetAllocation(models.Model):
 class BudgetAllocationLine(models.Model):
     _name = "budget.allocation.line"
     _description = "Budget Allocation Line"
+    _rec_name = "id"  # For unique ref
     _check_company_auto = True
 
     budget_allocation_id = fields.Many2one(

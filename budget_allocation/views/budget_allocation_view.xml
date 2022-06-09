@@ -6,6 +6,7 @@
         <field name="model">budget.allocation.line</field>
         <field name="arch" type="xml">
             <tree string="Budget Allocation Line" editable="bottom">
+                <field name="id" optional="hide" />
                 <field name="budget_allocation_id" invisible="1" />
                 <field name="date_from" invisible="1" />
                 <field name="date_to" invisible="1" />
