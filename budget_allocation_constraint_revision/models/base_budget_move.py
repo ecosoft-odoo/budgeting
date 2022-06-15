@@ -11,7 +11,7 @@ class BaseBudgetMove(models.AbstractModel):
         """ Find max revision number from budget_control """
         where_query = super()._get_where_commitment(docline)
         bc_max_revision = self.env["budget.control"].search(
-            [], order="revision_number", limit=1
+            [("active", "=", True)], order="revision_number desc", limit=1
         )
         # commitment is not revision
         where_revision = (
