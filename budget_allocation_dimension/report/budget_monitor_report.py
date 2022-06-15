@@ -26,9 +26,7 @@ class BudgetMonitorReport(models.Model):
         # Mark sure that budget will not error if not install budget_source_fund
         if not self.is_budget_source_fund_installed():
             add_fields = self._get_dimension_fields()
-            add_fields = [
-                "999999990::integer as {}".format(x) for x in add_fields
-            ]
+            add_fields = ["999999990::integer as {}".format(x) for x in add_fields]
             if add_fields:
                 select_budget_query[20] = ", ".join(add_fields)
         return select_budget_query

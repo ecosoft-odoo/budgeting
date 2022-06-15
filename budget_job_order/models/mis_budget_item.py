@@ -28,7 +28,7 @@ class MisBudgetItem(models.Model):
         return domain
 
     def _compute_name(self):
-        """ Adding Job Order """
+        """Adding Job Order"""
         super()._compute_name()
         for rec in self:
             if rec.job_order_id:

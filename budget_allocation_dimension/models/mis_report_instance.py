@@ -8,9 +8,7 @@ class MisReportInstance(models.Model):
 
     def _get_context_filter_matrix(self):
         ctx = super()._get_context_filter_matrix()
-        if ctx.get("mis_report_filters") and ctx.get(
-            "filter_analytic_tag_ids"
-        ):
+        if ctx.get("mis_report_filters") and ctx.get("filter_analytic_tag_ids"):
             ctx["mis_report_filters"]["analytic_tag_ids"] = {
                 "value": ctx["filter_analytic_tag_ids"],
                 "operator": "all",

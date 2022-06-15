@@ -32,9 +32,7 @@ class BudgetMonitorReport(models.Model):
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)
-        select_statement[
-            20
-        ] = "bag.name as activity_group, ba.name as activity"
+        select_statement[20] = "bag.name as activity_group, ba.name as activity"
         return select_statement
 
     def _from_statement(self, amount_type):
@@ -42,8 +40,7 @@ class BudgetMonitorReport(models.Model):
         from_statment = "\n".join(
             [
                 from_statment,
-                "left outer join budget_activity ba "
-                "on a.activity_id = ba.id ",
+                "left outer join budget_activity ba " "on a.activity_id = ba.id ",
                 "left outer join budget_activity_group bag "
                 "on ba.activity_group_id = bag.id",
             ]

@@ -16,9 +16,7 @@ class TestBudgetAllocation(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def setUpClass(cls):
         super().setUpClass()
-        cls.BudgetAllocation = cls.env[
-            "budget.allocation"
-        ]  # Create sample activity
+        cls.BudgetAllocation = cls.env["budget.allocation"]  # Create sample activity
         cls.AnalyticAccount = cls.env["account.analytic.account"]
         cls.AllocationLine = cls.env["budget.allocation.line"]
         cls.BudgetPlan = cls.env["budget.plan"]
@@ -29,9 +27,7 @@ class TestBudgetAllocation(BudgetControlCommon):
     def _create_budget_allocation(self, analytic_account, amount):
         budget_allocation_id = self.BudgetAllocation.create(
             {
-                "name": "Budget Allocation {}".format(
-                    self.budget_period.display_name
-                ),
+                "name": "Budget Allocation {}".format(self.budget_period.display_name),
                 "allocation_line_ids": [
                     (
                         0,
@@ -51,26 +47,14 @@ class TestBudgetAllocation(BudgetControlCommon):
     def test_01_process_budget_allocation(self):
         analytic_account = self.costcenter1 + self.costcenterX
         amount = 100.0
-        budget_allocation_id = self._create_budget_allocation(
-            analytic_account, amount
-        )
+        budget_allocation_id = self._create_budget_allocation(analytic_account, amount)
+        self.assertEqual(budget_allocation_id.budget_period_id, self.budget_period)
         self.assertEqual(
-            budget_allocation_id.budget_period_id, self.budget_period
-        )
-        self.assertEqual(
-            sum(
-                budget_allocation_id.allocation_line_ids.mapped(
-                    "allocated_amount"
-                )
-            ),
+            sum(budget_allocation_id.allocation_line_ids.mapped("allocated_amount")),
             budget_allocation_id.total_amount,
         )
         self.assertEqual(
-            sum(
-                budget_allocation_id.allocation_line_ids.mapped(
-                    "released_amount"
-                )
-            ),
+            sum(budget_allocation_id.allocation_line_ids.mapped("released_amount")),
             0.0,
         )
         # Open Analytic with depend on date period, Check count analytic
@@ -93,9 +77,7 @@ class TestBudgetAllocation(BudgetControlCommon):
         self.assertEqual(analytic_all, analytic_check)
         # Open Allocation Line, Check count line is correct
         allocation_line_dict = budget_allocation_id.button_open_allocation()
-        allocation_line = self.AllocationLine.search(
-            allocation_line_dict["domain"]
-        )
+        allocation_line = self.AllocationLine.search(allocation_line_dict["domain"])
         self.assertEqual(len(allocation_line), len(analytic_account))
         budget_allocation_id.action_cancel()
         self.assertEqual(budget_allocation_id.state, "cancel")
@@ -105,16 +87,8 @@ class TestBudgetAllocation(BudgetControlCommon):
         self.assertEqual(budget_allocation_id.state, "done")
         # After done, amount released must be equal allocated
         self.assertEqual(
-            sum(
-                budget_allocation_id.allocation_line_ids.mapped(
-                    "released_amount"
-                )
-            ),
-            sum(
-                budget_allocation_id.allocation_line_ids.mapped(
-                    "allocated_amount"
-                )
-            ),
+            sum(budget_allocation_id.allocation_line_ids.mapped("released_amount")),
+            sum(budget_allocation_id.allocation_line_ids.mapped("allocated_amount")),
         )
         # budget plan created by button generate budget plan.
         # initial amount in budget plan update from budget allocation.
@@ -126,9 +100,7 @@ class TestBudgetAllocation(BudgetControlCommon):
         plan = self.BudgetPlan.browse(plan_dict["res_id"])
         plan_id = budget_allocation_id.plan_id
         self.assertEqual(plan, plan_id)
-        self.assertEqual(
-            plan_id.init_amount, budget_allocation_id.total_amount
-        )
+        self.assertEqual(plan_id.init_amount, budget_allocation_id.total_amount)
         # Check case edit amount in budget allocation.
         budget_allocation_id.action_draft()
         with Form(budget_allocation_id.allocation_line_ids[0]) as f:
@@ -136,14 +108,10 @@ class TestBudgetAllocation(BudgetControlCommon):
         self.assertEqual(budget_allocation_id.total_amount, amount + 50.0)
         # Initial Amount in Budget Plan and
         # Total Amount in Budget Allocation must be equal after state = done
-        self.assertNotEqual(
-            plan_id.init_amount, budget_allocation_id.total_amount
-        )
+        self.assertNotEqual(plan_id.init_amount, budget_allocation_id.total_amount)
         self.assertEqual(plan_id.init_amount, plan_id.total_amount)
         budget_allocation_id.action_done()
-        self.assertEqual(
-            plan_id.init_amount, budget_allocation_id.total_amount
-        )
+        self.assertEqual(plan_id.init_amount, budget_allocation_id.total_amount)
         self.assertNotEqual(plan_id.init_amount, plan_id.total_amount)
         with self.assertRaises(UserError):
             plan_id.action_confirm()
@@ -155,9 +123,7 @@ class TestBudgetAllocation(BudgetControlCommon):
         self.assertEqual(plan_id.state, "confirm")
         # Check budget control and plan line must be the same.
         plan_id.action_create_update_budget_control()
-        self.assertEqual(
-            len(plan_id.plan_line), len(plan_id.budget_control_ids)
-        )
+        self.assertEqual(len(plan_id.plan_line), len(plan_id.budget_control_ids))
         plan_id.action_done()
         self.assertEqual(plan_id.state, "done")
         budget_control_ids = plan_id.budget_control_ids
@@ -173,9 +139,7 @@ class TestBudgetAllocation(BudgetControlCommon):
         budget_control_ids = self.test_01_process_budget_allocation()
         # Test with 1 budget control, it can commit budget not over 50
         budget_control = budget_control_ids[0]
-        self.assertEqual(
-            budget_control.allocation_line_ids.allocated_amount, 50
-        )
+        self.assertEqual(budget_control.allocation_line_ids.allocated_amount, 50)
         budget_control.write(
             {
                 "kpi_ids": [self.kpi1.id, self.kpi2.id, self.kpi3.id],
@@ -195,21 +159,15 @@ class TestBudgetAllocation(BudgetControlCommon):
             lambda x: x.kpi_expression_id == self.kpi3.expression_ids[0]
         ).write({"amount": 300})
         # KPI spend over limit budget allocation -> lock
-        bill1 = self._create_simple_bill(
-            self.costcenter1, self.account_kpiX, 100
-        )
+        bill1 = self._create_simple_bill(self.costcenter1, self.account_kpiX, 100)
         with self.assertRaises(UserError):
             bill1.action_post()
         bill1.button_draft()
         # KPI commit less than allocated amount.
-        bill2 = self._create_simple_bill(
-            self.costcenter1, self.account_kpiX, 40
-        )
+        bill2 = self._create_simple_bill(self.costcenter1, self.account_kpiX, 40)
         bill2.action_post()
         # KPI commit 40 already, it can commit not over 10
-        bill3 = self._create_simple_bill(
-            self.costcenter1, self.account_kpiX, 30
-        )
+        bill3 = self._create_simple_bill(self.costcenter1, self.account_kpiX, 30)
         with self.assertRaises(UserError):
             bill3.action_post()
         bill3.button_draft()

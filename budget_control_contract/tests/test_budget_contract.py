@@ -119,7 +119,7 @@ class TestBudgetControl(BudgetControlCommon):
 
     @freeze_time("2001-02-01")
     def test_02_budget_contract_to_invoice(self):
-        """ Contract to Invoice, commit and uncommit """
+        """Contract to Invoice, commit and uncommit"""
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare CT on kpi1 with qty 3 and unit_price 10
@@ -148,12 +148,8 @@ class TestBudgetControl(BudgetControlCommon):
         invoice = contract._get_related_invoices()[:1]
         # Change qty to 1, will not make invoice return by qty like PO <-> INV
         # It will always return the full line amount in the same way PR <-> PO
-        invoice.with_context(check_move_validity=False).invoice_line_ids[
-            0
-        ].quantity = 1
-        invoice.with_context(
-            check_move_validity=False
-        )._onchange_invoice_line_ids()
+        invoice.with_context(check_move_validity=False).invoice_line_ids[0].quantity = 1
+        invoice.with_context(check_move_validity=False)._onchange_invoice_line_ids()
         invoice.action_post()
         # CT Commit = 0, INV Actual = 10, Balance = 290
         self.budget_control.invalidate_cache()

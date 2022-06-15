@@ -31,7 +31,7 @@ class BudgetPlan(models.Model):
             raise UserError(_("Total Amount is not equal Initial Amount."))
 
     def _update_plan(self):
-        """ Update amount budget allocation to budget plan """
+        """Update amount budget allocation to budget plan"""
         res = super()._update_plan()
         for rec in self:
             period_id = rec.budget_period_id

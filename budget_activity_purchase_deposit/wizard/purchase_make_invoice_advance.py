@@ -14,9 +14,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
     )
 
     def _prepare_advance_purchase_line(self, order, product, tax_ids, amount):
-        res = super()._prepare_advance_purchase_line(
-            order, product, tax_ids, amount
-        )
+        res = super()._prepare_advance_purchase_line(order, product, tax_ids, amount)
         activity_purchase_deposit = self.env.ref(
             "budget_activity_purchase_deposit.activity_purchase_deposit"
         )
@@ -49,7 +47,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
         return super().create_invoices()
 
     def _prepare_deposit_val(self, order, po_line, amount):
-        """ Update activity and account on invoice lines """
+        """Update activity and account on invoice lines"""
         res = super()._prepare_deposit_val(order, po_line, amount)
         ir_property_obj = self.env["ir.property"]
         product = self.env.ref(
@@ -67,9 +65,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
                 "property_account_expense_categ_id", "product.category"
             )
             account_id = (
-                inc_acc
-                and order.fiscal_position_id.map_account(inc_acc).id
-                or False
+                inc_acc and order.fiscal_position_id.map_account(inc_acc).id or False
             )
             if not account_id:
                 raise UserError(

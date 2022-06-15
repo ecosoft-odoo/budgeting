@@ -19,9 +19,7 @@ class AccountAssetTransfer(models.TransientModel):
         assets = self.env["account.asset"].browse(from_asset_ids)
         # Prepare default values
         job_order_id = assets.mapped("job_order_id")
-        res["job_order_id"] = (
-            job_order_id[0].id if len(job_order_id) == 1 else False
-        )
+        res["job_order_id"] = job_order_id[0].id if len(job_order_id) == 1 else False
         return res
 
     def _get_move_line_from_asset(self, move_line):
@@ -50,7 +48,5 @@ class AccountAssetTransferLine(models.TransientModel):
         assets = self.env["account.asset"].browse(from_asset_ids)
         # Prepare default values
         job_order_id = assets.mapped("job_order_id")
-        res["job_order_id"] = (
-            job_order_id[0].id if len(job_order_id) == 1 else False
-        )
+        res["job_order_id"] = job_order_id[0].id if len(job_order_id) == 1 else False
         return res

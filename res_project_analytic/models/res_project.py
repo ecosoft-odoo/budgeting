@@ -12,8 +12,7 @@ class ResProject(models.Model):
         inverse_name="project_id",
         string="Analytic Account",
         copy=False,
-        domain="['|', ('company_id', '=', False), "
-        "('company_id', '=', company_id)]",
+        domain="['|', ('company_id', '=', False), " "('company_id', '=', company_id)]",
         check_company=True,
         readonly=True,
         states={"draft": [("readonly", False)]},

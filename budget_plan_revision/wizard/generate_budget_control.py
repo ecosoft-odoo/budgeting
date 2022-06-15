@@ -7,7 +7,7 @@ class GenerateBudgetControl(models.TransientModel):
     _inherit = "generate.budget.control"
 
     def _hook_budget_controls(self, budget_controls):
-        """ Update budget control for case new budget in year """
+        """Update budget control for case new budget in year"""
         budget_controls = super()._hook_budget_controls(budget_controls)
         revision_number = self._context.get("revision_number", False)
         init_revision = self._context.get("init_revision", False)

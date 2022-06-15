@@ -18,13 +18,9 @@ class ResProject(models.Model):
             parent_project_id = vals.get("parent_project_id", False)
             if split_project or (import_file and parent_project_id):
                 if not parent_project_id:
-                    parent_project_id = self._context.get(
-                        "parent_project_id", False
-                    )
+                    parent_project_id = self._context.get("parent_project_id", False)
                 if parent_project_id:
-                    parent_project = self.env["res.project"].browse(
-                        parent_project_id
-                    )
+                    parent_project = self.env["res.project"].browse(parent_project_id)
                 if parent_project:
                     next_split = parent_project.next_split
                     code = "{}-{}".format(parent_project.code, next_split)

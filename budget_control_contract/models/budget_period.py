@@ -17,9 +17,7 @@ class BudgetPeriod(models.Model):
         periods = super()._create_budget_move_periods()
         if self.contract:
             Period = self.env["mis.report.instance.period"]
-            model = self.env.ref(
-                "budget_control_contract.model_contract_budget_move"
-            )
+            model = self.env.ref("budget_control_contract.model_contract_budget_move")
             contract = Period.create(
                 {
                     "name": "Contract",
@@ -41,7 +39,7 @@ class BudgetPeriod(models.Model):
         return query
 
     def _compute_budget_info(self, **kwargs):
-        """ Add more data info budget_info, based on installed modules """
+        """Add more data info budget_info, based on installed modules"""
         super()._compute_budget_info(**kwargs)
         self._set_budget_info_amount(
             "amount_contract",

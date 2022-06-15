@@ -37,9 +37,7 @@ class BudgetControl(models.Model):
     def _domain_kpi_expression(self):
         domain_kpi = super()._domain_kpi_expression()
         domain_kpi = [
-            isinstance(dom, tuple)
-            and self._domain_kpi_job_expression(dom)
-            or dom
+            isinstance(dom, tuple) and self._domain_kpi_job_expression(dom) or dom
             for dom in domain_kpi
         ]
         return domain_kpi
@@ -47,9 +45,7 @@ class BudgetControl(models.Model):
     @api.onchange("use_all_job_order")
     def _onchange_use_all_job_order(self):
         if self.use_all_job_order:
-            domain = [
-                ("analytic_account_id", "=", self.analytic_account_id.id)
-            ]
+            domain = [("analytic_account_id", "=", self.analytic_account_id.id)]
             self.job_order_ids = self.env["budget.job.order"].search(domain)
         else:
             self.job_order_ids = False
@@ -68,18 +64,14 @@ class BudgetControl(models.Model):
                 )
 
     def _get_value_items(self, date_range, kpi_expression):
-        """ For each item, multiply by the job order """
+        """For each item, multiply by the job order"""
         items = super()._get_value_items(date_range, kpi_expression)
         if not self.kpi_x_job_order:
             return items
         # On each KPI, expand it by its job orders
         kpi_jo = {}
         for kpi_x_job in self.kpi_x_job_order:
-            job_id = (
-                kpi_x_job.job_order_ids
-                and kpi_x_job.job_order_ids[0].id
-                or False
-            )
+            job_id = kpi_x_job.job_order_ids and kpi_x_job.job_order_ids[0].id or False
             for x in kpi_x_job.kpi_ids:
                 if kpi_jo.get(x.id, False):
                     kpi_jo[x.id].append(job_id)

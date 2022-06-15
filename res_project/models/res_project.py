@@ -132,9 +132,7 @@ class ResProject(models.Model):
     def _compute_parent_project_name(self):
         for rec in self:
             rec.parent_project_name = (
-                rec.parent_project_id
-                and rec.parent_project_id.name
-                or rec.name
+                rec.parent_project_id and rec.parent_project_id.name or rec.name
             )
 
     @api.depends("project_plan_ids")
@@ -210,9 +208,9 @@ class ResProject(models.Model):
         return self.write({"state": "cancel"})
 
     def _get_domain_project_expired(self):
-        date = self._context.get(
-            "force_project_date"
-        ) or fields.Date.context_today(self)
+        date = self._context.get("force_project_date") or fields.Date.context_today(
+            self
+        )
         domain = [("date_to", "<", date), ("state", "=", "confirm")]
         return domain
 

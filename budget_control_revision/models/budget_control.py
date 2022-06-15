@@ -20,9 +20,7 @@ class BudgetControl(models.Model):
         string="Initial Version", default=True, readonly=True
     )
     revision_number = fields.Integer(readonly=True)
-    enable_revision_number = fields.Boolean(
-        compute="_compute_group_revision_number"
-    )
+    enable_revision_number = fields.Boolean(compute="_compute_group_revision_number")
 
     # Add budget_period_id for check constrains
     _sql_constraints = [
@@ -35,9 +33,7 @@ class BudgetControl(models.Model):
 
     def _get_permission_edit_revision(self):
         # Default by Budget Manager
-        return self.env.user.has_group(
-            "budget_control.group_budget_control_manager"
-        )
+        return self.env.user.has_group("budget_control.group_budget_control_manager")
 
     @api.depends("revision_number")
     def _compute_group_revision_number(self):

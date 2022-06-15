@@ -54,9 +54,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
             order = doc._get_purchase_order()
             account_analytic_all = []
             if order:
-                account_analytic_all = order.order_line.mapped(
-                    "account_analytic_id"
-                )
+                account_analytic_all = order.order_line.mapped("account_analytic_id")
             doc.account_analytic_all = account_analytic_all
 
     @api.depends("account_analytic_id")
@@ -108,9 +106,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
         return res
 
     def _prepare_advance_purchase_line(self, order, product, tax_ids, amount):
-        res = super()._prepare_advance_purchase_line(
-            order, product, tax_ids, amount
-        )
+        res = super()._prepare_advance_purchase_line(order, product, tax_ids, amount)
         res.update(
             {
                 "account_analytic_id": self.account_analytic_id.id,

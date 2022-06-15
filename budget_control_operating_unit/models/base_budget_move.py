@@ -16,14 +16,10 @@ class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
 
     def _update_budget_commitment(self, budget_vals, reverse=False):
-        budget_vals = super()._update_budget_commitment(
-            budget_vals, reverse=reverse
-        )
+        budget_vals = super()._update_budget_commitment(budget_vals, reverse=reverse)
         # docline's OU has priority over docline's header OU.
         if hasattr(self, "operating_unit_id"):
             budget_vals["operating_unit_id"] = self.operating_unit_id.id
         elif hasattr(self[self._doc_rel], "operating_unit_id"):
-            budget_vals["operating_unit_id"] = self[
-                self._doc_rel
-            ].operating_unit_id.id
+            budget_vals["operating_unit_id"] = self[self._doc_rel].operating_unit_id.id
         return budget_vals

@@ -16,9 +16,7 @@ class WorkAcceptance(models.Model):
         if len(analytic_account_ids) == 1:
             move_line["analytic_account_id"] = analytic_account_ids
         # Update analytic_tag_ids
-        analytic_tag_ids = self.wa_line_ids.mapped(
-            "purchase_line_id.analytic_tag_ids"
-        )
+        analytic_tag_ids = self.wa_line_ids.mapped("purchase_line_id.analytic_tag_ids")
         if analytic_tag_ids:
             move_line["analytic_tag_ids"] = [(6, 0, analytic_tag_ids.ids)]
         return move_line

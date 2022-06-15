@@ -28,9 +28,7 @@ class ContractContract(models.Model):
         # As there is no state changes, check_budget after done the budget moves
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
-            currency = (
-                doc.journal_id.currency_id or self.env.company.currency_id
-            )
+            currency = doc.journal_id.currency_id or self.env.company.currency_id
             BudgetPeriod.with_context(doc_currency=currency).check_budget(
                 doc.contract_line_ids, doc_type="contract"
             )
@@ -51,9 +49,7 @@ class ContractContract(models.Model):
         if "contract_line_ids" in vals:
             BudgetPeriod = self.env["budget.period"]
             for doc in self:
-                BudgetPeriod.check_budget(
-                    doc.contract_line_ids, doc_type="contract"
-                )
+                BudgetPeriod.check_budget(doc.contract_line_ids, doc_type="contract")
         return res
 
 
@@ -86,9 +82,7 @@ class ContractLine(models.Model):
         store=True,
     )
 
-    @api.depends(
-        "invoice_lines.move_id.state", "invoice_lines.quantity", "quantity"
-    )
+    @api.depends("invoice_lines.move_id.state", "invoice_lines.quantity", "quantity")
     def _compute_qty_invoiced(self):
         for line in self:
             # compute qty_invoiced
@@ -124,9 +118,7 @@ class ContractLine(models.Model):
 
     def _get_contract_line_account(self):
         fpos = self.contract_id.fiscal_position_id
-        account = self.product_id.product_tmpl_id.get_product_accounts(fpos)[
-            "expense"
-        ]
+        account = self.product_id.product_tmpl_id.get_product_accounts(fpos)["expense"]
         return account
 
     def _init_docline_budget_vals(self, budget_vals):

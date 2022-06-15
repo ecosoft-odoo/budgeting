@@ -19,16 +19,14 @@ class BudgetControl(models.Model):
         today = fields.Date.context_today(self)
         first_month_day = today.replace(day=1)
         for rec in self:
-            item_ids = rec.item_ids.filtered(
-                lambda l: l.date_from < first_month_day
-            )
+            item_ids = rec.item_ids.filtered(lambda l: l.date_from < first_month_day)
             amount_past_plan = sum(item_ids.mapped("amount"))
             rec.amount_rolling = (
                 rec.released_amount - rec.amount_consumed + amount_past_plan
             )
 
     def _compare_plan_fund(self, plan_amount, fund_amount):
-        """ Check total amount plan have to equal rolling amount """
+        """Check total amount plan have to equal rolling amount"""
         fund_amount = self.amount_rolling
         amount_compare = (
             float_compare(

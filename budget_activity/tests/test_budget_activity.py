@@ -34,39 +34,29 @@ class TestBudgetControl(BudgetControlCommon):
         - Posting invoice, will create budget move with activity
         """
         self.budget_period.account = False
-        invoice = self._create_simple_bill(
-            self.costcenter1, self.account_kpi1, 10
-        )
+        invoice = self._create_simple_bill(self.costcenter1, self.account_kpi1, 10)
         # Change to product2, account should change to account_kpi2
         with Form(invoice) as invoice_form:
             with invoice_form.invoice_line_ids.edit(0) as line_form:
                 line_form.product_id = self.product2
                 line_form.price_unit = 10  # Change product, amount will reset
         invoice_form.save()
-        self.assertEqual(
-            self.account_kpi2, invoice.invoice_line_ids[0].account_id
-        )
+        self.assertEqual(self.account_kpi2, invoice.invoice_line_ids[0].account_id)
         # Set activity1, account should change to account_kpi1
         with Form(invoice) as invoice_form:
             with invoice_form.invoice_line_ids.edit(0) as line_form:
                 line_form.activity_id = self.activity1
         invoice_form.save()
-        self.assertEqual(
-            self.account_kpi1, invoice.invoice_line_ids[0].account_id
-        )
+        self.assertEqual(self.account_kpi1, invoice.invoice_line_ids[0].account_id)
         # Set account only to account_kpi3
         with Form(invoice) as invoice_form:
             with invoice_form.invoice_line_ids.edit(0) as line_form:
                 line_form.account_id = self.account_kpi3
         invoice_form.save()
         # Invoice line is not set up as following,
-        self.assertEqual(
-            self.account_kpi3, invoice.invoice_line_ids[0].account_id
-        )
+        self.assertEqual(self.account_kpi3, invoice.invoice_line_ids[0].account_id)
         self.assertEqual(self.product2, invoice.invoice_line_ids[0].product_id)
-        self.assertEqual(
-            self.activity1, invoice.invoice_line_ids[0].activity_id
-        )
+        self.assertEqual(self.activity1, invoice.invoice_line_ids[0].activity_id)
         with self.assertRaises(UserError):
             invoice.action_post()  # Account in Activity and Account is not equal.
         # Reset state and set account = account in activity
@@ -74,10 +64,6 @@ class TestBudgetControl(BudgetControlCommon):
         invoice.state = "draft"
         # All values will be passed to budget move
         invoice.action_post()
-        self.assertEqual(
-            self.account_kpi1, invoice.budget_move_ids[0].account_id
-        )
+        self.assertEqual(self.account_kpi1, invoice.budget_move_ids[0].account_id)
         self.assertEqual(self.product2, invoice.budget_move_ids[0].product_id)
-        self.assertEqual(
-            self.activity1, invoice.budget_move_ids[0].activity_id
-        )
+        self.assertEqual(self.activity1, invoice.budget_move_ids[0].activity_id)

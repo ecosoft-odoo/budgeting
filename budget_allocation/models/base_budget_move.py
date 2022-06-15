@@ -72,19 +72,11 @@ class BaseBudgetMove(models.AbstractModel):
             query_dict = self._get_query_dict(docline)
             if not any(x["amount_type"] == "1_budget" for x in query_dict):
                 message_error.append(
-                    _(
-                        "{} is not allocated on budget allocation".format(
-                            docline.name
-                        )
-                    )
+                    _("{} is not allocated on budget allocation".format(docline.name))
                 )
                 continue
             total_spend = sum(
-                [
-                    x["amount"]
-                    for x in query_dict
-                    if isinstance(x["amount"], float)
-                ]
+                [x["amount"] for x in query_dict if isinstance(x["amount"], float)]
             )
             # check amount after commit must have more than 0.0
             if total_spend < 0.0:

@@ -9,9 +9,7 @@ class TestBudgetControlRevision(TestMisBudget):
     def setUpClass(cls):
         super().setUpClass()
         cls.BudgetControl = cls.env["budget.control"]
-        cls.BudgetControlExceptionConfirm = cls.env[
-            "budget.control.exception.confirm"
-        ]
+        cls.BudgetControlExceptionConfirm = cls.env["budget.control.exception.confirm"]
 
         cls.partner_id = cls.env.ref("base.res_partner_1")
         cls.exception_checkassignee = cls.env.ref(
@@ -49,9 +47,7 @@ class TestBudgetControlRevision(TestMisBudget):
     def test_02_budget_plan_exception(self):
         self.exception_checkamount.active = True
         # Normally Case
-        self.assertTrue(
-            all(plan.amount > 0 for plan in self.budget_control.item_ids)
-        )
+        self.assertTrue(all(plan.amount > 0 for plan in self.budget_control.item_ids))
         self._check_normal_process()
         # Exception Case
         self.budget_control.item_ids[0].amount = -1

@@ -17,6 +17,4 @@ def assign_old_sequences(cr, registry):
                 project.write({"code": code})
                 parent_project.write({"next_split": next_split + 1})
             else:
-                project.write(
-                    {"code": sequence_obj.next_by_code("res.project")}
-                )
+                project.write({"code": sequence_obj.next_by_code("res.project")})

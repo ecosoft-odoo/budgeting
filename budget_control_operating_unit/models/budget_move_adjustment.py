@@ -31,9 +31,7 @@ class BudgetMoveAdjustmentItem(models.Model):
         index=True,
     )
 
-    @api.constrains(
-        "adjust_id.operating_unit_id", "operating_unit_id", "adjust_id"
-    )
+    @api.constrains("adjust_id.operating_unit_id", "operating_unit_id", "adjust_id")
     def _check_line_operating_unit(self):
         for rec in self:
             if (

@@ -11,7 +11,7 @@ class BudgetControl(models.Model):
     _inherit = "budget.control"
 
     def _get_kpis(self):
-        """ Overwrite get kpi from kpi_x_job_order """
+        """Overwrite get kpi from kpi_x_job_order"""
         return self.kpi_x_job_order.mapped("kpi_ids")
 
     def _update_kpi_reset_plan(self, kpis):
@@ -36,9 +36,7 @@ class BudgetControl(models.Model):
                 kpi_plan_job = kpi_x_job.filtered(
                     lambda l: l.job_order_ids.id == job_order
                 )
-                ag_kpi = KPI.search(
-                    [("activity_group_id", "=", activity_group)]
-                )
+                ag_kpi = KPI.search([("activity_group_id", "=", activity_group)])
                 if kpi_plan_job:
                     # There is Job Order, No AG in plan
                     kpi_no_ag = kpi_plan_job.filtered(
