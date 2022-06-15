@@ -8,7 +8,7 @@ class OperatingUnit(models.Model):
     _inherit = "operating.unit"
 
     def _read(self, fields):
-        """ Make sure that user can reverse with other OU """
+        """Make sure that user can reverse with other OU"""
         if self._context.get("access_sudo", False) or self._context.get(
             "from_review_systray", False
         ):  # support with tier validation

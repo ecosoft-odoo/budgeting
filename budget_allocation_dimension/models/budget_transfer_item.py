@@ -55,9 +55,7 @@ class BudgetTransferItem(models.Model):
         res = {}
         for rec in self:
             tag_ids = []
-            res = rec._dynamic_domain_transfer_analytic_tags(
-                analytic_tag_field_name
-            )
+            res = rec._dynamic_domain_transfer_analytic_tags(analytic_tag_field_name)
             if res["domain"][analytic_tag_field_name]:
                 tag_ids = res["domain"][analytic_tag_field_name][0][2]
             rec.source_domain_tag_ids = tag_ids
@@ -72,9 +70,7 @@ class BudgetTransferItem(models.Model):
         res = {}
         for rec in self:
             tag_ids = []
-            res = rec._dynamic_domain_transfer_analytic_tags(
-                analytic_tag_field_name
-            )
+            res = rec._dynamic_domain_transfer_analytic_tags(analytic_tag_field_name)
             if res["domain"][analytic_tag_field_name]:
                 tag_ids = res["domain"][analytic_tag_field_name][0][2]
             rec.target_domain_tag_ids = tag_ids
@@ -118,8 +114,7 @@ class BudgetTransferItem(models.Model):
             next_tag_list = []
             for field in next_dimension.filtered_field_ids:
                 matched_tags = selected_tags.filtered(
-                    lambda l: l.resource_ref
-                    and l.resource_ref._name == field.relation
+                    lambda l: l.resource_ref and l.resource_ref._name == field.relation
                 )
                 tag_resources = matched_tags.mapped("resource_ref")
                 res_ids = tag_resources and [x.id for x in tag_resources] or []
@@ -147,8 +142,7 @@ class BudgetTransferItem(models.Model):
                 len(analytic_tag_ids) != len(dimension_fields)
                 and doc.source_analytic_tag_ids
                 and any(
-                    x in analytic_tag_ids.ids
-                    for x in doc.source_analytic_tag_ids.ids
+                    x in analytic_tag_ids.ids for x in doc.source_analytic_tag_ids.ids
                 )
             ):
                 continue
@@ -168,8 +162,7 @@ class BudgetTransferItem(models.Model):
                 len(analytic_tag_ids) != len(dimension_fields)
                 and doc.target_analytic_tag_ids
                 and any(
-                    x in analytic_tag_ids.ids
-                    for x in doc.target_analytic_tag_ids.ids
+                    x in analytic_tag_ids.ids for x in doc.target_analytic_tag_ids.ids
                 )
             ):
                 continue
@@ -228,16 +221,12 @@ class BudgetTransferItem(models.Model):
             lambda l: l.id in self.target_analytic_tag_ids.ids
         )
         if not (source_line and target_line):
-            raise UserError(
-                _("Source / Target Analytic Tags is not selected.")
-            )
+            raise UserError(_("Source / Target Analytic Tags is not selected."))
         # TODO: refacter code
-        analytic_tag = (
-            self.source_analytic_tag_ids + self.target_analytic_tag_ids
+        analytic_tag = self.source_analytic_tag_ids + self.target_analytic_tag_ids
+        dimension_constraints = analytic_tag.mapped("analytic_dimension_id").filtered(
+            lambda l: l.budget_transfer_constraint
         )
-        dimension_constraints = analytic_tag.mapped(
-            "analytic_dimension_id"
-        ).filtered(lambda l: l.budget_transfer_constraint)
         for dimension in dimension_constraints:
             tags = analytic_tag.filtered(
                 lambda l: l.analytic_dimension_id.id == dimension.id
@@ -245,9 +234,7 @@ class BudgetTransferItem(models.Model):
             source_analytic_tag = self.source_analytic_tag_ids.filtered(
                 lambda l: l.analytic_dimension_id.id == dimension.id
             )
-            cross_transfer_constraint = (
-                source_analytic_tag.analytic_tag_constraint_ids
-            )
+            cross_transfer_constraint = source_analytic_tag.analytic_tag_constraint_ids
             can_transfer = tags.filtered(
                 lambda l: l.id in cross_transfer_constraint.ids
             )
@@ -263,18 +250,10 @@ class BudgetTransferItem(models.Model):
 
     def _get_message_source_transfer(self):
         source_transfer = super()._get_message_source_transfer()
-        analytic_tag_name = ", ".join(
-            self.source_analytic_tag_ids.mapped("name")
-        )
-        return "<br/>Analytic Tags: ".join(
-            [source_transfer, analytic_tag_name]
-        )
+        analytic_tag_name = ", ".join(self.source_analytic_tag_ids.mapped("name"))
+        return "<br/>Analytic Tags: ".join([source_transfer, analytic_tag_name])
 
     def _get_message_target_transfer(self):
         target_transfer = super()._get_message_target_transfer()
-        analytic_tag_name = ", ".join(
-            self.target_analytic_tag_ids.mapped("name")
-        )
-        return "<br/>Analytic Tags: ".join(
-            [target_transfer, analytic_tag_name]
-        )
+        analytic_tag_name = ", ".join(self.target_analytic_tag_ids.mapped("name"))
+        return "<br/>Analytic Tags: ".join([target_transfer, analytic_tag_name])

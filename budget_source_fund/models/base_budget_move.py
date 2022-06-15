@@ -37,9 +37,7 @@ class BudgetDoclineMixinBase(models.AbstractModel):
     @api.onchange("fund_all")
     def _onchange_fund_all(self):
         for rec in self:
-            rec.fund_id = (
-                rec.fund_all._origin.id if len(rec.fund_all) == 1 else False
-            )
+            rec.fund_id = rec.fund_all._origin.id if len(rec.fund_all) == 1 else False
 
     @api.depends(
         lambda self: (self._budget_analytic_field,)
@@ -57,9 +55,7 @@ class BudgetDoclineMixinBase(models.AbstractModel):
             # show all fund, when not install 'budget_allocation_fund' module
             doc.fund_all = (
                 field_allocation_line
-                and budget_analytic_fields.allocation_line_ids.mapped(
-                    "fund_id"
-                )
+                and budget_analytic_fields.allocation_line_ids.mapped("fund_id")
                 or source_fund_all
             )
 
@@ -68,9 +64,7 @@ class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
 
     def _update_budget_commitment(self, budget_vals, reverse=False):
-        budget_vals = super()._update_budget_commitment(
-            budget_vals, reverse=reverse
-        )
+        budget_vals = super()._update_budget_commitment(budget_vals, reverse=reverse)
         budget_vals["fund_id"] = self.fund_id.id
         budget_vals["fund_group_id"] = self.fund_id.fund_group_id.id
         return budget_vals

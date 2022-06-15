@@ -16,10 +16,7 @@ class BudgetPeriod(models.Model):
                 if i.analytic_account_id and i.activity_id:
                     controls.add((i.analytic_account_id.id, i.activity_id.id))
             else:  # Only analtyic in control
-                if (
-                    i.analytic_account_id in control_analytics
-                    and i.activity_id
-                ):
+                if i.analytic_account_id in control_analytics and i.activity_id:
                     controls.add((i.analytic_account_id.id, i.activity_id.id))
         # Convert to list of dict, for readibility
         return [{"analytic_id": x[0], "activity_id": x[1]} for x in controls]

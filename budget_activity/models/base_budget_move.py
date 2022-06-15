@@ -31,9 +31,7 @@ class BaseBudgetMove(models.AbstractModel):
     def _compute_activity_account(self):
         for rec in self:
             rec.account_id = (
-                rec.activity_id.account_id
-                if rec.activity_id
-                else rec.account_id
+                rec.activity_id.account_id if rec.activity_id else rec.account_id
             )
 
     @api.constrains("activity_id", "account_id")
@@ -64,9 +62,7 @@ class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
 
     def _update_budget_commitment(self, budget_vals, reverse=False):
-        budget_vals = super()._update_budget_commitment(
-            budget_vals, reverse=reverse
-        )
+        budget_vals = super()._update_budget_commitment(budget_vals, reverse=reverse)
         budget_vals["activity_id"] = self.activity_id.id
         # For case object without account_id (PR/PO), normally account is from
         # product, it should now changed to follow activity.

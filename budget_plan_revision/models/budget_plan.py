@@ -21,9 +21,7 @@ class BudgetPlan(models.Model):
         string="Initial Version", default=True, readonly=True
     )
     revision_number = fields.Integer()
-    enable_revision_number = fields.Boolean(
-        compute="_compute_group_revision_number"
-    )
+    enable_revision_number = fields.Boolean(compute="_compute_group_revision_number")
 
     @api.depends("revision_number")
     def _compute_group_revision_number(self):
@@ -116,7 +114,7 @@ class BudgetPlan(models.Model):
         ).action_create_update_budget_control()
 
     def create_revision(self):
-        """ Create budget plan revision and all its budget controls """
+        """Create budget plan revision and all its budget controls"""
         self = self.sudo().with_context(active_test=False)
         res = super().create_revision()
         # Based on new budget_plan, create new budget controls by create_revision()

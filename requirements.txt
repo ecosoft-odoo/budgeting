@@ -1,4 +1,4 @@
-pandas
+# generated from manifests external_dependencies
+numpy
 openpyxl
-xlrd
-xlwt
+pandas

@@ -60,9 +60,7 @@ class TestPaymentMultiDeductionActivity(SavepointCase):
                         0,
                         0,
                         {
-                            "product_id": cls.env.ref(
-                                "product.product_product_3"
-                            ).id,
+                            "product_id": cls.env.ref("product.product_product_3").id,
                             "quantity": 1.0,
                             "account_id": cls.account_revenue.id,
                             "name": "[PCSC234] PC Assemble SC234",
@@ -93,7 +91,7 @@ class TestPaymentMultiDeductionActivity(SavepointCase):
         )
 
     def test_one_invoice_payment(self):
-        """ Validate 1 invoice and make payment with 2 deduction """
+        """Validate 1 invoice and make payment with 2 deduction"""
         self.cust_invoice.action_post()  # total amount 450.0
         ctx = {
             "active_ids": [self.cust_invoice.id],
@@ -135,9 +133,7 @@ class TestPaymentMultiDeductionActivity(SavepointCase):
         payment = self.payment_model.browse(payment_id.id)
         self.assertEqual(payment.state, "posted")
 
-        move_lines = self.move_line_model.search(
-            [("payment_id", "=", payment.id)]
-        )
+        move_lines = self.move_line_model.search([("payment_id", "=", payment.id)])
         bank_account = payment.journal_id.payment_debit_account_id
         self.assertEqual(self.cust_invoice.payment_state, "paid")
         self.assertRecordValues(
@@ -167,7 +163,7 @@ class TestPaymentMultiDeductionActivity(SavepointCase):
         )
 
     def test_one_invoice_payment_foreign_currency(self):
-        """ Validate 1 invoice and make payment with 2 deduction """
+        """Validate 1 invoice and make payment with 2 deduction"""
         self.cust_invoice.action_post()  # total amount 450.0
         ctx = {
             "active_ids": [self.cust_invoice.id],

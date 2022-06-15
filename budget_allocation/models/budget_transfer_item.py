@@ -20,7 +20,7 @@ class BudgetTransferItem(models.Model):
         return info
 
     def _get_source_line_available(self, source_lines):
-        """ Find amount available from allocation released - consumed """
+        """Find amount available from allocation released - consumed"""
         source_line_available = sum(source_lines.mapped("released_amount"))
         info = self._get_consumed_amount_filter(self.source_budget_control_id)
         return source_line_available - info["amount_consumed"]
@@ -32,13 +32,9 @@ class BudgetTransferItem(models.Model):
         return []
 
     def _get_budget_allocation_lines(self):
-        """ bypass permission admin for find budget allocation line """
-        source_ba_line = (
-            self.source_budget_control_id.sudo().allocation_line_ids
-        )
-        target_ba_line = (
-            self.target_budget_control_id.sudo().allocation_line_ids
-        )
+        """bypass permission admin for find budget allocation line"""
+        source_ba_line = self.source_budget_control_id.sudo().allocation_line_ids
+        target_ba_line = self.target_budget_control_id.sudo().allocation_line_ids
         source_lines = source_ba_line.filtered_domain(
             self._get_domain_source_allocation_line()
         )
@@ -87,9 +83,7 @@ class BudgetTransferItem(models.Model):
             target_lines[0].released_amount += transfer.amount
             # Log message to budget allocation
             allocation_lines = source_lines + target_lines
-            budget_allocation_ids = allocation_lines.mapped(
-                "budget_allocation_id"
-            )
+            budget_allocation_ids = allocation_lines.mapped("budget_allocation_id")
             message = _(
                 "{}<br/><b>transfer to</b><br/>{}<br/>with amount {:,.2f} {}".format(
                     transfer._get_message_source_transfer(),
@@ -114,9 +108,7 @@ class BudgetTransferItem(models.Model):
             target_lines[0].released_amount -= reverse_amount
             # Log message to budget allocation
             allocation_lines = source_lines + target_lines
-            budget_allocation_ids = allocation_lines.mapped(
-                "budget_allocation_id"
-            )
+            budget_allocation_ids = allocation_lines.mapped("budget_allocation_id")
             message = _(
                 "{}<br/><b>reverse from</b><br/>{}<br/>with amount {:,.2f} {}".format(
                     transfer._get_message_source_transfer(),

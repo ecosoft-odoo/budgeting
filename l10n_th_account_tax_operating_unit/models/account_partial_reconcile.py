@@ -16,9 +16,7 @@ class AccountPartialReconcile(models.Model):
         return line_value
 
     @api.model
-    def _prepare_cash_basis_base_line_vals(
-        self, base_line, balance, amount_currency
-    ):
+    def _prepare_cash_basis_base_line_vals(self, base_line, balance, amount_currency):
         res = super()._prepare_cash_basis_base_line_vals(
             base_line, balance, amount_currency
         )
@@ -26,9 +24,7 @@ class AccountPartialReconcile(models.Model):
         return res
 
     @api.model
-    def _prepare_cash_basis_tax_line_vals(
-        self, tax_line, balance, amount_currency
-    ):
+    def _prepare_cash_basis_tax_line_vals(self, tax_line, balance, amount_currency):
         res = super()._prepare_cash_basis_tax_line_vals(
             tax_line, balance, amount_currency
         )
@@ -36,9 +32,7 @@ class AccountPartialReconcile(models.Model):
         return res
 
     @api.model
-    def _prepare_cash_basis_counterpart_tax_line_vals(
-        self, tax_line, cb_tax_line_vals
-    ):
+    def _prepare_cash_basis_counterpart_tax_line_vals(self, tax_line, cb_tax_line_vals):
         res = super()._prepare_cash_basis_counterpart_tax_line_vals(
             tax_line, cb_tax_line_vals
         )

@@ -29,8 +29,6 @@ class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
 
     def _update_budget_commitment(self, budget_vals, reverse=False):
-        budget_vals = super()._update_budget_commitment(
-            budget_vals, reverse=reverse
-        )
+        budget_vals = super()._update_budget_commitment(budget_vals, reverse=reverse)
         budget_vals["job_order_id"] = self.job_order_id.id
         return budget_vals

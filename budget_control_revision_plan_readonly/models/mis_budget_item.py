@@ -22,10 +22,7 @@ class MisBudgetItem(models.Model):
             date = date.replace(day=1) - relativedelta(days=1)
         for rec in self:
             rec.is_readonly = False
-            if (
-                not rec.budget_control_id.init_revision
-                and rec.date_from <= date
-            ):
+            if not rec.budget_control_id.init_revision and rec.date_from <= date:
                 rec.is_readonly = True
 
     @api.constrains("amount")

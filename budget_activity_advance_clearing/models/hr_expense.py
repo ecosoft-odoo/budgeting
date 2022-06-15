@@ -8,7 +8,7 @@ class HRExpenseSheet(models.Model):
     _inherit = "hr.expense.sheet"
 
     def action_submit_sheet(self):
-        """ As advance clearing, Employee Advance as activity not allowed """
+        """As advance clearing, Employee Advance as activity not allowed"""
         if self.mapped("advance_sheet_id"):
             activity_advance = self.env.ref(
                 "budget_activity_advance_clearing.activity_advance"
@@ -23,7 +23,7 @@ class HRExpenseSheet(models.Model):
         return super().action_submit_sheet()
 
     def get_domain_advance_sheet_expense_line(self):
-        """ Overwrite domain filter expense lines with clearing product or activity """
+        """Overwrite domain filter expense lines with clearing product or activity"""
         return self.advance_sheet_id.expense_line_ids.filtered(
             lambda l: l.clearing_product_id or l.clearing_activity_id
         )
@@ -51,9 +51,7 @@ class HRExpense(models.Model):
             (
                 "id",
                 "!=",
-                self.env.ref(
-                    "budget_activity_advance_clearing.activity_advance", 0
-                ).id,
+                self.env.ref("budget_activity_advance_clearing.activity_advance", 0).id,
             )
         ],
         tracking=True,
@@ -69,9 +67,7 @@ class HRExpense(models.Model):
                 "budget_activity_advance_clearing.activity_advance"
             )
             if not activity_advance.account_id:
-                raise ValidationError(
-                    _("Employee advance activity has no account.")
-                )
+                raise ValidationError(_("Employee advance activity has no account."))
             if expense.activity_id != activity_advance:
                 raise ValidationError(
                     _("Employee advance, selected activity is not valid.")

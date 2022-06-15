@@ -19,7 +19,7 @@ class MisReport(models.Model):
         return super().get_kpis(company)
 
     def get_kpis_by_activity_id(self, company):
-        """ Return { activity_id: set(kpi) } """
+        """Return { activity_id: set(kpi) }"""
         res = defaultdict(set)
         for kpi in self.kpi_ids:
             for expression in kpi.expression_ids:

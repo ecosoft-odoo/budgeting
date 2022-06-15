@@ -14,7 +14,7 @@ class SourceFundMonitorReport(models.Model):
 
     @property
     def _table_query(self):
-        """ Overwrite query table on source of fund monitoring """
+        """Overwrite query table on source of fund monitoring"""
         return """
             select a.*, d.id as date_range_id, p.id as budget_period_id
             from ({}) a

@@ -8,7 +8,7 @@ class BudgetControl(models.Model):
     _inherit = "budget.control"
 
     def _get_new_rev_data(self, new_rev_number):
-        """ Update revision budget control from budget plan """
+        """Update revision budget control from budget plan"""
         self.ensure_one()
         new_rev_number = self._context.get("revision_number", new_rev_number)
         new_rev_dict = super()._get_new_rev_data(new_rev_number)

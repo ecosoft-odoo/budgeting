@@ -98,9 +98,7 @@ class GenerateAnalyticAccount(models.TransientModel):
             analytic_group_id = self.env.ref(
                 "budget_control_department.analytic_department_group"
             )
-        analytic_group = self.env["account.analytic.group"].browse(
-            analytic_group_id.id
-        )
+        analytic_group = self.env["account.analytic.group"].browse(analytic_group_id.id)
         values["group_id"] = analytic_group.id
         return values
 
@@ -112,8 +110,7 @@ class GenerateAnalyticAccount(models.TransientModel):
         field_model = DICT_FIELD_MODEL[objects._name]
         for obj in objects:
             existing_analytic = analytic_accounts.filtered(
-                lambda l: l.id in self.analytic_ids.ids
-                and l[field_model].id == obj.id
+                lambda l: l.id in self.analytic_ids.ids and l[field_model].id == obj.id
             )
             if existing_analytic:
                 continue
@@ -133,9 +130,7 @@ class GenerateAnalyticAccount(models.TransientModel):
         analytic_vals = self._prepare_analytic_vals(objects)
         analytic = self.env["account.analytic.account"].create(analytic_vals)
         list_view = self.env.ref("budget_control.view_budget_analytic_list").id
-        form_view = self.env.ref(
-            "budget_control.view_account_analytic_account_form"
-        ).id
+        form_view = self.env.ref("budget_control.view_account_analytic_account_form").id
         return {
             "name": _("Analytic Accounts"),
             "type": "ir.actions.act_window",

@@ -17,9 +17,7 @@ class BudgetAllocation(models.Model):
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
         required=True,
-        default=lambda self: self.env[
-            "budget.period"
-        ]._get_eligible_budget_period(),
+        default=lambda self: self.env["budget.period"]._get_eligible_budget_period(),
         readonly=True,
         states={"draft": [("readonly", "=", False)]},
     )
@@ -57,9 +55,7 @@ class BudgetAllocation(models.Model):
     @api.depends("allocation_line_ids")
     def _compute_total_amount(self):
         for rec in self:
-            rec.total_amount = sum(
-                rec.allocation_line_ids.mapped("allocated_amount")
-            )
+            rec.total_amount = sum(rec.allocation_line_ids.mapped("allocated_amount"))
 
     def action_done(self):
         for rec in self:
@@ -110,9 +106,7 @@ class BudgetAllocation(models.Model):
         self.ensure_one()
         domain = self._get_domain_open_analytic()
         list_view = self.env.ref("budget_control.view_budget_analytic_list").id
-        form_view = self.env.ref(
-            "budget_control.view_account_analytic_account_form"
-        ).id
+        form_view = self.env.ref("budget_control.view_account_analytic_account_form").id
         return {
             "name": _("Analytic Accounts"),
             "type": "ir.actions.act_window",

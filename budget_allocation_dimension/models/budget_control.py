@@ -17,7 +17,5 @@ class BudgetControl(models.Model):
     def _compute_allocation_line_ids(self):
         res = super()._compute_allocation_line_ids()
         for rec in self:
-            rec.analytic_tag_ids = rec.allocation_line_ids.mapped(
-                "analytic_tag_ids"
-            )
+            rec.analytic_tag_ids = rec.allocation_line_ids.mapped("analytic_tag_ids")
         return res

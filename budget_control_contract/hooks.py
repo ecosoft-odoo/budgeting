@@ -17,7 +17,7 @@ def uninstall_hook(cr, registry):
         ]
     )
     for period in periods:
-        period.report_instance_id.period_ids.mapped(
-            "source_sumcol_ids"
-        ).filtered(lambda l: l.period_to_sum_id == period).unlink()
+        period.report_instance_id.period_ids.mapped("source_sumcol_ids").filtered(
+            lambda l: l.period_to_sum_id == period
+        ).unlink()
     periods.unlink()

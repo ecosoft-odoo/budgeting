@@ -37,7 +37,5 @@ class ContractBudgetMove(models.Model):
     def _compute_reference(self):
         for rec in self:
             rec.reference = (
-                rec.reference
-                if rec.reference
-                else rec.contract_id.display_name
+                rec.reference if rec.reference else rec.contract_id.display_name
             )

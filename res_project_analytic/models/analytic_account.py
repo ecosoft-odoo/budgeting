@@ -9,7 +9,7 @@ class AccountAnalyticAccount(models.Model):
     project_id = fields.Many2one(comodel_name="res.project")
 
     def _find_next_analytic(self, next_date_range):
-        """ Find next analytic from project """
+        """Find next analytic from project"""
         next_analytic = super()._find_next_analytic(next_date_range)
         if not next_analytic:
             dimension_analytic = self.project_id

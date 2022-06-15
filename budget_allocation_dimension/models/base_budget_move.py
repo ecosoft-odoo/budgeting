@@ -12,9 +12,7 @@ class BaseBudgetMove(models.AbstractModel):
     def _get_dimension_fields(self):
         if self.env.context.get("update_custom_fields"):
             return []  # Avoid to report these columns when not yet created
-        return [
-            x for x in self.fields_get().keys() if x.startswith("x_dimension_")
-        ]
+        return [x for x in self.fields_get().keys() if x.startswith("x_dimension_")]
 
     def _get_condition_skip_dimension(self):
         """
@@ -84,26 +82,22 @@ class BudgetDoclineMixinBase(models.AbstractModel):
     @api.onchange("analytic_tag_all")
     def _onchange_analytic_tag_all(self):
         dimension_fields = self._get_dimension_fields()
-        analytic_tag_ids = self[
-            self._budget_analytic_field
-        ].allocation_line_ids.mapped("analytic_tag_ids")
+        analytic_tag_ids = self[self._budget_analytic_field].allocation_line_ids.mapped(
+            "analytic_tag_ids"
+        )
         if (
             len(analytic_tag_ids) != len(dimension_fields)
             and self[self._analytic_tag_field_name]
         ):
             return
         self[self._analytic_tag_field_name] = (
-            len(analytic_tag_ids) == len(dimension_fields)
-            and analytic_tag_ids
-            or False
+            len(analytic_tag_ids) == len(dimension_fields) and analytic_tag_ids or False
         )
 
     def _get_dimension_fields(self):
         if self.env.context.get("update_custom_fields"):
             return []  # Avoid to report these columns when not yet created
-        return [
-            x for x in self.fields_get().keys() if x.startswith("x_dimension_")
-        ]
+        return [x for x in self.fields_get().keys() if x.startswith("x_dimension_")]
 
     @api.depends(
         lambda self: (self._budget_analytic_field,)

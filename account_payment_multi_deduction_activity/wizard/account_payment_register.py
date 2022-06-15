@@ -15,11 +15,7 @@ class AccountPaymentRegister(models.TransientModel):
     def _prepare_deduct_move_line(self, deduct):
         vals = super()._prepare_deduct_move_line(deduct)
         vals.update(
-            {
-                "activity_id": deduct.activity_id
-                and deduct.activity_id.id
-                or False
-            }
+            {"activity_id": deduct.activity_id and deduct.activity_id.id or False}
         )
         return vals
 
@@ -29,7 +25,5 @@ class AccountPaymentRegister(models.TransientModel):
             not self.currency_id.is_zero(self.payment_difference)
             and self.payment_difference_handling == "reconcile"
         ):
-            payment_vals["write_off_line_vals"][
-                "activity_id"
-            ] = self.activity_id.id
+            payment_vals["write_off_line_vals"]["activity_id"] = self.activity_id.id
         return payment_vals
