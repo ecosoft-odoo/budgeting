@@ -12,7 +12,12 @@
                 expr="//page[@name='adjust_item_ids']//tree/field[@name='json_budget_popover']"
                 position="after"
             >
-                <field name="job_order_id" optional="show" />
+                <field name="filter_job_order" widget="many2many_tags" invisible="1" />
+                <field
+                    name="job_order_id"
+                    options="{'no_create': True, 'no_open': True}"
+                    domain="[('id', 'in', filter_job_order)]"
+                />
             </xpath>
             <xpath
                 expr="//page[@name='adjust_item_ids']//form//field[@name='analytic_account_id']"
@@ -20,7 +25,6 @@
             >
                 <field name="job_order_id" />
             </xpath>
-
         </field>
     </record>
 </odoo>

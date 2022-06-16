@@ -9,13 +9,18 @@
         />
         <field name="arch" type="xml">
             <xpath
-                expr="//field[@name='line_ids']/tree//field[@name='product_id']"
+                expr="//field[@name='line_ids']/tree//field[@name='account_analytic_id']"
                 position="after"
             >
-                <field name="job_order_id" />
+                <field name="filter_job_order" widget="many2many_tags" invisible="1" />
+                <field
+                    name="job_order_id"
+                    options="{'no_create': True}"
+                    domain="[('id', 'in', filter_job_order)]"
+                />
             </xpath>
             <xpath
-                expr="//field[@name='line_ids']/form//field[@name='product_id']"
+                expr="//field[@name='line_ids']/form//field[@name='account_analytic_id']"
                 position="after"
             >
                 <field name="job_order_id" />

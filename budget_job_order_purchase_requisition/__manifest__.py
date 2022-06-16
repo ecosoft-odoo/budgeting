@@ -14,7 +14,6 @@
         "budget_control_purchase_requisition",
     ],
     "data": [
-        "wizard/purchase_request_line_make_purchase_requisition_view.xml",
         "views/purchase_requisition_view.xml",
     ],
     "installable": True,

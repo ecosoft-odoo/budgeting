@@ -1,6 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import api, fields, models
+
+from odoo import fields, models
 
 
 class BudgetJobOrder(models.Model):
@@ -17,29 +18,14 @@ class BudgetJobOrder(models.Model):
         default=lambda self: self.env.company,
         required=True,
     )
-    analytic_account_id = fields.Many2one(
+    analytic_account_ids = fields.Many2many(
         comodel_name="account.analytic.account",
+        relation="analytic_job_rel",
+        column1="job_order_id",
+        column2="analytic_account_id",
         string="Analytic Account",
         index=True,
-        required=True,
     )
     _sql_constraints = [
-        (
-            "name_analytic_unique",
-            "unique(name, analytic_account_id)",
-            "This name is already used by this analytic!",
-        )
+        ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
     ]
-
-    @api.model
-    def name_search(self, name="", args=None, operator="ilike", limit=100):
-        args = args or []
-        if "default_analytic_account_id" in self.env.context:
-            job_order_ids = []
-            analytic_id = self.env.context["default_analytic_account_id"]
-            if analytic_id:
-                job_order_ids = self.search(
-                    [("analytic_account_id", "=", analytic_id)]
-                ).ids
-            args += [("id", "in", job_order_ids)]
-        return super().name_search(name, args, operator, limit)

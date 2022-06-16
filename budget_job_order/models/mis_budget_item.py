@@ -1,5 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 from odoo import fields, models
 
 
@@ -30,11 +31,8 @@ class MisBudgetItem(models.Model):
     def _compute_name(self):
         """Adding Job Order"""
         super()._compute_name()
-        for rec in self:
-            if rec.job_order_id:
-                rec.name = "{} / {}".format(rec.job_order_id.name, rec.name)
-            else:
-                rec.name = rec.name
+        for rec in self.filtered("job_order_id"):
+            rec.name = "{} / {}".format(rec.job_order_id.name, rec.name)
 
     def search_neutralize(self, dom):
         mis_filter = self._context.get("mis_report_filters", {})
