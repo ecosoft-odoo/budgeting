@@ -79,8 +79,7 @@ class BudgetControl(models.Model):
         if not date:
             date = self._get_last_date_period()
         for rec in self:
-            if rec.item_ids:
-                rec._get_consumed_plan(date)
+            rec._get_consumed_plan(date)
         return False
 
     def action_update_consumed_plan(self):
