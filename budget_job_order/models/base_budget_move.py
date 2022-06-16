@@ -1,6 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+
+from odoo import api, fields, models
 
 
 class BaseBudgetMove(models.AbstractModel):
@@ -17,12 +18,34 @@ class BaseBudgetMove(models.AbstractModel):
 class BudgetDoclineMixinBase(models.AbstractModel):
     _inherit = "budget.docline.mixin.base"
 
+    filter_job_order = fields.Many2many(
+        comodel_name="budget.job.order",
+        compute="_compute_filter_job_order",
+    )
     job_order_id = fields.Many2one(
         comodel_name="budget.job.order",
         string="Job Order",
         index=True,
         ondelete="restrict",
     )
+
+    @api.depends(
+        lambda self: (self._budget_analytic_field,)
+        if self._budget_analytic_field
+        else ()
+    )
+    def _compute_filter_job_order(self):
+        """Filter Job Order following Analytic Account.
+        if job order is not analytic account, it mean global job order
+        """
+        JobOrder = self.env["budget.job.order"].search([])
+        for doc in self:
+            filter_job = JobOrder.filtered(
+                lambda l: doc[doc._budget_analytic_field].id
+                in l.analytic_account_ids.ids
+                or not l.analytic_account_ids
+            )
+            doc.filter_job_order = filter_job
 
 
 class BudgetDoclineMixin(models.AbstractModel):

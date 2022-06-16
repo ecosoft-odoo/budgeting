@@ -1,5 +1,6 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 {
     "name": "Budget Job Order - Purchase Request",
     "version": "14.0.1.0.0",
@@ -14,7 +15,6 @@
     "data": [
         "views/purchase_request_view.xml",
         "views/purchase_request_line_view.xml",
-        "wizard/purchase_line_make_purchase_order_view.xml",
     ],
     "installable": True,
     "auto_install": True,

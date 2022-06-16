@@ -1,21 +1,20 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import api, fields, models
+
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class BudgetControl(models.Model):
     _inherit = "budget.control"
 
-    use_all_job_order = fields.Boolean(string="Use All Job Orders")
-    job_order_ids = fields.Many2many(
-        string="Job Orders",
+    filter_job_order = fields.Many2many(
         comodel_name="budget.job.order",
         relation="job_order_budget_contol_rel",
         column1="budget_control_id",
         column2="job_order_id",
-        domain="[('analytic_account_id', '=', analytic_account_id)]",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
+        string="Filter Job Orders",
+        compute="_compute_filter_job_order",
     )
     kpi_x_job_order = fields.One2many(
         comodel_name="budget.control.kpi.x.job.order",
@@ -24,6 +23,19 @@ class BudgetControl(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
+
+    @api.depends("analytic_account_id")
+    def _compute_filter_job_order(self):
+        """Filter Job Order following Analytic Account.
+        if job order is not analytic account, it mean global job order
+        """
+        JobOrder = self.env["budget.job.order"].search([])
+        for rec in self:
+            filter_job = JobOrder.filtered(
+                lambda l: rec.analytic_account_id.id in l.analytic_account_ids.ids
+                or not l.analytic_account_ids
+            )
+            rec.filter_job_order = filter_job
 
     def _domain_kpi_job_expression(self, dom):
         if len(dom) == 3 and dom[0] == "kpi_id.id":
@@ -42,26 +54,19 @@ class BudgetControl(models.Model):
         ]
         return domain_kpi
 
-    @api.onchange("use_all_job_order")
-    def _onchange_use_all_job_order(self):
-        if self.use_all_job_order:
-            domain = [("analytic_account_id", "=", self.analytic_account_id.id)]
-            self.job_order_ids = self.env["budget.job.order"].search(domain)
-        else:
-            self.job_order_ids = False
-
-    @api.onchange("kpi_ids", "job_order_ids")
-    def _compute_kpi_x_job_order(self):
+    def _update_kpi_x_job_order(self):
+        """Update Table KPI x Job Order following KPIs"""
         KPIxJO = self.env["budget.control.kpi.x.job.order"]
         for rec in self:
-            rec.kpi_x_job_order = False
-            for job in rec.job_order_ids:
-                rec.kpi_x_job_order += KPIxJO.new(
-                    {
-                        "job_order_ids": [job.id],
-                        "kpi_ids": rec.kpi_ids.ids,
-                    }
-                )
+            if not rec.kpi_ids:
+                continue
+            # Create new table with no job
+            rec.kpi_x_job_order = KPIxJO.new(
+                {
+                    "job_order_ids": False,
+                    "kpi_ids": rec.kpi_ids.ids,
+                }
+            )
 
     def _get_value_items(self, date_range, kpi_expression):
         """For each item, multiply by the job order"""
@@ -93,6 +98,12 @@ class BudgetControl(models.Model):
         ctx.update({"search_default_group_by_job_order": 1})
         return ctx
 
+    @api.constrains("kpi_ids")
+    def check_kpi_description(self):
+        for rec in self:
+            if rec.kpi_ids and not rec.kpi_x_job_order:
+                raise UserError(_("Please fill kpis in table KPIs Description."))
+
 
 class BudgetControlKPIxJobOrder(models.Model):
     _name = "budget.control.kpi.x.job.order"
@@ -115,12 +126,7 @@ class BudgetControlKPIxJobOrder(models.Model):
         string="KPI",
         domain="[('report_id', '=', mis_report_id), ('budgetable', '=', True)]",
     )
-    analytic_account_id = fields.Many2one(
-        comodel_name="account.analytic.account",
-        related="budget_control_id.analytic_account_id",
-    )
     job_order_ids = fields.Many2many(
         comodel_name="budget.job.order",
         string="Job Orders",
-        readonly=True,
     )

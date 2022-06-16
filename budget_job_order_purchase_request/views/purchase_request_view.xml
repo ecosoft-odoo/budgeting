@@ -18,10 +18,11 @@
                 expr="//field[@name='line_ids']/form//field[@name='analytic_account_id']"
                 position="after"
             >
+                <field name="filter_job_order" widget="many2many_tags" invisible="1" />
                 <field
                     name="job_order_id"
                     options="{'no_create': True}"
-                    context="{'default_analytic_account_id': analytic_account_id}"
+                    domain="[('id', 'in', filter_job_order)]"
                     attrs="{'readonly': [('is_editable','=', False)]}"
                 />
             </xpath>
@@ -36,10 +37,11 @@
                 expr="/form/sheet/group/group/field[@name='analytic_account_id']"
                 position="after"
             >
+                <field name="filter_job_order" widget="many2many_tags" invisible="1" />
                 <field
                     name="job_order_id"
                     options="{'no_create': True}"
-                    context="{'default_analytic_account_id': analytic_account_id}"
+                    domain="[('id', 'in', filter_job_order)]"
                     attrs="{'readonly': [('is_editable','=', False)]}"
                 />
             </xpath>
