@@ -9,7 +9,9 @@ class BudgetPeriod(models.Model):
     _inherit = "budget.period"
 
     def _get_budget_constraint(self):
-        return self.env["budget.constraint"].search([], order="sequence")
+        return self.env["budget.constraint"].search(
+            [("active", "=", True)], order="sequence"
+        )
 
     @api.model
     def check_budget_constraint(self, budget_constraints, doclines):
