@@ -7,7 +7,18 @@ class GenerateBudgetControl(models.TransientModel):
     _inherit = "generate.budget.control"
 
     def _create_budget_controls(self, vals):
-        budget_controls = super()._create_budget_controls(vals)
-        # Recompute table kpi_x_job, as this will be used to reset plan.
-        budget_controls._update_kpi_x_job_order()
-        return budget_controls
+        """Add kpi_ids into tabel kpi_x_job"""
+        for val in vals:
+            kpi_ids = val.get("kpi_ids", False)
+            if kpi_ids:
+                val["kpi_x_job_order"] = [
+                    (
+                        0,
+                        0,
+                        {
+                            "job_order_ids": False,
+                            "kpi_ids": kpi_ids,
+                        },
+                    )
+                ]
+        return super()._create_budget_controls(vals)

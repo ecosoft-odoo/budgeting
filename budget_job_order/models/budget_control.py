@@ -54,20 +54,6 @@ class BudgetControl(models.Model):
         ]
         return domain_kpi
 
-    def _update_kpi_x_job_order(self):
-        """Update Table KPI x Job Order following KPIs"""
-        KPIxJO = self.env["budget.control.kpi.x.job.order"]
-        for rec in self:
-            if not rec.kpi_ids:
-                continue
-            # Create new table with no job
-            rec.kpi_x_job_order = KPIxJO.new(
-                {
-                    "job_order_ids": False,
-                    "kpi_ids": rec.kpi_ids.ids,
-                }
-            )
-
     def _get_value_items(self, date_range, kpi_expression):
         """For each item, multiply by the job order"""
         items = super()._get_value_items(date_range, kpi_expression)
