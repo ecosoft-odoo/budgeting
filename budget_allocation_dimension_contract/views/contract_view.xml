@@ -21,6 +21,22 @@
                     name="domain"
                 >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
             </xpath>
+            <!-- contract_line_fixed -->
+            <xpath
+                expr="//field[@name='contract_line_fixed_ids']/tree//field[@name='analytic_tag_ids']"
+                position="after"
+            >
+                <field name="domain_tag_ids" invisible="1" />
+                <field name="analytic_tag_all" invisible="1" />
+            </xpath>
+            <xpath
+                expr="//field[@name='contract_line_fixed_ids']/tree//field[@name='analytic_tag_ids']"
+                position="attributes"
+            >
+                <attribute
+                    name="domain"
+                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
+            </xpath>
         </field>
     </record>
 </odoo>
