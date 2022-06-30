@@ -62,12 +62,15 @@ class BudgetControl(models.Model):
         # On each KPI, expand it by its job orders
         kpi_jo = {}
         for kpi_x_job in self.kpi_x_job_order:
-            job_id = kpi_x_job.job_order_ids and kpi_x_job.job_order_ids[0].id or False
+            job_ids = kpi_x_job.job_order_ids and kpi_x_job.job_order_ids.ids or [False]
             for x in kpi_x_job.kpi_ids:
-                if kpi_jo.get(x.id, False):
-                    kpi_jo[x.id].append(job_id)
+                if kpi_jo.get(x.id, False):  # same KPI, other line
+                    for job in job_ids:
+                        kpi_jo[x.id].append(job)
+                    # delete duplicate job order in KPI
+                    kpi_jo[x.id] = list(set(kpi_jo[x.id]))
                 else:
-                    kpi_jo[x.id] = [job_id]
+                    kpi_jo[x.id] = job_ids
         new_items = []
         append = new_items.append
         for item in items:
@@ -116,3 +119,10 @@ class BudgetControlKPIxJobOrder(models.Model):
         comodel_name="budget.job.order",
         string="Job Orders",
     )
+
+    @api.constrains("job_order_ids")
+    def check_kpi_job(self):
+        for rec in self:
+            if rec.job_order_ids and not rec.kpi_ids:
+                ", ".join(rec.job_order_ids.mapped("name"))
+                raise UserError(_("KPI is required for Job Orders."))
