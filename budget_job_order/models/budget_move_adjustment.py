@@ -18,6 +18,12 @@ class BudgetMoveAdjustmentItem(models.Model):
         ondelete="restrict",
     )
 
+    @api.onchange("filter_job_order")
+    def _onchange_filter_job_order(self):
+        """Reset job order when filter job has changed"""
+        for rec in self:
+            rec.job_order_id = False
+
     @api.depends("analytic_account_id")
     def _compute_filter_job_order(self):
         """Filter Job Order following Analytic Account.

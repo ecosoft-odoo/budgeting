@@ -9,7 +9,9 @@ class BudgetPeriod(models.Model):
     _inherit = "budget.period"
 
     def _get_budget_constraint(self):
-        return self.env["budget.constraint"].search([], order="sequence")
+        return self.env["budget.constraint"].search(
+            [("active", "=", True)], order="sequence"
+        )
 
     @api.model
     def check_budget_constraint(self, budget_constraints, doclines):
@@ -33,7 +35,14 @@ class BudgetPeriod(models.Model):
     @api.model
     def check_budget(self, doclines, doc_type="account"):
         """Create budget commit for each docline"""
+        self = self.sudo()
         budget_constraints = self._get_budget_constraint()
-        if doclines and budget_constraints:
+        # Find active budget.period based on latest doclines date_commit
+        date_commit = doclines.filtered("date_commit").mapped("date_commit")
+        if not date_commit:
+            return super().check_budget(doclines, doc_type)
+        date_commit = max(date_commit)
+        budget_period = self._get_eligible_budget_period(date_commit, doc_type=doc_type)
+        if doclines and budget_constraints and budget_period:
             self.check_budget_constraint(budget_constraints, doclines)
         return super().check_budget(doclines, doc_type)
