@@ -136,7 +136,11 @@
         <field name="model">res.project</field>
         <field name="arch" type="xml">
             <search string="Search Project">
-                <field name="name" string="Project" />
+                <field
+                    name="name"
+                    string="Project"
+                    filter_domain="['|', ('name', 'ilike', self), ('code', 'ilike', self)]"
+                />
                 <field name="parent_project_name" string="Parent Project" />
                 <field name="project_manager_id" string="Project Manager" />
                 <separator name="filter_state" />
