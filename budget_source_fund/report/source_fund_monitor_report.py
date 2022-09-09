@@ -74,18 +74,13 @@ class SourceFundMonitorReport(models.Model):
         sql_from = {}
         for source in self._get_consumed_sources():
             budget_table = source["budget_move"][0]  # i.e., account_budget_move
-            doc_table = source["source_doc"][0]  # i.e., account_move
-            doc_field = source["source_doc"][1]  # i.e., move_id
             amount_type = source["type"][0]  # i.e., 8_actual
             sql_from[
                 amount_type
             ] = """
                 from {} a
-                left outer join {} b on a.{} = b.id
             """.format(
                 budget_table,
-                doc_table,
-                doc_field,
             )
         return sql_from
 
@@ -120,9 +115,7 @@ class SourceFundMonitorReport(models.Model):
         return self._get_from_amount_types()[amount_type]
 
     def _where_actual(self):
-        return """
-            where b.state = 'posted'
-        """
+        return ""
 
     def _get_sql(self):
         select_budget_query = self._select_budget()
