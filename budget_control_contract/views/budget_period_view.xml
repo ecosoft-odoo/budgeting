@@ -9,7 +9,7 @@
                 <label for="contract" invisible="1" />
                 <div name="contract" class="o_row">
                     <field name="contract" invisible="1" />
-                    <span>On Purchase</span>
+                    <span>On Contract</span>
                 </div>
             </div>
         </field>
