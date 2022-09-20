@@ -4,6 +4,7 @@
 from psycopg2 import sql
 
 from odoo import _, api, models
+from odoo.tools import float_compare
 
 
 class BaseBudgetMove(models.AbstractModel):
@@ -79,7 +80,8 @@ class BaseBudgetMove(models.AbstractModel):
                 [x["amount"] for x in query_dict if isinstance(x["amount"], float)]
             )
             # check amount after commit must have more than 0.0
-            if total_spend < 0.0:
+            prec_digits = self.env.user.company_id.currency_id.decimal_places
+            if float_compare(total_spend, 0.0, precision_digits=prec_digits) == -1:
                 message_error.append(
                     _(
                         "{} spend amount over budget allocation "
