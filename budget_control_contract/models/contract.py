@@ -10,6 +10,7 @@ class ContractContract(models.Model):
         comodel_name="contract.budget.move",
         inverse_name="contract_id",
         string="Contract Budget Moves",
+        ondelete="cascade",
     )
     commit_budget = fields.Boolean(
         string="Commit Budget",
