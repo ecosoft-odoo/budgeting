@@ -38,13 +38,17 @@ class ContractContract(models.Model):
         self.mapped("contract_line_ids").close_budget_move()
 
     def write(self, vals):
+        """
+        - Commit budget when check commit budget
+        - Archived ot not check commit budget, document should delete all budget commitment
+        """
         res = super().write(vals)
-        if "active" not in vals:
+        contract_not_active = self.filtered(lambda l: not l.active)
+        if contract_not_active:
+            self.mapped("budget_move_ids").unlink()
             return res
-        elif vals.get("active"):
-            self.recompute_budget_move()
-        else:
-            self.with_context(active_test=False).close_budget_move()
+        self = self.filtered("active")
+        self.recompute_budget_move()
         # Special for contract, as line can always change
         # make sure budget is checked when line changes
         if "contract_line_ids" in vals:
@@ -113,9 +117,12 @@ class ContractLine(models.Model):
     def recompute_budget_move(self):
         for contract_line in self:
             contract_line.budget_move_ids.unlink()
+            # skip commit budget, if not check commit budget field
+            if not contract_line.contract_id.commit_budget:
+                continue
             contract_line.commit_budget()
-            contract_line.invoice_lines.uncommit_contract_budget()
             contract_line.forward_commit()
+            contract_line.invoice_lines.uncommit_contract_budget()
 
     def _get_contract_line_account(self):
         fpos = self.contract_id.fiscal_position_id
