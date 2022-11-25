@@ -32,7 +32,10 @@ class AccountMoveLine(models.Model):
                             return_amount_commit=ml.amount_commit
                         )
                     contract_line.commit_budget(
-                        reverse=rev, move_line_id=ml.id, quantity=qty
+                        reverse=rev,
+                        move_line_id=ml.id,
+                        quantity=qty,
+                        date=ml.date_commit,
                     )
                 else:  # Cancel or draft, not commitment line
                     self.env["contract.budget.move"].search(
