@@ -21,7 +21,7 @@ class BaseBudgetMove(models.AbstractModel):
         if not install budget_source_fund module
         """
         model = "source.fund.monitor.report"
-        if self.env.get(model, "/") == "/":
+        if isinstance(self.env.get(model, "/"), str):
             model = "budget.monitor.report"
         return self.env[model].with_context(force_all_ou=1)._table_query
 
