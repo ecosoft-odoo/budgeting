@@ -28,7 +28,11 @@ class BudgetAllocation(models.Model):
         context={"active_test": False},
         states={"draft": [("readonly", "=", False)]},
     )
-    plan_id = fields.Many2one(comodel_name="budget.plan", copy=False)
+    plan_id = fields.Many2one(
+        comodel_name="budget.plan",
+        index=True,
+        copy=False,
+    )
     total_amount = fields.Monetary(
         compute="_compute_total_amount", help="Sum of amount allocation"
     )
@@ -62,9 +66,12 @@ class BudgetAllocation(models.Model):
             # Write initail on budget plan
             if rec.plan_id:
                 rec.plan_id.write({"init_amount": rec.total_amount})
-            # Update released amount
-            for line in rec.allocation_line_ids:
-                line.write({"released_amount": line._get_released_amount()})
+            # Update released amount following allocated amount
+            allocation_lines = rec.allocation_line_ids.filtered(
+                lambda l: l.allocated_amount != l.released_amount
+            )
+            for line in allocation_lines:
+                line.write({"released_amount": line.allocated_amount})
         return self.write({"state": "done"})
 
     def action_draft(self):
@@ -84,12 +91,14 @@ class BudgetAllocation(models.Model):
 
     def action_generate_budget_plan(self):
         self.ensure_one()
-        BudgetPlan = self.env["budget.plan"]
+        # Create budget plan from allocation
         vals = self._prepare_vals_budget_plan()
-        plan_id = BudgetPlan.create(vals)
-        self.write({"plan_id": plan_id.id})
-        plan_id.action_update_plan()
-        return plan_id
+        budget_plan = self.env["budget.plan"].create(vals)
+        # Link allocation and budget plan
+        self.write({"plan_id": budget_plan.id})
+        # Update budget plan lines
+        budget_plan.action_update_plan()
+        return budget_plan
 
     def _get_domain_open_analytic(self):
         self.ensure_one()
@@ -155,6 +164,7 @@ class BudgetAllocationLine(models.Model):
         ondelete="cascade",
         required=True,
         readonly=True,
+        index=True,
         check_company=True,
     )
     budget_period_id = fields.Many2one(
@@ -209,7 +219,3 @@ class BudgetAllocationLine(models.Model):
     def _compute_estimated_amount(self):
         for rec in self:
             rec.estimated_amount = rec.estimated_amount or rec.allocated_amount
-
-    def _get_released_amount(self):
-        self.ensure_one()
-        return self.allocated_amount
