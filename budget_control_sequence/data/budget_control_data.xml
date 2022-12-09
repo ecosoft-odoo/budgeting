@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<odoo noupdate="1">
-    <record id="seq_budget_control" model="ir.sequence">
-        <field name="name">Budget Control Sequence</field>
-        <field name="code">budget.control</field>
-        <field name="padding" eval="5" />
-        <field name="prefix">BC</field>
-    </record>
-</odoo>
