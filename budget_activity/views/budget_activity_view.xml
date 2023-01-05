@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <!-- Budget Activity Tag -->
-    <record id="budget_activity_tag_view_tree" model="ir.ui.view">
-        <field name="name">budget.activity.tag.view.tree</field>
-        <field name="model">budget.activity.tag</field>
+    <!-- Budget Activity Keyword -->
+    <record id="budget_activity_keyword_view_tree" model="ir.ui.view">
+        <field name="name">budget.activity.keyword.view.tree</field>
+        <field name="model">budget.activity.keyword</field>
         <field name="arch" type="xml">
-            <tree string="Budget Activity Tag">
+            <tree>
                 <field name="name" />
                 <field name="company_id" groups="base.group_multi_company" />
                 <field name="active" />
             </tree>
         </field>
     </record>
-    <record id="budget_activity_tag_view_search" model="ir.ui.view">
-        <field name="name">budget.activity.tag.view.search</field>
-        <field name="model">budget.activity.tag</field>
+    <record id="budget_activity_keyword_view_search" model="ir.ui.view">
+        <field name="name">budget.activity.keyword.view.search</field>
+        <field name="model">budget.activity.keyword</field>
         <field name="priority" eval="15" />
         <field name="arch" type="xml">
-            <search string="Search Budget Activity Tag">
+            <search string="Search Budget Activity Keyword">
                 <field
                     name="name"
-                    string="Budget Activity Tag"
+                    string="Keyword"
                     filter_domain="[('name','ilike',self)]"
                 />
                 <filter
@@ -39,11 +39,11 @@
             </search>
         </field>
     </record>
-    <record id="budget_activity_tag_view_form" model="ir.ui.view">
+    <record id="budget_activity_keyword_view_form" model="ir.ui.view">
         <field name="name">budget.activity.view.form</field>
-        <field name="model">budget.activity.tag</field>
+        <field name="model">budget.activity.keyword</field>
         <field name="arch" type="xml">
-            <form string="Budget Activity Tag">
+            <form string="Budget Activity Keyword">
                 <sheet>
                     <widget
                         name="web_ribbon"
@@ -67,10 +67,10 @@
             </form>
         </field>
     </record>
-    <record id="budget_activity_tag_action" model="ir.actions.act_window">
-        <field name="name">Budget Activity Tags</field>
-        <field name="view_id" ref="budget_activity_tag_view_tree" />
-        <field name="res_model">budget.activity.tag</field>
+    <record id="budget_activity_keyword_action" model="ir.actions.act_window">
+        <field name="name">Budget Activity Keywords</field>
+        <field name="view_id" ref="budget_activity_keyword_view_tree" />
+        <field name="res_model">budget.activity.keyword</field>
         <field name="view_mode">tree,form</field>
     </record>
     <!-- Budget Activity -->
@@ -82,12 +82,7 @@
                 <field name="name" />
                 <field name="kpi_id" />
                 <field name="account_id" />
-                <field
-                    name="tag_ids"
-                    widget="many2many_tags"
-                    optional="hide"
-                    groups="budget_activity.group_budget_activity_tag"
-                />
+                <field name="keyword_ids" widget="many2many_tags" optional="hide" />
             </tree>
         </field>
     </record>
@@ -144,11 +139,7 @@
                     <group>
                         <group>
                             <field name="account_id" />
-                            <field
-                                name="tag_ids"
-                                widget="many2many_tags"
-                                groups="budget_activity.group_budget_activity_tag"
-                            />
+                            <field name="keyword_ids" widget="many2many_tags" />
                         </group>
                         <group>
                             <field name="active" />
@@ -168,26 +159,4 @@
         <field name="res_model">budget.activity</field>
         <field name="view_mode">tree,form</field>
     </record>
-    <!-- Menu Items -->
-    <menuitem
-        id="budget_activity_menu"
-        parent="budget_control.budget_config_menu"
-        name="Activity"
-        sequence="40"
-    />
-    <menuitem
-        id="budget_budget_activity_menu"
-        parent="budget_activity.budget_activity_menu"
-        name="Budget Activity"
-        action="budget_activity_action"
-        sequence="30"
-    />
-    <menuitem
-        id="budget_budget_activity_tag_menu"
-        parent="budget_activity.budget_activity_menu"
-        name="Budget Activity Tags"
-        action="budget_activity_tag_action"
-        sequence="30"
-        groups="budget_activity.group_budget_activity_tag"
-    />
 </odoo>

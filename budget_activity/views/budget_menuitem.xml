@@ -13,4 +13,11 @@
         action="budget_activity_action"
         sequence="10"
     />
+    <menuitem
+        id="budget_budget_activity_keyword_menu"
+        parent="budget_activity.budget_main_budget_activity_menu"
+        name="Budget Activity Keyword"
+        action="budget_activity_keyword_action"
+        sequence="20"
+    />
 </odoo>

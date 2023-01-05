@@ -13,19 +13,20 @@ class AccountMoveLine(models.Model):
         index=True,
     )
 
-    def _get_computed_account(self):
-        self.ensure_one()
-        account = super()._get_computed_account()
+    def _is_realtime_inventory_product(self):
         # Case non-realtime inventory product
         # activity's account takes priority over product's account
-        realtime = (
-            self.product_id.type == "product"
-            and hasattr(self.product_id.categ_id, "property_valuation")
-            and self.product_id.categ_id.property_valuation == "real_time"
-        )
-        if not realtime and self.activity_id:
-            account = self.activity_id.account_id
-        return account
+        if self.product_id.type != "product":
+            return False
+        if not hasattr(self.product_id.categ_id, "property_valuation"):
+            return False
+        return self.product_id.categ_id.property_valuation == "real_time"
+
+    def _get_computed_account(self):
+        self.ensure_one()
+        if self.activity_id and not self._is_realtime_inventory_product():
+            return self.activity_id.account_id
+        return super()._get_computed_account()
 
     def _prepare_analytic_line(self):
         res = super()._prepare_analytic_line()

@@ -14,18 +14,22 @@ Budget Activity
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Faccount--budgeting-lightgray.png?logo=github
-    :target: https://github.com/OCA/account-budgeting/tree/14.0/budget_activity
+    :target: https://github.com/OCA/account-budgeting/tree/15.0/budget_activity
     :alt: OCA/account-budgeting
 .. |badge4| image:: https://img.shields.io/badge/weblate-Translate%20me-F47D42.png
-    :target: https://translation.odoo-community.org/projects/account-budgeting-14-0/account-budgeting-14-0-budget_activity
+    :target: https://translation.odoo-community.org/projects/account-budgeting-15-0/account-budgeting-15-0-budget_activity
     :alt: Translate me on Weblate
 .. |badge5| image:: https://img.shields.io/badge/runbot-Try%20me-875A7B.png
-    :target: https://runbot.odoo-community.org/runbot/88/14.0
+    :target: https://runbot.odoo-community.org/runbot/88/15.0
     :alt: Try me on Runbot
 
 |badge1| |badge2| |badge3| |badge4| |badge5| 
 
-This module add "Activity" element for budget actual (move, move line, analytic line)
+This module helps the system accurately record the account code for budget recording.
+It includes an "Activity" linking the two, where the activity serves as a match between what the user understands and the account code.
+The user can select from a list of activity that have been created in the system,
+and the system will then match the selected activity to the corresponding account,
+so the user does not need to understand the account themselves.
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
@@ -40,9 +44,18 @@ This module add "Activity" element for budget actual (move, move line, analytic 
 Usage
 =====
 
-#. Go to Budgeting > Configurations > Budget Activity
-#. Create new activity and match with Account > Save
-#. On invoice lines, User can select Activity field and it will auto change account to match with Activity
+To used this module you have to configued Budget Activity first.
+
+#. Go to Budgeting > Activity > Budget Activity
+#. Create new activity, select a KPI (if you want to group it) and match the activity to an account.
+#. Add a `Keyword` if you need to search for other words to show this activity. For example, the activity name is `Activity1` and the keywords are `Ticket` and `Transportation`. In the Activity field, the user can search for the name `Ticket` to see the activity `Activity1`.
+#. Go to Budgeting > Configurations > Budget Template
+#. Create new template or use old template (if you have)
+#. When you select a KPI, it will automatically select the corresponding activity and account. If you haven't set up an activity in the KPI, you can select the activity and it will automatically select the corresponding account
+
+
+In the usage window, you will see a new field called "Activity" where the user can select from a list of options.
+The system will then match the selected activity to the corresponding account that has been set up.
 
 Bug Tracker
 ===========
@@ -50,7 +63,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/OCA/account-budgeting/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us smashing it by providing a detailed and welcomed
-`feedback <https://github.com/OCA/account-budgeting/issues/new?body=module:%20budget_activity%0Aversion:%2014.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/OCA/account-budgeting/issues/new?body=module:%20budget_activity%0Aversion:%2015.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -66,7 +79,7 @@ Contributors
 ~~~~~~~~~~~~
 
 * `Ecosoft <http://ecosoft.co.th>`__:
-    
+
     * Kitti Upariphutthiphong <kittiu@ecosoft.co.th>
     * Saran Lim. <saranl@ecosoft.co.th>
     * Pimolnat Suntian <pimolnats@ecosoft.co.th>
@@ -92,6 +105,6 @@ Current `maintainer <https://odoo-community.org/page/maintainer-role>`__:
 
 |maintainer-kittiu| 
 
-This module is part of the `OCA/account-budgeting <https://github.com/OCA/account-budgeting/tree/14.0/budget_activity>`_ project on GitHub.
+This module is part of the `OCA/account-budgeting <https://github.com/OCA/account-budgeting/tree/15.0/budget_activity>`_ project on GitHub.
 
 You are welcome to contribute. To learn how please visit https://odoo-community.org/page/Contribute.

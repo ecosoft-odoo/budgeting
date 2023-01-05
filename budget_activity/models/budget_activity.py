@@ -1,31 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import fields, models
-
-
-class BudgetActivityTag(models.Model):
-    _name = "budget.activity.tag"
-    _description = "Budget Activity Tag"
-
-    name = fields.Char(string="Name", required=True)
-    company_id = fields.Many2one(
-        comodel_name="res.company",
-        string="Company",
-        default=lambda self: self.env.company,
-        required=True,
-    )
-    active = fields.Boolean(
-        default=True,
-        help="Set active to false to hide the Budget Activity Tag without removing it.",
-    )
-    _sql_constraints = [
-        (
-            "name_company_unique",
-            "unique(name, company_id)",
-            "This tag name is already used!",
-        )
-    ]
+from odoo import api, fields, models
 
 
 class BudgetActivity(models.Model):
@@ -54,15 +30,54 @@ class BudgetActivity(models.Model):
         default=lambda self: self.env.company,
         required=True,
     )
-    tag_ids = fields.Many2many(
-        comodel_name="budget.activity.tag",
-        relation="budget_activity_tag_rel",
+    keyword_ids = fields.Many2many(
+        comodel_name="budget.activity.keyword",
+        relation="budget_activity_keyword_rel",
         column1="budget_activity_id",
-        column2="budget_activity_tag_id",
-        string="Tags",
-        help="Optional tags you may want to assign for search",
+        column2="budget_activity_keyword_id",
+        string="Keyword",
+        help="Optional keyword you may want to assign for search",
     )
 
     _sql_constraints = [
         ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
+    ]
+
+    @api.model
+    def name_search(self, name, args=None, operator="ilike", limit=100):
+        args = args or []
+        domain = []
+        if name:
+            domain = [
+                "|",
+                "|",
+                ("name", operator, name),
+                ("keyword_ids", operator, name),
+                ("account_id", operator, name),
+            ]
+        activitys = self.search(domain + args, limit=limit)
+        return activitys.name_get()
+
+
+class BudgetActivityKeyword(models.Model):
+    _name = "budget.activity.keyword"
+    _description = "Search budget activity with keyword"
+
+    name = fields.Char(string="Name", required=True)
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        string="Company",
+        default=lambda self: self.env.company,
+        required=True,
+    )
+    active = fields.Boolean(
+        default=True,
+        help="Set active to false to hide the Budget Activity keyword without removing it.",
+    )
+    _sql_constraints = [
+        (
+            "name_company_unique",
+            "unique(name, company_id)",
+            "This keyword is already used!",
+        )
     ]
