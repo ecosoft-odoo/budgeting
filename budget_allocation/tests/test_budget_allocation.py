@@ -60,25 +60,6 @@ class TestBudgetAllocation(BudgetControlCommon):
             {"name": "Test Tags 2", "analytic_dimension_id": cls.tag_dimension1.id}
         )
 
-    def _create_simple_transfer(self, bc_from, fund_from, bc_to, fund_to, amount):
-        return self.env["budget.transfer"].create(
-            {
-                "transfer_item_ids": [
-                    (
-                        0,
-                        0,
-                        {
-                            "budget_control_from_id": bc_from.id,
-                            "fund_from_id": fund_from.id,
-                            "budget_control_to_id": bc_to.id,
-                            "fund_to_id": fund_to.id,
-                            "amount": amount,
-                        },
-                    )
-                ]
-            }
-        )
-
     def _create_budget_allocation(self, amount):
         """Create same analytic, difference fund, difference analytic tags
         line 1: Costcenter1, Fund1, Tag1, 100.0
