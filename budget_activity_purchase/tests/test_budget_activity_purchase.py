@@ -32,6 +32,7 @@ class TestBudgetActivityPurchase(TestBudgetActivity):
                     line.product_qty = po_line["product_qty"]
                     line.price_unit = po_line["price_unit"]
                     line.account_analytic_id = po_line["analytic_id"]
+                    line.activity_id = po_line["activity_id"]
         purchase = po.save()
         return purchase
 
@@ -53,34 +54,20 @@ class TestBudgetActivityPurchase(TestBudgetActivity):
                     "product_qty": 3,
                     "price_unit": 10,
                     "analytic_id": self.costcenter1,
+                    "activity_id": self.activity3,
                 },
             ]
         )
         purchase = purchase.with_context(force_date_commit=purchase.date_order)
         purchase.button_confirm()
-        # Check if not selected activity, budget move will get account from product
-        fpos = purchase.fiscal_position_id
-        self.assertEqual(
-            purchase.budget_move_ids.account_id,
-            purchase.order_line.product_id.product_tmpl_id.get_product_accounts(fpos)[
-                "expense"
-            ],
-        )
-        # PO Commit = 30, INV Actual = 0, Balance = 270
+        # PO Commit = 30, INV Actual = 0, Balance = 2370
         self.assertEqual(self.budget_control.amount_commit, 30)
         self.assertEqual(self.budget_control.amount_actual, 0)
         self.assertEqual(self.budget_control.amount_balance, 2370)
-
-        purchase.button_cancel()
-        purchase.button_draft()
-        # Add activity in order line
-        purchase.order_line.activity_id = self.activity3.id
-        purchase.button_confirm()
         self.assertEqual(
             purchase.budget_move_ids.account_id,
             purchase.order_line.activity_id.account_id,
         )
-
         # Create and post invoice
         purchase.action_create_invoice()
         self.assertEqual(purchase.invoice_status, "invoiced")

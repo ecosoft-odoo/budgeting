@@ -18,6 +18,27 @@
                 <attribute name="readonly">1</attribute>
                 <attribute name="force_save">1</attribute>
             </xpath>
+            <xpath expr="//page[@name='help']//ol" position="inside">
+                <li><b
+                    >Activity</b>: Replaces binding with an account, where 1 activity = 1 account and each activity is associated with a KPI.</li>
+            </xpath>
+            <xpath expr="//page[@name='help']" position="inside">
+                Hierarchy:
+                <pre>
+                            KPI 1                   KPI 2
+                            /  \                   /   \
+                          /      \               /       \
+                        /          \           /           \
+                    Activity1   Activity2   Activity3   Activity4
+                        |            \      /               |
+                        |              \  /                 |
+                    Account1          Account2          Account3
+                </pre>
+                So, <b
+                >Activity must not be repeated in order</b> for users to be able to select them,
+                and the system will correctly check the budget.
+            </xpath>
+
         </field>
     </record>
 </odoo>

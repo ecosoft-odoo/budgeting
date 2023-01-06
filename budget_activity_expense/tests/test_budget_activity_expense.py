@@ -29,6 +29,7 @@ class TestBudgetActivityExpense(TestBudgetActivity):
                 ex.quantity = ex_line["product_qty"]
                 ex.unit_amount = ex_line["price_unit"]
                 ex.analytic_account_id = ex_line["analytic_id"]
+                ex.activity_id = ex_line["activity_id"]
             expense = ex.save()
             expense_ids.append(expense.id)
         expense_sheet = self.env["hr.expense.sheet"].create(
@@ -58,14 +59,10 @@ class TestBudgetActivityExpense(TestBudgetActivity):
                     "product_qty": 3,
                     "price_unit": 10,
                     "analytic_id": self.costcenter1,
+                    "activity_id": self.activity3,
                 },
             ]
         )
-        # Add activity3, account should change to account kpi3
-        self.assertEqual(expense.expense_line_ids[:1].account_id, self.account_kpi1)
-        with Form(expense.expense_line_ids[:1]) as ex:
-            ex.activity_id = self.activity3
-        ex.save()
         self.assertEqual(expense.expense_line_ids[:1].account_id, self.account_kpi3)
         # Change Product, account will not change (following activity only)
         with Form(expense.expense_line_ids[:1]) as ex:

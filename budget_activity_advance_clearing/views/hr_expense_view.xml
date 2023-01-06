@@ -13,7 +13,7 @@
             <field name="activity_id" position="attributes">
                 <attribute
                     name="attrs"
-                >{'readonly': ['|', ('advance', '=', True), ('state', 'in', ['approve', 'post', 'done'])]}</attribute>
+                >{'required': [('analytic_account_id', '!=', False)], 'readonly': ['|', ('advance', '=', True), ('state', 'in', ['approve', 'post', 'done'])]}</attribute>
                 <attribute name="force_save">1</attribute>
             </field>
             <field name="activity_id" position="after">
