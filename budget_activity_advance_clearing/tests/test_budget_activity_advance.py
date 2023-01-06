@@ -84,11 +84,9 @@ class TestBudgetActivityAdvance(TestBudgetActivity):
     @freeze_time("2001-02-01")
     def test_01_budget_activity_advance(self):
         """
-        On expense,
+        On expense (advnace/clearing),
         - If no activity, budget follows product's account
         - If activity is selected, account follows activity's regardless of product
-        - User can always change account code afterwards
-        - Posting invoice, will create budget move with activity
         """
         # Control budget
         self.budget_period.control_budget = True

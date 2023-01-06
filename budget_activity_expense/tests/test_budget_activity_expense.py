@@ -46,8 +46,6 @@ class TestBudgetActivityExpense(TestBudgetActivity):
         On expense,
         - If no activity, budget follows product's account
         - If activity is selected, account follows activity's regardless of product
-        - User can always change account code afterwards
-        - Posting invoice, will create budget move with activity
         """
         # Control budget
         self.budget_period.control_budget = True
