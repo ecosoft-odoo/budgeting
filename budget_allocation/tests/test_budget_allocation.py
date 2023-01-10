@@ -25,7 +25,6 @@ class TestBudgetAllocation(BudgetControlCommon):
         cls.BudgetFundGroup = cls.env["budget.source.fund.group"]
         cls.BudgetPlan = cls.env["budget.plan"]
         cls.BudgetTransfer = cls.env["budget.transfer"]
-        cls.BudgetTransferItem = cls.env["budget.transfer.item"]
         cls.costcenter1.write({"budget_period_id": cls.budget_period.id})
         cls.costcenterX.write({"budget_period_id": cls.budget_period.id})
         # Create fund
@@ -265,7 +264,7 @@ class TestBudgetAllocation(BudgetControlCommon):
         # Create budget transfer from
         # line 1: Costcenter1, Fund1, Tag1,  50.0 to
         # line 4: CostcenterX, Fund1,     , 100.0
-        transfer = self.env["budget.transfer"].create({})
+        transfer = self.BudgetTransfer.create({})
         with Form(transfer.transfer_item_ids) as line:
             line.transfer_id = transfer
             line.budget_control_from_id = budget_control_ids[0]

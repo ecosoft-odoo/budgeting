@@ -42,7 +42,7 @@ class SourceFundMonitorReport(models.Model):
                 on a.date_to between p.bm_date_from and p.bm_date_to
             {}
         """.format(
-            self._get_sql(), self._get_where_sql()
+            self._get_sql(), self._get_where_clause()
         )
 
     def _get_consumed_sources(self):
@@ -194,5 +194,5 @@ class SourceFundMonitorReport(models.Model):
             self._where_actual(),
         )
 
-    def _get_where_sql(self):
+    def _get_where_clause(self):
         return "where d.type_id = p.plan_date_range_type_id"
