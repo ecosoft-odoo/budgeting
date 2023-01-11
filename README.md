@@ -7,33 +7,13 @@
 
 <!-- /!\ do not modify above this line -->
 
-# account-analytic
+# Budgeting
 
-TODO: add repo description.
+This repository will be a module for extending the main budgeting.
 
 <!-- /!\ do not modify below this line -->
 
 <!-- prettier-ignore-start -->
-
-[//]: # (addons)
-
-Available addons
-----------------
-addon | version | maintainers | summary
---- | --- | --- | ---
-[account_analytic_parent](account_analytic_parent/) | 15.0.1.0.0 |  | This module reintroduces the hierarchy to the analytic accounts.
-[account_analytic_required](account_analytic_required/) | 15.0.1.0.2 |  | Account Analytic Required
-[account_analytic_sequence](account_analytic_sequence/) | 15.0.1.0.1 |  | Restore the analytic account sequence
-[account_analytic_tag_default](account_analytic_tag_default/) | 15.0.1.0.0 |  | Set default tags on analytic accounts.
-[account_move_update_analytic](account_move_update_analytic/) | 15.0.1.0.1 |  | This module allows the user to update analytic on posted moves
-[analytic_base_department](analytic_base_department/) | 15.0.1.0.0 |  | Add relationship between Analytic and Department
-[analytic_tag_dimension](analytic_tag_dimension/) | 15.0.1.0.0 |  | Group Analytic Entries by Dimensions
-[mrp_analytic](mrp_analytic/) | 15.0.1.0.0 |  | Adds the analytic account to the production order
-[procurement_mto_analytic](procurement_mto_analytic/) | 15.0.1.0.0 |  | This module sets analytic account in purchase order line from sale order analytic account
-[product_analytic](product_analytic/) | 15.0.1.0.0 |  | Add analytic account on products and product categories
-[purchase_analytic](purchase_analytic/) | 15.0.2.0.0 |  | Purchase Analytic
-
-[//]: # (end addons)
 
 <!-- prettier-ignore-end -->
 
