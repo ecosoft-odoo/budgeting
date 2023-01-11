@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <menuitem
+        id="budget_main_budget_activity_menu"
+        parent="budget_control.budget_menu"
+        name="Activity"
+        sequence="15"
+    />
+    <menuitem
+        id="budget_activity_sub_menu"
+        parent="budget_activity.budget_main_budget_activity_menu"
+        name="Budget Activity"
+        action="budget_activity_action"
+        sequence="10"
+    />
+    <menuitem
+        id="budget_budget_activity_keyword_menu"
+        parent="budget_activity.budget_main_budget_activity_menu"
+        name="Budget Activity Keyword"
+        action="budget_activity_keyword_action"
+        sequence="20"
+    />
+</odoo>
