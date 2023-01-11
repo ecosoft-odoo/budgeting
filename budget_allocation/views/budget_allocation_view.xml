@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Budget Allocation Line -->
+    <record id="budget_allocation_line_view_tree" model="ir.ui.view">
+        <field name="name">budget.allocation.line.view.tree</field>
+        <field name="model">budget.allocation.line</field>
+        <field name="arch" type="xml">
+            <tree string="Budget Allocation Line" editable="bottom">
+                <field name="id" optional="hide" />
+                <field name="budget_allocation_id" invisible="1" />
+                <field name="date_from" invisible="1" />
+                <field name="date_to" invisible="1" />
+                <field
+                    name="analytic_account_id"
+                    domain="[('bm_date_to', '&gt;=', date_from), ('bm_date_from', '&lt;=', date_to)]"
+                    options="{'no_create': 1}"
+                />
+                <field name="name" optional="show" />
+                <field
+                    name="estimated_amount"
+                    optional="show"
+                    sum="Total Esitmated Amount"
+                />
+                <field
+                    name="allocated_amount"
+                    optional="show"
+                    sum="Total Allocated Amount"
+                />
+                <field
+                    name="released_amount"
+                    optional="show"
+                    readonly="True"
+                    sum="Total Released Amount"
+                />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company"
+                />
+                <field
+                    name="currency_id"
+                    optional="show"
+                    groups="base.group_multi_currency"
+                />
+                <field name="active" invisible="1" />
+            </tree>
+        </field>
+    </record>
+    <record id="budget_allocation_line_view_search" model="ir.ui.view">
+        <field name="name">budget.allocation.line.view.search</field>
+        <field name="model">budget.allocation.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field
+                    name="name"
+                    string="Allocation"
+                    filter_domain="['|', ('name', 'ilike', self), ('analytic_account_id', 'ilike', self)]"
+                />
+                <group string="Group By" name="groupby" expand="1">
+                    <filter
+                        string="Analytic Account"
+                        name="groupby_analytic_account"
+                        context="{'group_by': 'analytic_account_id'}"
+                    />
+                    <filter
+                        string="Company"
+                        name="groupby_company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="budget_allocation_line_action" model="ir.actions.act_window">
+        <field name="name">Budget Allocation Line</field>
+        <field name="res_model">budget.allocation.line</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Budget Allocation -->
+    <record id="budget_allocation_view_tree" model="ir.ui.view">
+        <field name="name">budget.allocation.view.tree</field>
+        <field name="model">budget.allocation</field>
+        <field name="arch" type="xml">
+            <tree string="Budget Allocation">
+                <field name="name" />
+                <field name="budget_period_id" optional="show" />
+                <field name="total_amount" optional="show" />
+                <field name="active" optional="hide" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-success="state == 'done'"
+                    decoration-info="state == 'draft'"
+                    optional="show"
+                />
+            </tree>
+        </field>
+    </record>
+    <record id="budget_allocation_view_search" model="ir.ui.view">
+        <field name="name">budget.allocation.view.search</field>
+        <field name="model">budget.allocation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" filter_domain="[('name', 'ilike', self)]" />
+                <filter
+                    name="draft"
+                    string="Draft"
+                    domain="[('state', '=', 'draft')]"
+                />
+                <filter name="done" string="Done" domain="[('state', '=', 'done')]" />
+                <filter
+                    name="cancel"
+                    string="Cancel"
+                    domain="[('state', '=', 'cancel')]"
+                />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+            </search>
+        </field>
+    </record>
+    <record id="budget_allocation_view_form" model="ir.ui.view">
+        <field name="name">budget.allocation.view.form</field>
+        <field name="model">budget.allocation</field>
+        <field name="arch" type="xml">
+            <form string="Budget Allocation">
+                <header>
+                    <button
+                        id="action_generate_budget_plan"
+                        name="action_generate_budget_plan"
+                        string="Generate Budget Plan"
+                        class="btn-primary"
+                        type="object"
+                        attrs="{'invisible': ['|', ('plan_id', '!=', False), ('state', '!=', 'done')]}"
+                    />
+                    <button
+                        id="action_done"
+                        name="action_done"
+                        string="Done"
+                        class="btn-primary"
+                        type="object"
+                        states="draft"
+                    />
+                    <button
+                        id="action_draft"
+                        name="action_draft"
+                        string="Set to Draft"
+                        type="object"
+                        states="done,cancel"
+                    />
+                    <button
+                        id="action_cancel"
+                        name="action_cancel"
+                        string="Cancel"
+                        type="object"
+                        states="draft"
+                    />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="button_open_analytic"
+                            class="oe_stat_button"
+                            string="Analytic Account"
+                            icon="fa-file-text"
+                            type="object"
+                        />
+                        <button
+                            name="button_open_allocation"
+                            class="oe_stat_button"
+                            string="Allocation"
+                            icon="fa-bar-chart-o"
+                            type="object"
+                        />
+                        <button
+                            name="button_open_budget_plan"
+                            string="Budget Plan"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-bars"
+                            attrs="{'invisible': [('plan_id', '=', False)]}"
+                        />
+                    </div>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        attrs="{'invisible': [('active', '=', True)]}"
+                    />
+                    <div class="oe_title">
+                        <label for="name" string="Budget Allocation" />
+                        <h1>
+                            <field name="name" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="budget_allocation_left">
+                            <field name="budget_period_id" />
+                            <field name="total_amount" />
+                            <field name="plan_id" invisible="1" />
+                        </group>
+                        <group name="budget_allocation_right">
+                            <field name="active" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                            <field
+                                name="currency_id"
+                                groups="base.group_multi_currency"
+                            />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="allocation" string="Allocation">
+                            <field name="allocation_line_ids" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers" />
+                    <field name="message_ids" widget="mail_thread" />
+                </div>
+            </form>
+        </field>
+    </record>
+    <record id="budget_allocation_action" model="ir.actions.act_window">
+        <field name="name">Budget Allocation</field>
+        <field name="res_model">budget.allocation</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <menuitem
+        id="budget_allocation_menu"
+        parent="budget_control.budget_control_menu"
+        name="Budget Allocation"
+        action="budget_allocation_action"
+        sequence="20"
+    />
+</odoo>
