@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_move_adjustment_form" model="ir.ui.view">
+        <field name="name">view.budget.move.adjustment.form</field>
+        <field name="model">budget.move.adjustment</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.view_budget_move_adjustment_form"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//page[@name='adjust_item_ids']//tree/field[@name='json_budget_popover']"
+                position="after"
+            >
+                <field name="filter_job_order" widget="many2many_tags" invisible="1" />
+                <field
+                    name="job_order_id"
+                    options="{'no_create': True, 'no_open': True}"
+                    domain="[('id', 'in', filter_job_order)]"
+                />
+            </xpath>
+            <xpath
+                expr="//page[@name='adjust_item_ids']//form//field[@name='analytic_account_id']"
+                position="after"
+            >
+                <field name="job_order_id" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

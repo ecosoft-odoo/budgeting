@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="budget_control_view_form" model="ir.ui.view">
+        <field name="name">budget.control.view.form</field>
+        <field name="model">budget.control</field>
+        <field name="inherit_id" ref="budget_control.budget_control_view_form" />
+        <field name="arch" type="xml">
+            <field name="kpi_ids" position="before">
+                <field
+                    name="filter_job_order"
+                    widget="many2many_tags"
+                    attrs="{'invisible': 1}"
+                />
+            </field>
+            <xpath expr="//page[@name='options']" position="inside">
+                <group name="kpi_x_job_order" string="KPIs Description">
+                    <field
+                        name="kpi_x_job_order"
+                        nolabel="1"
+                        colspan="2"
+                        context="{'default_kpi_ids': kpi_ids, 'filter_job_order': filter_job_order}"
+                    >
+                        <tree editable="bottom">
+                            <field name="mis_report_id" invisible="1" />
+                            <field
+                                name="job_order_ids"
+                                force_save="1"
+                                widget="many2many_tags"
+                                domain="[('id', 'in', context.get('filter_job_order'))]"
+                                options="{'no_open': True, 'no_create': True}"
+                            />
+                            <field
+                                name="kpi_ids"
+                                widget="many2many_tags"
+                                options="{'no_open': True, 'no_create': True}"
+                            />
+                        </tree>
+                    </field>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

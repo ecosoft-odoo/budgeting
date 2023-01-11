@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_purchase_request_form" model="ir.ui.view">
+        <field name="name">view.purchase.request.form</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form" />
+        <field name="arch" type="xml">
+            <!-- additional domain is needed on edit mode, which is not covered by onchange -->
+            <xpath
+                expr="//field[@name='line_ids']/form//field[@name='analytic_tag_ids']"
+                position="before"
+            >
+                <field name="domain_tag_ids" invisible="1" />
+                <field name="analytic_tag_all" invisible="1" />
+            </xpath>
+            <xpath
+                expr="//field[@name='line_ids']/form//field[@name='analytic_tag_ids']"
+                position="attributes"
+            >
+                <attribute name="widget">many2many_tags</attribute>
+                <attribute
+                    name="domain"
+                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
+            </xpath>
+            <xpath
+                expr="//field[@name='line_ids']/tree//field[@name='analytic_tag_ids']"
+                position="attributes"
+            >
+                <attribute name="widget">many2many_tags</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

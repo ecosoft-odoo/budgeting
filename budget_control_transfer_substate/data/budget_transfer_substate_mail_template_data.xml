@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record
+        id="mail_template_data_budget_transfer_substate_verified"
+        model="mail.template"
+    >
+        <field name="name">Verified</field>
+        <field name="model_id" ref="budget_control.model_budget_transfer" />
+        <field name="subject">Your budget transfer ${object.name} is verified</field>
+        <field name="use_default_to" eval="True" />
+        <field name="body_html" type="html">
+            <div>
+    Dear stakeholders,<br />
+    This email is to inform that your budget transfer ${object.name} was verified by budget team.
+       <br /><br />
+    Thank you,
+    <br />
+</div>
+        </field>
+        <field name="auto_delete" eval="True" />
+    </record>
+</odoo>

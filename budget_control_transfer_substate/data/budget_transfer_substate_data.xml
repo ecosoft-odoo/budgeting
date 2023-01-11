@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="base_substate_type_budget_transfer" model="base.substate.type">
+        <field name="name">Budget Transfer Substate</field>
+        <field name="model">budget.transfer</field>
+        <field name="target_state_field">state</field>
+    </record>
+    <!-- Budget transfer related substate to state (submit, transfer) -->
+    <record id="target_state_value_submit" model="target.state.value">
+        <field name="name">Submitted</field>
+        <field name="base_substate_type_id" ref="base_substate_type_budget_transfer" />
+        <field name="target_state_value">submit</field>
+    </record>
+    <record id="target_state_value_transfer" model="target.state.value">
+        <field name="name">Transferred</field>
+        <field name="base_substate_type_id" ref="base_substate_type_budget_transfer" />
+        <field name="target_state_value">transfer</field>
+    </record>
+</odoo>

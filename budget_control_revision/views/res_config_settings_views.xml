@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form_budget" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.budget</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="25" />
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//div[@name='budget_control_setting_container']"
+                position="inside"
+            >
+                <div
+                    class="col-12 col-lg-6 o_setting_box"
+                    id="budget_update_consumed_plan"
+                >
+                    <div class="o_setting_left_pane">
+                        <field name="group_enable_revision" />
+                    </div>
+                    <div class="o_setting_right_pane">
+                        <label for="group_enable_revision" />
+                        <div class="text-muted">
+                            If checked, user can edit initial revision number.
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

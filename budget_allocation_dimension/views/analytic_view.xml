@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="account_analytic_tag_dimension_form_view" model="ir.ui.view">
+        <field name="name">account.analytic.tag.dimension.form</field>
+        <field name="model">account.analytic.tag</field>
+        <field name='inherit_id' ref='analytic.account_analytic_tag_form_view' />
+        <field name="arch" type="xml">
+            <xpath expr="//form//group" position="inside">
+                <field name="budget_transfer_constraint" invisible="1" />
+                <field
+                    name="analytic_tag_constraint_ids"
+                    widget="many2many_tags"
+                    options="{'no_create': True}"
+                    domain="[('id', '!=', id)]"
+                    attrs="{'invisible': [('budget_transfer_constraint', '=', False)]}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_AccountAnalyticDimension_tree" model="ir.ui.view">
+        <field name="name">view.AccountAnalyticDimension.tree</field>
+        <field name="model">account.analytic.dimension</field>
+        <field
+            name="inherit_id"
+            ref="analytic_tag_dimension_enhanced.view_AccountAnalyticDimension_tree"
+        />
+        <field name="arch" type="xml">
+            <field name="required" position="before">
+                <field name="budget_transfer_constraint" optional="show" />
+            </field>
+        </field>
+    </record>
+    <record id="view_AccountAnalyticDimension_form" model="ir.ui.view">
+        <field name="name">view.AccountAnalyticDimension.form</field>
+        <field name="model">account.analytic.dimension</field>
+        <field
+            name="inherit_id"
+            ref="analytic_tag_dimension_enhanced.view_AccountAnalyticDimension_form"
+        />
+        <field name="arch" type="xml">
+            <field name="required" position="before">
+                <field name="budget_transfer_constraint" />
+            </field>
+        </field>
+    </record>
+
+    <menuitem
+        id="budget_menu_analytic_account_tag_dimension"
+        name="Analytic Accounts Dimensions"
+        parent="budget_control.budget_menu_analytic_accounting"
+        sequence="4"
+        action="analytic_tag_dimension.AccountAnalyticDimension_action"
+        groups="analytic.group_analytic_tags"
+    />
+</odoo>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_plan_line_tree" model="ir.ui.view">
+        <field name="name">budget.plan.line.tree</field>
+        <field name="model">budget.plan.line</field>
+        <field name="inherit_id" ref="budget_plan.view_budget_plan_line_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="inside">
+                <field name="revision_number" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+    <record id="budget_plan_filter" model="ir.ui.view">
+        <field name="name">budget.plan.filter</field>
+        <field name="model">budget.plan</field>
+        <field name="inherit_id" ref="budget_plan.budget_plan_filter" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter
+                    name="revision_number"
+                    string="Revision"
+                    context="{'group_by': 'revision_number'}"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_budget_plan_tree" model="ir.ui.view">
+        <field name="name">budget.plan.tree</field>
+        <field name="model">budget.plan</field>
+        <field name="inherit_id" ref="budget_plan.view_budget_plan_tree" />
+        <field name="arch" type="xml">
+            <field name="state" position="before">
+                <field name="revision_number" />
+            </field>
+        </field>
+    </record>
+    <record id="view_budget_plan_form" model="ir.ui.view">
+        <field name="name">budget.plan.form</field>
+        <field name="model">budget.plan</field>
+        <field name="inherit_id" ref="budget_plan.view_budget_plan_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//header/button[@name='action_create_update_budget_control']"
+                position="after"
+            >
+                <button
+                    name="create_revision"
+                    class="oe_highlight"
+                    string="New Revision"
+                    type="object"
+                    attrs="{'invisible': ['|', ('budget_control_count', '=', 0), ('state', '!=', 'done')]}"
+                    confirm="This operation cannot be undone. Are you sure to continue?"
+                />
+            </xpath>
+            <xpath expr="//group[@name='budget_plan_right']" position="inside">
+                <field name="enable_revision_number" invisible="1" />
+                <field name="init_revision" />
+                <field
+                    name="revision_number"
+                    attrs="{'readonly': [('enable_revision_number', '=', False)]}"
+                />
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Revisions">
+                    <field
+                        name="old_revision_ids"
+                        context="{'form_view_ref': 'budget_plan.view_budget_plan_form_without_header'}"
+                        attrs="{'invisible': [('has_old_revisions', '=', False)]}"
+                    >
+                        <tree>
+                            <field name="name" />
+                            <field name="create_date" string="Superseeded on" />
+                            <field name="create_uid" string="Superseeded by" />
+                            <field name="state" invisible="1" />
+                        </tree>
+                    </field>
+                    <group attrs="{'invisible': [('current_revision_id', '=', False)]}">
+                        <field name="current_revision_id" />
+                        <field name="has_old_revisions" invisible="1" />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <record id="budget_plan.budget_plan_action" model="ir.actions.act_window">
+        <field
+            name="context"
+        >{'active_test': False, 'search_default_current_period': 1}</field>
+    </record>
+</odoo>
