@@ -1,3 +1,0 @@
-"id","name","model_id:id","group_id:id","perm_read","perm_write","perm_create","perm_unlink"
-read_budget_constraint,read_budget_constraint,model_budget_constraint,,1,0,0,0
-manage_budget_constraint,manage_budget_constraint,model_budget_constraint,budget_control.group_budget_control_manager,1,1,1,1
