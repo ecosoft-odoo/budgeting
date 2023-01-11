@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!-- Check budget allocation limit -->
+    <record id="check_budget_allocation_over_limit" model="budget.constraint">
+        <field name="name">Check Budget Allocation Over Limit</field>
+        <field
+            name="server_action_id"
+            ref="budget_allocation.ir_server_action_check_budget_allocation_constraint"
+        />
+    </record>
+</odoo>

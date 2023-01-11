@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!-- Check budget allocation limit -->
+    <record
+        id="ir_server_action_check_budget_allocation_constraint"
+        model="ir.actions.server"
+    >
+        <field name="name">Check Budget Allocation Over Limit</field>
+        <field name="model_id" ref="budget_control.model_budget_constraint" />
+        <field name="state">code</field>
+        <field name="code">
+if record:
+    doclines = record._context.get("doclines", False)
+    if doclines._name == "account.move.line" and doclines.move_id.not_affect_budget:
+        action = False
+    else:
+        message_error = doclines.mapped("budget_move_ids").check_budget_allocation_limit(doclines)
+        if message_error:
+            action = message_error
+        </field>
+    </record>
+</odoo>
