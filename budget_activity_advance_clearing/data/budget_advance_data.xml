@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="budget_kpi_advance" model="budget.kpi">
+        <field name="name">Employee Advance</field>
+    </record>
+    <record id="budget_activity_advance" model="budget.activity">
+        <field name="name">Employee Advance</field>
+        <field
+            name="kpi_id"
+            ref="budget_activity_advance_clearing.budget_kpi_advance"
+        />
+    </record>
+</odoo>

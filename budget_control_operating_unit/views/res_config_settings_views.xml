@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form_budget" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.budget</field>
+        <field name="model">res.config.settings</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.res_config_settings_view_form_budget"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//div[hasclass('settings')]//div[@data-key='budget_control']"
+                position="inside"
+            >
+                <h2>Budget Transfer</h2>
+                <div
+                    class="row mt16 o_settings_container"
+                    name="budget_transfer_setting_container"
+                >
+                    <div
+                        class="col-12 col-lg-6 o_setting_box"
+                        id="group_access_all_ou_transfer_from"
+                    >
+                        <div class="o_setting_left_pane">
+                            <field name="group_access_all_ou_transfer_from" />
+                        </div>
+                        <div class="o_setting_right_pane">
+                            <label for="group_access_all_ou_transfer_from" />
+                            <div class="text-muted">
+                                If checked, the user will be able to see the budget from all documents in budget transfer.
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="col-12 col-lg-6 o_setting_box"
+                        id="group_access_all_ou_transfer_to"
+                    >
+                        <div class="o_setting_left_pane">
+                            <field name="group_access_all_ou_transfer_to" />
+                        </div>
+                        <div class="o_setting_right_pane">
+                            <label for="group_access_all_ou_transfer_to" />
+                            <div class="text-muted">
+                                If checked, the user will be able to see the budget to all documents in budget transfer.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
