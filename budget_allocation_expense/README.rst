@@ -25,7 +25,8 @@ Budget Allocation - Expense
 
 |badge1| |badge2| |badge3| |badge4| |badge5| 
 
-This module adds funds and analytic tag conditions for expenses in order to generate accurate expense reports.
+This module adds funds and analytic tag conditions for expenses in order to generate accurate budget monitoring and budget source fund monitoring.
+
 It allows to allocate expenses to specific funds and to analyze expenses by specific tags,
 which can be useful for financial management and budgeting.
 Additionally, it also enables to track expenses effectively,
