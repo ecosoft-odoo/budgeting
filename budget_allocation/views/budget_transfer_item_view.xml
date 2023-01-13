@@ -24,6 +24,7 @@
                     widget="many2many_tags"
                     options="{'no_create': True, 'no_open': True}"
                     domain="[('id', 'in', analytic_tag_from_all or []), '|', ('id', 'in', domain_tag_from_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                    groups="analytic.group_analytic_tags"
                 />
             </xpath>
             <xpath expr="//field[@name='budget_control_to_id']" position="after">
@@ -45,6 +46,7 @@
                     widget="many2many_tags"
                     options="{'no_create': True, 'no_open': True}"
                     domain="[('id', 'in', analytic_tag_to_all or []), '|', ('id', 'in', domain_tag_to_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                    groups="analytic.group_analytic_tags"
                 />
 
             </xpath>
