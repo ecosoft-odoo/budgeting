@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <!-- New Group for install without demo -->
+    <record id="analytic_group_project" model="account.analytic.group">
+        <field name="name">Project</field>
+    </record>
+    <record id="analytic_group_department" model="account.analytic.group">
+        <field name="name">Department</field>
+    </record>
+</odoo>
