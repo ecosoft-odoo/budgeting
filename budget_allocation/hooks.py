@@ -14,14 +14,15 @@ def post_init_hook(cr, registry):
         return
     _models = env["ir.model"].search(
         [
-            ("model", "in", AnalyticDimension.get_model_names()),
             (
                 "model",
-                "not in",
+                "in",
                 [
-                    "account.move.line",
-                    "account.analytic.line",
-                    "account.invoice.report",
+                    "budget.allocation.line",
+                    "account.budget.move",
+                    "budget.move.adjustment.item",
+                    "budget.monitor.report",
+                    "budget.source.fund.report",
                 ],
             ),
         ],
