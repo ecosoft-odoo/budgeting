@@ -41,10 +41,12 @@ class BaseBudgetMove(models.AbstractModel):
         analytic_tag_domain = " and ".join(analytic_tag_domain)
         where_query = (
             "analytic_account_id = {analytic} and active = True"
-            " and {fund_domain} and {analytic_tag_domain}".format(
+            " and {fund_domain} {analytic_tag_domain}".format(
                 analytic=docline[docline._budget_analytic_field].id,
                 fund_domain=fund_domain,
-                analytic_tag_domain=analytic_tag_domain,
+                analytic_tag_domain="and {}".format(analytic_tag_domain)
+                if analytic_tag_domain
+                else "",
             )
         )
         return where_query

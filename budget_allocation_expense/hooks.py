@@ -14,17 +14,7 @@ def post_init_hook(cr, registry):
         return
     _models = env["ir.model"].search(
         [
-            (
-                "model",
-                "in",
-                [
-                    "budget.allocation.line",
-                    "account.budget.move",
-                    "budget.move.adjustment.item",
-                    "budget.monitor.report",
-                    "budget.source.fund.report",
-                ],
-            ),
+            ("model", "in", ["expense.budget.move", "hr.expense"]),
         ],
         order="id",
     )
