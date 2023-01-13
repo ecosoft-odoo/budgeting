@@ -167,6 +167,9 @@ class BudgetTransferItem(models.Model):
     def _compute_amount_available(self):
         res = super()._compute_amount_available()
         for rec in self:
+            # Not update amount when transferred or reversed
+            if rec.state in ["transfer", "reverse"]:
+                continue
             # check condition for not error with query data
             if rec.fund_from_id or rec.analytic_tag_from_ids:
                 allocation_line_from_available = rec._get_allocation_line_available(
@@ -291,7 +294,7 @@ class BudgetTransferItem(models.Model):
 
     def transfer(self):
         res = super().transfer()
-        for rec in self:
+        for rec in self.sudo():
             transfer_amount = rec.amount
             # Transfer amount more than budget allocation per line
             for ba_line in rec.allocation_line_from_ids:
@@ -317,7 +320,7 @@ class BudgetTransferItem(models.Model):
 
     def reverse(self):
         res = super().reverse()
-        for rec in self:
+        for rec in self.sudo():
             reverse_amount = rec.amount
             # Update release amount
             rec.allocation_line_from_ids[0].released_amount += reverse_amount
