@@ -7,7 +7,9 @@ from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tests.common import Form
 
-from odoo.addons.budget_allocation.tests.test_budget_allocation import TestBudgetAllocation
+from odoo.addons.budget_allocation.tests.test_budget_allocation import (
+    TestBudgetAllocation,
+)
 
 
 @tagged("post_install", "-at_install")
@@ -66,7 +68,7 @@ class TestBudgetAllocationExpense(TestBudgetAllocation):
         # Control budget
         budget_control.action_done()
         self.budget_period.control_budget = True
-        # Commit actual without allocation (no fund, no tags)
+        # Commit expense without allocation (no fund, no tags)
         expense = self._create_expense_sheet(
             [
                 {
@@ -74,7 +76,7 @@ class TestBudgetAllocationExpense(TestBudgetAllocation):
                     "product_qty": 1,
                     "price_unit": 30,
                     "analytic_id": self.costcenter1,
-                    "fund_id": self.fund1_g1
+                    "fund_id": self.fund1_g1,
                 },
             ]
         )
