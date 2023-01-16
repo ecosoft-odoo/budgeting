@@ -39,7 +39,7 @@ class TestBudgetAllocationPurchase(TestBudgetAllocation):
         return purchase
 
     @freeze_time("2001-02-01")
-    def test_01_commitment_expense_fund(self):
+    def test_01_commitment_purchase_fund(self):
         """Create same analytic, difference fund, difference analytic tags
         line 1: Costcenter1, Fund1, Tag1, 50.0
         line 2: Costcenter1, Fund1, Tag2, 100.0
