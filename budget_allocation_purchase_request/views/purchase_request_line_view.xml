@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="purchase_request_line_tree" model="ir.ui.view">
+        <field name="name">purchase_request_line_tree</field>
+        <field name="model">purchase.request.line</field>
+        <field name="inherit_id" ref="purchase_request.purchase_request_line_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_account_id']" position="after">
+                <field name="fund_id" />
+            </xpath>
+        </field>
+    </record>
+    <record id="purchase_request_line_form" model="ir.ui.view">
+        <field name="name">purchase.request.line.form</field>
+        <field name="model">purchase.request.line</field>
+        <field name="inherit_id" ref="purchase_request.purchase_request_line_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//group[@name='settings']/field[@name='analytic_account_id']"
+                position="after"
+            >
+                <field name="fund_all" invisible="1" />
+                <field
+                    name="fund_id"
+                    attrs="{'readonly': [('is_editable', '=', False)]}"
+                />
+                <field name="domain_tag_ids" invisible="1" />
+                <field name="analytic_tag_all" invisible="1" />
+            </xpath>
+            <xpath
+                expr="//group[@name='settings']/field[@name='analytic_tag_ids']"
+                position="attributes"
+            >
+                <attribute name="widget">many2many_tags</attribute>
+                <attribute
+                    name="domain"
+                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
