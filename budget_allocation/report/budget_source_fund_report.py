@@ -162,7 +162,7 @@ class SourceFundMonitorReport(models.Model):
         """
 
     def _where_budget(self):
-        return """ where sf.active is true """
+        return """where sf.active is true"""
 
     def _select_statement(self, amount_type):
         return self._get_select_amount_types()[amount_type]
