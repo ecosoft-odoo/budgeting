@@ -214,7 +214,7 @@
                             <field name="plan_id" invisible="1" />
                         </group>
                         <group name="budget_allocation_right">
-                            <field name="active" />
+                            <field name="active" invisible="1" />
                             <field
                                 name="company_id"
                                 groups="base.group_multi_company"
