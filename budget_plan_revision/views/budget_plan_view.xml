@@ -56,7 +56,10 @@
                 <field name="revision_number" readonly="1" />
             </xpath>
             <xpath expr="//notebook" position="inside">
-                <page string="Revisions">
+                <page
+                    string="Revisions"
+                    attrs="{'invisible': [('has_old_revisions', '=', False)]}"
+                >
                     <field
                         name="old_revision_ids"
                         context="{'form_view_ref': 'budget_plan.view_budget_plan_form_without_header'}"
@@ -76,10 +79,5 @@
                 </page>
             </xpath>
         </field>
-    </record>
-    <record id="budget_plan.budget_plan_action" model="ir.actions.act_window">
-        <field
-            name="context"
-        >{'active_test': False, 'search_default_current_period': 1}</field>
     </record>
 </odoo>

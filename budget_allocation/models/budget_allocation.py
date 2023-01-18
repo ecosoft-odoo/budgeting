@@ -32,8 +32,10 @@ class BudgetAllocation(models.Model):
     line_ids = fields.One2many(
         comodel_name="budget.allocation.line",
         inverse_name="budget_allocation_id",
+        copy=True,
         readonly=True,
         states={"draft": [("readonly", "=", False)]},
+        context={"active_test": False},
     )
     company_id = fields.Many2one(
         comodel_name="res.company",

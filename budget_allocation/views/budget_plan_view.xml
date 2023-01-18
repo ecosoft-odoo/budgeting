@@ -5,9 +5,13 @@
         <field name="model">budget.plan</field>
         <field name="inherit_id" ref="budget_plan.view_budget_plan_tree" />
         <field name="arch" type="xml">
-            <field name="total_amount" position="before">
+            <xpath expr="//field[@name='total_amount']" position="before">
                 <field name="init_amount" />
-            </field>
+            </xpath>
+            <xpath expr="//tree" position="attributes">
+                <attribute name="create">0</attribute>
+                <attribute name="edit">0</attribute>
+            </xpath>
         </field>
     </record>
     <record id="view_budget_plan_form" model="ir.ui.view">
@@ -20,6 +24,11 @@
                 position="before"
             >
                 <field name="init_amount" />
+            </xpath>
+            <!-- Not allow create/edit plan line -->
+            <xpath expr="//form" position="attributes">
+                <attribute name="create">0</attribute>
+                <attribute name="edit">0</attribute>
             </xpath>
         </field>
     </record>
