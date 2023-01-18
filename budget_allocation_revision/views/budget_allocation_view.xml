@@ -1,19 +1,35 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <record id="view_budget_plan_line_tree" model="ir.ui.view">
-        <field name="name">budget.plan.line.tree</field>
-        <field name="model">budget.plan.line</field>
-        <field name="inherit_id" ref="budget_plan.view_budget_plan_line_tree" />
+    <!-- Budget Allocation -->
+    <record id="budget_allocation_view_form_without_header" model="ir.ui.view">
+        <field name="name">budget.allocation.view.form</field>
+        <field name="model">budget.allocation</field>
+        <field name="inherit_id" ref="budget_allocation.budget_allocation_view_form" />
+        <field name="priority" eval="35" />
+        <field name="mode">primary</field>
         <field name="arch" type="xml">
-            <xpath expr="//tree" position="inside">
-                <field name="revision_number" optional="hide" />
+            <xpath expr="//header" position="attributes">
+                <attribute name="invisible">True</attribute>
             </xpath>
         </field>
     </record>
-    <record id="budget_plan_filter" model="ir.ui.view">
-        <field name="name">budget.plan.filter</field>
-        <field name="model">budget.plan</field>
-        <field name="inherit_id" ref="budget_plan.budget_plan_filter" />
+    <record id="budget_allocation_view_tree" model="ir.ui.view">
+        <field name="name">budget.allocation.view.tree</field>
+        <field name="model">budget.allocation</field>
+        <field name="inherit_id" ref="budget_allocation.budget_allocation_view_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state']" position="before">
+                <field name="revision_number" />
+            </xpath>
+        </field>
+    </record>
+    <record id="budget_allocation_view_search" model="ir.ui.view">
+        <field name="name">budget.allocation.view.search</field>
+        <field name="model">budget.allocation</field>
+        <field
+            name="inherit_id"
+            ref="budget_allocation.budget_allocation_view_search"
+        />
         <field name="arch" type="xml">
             <xpath expr="//search" position="inside">
                 <filter
@@ -24,25 +40,12 @@
             </xpath>
         </field>
     </record>
-    <record id="view_budget_plan_tree" model="ir.ui.view">
-        <field name="name">budget.plan.tree</field>
-        <field name="model">budget.plan</field>
-        <field name="inherit_id" ref="budget_plan.view_budget_plan_tree" />
+    <record id="budget_allocation_view_form" model="ir.ui.view">
+        <field name="name">budget.allocation.view.form</field>
+        <field name="model">budget.allocation</field>
+        <field name="inherit_id" ref="budget_allocation.budget_allocation_view_form" />
         <field name="arch" type="xml">
-            <field name="state" position="before">
-                <field name="revision_number" />
-            </field>
-        </field>
-    </record>
-    <record id="view_budget_plan_form" model="ir.ui.view">
-        <field name="name">budget.plan.form</field>
-        <field name="model">budget.plan</field>
-        <field name="inherit_id" ref="budget_plan.view_budget_plan_form" />
-        <field name="arch" type="xml">
-            <xpath
-                expr="//header/button[@name='action_create_update_budget_control']"
-                position="after"
-            >
+            <xpath expr="//header/button[@name='action_draft']" position="before">
                 <button
                     name="create_revision"
                     string="New Revision"
@@ -51,7 +54,7 @@
                     confirm="This operation cannot be undone. Are you sure to continue?"
                 />
             </xpath>
-            <xpath expr="//group[@name='budget_plan_right']" position="inside">
+            <xpath expr="//group[@name='budget_allocation_right']" position="inside">
                 <field name="init_revision" />
                 <field name="revision_number" readonly="1" />
             </xpath>

@@ -15,13 +15,11 @@ class BudgetPlan(models.Model):
     old_revision_ids = fields.One2many(
         comodel_name="budget.plan",
     )
-    init_revision = fields.Boolean(
-        string="Initial Version", default=True, readonly=True
-    )
+    init_revision = fields.Boolean(default=True, readonly=True)
 
     def _query_budget_controls_revision(self, domain_analytics, date_from, date_to):
+        """Find revisions of budget_controls, and use latest one to create_revision()"""
         cr = self._cr
-        # Find revisions of budget_controls, and use latest one to create_revision()
         query = """
             SELECT bc.id
             FROM budget_control bc

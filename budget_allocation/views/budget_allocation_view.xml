@@ -10,13 +10,13 @@
                 <field name="budget_allocation_id" invisible="1" />
                 <field name="date_from" invisible="1" />
                 <field name="date_to" invisible="1" />
+                <field name="fund_id" options="{'no_create': 1}" />
+                <field name="fund_group_id" optional="show" />
                 <field
                     name="analytic_account_id"
                     domain="[('bm_date_to', '&gt;=', date_from), ('bm_date_from', '&lt;=', date_to)]"
                     options="{'no_create': 1}"
                 />
-                <field name="fund_id" options="{'no_create': 1}" />
-                <field name="fund_group_id" optional="show" />
                 <field name="domain_tag_ids" invisible="1" />
                 <field
                     name="analytic_tag_ids"
@@ -42,16 +42,8 @@
                     readonly="True"
                     sum="Total Released Amount"
                 />
-                <field
-                    name="company_id"
-                    optional="show"
-                    groups="base.group_multi_company"
-                />
-                <field
-                    name="currency_id"
-                    optional="show"
-                    groups="base.group_multi_currency"
-                />
+                <field name="company_id" invisible="1" />
+                <field name="currency_id" invisible="1" />
                 <field name="active" invisible="1" />
             </tree>
         </field>
@@ -222,7 +214,7 @@
                             <field name="plan_id" invisible="1" />
                         </group>
                         <group name="budget_allocation_right">
-                            <field name="active" />
+                            <field name="active" invisible="1" />
                             <field
                                 name="company_id"
                                 groups="base.group_multi_company"
