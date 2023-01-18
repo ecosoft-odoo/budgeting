@@ -16,6 +16,7 @@
     "data": [
         "views/budget_allocation_view.xml",
         "views/budget_plan_view.xml",
+        "report/budget_source_fund_report_view.xml",
     ],
     "installable": True,
     "maintainers": ["Saran440"],
