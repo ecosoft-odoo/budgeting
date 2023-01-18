@@ -39,9 +39,11 @@ class BudgetAllocation(models.Model):
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
+        string="Company",
         default=lambda self: self.env.user.company_id,
         required=True,
-        string="Company",
+        readonly=True,
+        states={"draft": [("readonly", "=", False)]},
     )
     currency_id = fields.Many2one(
         comodel_name="res.currency", related="company_id.currency_id"
