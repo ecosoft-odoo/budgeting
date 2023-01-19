@@ -12,7 +12,7 @@ from odoo.addons.budget_control.tests.common import BudgetControlCommon
 
 
 @tagged("post_install", "-at_install")
-class TestBudgetControlRevision(BudgetControlCommon):
+class TestBudgetControlRevisionLockPeriod(BudgetControlCommon):
     @classmethod
     @freeze_time("2001-02-01")
     def setUpClass(cls):
@@ -47,15 +47,12 @@ class TestBudgetControlRevision(BudgetControlCommon):
         )
 
     @freeze_time("2001-02-01")
-    def test_01_budget_control_revision(self):
+    def test_01_budget_control_revision_lock_date(self):
         """Revision budget control, commitment should normal process"""
         self.assertTrue(self.budget_control.init_revision)
         self.assertEqual(self.budget_control.revision_number, 0)
         self.assertEqual(self.budget_control.amount_budget, 2400.0)
-        # Check state not cancel (in tree view), not allow to revision
         self.assertEqual(self.budget_control.state, "draft")
-        with self.assertRaises(UserError):
-            self.budget_control.action_create_revision()
         self.budget_control.action_cancel()
         self.assertEqual(self.budget_control.state, "cancel")
         revision_val = self.budget_control.action_create_revision()
@@ -65,17 +62,16 @@ class TestBudgetControlRevision(BudgetControlCommon):
         self.assertFalse(self.budget_control.active)
         self.assertFalse(new_budget_control.init_revision)
         self.assertEqual(new_budget_control.revision_number, 1)
-        self.assertEqual(self.budget_control.amount_budget, 0.0)
-        self.assertEqual(new_budget_control.amount_budget, 2400.0)
 
-        # Check budget must commit with newest budget always.
-        bill1 = self._create_simple_bill(self.costcenter1, self.account_kpi1, 400)
-        # Allocate and control budget
-        self.budget_period.control_budget = True
-        new_budget_control.allocated_amount = 2400
-        new_budget_control.action_done()
-        bill1.action_post()
-        self.assertTrue(bill1.budget_move_ids)
-        # trigger check amount budget
-        new_budget_control._compute_budget_info()
-        self.assertEqual(new_budget_control.amount_balance, 2000.0)
+        # Config no lock amount, users can editing previous amount
+        self.env.company.budget_control_revision_lock_amount = "none"
+        new_budget_control.line_ids[0].amount = 100
+
+        # Config lock amount current period, users can not editing previous amount
+        self.env.company.budget_control_revision_lock_amount = "current"
+        self.assertFalse(new_budget_control.line_ids[0].is_readonly)
+        new_budget_control.line_ids._compute_amount_readonly()
+        # Check amount should not editable in this range date
+        self.assertTrue(new_budget_control.line_ids[0].is_readonly)
+        with self.assertRaises(UserError):
+            new_budget_control.line_ids[0].amount = 100
