@@ -2,17 +2,22 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 {
-    "name": "Budget Control - Purchase Requisition",
+    "name": "Budget Activity - Purchase Requisition",
+    "summary": "Bridget module to pass activity, PR -> Tende -> PO",
     "version": "15.0.1.0.0",
+    "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-analytic",
     "depends": [
-        "budget_control_purchase_request",
-        "purchase_request_to_requisition",
+        "budget_activity_purchase_request",
+        "budget_control_purchase_requisition",
     ],
-    "data": [],
+    "data": [
+        "views/purchase_requisition_view.xml",
+    ],
     "installable": True,
-    "maintainers": ["Saran440"],
+    "auto_install": True,
+    "maintainers": ["kittiu"],
     "development_status": "Alpha",
 }
