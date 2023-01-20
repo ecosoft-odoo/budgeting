@@ -19,8 +19,6 @@ class TestBudgetAllocationPurchaseRequest(TestBudgetAllocation):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # # Purchase method
-        # cls.product1.product_tmpl_id.purchase_method = "purchase"
 
     @freeze_time("2001-02-01")
     def _create_purchase_request(self, pr_lines):
