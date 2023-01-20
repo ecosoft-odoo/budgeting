@@ -20,6 +20,7 @@
         "views/budget_menuitem.xml",
         "views/budget_move_adjustment_view.xml",
     ],
+    "demo": ["demo/budget_activity_demo.xml"],
     "installable": True,
     "maintainers": ["kittiu"],
     "development_status": "Alpha",

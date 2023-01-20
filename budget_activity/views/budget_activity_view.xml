@@ -17,7 +17,7 @@
         <field name="model">budget.activity.keyword</field>
         <field name="priority" eval="15" />
         <field name="arch" type="xml">
-            <search string="Search Budget Activity Keyword">
+            <search string="Search Budget Activity Keywords">
                 <field
                     name="name"
                     string="Keyword"
@@ -43,7 +43,7 @@
         <field name="name">budget.activity.view.form</field>
         <field name="model">budget.activity.keyword</field>
         <field name="arch" type="xml">
-            <form string="Budget Activity Keyword">
+            <form string="Budget Activity Keywords">
                 <sheet>
                     <widget
                         name="web_ribbon"

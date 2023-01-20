@@ -47,7 +47,7 @@ class TestBudgetControlRevisionLockPeriod(BudgetControlCommon):
         )
 
     @freeze_time("2001-02-01")
-    def test_01_budget_control_revision_lock_date(self):
+    def test_01_budget_control_revision_lock_amount(self):
         """Revision budget control, commitment should normal process"""
         self.assertTrue(self.budget_control.init_revision)
         self.assertEqual(self.budget_control.revision_number, 0)
