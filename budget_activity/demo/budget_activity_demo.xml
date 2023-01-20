@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <!-- Add Activity Demo -->
+    <record id="budget_activity_expense_demo" model="budget.activity">
+        <field name="name">Expense</field>
+        <field name="kpi_id" ref="budget_control.budget_kpi1_demo" />
+        <field name="account_id" eval="ref('l10n_generic_coa.expense')" />
+    </record>
+    <record id="budget_activity_purchase_equipment_demo" model="budget.activity">
+        <field name="name">Purchase of Equipments</field>
+        <field name="kpi_id" ref="budget_control.budget_kpi2_demo" />
+        <field name="account_id" eval="ref('l10n_generic_coa.expense_invest')" />
+    </record>
+    <record id="budget_activity_rent_demo" model="budget.activity">
+        <field name="name">Rent</field>
+        <field name="kpi_id" ref="budget_control.budget_kpi3_demo" />
+        <field name="account_id" eval="ref('l10n_generic_coa.expense_rent')" />
+    </record>
+    <!-- Template Demo -->
+    <record
+        id="budget_control.budget_template_line_demo_kpi_600000"
+        model="budget.template.line"
+    >
+        <field
+            name="activity_ids"
+            eval="[(4, ref('budget_activity.budget_activity_expense_demo'))]"
+        />
+    </record>
+    <record
+        id="budget_control.budget_template_line_demo_kpi_611000"
+        model="budget.template.line"
+    >
+        <field
+            name="activity_ids"
+            eval="[(4, ref('budget_activity.budget_activity_purchase_equipment_demo'))]"
+        />
+    </record>
+    <record
+        id="budget_control.budget_template_line_demo_kpi_612000"
+        model="budget.template.line"
+    >
+        <field
+            name="activity_ids"
+            eval="[(4, ref('budget_activity.budget_activity_rent_demo'))]"
+        />
+    </record>
+
+</odoo>
