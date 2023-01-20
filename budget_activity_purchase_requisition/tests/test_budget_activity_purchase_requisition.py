@@ -77,7 +77,7 @@ class TestBudgetActivityPurchaseRequisition(TestBudgetActivity):
         # Check PR link to TE must have 1
         self.assertEqual(purchase_request.requisition_count, 1)
         requisition = purchase_request.line_ids.requisition_lines.requisition_id
-        # activity (TE Line) = activity (PR Line)
+        # activity (PR Line) = activity (TE Line)
         self.assertEqual(
             purchase_request.line_ids.activity_id,
             requisition.line_ids.activity_id,
@@ -90,6 +90,7 @@ class TestBudgetActivityPurchaseRequisition(TestBudgetActivity):
             }
         )
         purchase._onchange_requisition_id()
+        # activity (TE Line) = activity (PO Line)
         self.assertEqual(
             purchase.order_line.activity_id, requisition.line_ids.activity_id
         )
