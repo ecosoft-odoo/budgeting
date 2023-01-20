@@ -16,7 +16,7 @@
     <menuitem
         id="budget_budget_activity_keyword_menu"
         parent="budget_activity.budget_main_budget_activity_menu"
-        name="Budget Activity Keyword"
+        name="Budget Activity Keywords"
         action="budget_activity_keyword_action"
         sequence="20"
     />

@@ -35,7 +35,7 @@ class BudgetActivity(models.Model):
         relation="budget_activity_keyword_rel",
         column1="budget_activity_id",
         column2="budget_activity_keyword_id",
-        string="Keyword",
+        string="Keywords",
         help="Optional keyword you may want to assign for search",
     )
 
