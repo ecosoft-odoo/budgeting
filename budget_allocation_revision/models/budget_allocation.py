@@ -3,7 +3,7 @@
 
 import ast
 
-from odoo import fields, models, api, _
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -58,8 +58,11 @@ class BudgetAllocation(models.Model):
     def check_active_revision(self):
         """After revision allocation, not allow unarchive old version allocation"""
         non_current_revisions = self.filtered(
-            lambda l: l.active and l.current_revision_id and l.current_revision_id != l)
+            lambda l: l.active and l.current_revision_id and l.current_revision_id != l
+        )
         if non_current_revisions:
-            raise UserError(_(
-                "You cannot unarchive a budget allocation that is not the current revision."
-            ))
+            raise UserError(
+                _(
+                    "You cannot unarchive a budget allocation that is not the current revision."
+                )
+            )
