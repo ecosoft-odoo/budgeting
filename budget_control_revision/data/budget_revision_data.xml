@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <!-- Server action: multi revision -->
+    <record id="action_revision_budget_control" model="ir.actions.server">
+        <field name="name">New Revision</field>
+        <field name="model_id" ref="budget_control.model_budget_control" />
+        <field name="binding_model_id" ref="budget_control.model_budget_control" />
+        <field name="state">code</field>
+        <field
+            name="groups_id"
+            eval="[(4, ref('budget_control.group_budget_control_manager'))]"
+        />
+        <field name="binding_view_types">list</field>
+        <field name="code">
+action = records.action_create_revision()
+        </field>
+    </record>
+</odoo>

@@ -15,10 +15,11 @@ from odoo.addons.budget_allocation.tests.test_budget_allocation import (
 
 
 @tagged("post_install", "-at_install")
-class TestBudgetAllocationPurchaseRequest(TestBudgetAllocation):
+class TestBudgetAllocationPurchaseRequisition(TestBudgetAllocation):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.pr_te_wiz = cls.env["purchase.request.line.make.purchase.requisition"]
 
     @freeze_time("2001-02-01")
     def _create_purchase_request(self, pr_lines):
@@ -36,7 +37,7 @@ class TestBudgetAllocationPurchaseRequest(TestBudgetAllocation):
         return purchase_request
 
     @freeze_time("2001-02-01")
-    def test_01_commitment_purchase_request_fund(self):
+    def test_01_commitment_purchase_request_to_requisition(self):
         """Create same analytic, difference fund, difference analytic tags
         line 1: Costcenter1, Fund1, Tag1, 50.0
         line 2: Costcenter1, Fund1, Tag2, 100.0
@@ -88,19 +89,36 @@ class TestBudgetAllocationPurchaseRequest(TestBudgetAllocation):
         self.assertEqual(budget_control.amount_purchase_request, 30)
         self.assertEqual(budget_control.amount_purchase, 0)
         self.assertEqual(budget_control.amount_balance, 220)
-        # Create PR from PO
-        MakePO = self.env["purchase.request.line.make.purchase.order"]
-        view_id = "purchase_request.view_purchase_request_line_make_purchase_order"
-        ctx = {
-            "active_model": "purchase.request",
-            "active_ids": [purchase_request.id],
-        }
-        with Form(MakePO.with_context(**ctx), view=view_id) as w:
-            w.supplier_id = self.vendor
-        wizard = w.save()
-        res = wizard.make_purchase_order()
-        purchase = self.env["purchase.order"].search(res["domain"])
-        # Check quantity, fund and analytic tags of purchase
-        self.assertEqual(purchase.order_line[0].product_qty, 3)
-        self.assertEqual(purchase.order_line[0].fund_id, self.fund1_g1)
-        self.assertEqual(purchase.order_line[0].analytic_tag_ids, self.analytic_tag1)
+
+        # Check create Agreement from PR, activity must be equal PR
+        wiz = self.pr_te_wiz.with_context(
+            active_model="purchase.request", active_ids=[purchase_request.id]
+        ).create({})
+        self.assertEqual(len(wiz.item_ids), 1)
+        wiz.make_purchase_requisition()
+        # Check PR link to TE must have 1
+        self.assertEqual(purchase_request.requisition_count, 1)
+        requisition = purchase_request.line_ids.requisition_lines.requisition_id
+        # activity (PR Line) = activity (TE Line)
+        self.assertEqual(
+            purchase_request.line_ids.fund_id,
+            requisition.line_ids.fund_id,
+        )
+        self.assertEqual(
+            purchase_request.line_ids.analytic_tag_ids,
+            requisition.line_ids.analytic_tag_ids,
+        )
+        # Create Purchase from Agreement, activtiy must be equal Agreement
+        purchase = self.env["purchase.order"].create(
+            {
+                "partner_id": self.env.ref("base.res_partner_12").id,
+            }
+        )
+        with Form(purchase) as p:
+            p.requisition_id = requisition
+        p.save()
+        # activity (TE Line) = activity (PO Line)
+        self.assertEqual(purchase.order_line.fund_id, requisition.line_ids.fund_id)
+        self.assertEqual(
+            purchase.order_line.analytic_tag_ids, requisition.line_ids.analytic_tag_ids
+        )
