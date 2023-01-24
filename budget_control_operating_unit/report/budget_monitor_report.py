@@ -9,15 +9,17 @@ class BudgetMonitorReport(models.Model):
 
     operating_unit_id = fields.Many2one(comodel_name="operating.unit")
 
+    def _get_group_access_all_ou(self):
+        """Hook this function for add group access all ou"""
+        return self.env.user.has_group("budget_control.group_budget_control_manager")
+
     def _get_where_clause(self):
         """Show monitoring according to the operating unit where the user is located,
         except for budget managers and user with the right to see everything"""
         where_clause = super()._get_where_clause()
         operating_unit_ids = self.env.user.operating_unit_ids
-        group_budget_manager = self.env.user.has_group(
-            "budget_control.group_budget_control_manager"
-        )
-        if group_budget_manager or self._context.get("force_all_ou", False):
+        group_access_all_ou = self._get_group_access_all_ou()
+        if group_access_all_ou or self._context.get("force_all_ou", False):
             operating_unit_ids = self.env["operating.unit"].sudo().search([])
         if not operating_unit_ids:
             return where_clause
