@@ -6,12 +6,8 @@ from odoo import models
 class BudgetMonitorReport(models.Model):
     _inherit = "budget.monitor.report"
 
-    def _get_operating_unit(self):
-        """Allow user group access all ou can see all budget monitoring"""
-        ou_id = super()._get_operating_unit()
-        all_ou = self.env.user.has_group(
+    def _get_group_access_all_ou(self):
+        """If user have a group access all ou, return True"""
+        return super()._get_group_access_all_ou() or self.env.user.has_group(
             "budget_control_operating_unit_access_all.group_all_ou_budget_control"
         )
-        if all_ou:
-            ou_id = self.env["operating.unit"].sudo().search([])
-        return ou_id
