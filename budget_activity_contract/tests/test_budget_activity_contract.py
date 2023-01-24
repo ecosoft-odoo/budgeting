@@ -79,8 +79,7 @@ class TestBudgetActivityContract(TestBudgetActivity):
         contract.recurring_create_invoice()
         self.assertEqual(contract.invoice_count, 1)
         invoice = contract._get_related_invoices()[:1]
-        # Change qty to 1, will not make invoice return by qty like PO <-> INV
-        # It will always return the full line amount in the same way PR <-> PO
+        # Change qty to 1, will not make invoice return by qty like Contract <-> INV
         invoice.with_context(check_move_validity=False).invoice_line_ids[0].quantity = 1
         invoice.with_context(check_move_validity=False)._onchange_invoice_line_ids()
         invoice.action_post()
@@ -89,7 +88,7 @@ class TestBudgetActivityContract(TestBudgetActivity):
         self.assertEqual(self.budget_control.amount_commit, 20)
         self.assertEqual(self.budget_control.amount_actual, 10)
         self.assertEqual(self.budget_control.amount_balance, 2370)
-        # # Cancel invoice
+        # Cancel invoice
         invoice.button_cancel()
         self.budget_control.invalidate_cache()
         self.assertEqual(self.budget_control.amount_commit, 30)
