@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- line when check 'Recurrence at line level' -->
+    <record id="contract_line_form_view" model="ir.ui.view">
+        <field name="name">contract.line.form.view</field>
+        <field name="model">contract.line</field>
+        <field name="inherit_id" ref="contract.contract_line_form_view" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_account_id']" position="after">
+                <field name="fund_all" invisible="1" />
+                <field name="fund_id" />
+                <field name="domain_tag_ids" invisible="1" />
+                <field name="analytic_tag_all" invisible="1" />
+            </xpath>
+            <xpath expr="//field[@name='analytic_tag_ids']" position="attributes">
+                <attribute
+                    name="domain"
+                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
