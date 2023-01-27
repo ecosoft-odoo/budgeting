@@ -5,6 +5,7 @@ from datetime import datetime
 
 from freezegun import freeze_time
 
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tests.common import Form
 
@@ -100,6 +101,11 @@ class TestBudgetControlPurchaseManualCurrency(BudgetControlCommon):
         )
         # force date commit, as freeze_time not work for write_date
         purchase = purchase.with_context(force_date_commit=purchase.date_order)
+        purchase.order_line.price_unit = 1000
+        # Check multi-currency more than budgeting, it should error
+        with self.assertRaises(UserError):
+            purchase.button_confirm()
+        purchase.order_line.price_unit = 100
         purchase.button_confirm()
         self.assertEqual(purchase.budget_move_ids.debit, 130.81)
         purchase.button_draft()
@@ -108,6 +114,11 @@ class TestBudgetControlPurchaseManualCurrency(BudgetControlCommon):
             p.manual_currency = True
             p.custom_rate = 10.0
         self.assertEqual(purchase.custom_rate, 10.0)
+        purchase.order_line.price_unit = 100000
+        # Check multi-currency more than budgeting, it should error
+        with self.assertRaises(UserError):
+            purchase.button_confirm()
+        purchase.order_line.price_unit = 100
         purchase.button_confirm()
         # Check budget should convert with custom rate
         self.assertEqual(purchase.budget_move_ids.debit, 10.0)
