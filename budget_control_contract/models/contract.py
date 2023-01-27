@@ -5,6 +5,8 @@ from odoo import api, fields, models
 
 class ContractContract(models.Model):
     _inherit = "contract.contract"
+    _docline_rel = "contract_line_ids"
+    _docline_type = "contract"
 
     budget_move_ids = fields.One2many(
         comodel_name="contract.budget.move",
