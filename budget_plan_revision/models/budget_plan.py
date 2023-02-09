@@ -50,22 +50,32 @@ class BudgetPlan(models.Model):
         return [bc[0] for bc in cr.fetchall()]
 
     def action_create_update_budget_control(self):
-        """Update budget control to version lastest"""
+        """Update budget control to version lastest.
+        if add new analytic or amount with same revision,
+        it will call main function action_create_update_budget_control() only.
+        """
         self = self.with_context(active_test=False)
         no_bc_lines = self.line_ids.filtered_domain(
             [("budget_control_ids", "=", False)]
         )
-        analytics = no_bc_lines.mapped("analytic_account_id")
-        if len(analytics) > 1:
-            domain_analytics = "in {}".format(tuple(analytics.ids))
+        # Case new no link between budget plan line and budget control
+        if no_bc_lines:
+            analytics = no_bc_lines.mapped("analytic_account_id")
+            if len(analytics) > 1:
+                domain_analytics = "in {}".format(tuple(analytics.ids))
+            else:
+                domain_analytics = "= {}".format(analytics.id)
+            budget_control_ids = self._query_budget_controls_revision(
+                domain_analytics,
+                self.budget_period_id.bm_date_from,
+                self.budget_period_id.bm_date_to,
+            )
+            budget_controls = self.env["budget.control"].browse(budget_control_ids)
         else:
-            domain_analytics = "= {}".format(analytics.id)
-        budget_control_ids = self._query_budget_controls_revision(
-            domain_analytics,
-            self.budget_period_id.bm_date_from,
-            self.budget_period_id.bm_date_to,
-        )
-        budget_controls = self.env["budget.control"].browse(budget_control_ids)
+            # Get only revision is not equal
+            budget_controls = self.budget_control_ids.filtered(
+                lambda l: l.revision_number != self.revision_number
+            )
         # Check state budget control for user manual cancel.
         if any(bc.state != "cancel" for bc in budget_controls):
             raise UserError(
