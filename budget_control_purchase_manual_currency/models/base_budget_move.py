@@ -10,8 +10,11 @@ class BudgetDoclineMixin(models.AbstractModel):
     def _get_amount_convert_currency(
         self, amount_currency, currency, company, date_commit
     ):
-        if self[self._doc_rel].manual_currency:
-            return amount_currency * (1.0 / self[self._doc_rel].custom_rate)
+        # Expense and Advance don't have manual_currency.
+        # So, we check field first if no field skip it.
+        doc_budget = self[self._doc_rel]
+        if hasattr(doc_budget, "manual_currency") and doc_budget.manual_currency:
+            return amount_currency * (1.0 / doc_budget.custom_rate)
         return super()._get_amount_convert_currency(
             amount_currency, currency, company, date_commit
         )
