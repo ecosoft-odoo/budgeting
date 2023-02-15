@@ -1,5 +1,6 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
@@ -17,8 +18,7 @@ class BudgetPeriod(models.Model):
         activity = self.env["budget.activity"].browse(activity_id)
         if not template_line:
             raise UserError(
-                _("Chosen activity %s is not valid for budgeting")
-                % activity.display_name
+                _("Chosen activity %s is not valid in template") % activity.display_name
             )
         raise UserError(
             _(
