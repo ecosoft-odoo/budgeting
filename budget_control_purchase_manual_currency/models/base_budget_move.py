@@ -14,7 +14,12 @@ class BudgetDoclineMixin(models.AbstractModel):
         # So, we check field first if no field skip it.
         doc_budget = self[self._doc_rel]
         if hasattr(doc_budget, "manual_currency") and doc_budget.manual_currency:
-            return amount_currency * (1.0 / doc_budget.custom_rate)
+            rate = (
+                doc_budget.custom_rate
+                if doc_budget.type_currency == "inverse_company_rate"
+                else (1.0 / doc_budget.custom_rate)
+            )
+            return amount_currency * rate
         return super()._get_amount_convert_currency(
             amount_currency, currency, company, date_commit
         )
