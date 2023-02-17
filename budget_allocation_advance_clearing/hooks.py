@@ -5,16 +5,14 @@ from odoo import SUPERUSER_ID, api
 
 
 def post_init_hook(cr, registry):
-    """Update analytic tag dimension demo (if any) for new module"""
+    """Update analytic tag dimension for new module"""
     env = api.Environment(cr, SUPERUSER_ID, {})
     AnalyticDimension = env["account.analytic.dimension"]
     dimensions = AnalyticDimension.search([])
-    # skip it if not install with demo
+    # skip it if not dimension
     if not dimensions:
         return
-    _models = env["ir.model"].search(
-        [("model", "=", "advance.budget.move")], order="id"
-    )
+    _models = env["ir.model"].search([("model", "=", "advance.budget.move")])
     _models.write(
         {
             "field_id": [
