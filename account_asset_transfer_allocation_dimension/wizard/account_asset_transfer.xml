@@ -8,6 +8,9 @@
             ref="account_asset_transfer.account_asset_transfer_view_form"
         />
         <field name="arch" type="xml">
+            <xpath expr="//group/field[@name='analytic_tag_ids']" position="after">
+                <field name="not_affect_budget" />
+            </xpath>
             <xpath
                 expr="//field[@name='to_asset_ids']/tree/field[@name='analytic_tag_ids']"
                 position="after"

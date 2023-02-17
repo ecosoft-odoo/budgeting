@@ -7,6 +7,7 @@ from odoo import api, fields, models
 class AccountAsset(models.Model):
     _inherit = "account.asset"
 
+    not_affect_budget = fields.Boolean(default=True)
     fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
         index=True,

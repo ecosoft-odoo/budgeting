@@ -8,15 +8,14 @@
             ref="account_asset_management.account_asset_view_form"
         />
         <field name="arch" type="xml">
-            <xpath expr="//notebook" position="inside">
-                <field name="fund_all" widget="many2many_tags" />
-            </xpath>
             <xpath expr="//field[@name='analytic_tag_ids']" position="after">
                 <field
                     name="fund_id"
                     options="{'no_create': True}"
                     domain="[('id', 'in', fund_all)]"
                 />
+                <field name="fund_all" widget="many2many_tags" invisible="1" />
+                <field name="not_affect_budget" />
 
             </xpath>
         </field>
