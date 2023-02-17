@@ -49,14 +49,17 @@ class BudgetDoclineMixinBase(models.AbstractModel):
         source_fund_all = SourceFund.search([])
         for doc in self:
             budget_analytic_fields = doc[doc._budget_analytic_field]
-            field_allocation_line = budget_analytic_fields._fields.get(
-                "allocation_line_ids"
+            allocation_line = hasattr(
+                self.env["account.analytic.account"], "allocation_line_ids"
+            )
+            allocation_line_fund = hasattr(
+                self.env["budget.allocation.line"], "fund_id"
             )
             # show all fund, when not install 'budget_allocation_fund' module
             doc.fund_all = (
-                field_allocation_line
-                and budget_analytic_fields.allocation_line_ids.mapped("fund_id")
-                or source_fund_all
+                budget_analytic_fields.allocation_line_ids.mapped("fund_id")
+                if allocation_line and allocation_line_fund
+                else source_fund_all
             )
 
 

@@ -29,13 +29,14 @@ class AccountAsset(models.Model):
     def _compute_fund_all(self):
         SourceFund = self.env["budget.source.fund"]
         source_fund_all = SourceFund.search([])
+        allocation_line = hasattr(
+            self.env["account.analytic.account"], "allocation_line_ids"
+        )
+        allocation_line_fund = hasattr(self.env["budget.allocation.line"], "fund_id")
         for rec in self:
-            field_allocation_line = rec.account_analytic_id._fields.get(
-                "allocation_line_ids"
-            )
             # show all fund, when not install 'budget_allocation_fund' module
             rec.fund_all = (
-                field_allocation_line
-                and rec.account_analytic_id.allocation_line_ids.mapped("fund_id")
-                or source_fund_all
+                rec.account_analytic_id.allocation_line_ids.mapped("fund_id")
+                if allocation_line and allocation_line_fund
+                else source_fund_all
             )
