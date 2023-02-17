@@ -12,22 +12,7 @@ def post_init_hook(cr, registry):
     # skip it if not dimension
     if not dimensions:
         return
-    _models = env["ir.model"].search(
-        [
-            (
-                "model",
-                "in",
-                [
-                    "budget.allocation.line",
-                    "account.budget.move",
-                    "budget.move.adjustment.item",
-                    "budget.monitor.report",
-                    "budget.source.fund.report",
-                ],
-            ),
-        ],
-        order="id",
-    )
+    _models = env["ir.model"].search([("model", "=", "account.asset.transfer.line")])
     _models.write(
         {
             "field_id": [
