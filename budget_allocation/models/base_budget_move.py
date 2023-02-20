@@ -31,7 +31,7 @@ class BaseBudgetMove(models.AbstractModel):
         )
         dimensions = docline._get_dimension_fields()
         analytic_tag_domain = [
-            "({0} {1} {2} or {0} = 999999990)".format(
+            "({} {} {})".format(
                 dimension,
                 docline[dimension] and "=" or "is",
                 docline[dimension] and docline[dimension].id or "null",
