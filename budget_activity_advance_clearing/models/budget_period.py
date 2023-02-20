@@ -12,5 +12,6 @@ class BudgetPeriod(models.Model):
         kpi_advance = self.env.ref(
             "budget_activity_advance_clearing.budget_kpi_advance"
         )
-        template_lines = template_lines.filtered(lambda l: l.kpi_id != kpi_advance)
+        if template_lines._name == "budget.template.line":
+            template_lines = template_lines.filtered(lambda l: l.kpi_id != kpi_advance)
         return super()._get_budget_avaiable(analytic_id, template_lines)
