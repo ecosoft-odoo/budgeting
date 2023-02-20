@@ -27,7 +27,7 @@ class BudgetMonitorReport(models.Model):
         dimension_fields = self._get_dimension_fields()
         formatted_dimension_fields = ""
         if dimension_fields:
-            dimension_fields = [f"999999990::integer as {x}" for x in dimension_fields]
+            dimension_fields = [f"null::integer as {x}" for x in dimension_fields]
             if len(dimension_fields) == 1:
                 formatted_dimension_fields = f", {dimension_fields[0]}"
             else:
@@ -47,7 +47,7 @@ class BudgetMonitorReport(models.Model):
         dimension_fields = self._get_dimension_fields()
         formatted_dimension_fields = ""
         if dimension_fields:
-            dimension_fields = [f"999999990::integer as {x}" for x in dimension_fields]
+            dimension_fields = [f"a.{x} as {x}" for x in dimension_fields]
             if len(dimension_fields) == 1:
                 formatted_dimension_fields = f", {dimension_fields[0]}"
             else:
