@@ -16,7 +16,7 @@ class AccountAnalyticTag(models.Model):
         elif record._name == "account.analytic.line":
             not_affect_budget = record.move_id.move_id.not_affect_budget
         # field has analytic account, check control_budget in budget_period
-        elif hasattr(record, "_budget_analytic_field"):
+        if hasattr(record, "_budget_analytic_field"):
             date = record[record._budget_analytic_field].bm_date_to
             period = self.env["budget.period"]._get_eligible_budget_period(date)
             if not period.control_budget:
