@@ -37,11 +37,26 @@ This module add "Activity" element for advance/clearing commitment
 .. contents::
    :local:
 
+Configuration
+=============
+
+This module will create a new activity and KPI "Employee Advance" automatically.
+You will need to setup the Account of this activity first.
+
+* Go to Budgeting > Activity > Budget Activity > Open activity "Employee Advance"
+* Select appropriate employee advance account from your chart of account
+* Go to Budgeting > Configurations > Budget Template
+* Select your template that control budget and add KPI "Employee Advance" into Template
+
+Note:
+
+* Employee Advance account code, if not already exists, you can create one. Use type = Current Asset and check Allow Reconciliation.
+
 Usage
 =====
 
 #. Go to Expenses > My Expenses > Advances > Create new advance
-#. Select the Activity field and it will automatically change the account on the advance/clearing.
+#. Activity field is default Employee Advance and it will automatically change the account on the advance/clearing that your config.
 
 Bug Tracker
 ===========
