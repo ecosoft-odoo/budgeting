@@ -1,5 +1,5 @@
 ==================================
-Budget Activity - Advance/Clearing
+Budget Activity - Purchase Deposit
 ==================================
 
 .. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -7,17 +7,17 @@ Budget Activity - Advance/Clearing
    !! changes will be overwritten.                   !!
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-.. |badge1| image:: https://img.shields.io/badge/maturity-Alpha-red.png
+.. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
     :target: https://odoo-community.org/page/development-status
-    :alt: Alpha
+    :alt: Beta
 .. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Faccount--budgeting-lightgray.png?logo=github
-    :target: https://github.com/OCA/account-budgeting/tree/15.0/budget_activity_advance_clearing
+    :target: https://github.com/OCA/account-budgeting/tree/15.0/budget_activity_purchase_deposit
     :alt: OCA/account-budgeting
 .. |badge4| image:: https://img.shields.io/badge/weblate-Translate%20me-F47D42.png
-    :target: https://translation.odoo-community.org/projects/account-budgeting-15-0/account-budgeting-15-0-budget_activity_advance_clearing
+    :target: https://translation.odoo-community.org/projects/account-budgeting-15-0/account-budgeting-15-0-budget_activity_purchase_deposit
     :alt: Translate me on Weblate
 .. |badge5| image:: https://img.shields.io/badge/runbot-Try%20me-875A7B.png
     :target: https://runbot.odoo-community.org/runbot/88/15.0
@@ -25,12 +25,8 @@ Budget Activity - Advance/Clearing
 
 |badge1| |badge2| |badge3| |badge4| |badge5| 
 
-This module add "Activity" element for advance/clearing commitment
-
-.. IMPORTANT::
-   This is an alpha version, the data model and design can change at any time without warning.
-   Only for development or testing purpose, do not use in production.
-   `More details on development status <https://odoo-community.org/page/development-status>`_
+This module add "Activity" element on purchase deposit for
+create deposit line with activity and send it to vendor bills
 
 **Table of contents**
 
@@ -40,23 +36,24 @@ This module add "Activity" element for advance/clearing commitment
 Configuration
 =============
 
-This module will create a new activity and KPI "Employee Advance" automatically.
+This module will create a new activity and KPI "Purchase Deposit" automatically.
 You will need to setup the Account of this activity first.
 
-* Go to Budgeting > Activity > Budget Activity > Open activity "Employee Advance"
-* Select appropriate employee advance account from your chart of account
+* Go to Budgeting > Activity > Budget Activity > Open activity "Purchase Deposit"
+* Select appropriate purchase deposit account from your chart of account
 * Go to Budgeting > Configurations > Budget Template
-* Select your template that control budget and add KPI "Employee Advance" into Template
+* Select your template that control budget and add KPI "Purchase Deposit" into Template
 
-Note:
+Configuration default activity deposit
 
-* Employee Advance account code, if not already exists, you can create one. Use type = Current Asset and check Allow Reconciliation.
+* Go to Purchase > Configuration > Settings
+* At Deposit Payments, select Activity used for deposit payments
 
 Usage
 =====
 
-#. Go to Expenses > My Expenses > Advances > Create new advance
-#. Activity field is default Employee Advance and it will automatically change the account on the advance/clearing that your config.
+To use this module, you can do it with normal process purchase deposit until deposit is created.
+it will add activity that you config in deposit line and send it to vendor bills.
 
 Bug Tracker
 ===========
@@ -64,7 +61,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/OCA/account-budgeting/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us smashing it by providing a detailed and welcomed
-`feedback <https://github.com/OCA/account-budgeting/issues/new?body=module:%20budget_activity_advance_clearing%0Aversion:%2015.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/OCA/account-budgeting/issues/new?body=module:%20budget_activity_purchase_deposit%0Aversion:%2015.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -81,9 +78,7 @@ Contributors
 
 * `Ecosoft <http://ecosoft.co.th>`__:
 
-    * Kitti Upariphutthiphong <kittiu@ecosoft.co.th>
     * Saran Lim. <saranl@ecosoft.co.th>
-    * Pimolnat Suntian <pimolnats@ecosoft.co.th>
 
 Maintainers
 ~~~~~~~~~~~
@@ -106,6 +101,6 @@ Current `maintainer <https://odoo-community.org/page/maintainer-role>`__:
 
 |maintainer-Saran440| 
 
-This module is part of the `OCA/account-budgeting <https://github.com/OCA/account-budgeting/tree/15.0/budget_activity_advance_clearing>`_ project on GitHub.
+This module is part of the `OCA/account-budgeting <https://github.com/OCA/account-budgeting/tree/15.0/budget_activity_purchase_deposit>`_ project on GitHub.
 
 You are welcome to contribute. To learn how please visit https://odoo-community.org/page/Contribute.
