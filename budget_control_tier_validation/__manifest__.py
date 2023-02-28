@@ -14,6 +14,7 @@
     "data": [
         "security/budget_control_rules.xml",
         "views/budget_control_view.xml",
+        "views/budget_transfer_view.xml",
     ],
     "application": False,
     "installable": True,
