@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_budget_transfer_search" model="ir.ui.view">
+        <field name="name">view.budget.transfer.search</field>
+        <field name="model">budget.transfer</field>
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_search" />
+        <field name="arch" type="xml">
+            <search position="inside">
+                <group expand="0" string="Need actions">
+                    <filter
+                        name="needs_review"
+                        string="Needs my Review"
+                        domain="[('reviewer_ids', 'in', uid), ('state', 'not in', ['transfer', 'reverse', 'cancel'])]"
+                        help="My Budget Transfer to review"
+                    />
+                    <filter
+                        name="tier_validated"
+                        string="Validated"
+                        domain="[('validated', '=', True)]"
+                        help="Budget Transfer validated and ready to be confirmed"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>
