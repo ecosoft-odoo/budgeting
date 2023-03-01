@@ -7,6 +7,8 @@ from odoo import api, models
 class AccountPaymentRegister(models.TransientModel):
     _name = "account.payment.register"
     _inherit = ["account.payment.register", "budget.docline.mixin.base"]
+    _budget_analytic_field = "writeoff_analytic_account_id"
+    _analytic_tag_field_name = "writeoff_analytic_tag_ids"
 
     @api.onchange("activity_id")
     def _onchange_activity_id(self):
