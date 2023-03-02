@@ -8,7 +8,7 @@
             ref="account_payment_multi_deduction.view_account_payment_register_form"
         />
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='writeoff_analytic_tag_ids']" position="before">
+            <xpath expr="//field[@name='writeoff_analytic_tag_ids']" position="after">
                 <field name="analytic_tag_all" invisible="1" />
                 <field name="domain_tag_ids" invisible="1" />
                 <div
