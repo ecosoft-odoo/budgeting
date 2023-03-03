@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_move_form" model="ir.ui.view">
+        <field name="name">stock.move.form</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock_analytic.view_move_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_account_id']" position="after">
+                <field name="fund_all" widget="many2many_tags" invisible="1" />
+                <field name="fund_id" />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_move_search" model="ir.ui.view">
+        <field name="name">stock.move.search</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock_analytic.view_move_search_analytic" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_account_id']" position="after">
+                <field name="fund_id" />
+            </xpath>
+            <xpath expr="//filter[@name='analytic']" position="after">
+                <filter
+                    string="Fund"
+                    name="groupby_fund"
+                    context="{'group_by':'fund_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_picking_form" model="ir.ui.view">
+        <field name="name">stock.picking.form</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock_analytic.view_picking_form_analytic" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='move_ids_without_package']/tree/field[@name='analytic_account_id']"
+                position="after"
+            >
+                <field name="analytic_tag_all" widget="many2many_tags" invisible="1" />
+                <field name="domain_tag_ids" widget="many2many_tags" invisible="1" />
+                <field name="fund_id" />
+                <field name="fund_all" widget="many2many_tags" invisible="1" />
+            </xpath>
+            <xpath
+                expr="//field[@name='move_ids_without_package']/tree/field[@name='analytic_tag_ids']"
+                position="attributes"
+            >
+                <attribute
+                    name="domain"
+                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
