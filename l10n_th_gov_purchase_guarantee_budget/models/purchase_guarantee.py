@@ -29,7 +29,11 @@ class PurchaseGuarantee(models.Model):
             if rec.reference_model == "purchase.requisition":
                 origin_fund = rec.reference.line_ids.mapped("fund_id")
             else:
-                origin_fund = rec.reference.order_line.mapped("fund_id")
+                origin_fund = (
+                    rec.reference_model
+                    and rec.reference.order_line.mapped("fund_id")
+                    or False
+                )
             rec.fund_all = origin_fund
 
     @api.depends("analytic_account_id")
