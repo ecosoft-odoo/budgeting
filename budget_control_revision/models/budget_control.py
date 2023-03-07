@@ -21,11 +21,11 @@ class BudgetControl(models.Model):
         readonly=True,
     )
 
-    # Add budget_period_id for check constrains
+    # Add budget_period_id and analytic account for check constrains
     _sql_constraints = [
         (
             "revision_unique",
-            "unique(unrevisioned_name, revision_number, budget_period_id)",
+            "unique(unrevisioned_name, revision_number, budget_period_id, analytic_account_id)",
             "Reference and revision must be unique.",
         )
     ]
