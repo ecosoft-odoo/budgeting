@@ -11,5 +11,7 @@ class PurchaseRequestLineMakePurchaseRequisition(models.TransientModel):
     def _prepare_purchase_requisition_line(self, pr, item):
         """Convert analytic_tags from [1,2,3] to [6, 0, [1,2,3]]"""
         pr_line_dict = super()._prepare_purchase_requisition_line(pr, item)
-        pr_line_dict["analytic_tag_ids"] = [(6, 0, pr_line_dict["analytic_tag_ids"] or [])]
+        pr_line_dict["analytic_tag_ids"] = [
+            (6, 0, pr_line_dict["analytic_tag_ids"] or [])
+        ]
         return pr_line_dict
