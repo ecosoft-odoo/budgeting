@@ -22,11 +22,11 @@ class BudgetControl(models.Model):
     revision_number = fields.Integer(readonly=True)
     enable_revision_number = fields.Boolean(compute="_compute_group_revision_number")
 
-    # Add budget_period_id for check constrains
+    # Add budget_period_id and analytic account for check constrains
     _sql_constraints = [
         (
             "revision_unique",
-            "unique(unrevisioned_name, revision_number, budget_period_id)",
+            "unique(unrevisioned_name, revision_number, budget_period_id, analytic_account_id)",
             "Reference and revision must be unique.",
         )
     ]
