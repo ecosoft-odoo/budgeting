@@ -14,21 +14,38 @@ class StockMove(models.Model):
     _budget_analytic_field = "analytic_account_id"
     _analytic_tag_field_name = "analytic_tag_ids"
 
-    def _prepare_account_move_line(
-        self, qty, cost, credit_account_id, debit_account_id, description
+    def _generate_valuation_lines_data(
+        self,
+        partner_id,
+        qty,
+        debit_value,
+        credit_value,
+        debit_account_id,
+        credit_account_id,
+        description,
     ):
-        self.ensure_one()
-        res = super()._prepare_account_move_line(
-            qty, cost, credit_account_id, debit_account_id, description
+        res = super()._generate_valuation_lines_data(
+            partner_id,
+            qty,
+            debit_value,
+            credit_value,
+            debit_account_id,
+            credit_account_id,
+            description,
         )
-        for line in res:
+        for key, value in res.items():
+            # config stock account line debit, accounting all line (exclude price diff)
             if (
-                line[2]["account_id"]
+                self.company_id.stock_account_line_debit
+                and key != "price_diff_line_vals"
+            ):
+                value["fund_id"] = self.fund_id.id
+                continue
+            if (
+                value["account_id"]
                 != self.product_id.categ_id.property_stock_valuation_account_id.id
             ):
-                # Add analytic account in debit line
-                if self.fund_id:
-                    line[2].update({"fund_id": self.fund_id.id})
+                value["fund_id"] = self.fund_id.id
         return res
 
     def _prepare_procurement_values(self):
