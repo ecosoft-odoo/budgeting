@@ -8,7 +8,7 @@
             <div name="account" position="after">
                 <label for="contract" invisible="1" />
                 <div name="contract" class="o_row">
-                    <field name="contract" invisible="1" />
+                    <field name="contract" />
                     <span>On Contract</span>
                 </div>
             </div>

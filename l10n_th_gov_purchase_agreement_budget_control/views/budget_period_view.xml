@@ -7,13 +7,10 @@
             name="inherit_id"
             ref="budget_control_purchase.budget_period_view_form"
         />
+        <field name="priority" eval="100" />
         <field name="arch" type="xml">
-            <xpath expr="//div[@name='purchase']" position="after">
-                <label for="agreement" invisible="1" />
-                <div name="agreement" class="o_row">
-                    <field name="agreement" invisible="1" />
-                    <span>On Agreement</span>
-                </div>
+            <xpath expr="//div[@name='purchase']/span" position="replace">
+                <span>On Purchase / Agreement</span>
             </xpath>
         </field>
     </record>
