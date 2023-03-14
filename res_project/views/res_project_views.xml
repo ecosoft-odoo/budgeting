@@ -42,6 +42,7 @@
                         string="Close"
                         class="oe_highlight"
                         attrs="{'invisible':[('state', '!=', 'confirm')]}"
+                        confirm="This action will close Project. Are you sure to continue?"
                         groups="res_project.group_res_project_manager"
                     />
                     <button
@@ -56,6 +57,7 @@
                         type="object"
                         string="Cancel"
                         attrs="{'invisible':[('state', 'not in', ('draft', 'confirm'))]}"
+                        confirm="This action will cancel Project. Are you sure to continue?"
                         groups="res_project.group_res_project_manager"
                     />
                     <field name="state" widget="statusbar" />
