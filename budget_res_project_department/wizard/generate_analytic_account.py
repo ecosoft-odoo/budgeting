@@ -94,6 +94,31 @@ class GenerateAnalyticAccount(models.TransientModel):
         values["group_id"] = analytic_group.id
         return values
 
+    def _get_value_object(self, obj):
+        return {
+            "name": obj.name,
+            "code": obj.code,
+            "group_id": self.group_id.id or False,
+            "budget_period_id": self.budget_period_id.id,
+            "bm_date_from": self.bm_date_from,
+            "bm_date_to": self.bm_date_to,
+            "auto_adjust_date_commit": self.auto_adjust_date_commit,
+        }
+
+    def _check_operating_unit(self, department, val):
+        """Update operating unit in analytic, if there is field operating unit
+        in department and analytic."""
+        if (
+            getattr(department, "operating_unit_id", "/") != "/"
+            and getattr(self.env["account.analytic.account"], "operating_unit_ids", "/")
+            != "/"
+        ):
+            operating_unit = department.operating_unit_id
+            if not operating_unit:
+                raise UserError(_("Department there is not operating unit"))
+            val["operating_unit_ids"] = [(6, 0, [operating_unit.id])]
+        return val
+
     def _prepare_analytic_vals(self, objects):
         self.ensure_one()
         analytic_accounts = objects.mapped("analytic_account_ids")
@@ -105,19 +130,13 @@ class GenerateAnalyticAccount(models.TransientModel):
             )
             if existing_analytic:
                 continue
-            val = {
-                "name": obj.name,
-                "code": obj.code,
-                "group_id": self.group_id.id or False,
-                "budget_period_id": self.budget_period_id.id,
-                "bm_date_from": self.bm_date_from,
-                "bm_date_to": self.bm_date_to,
-                "auto_adjust_date_commit": self.auto_adjust_date_commit,
-            }
-            if objects._name == "res.project":
+            val = self._get_value_object(obj)
+            if obj._name == "res.project":
                 val["project_id"] = obj.id
-            elif objects._name == "hr.department":
+                val = self._check_operating_unit(obj.department_id, val)
+            elif obj._name == "hr.department":
                 val["department_id"] = obj.id
+                val = self._check_operating_unit(obj, val)
             analytic_vals.append(val)
         return analytic_vals
 
