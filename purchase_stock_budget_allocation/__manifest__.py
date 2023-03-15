@@ -8,13 +8,11 @@
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/account-analytic",
-    "depends": ["purchase_stock", "stock_analytic", "budget_allocation_purchase"],
-    "data": [
-        "views/stock_move_views.xml",
-        "views/stock_scrap.xml",
-        "views/stock_move_line.xml",
+    "depends": [
+        "purchase_stock",
+        "stock_budget_allocation",
+        "budget_allocation_purchase",
     ],
-    "post_init_hook": "post_init_hook",
-    "uninstall_hook": "uninstall_hook",
+    "data": [],
     "maintainers": ["Saran440"],
 }
