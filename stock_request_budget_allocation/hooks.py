@@ -30,3 +30,17 @@ def post_init_hook(cr, registry):
             ],
         }
     )
+
+
+def uninstall_hook(cr, registry):
+    """Cleanup all dimensions before uninstalling."""
+    env = api.Environment(cr, SUPERUSER_ID, {})
+    AnalyticDimension = env["account.analytic.dimension"]
+    dimensions = AnalyticDimension.search([])
+    # drop relation column x_dimension_<code>
+    for dimension in dimensions:
+        name_column = AnalyticDimension.get_field_name(dimension.code)
+        cr.execute(
+            "DELETE FROM ir_model_fields WHERE name=%s and model='stock.request'",
+            (name_column,),
+        )
