@@ -18,5 +18,6 @@
     "installable": True,
     "development_status": "Alpha",
     "post_init_hook": "post_init_hook",
+    "uninstall_hook": "uninstall_hook",
     "maintainers": ["ps-tubtim"],
 }
