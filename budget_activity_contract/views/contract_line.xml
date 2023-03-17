@@ -14,7 +14,6 @@
                     name="activity_id"
                     attrs="{'required': [('analytic_account_id', '!=', False)]}"
                 />
-
             </xpath>
             <xpath
                 expr="//field[@name='contract_line_ids']/tree//field[@name='product_id']"
