@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="contract_contract_form_view" model="ir.ui.view">
+        <field name="name">contract.contract.form.view</field>
+        <field name="model">contract.contract</field>
+        <field
+            name="inherit_id"
+            ref="contract_invoice_plan.contract_contract_form_view"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="/form//page[@name='invoice_line']/field[@name='contract_line_ids']/tree/field[@name='analytic_account_id']"
+                position="after"
+            >
+                <field
+                    name="json_budget_popover"
+                    optional="show"
+                    nolabel="1"
+                    string="Budget Figure"
+                    width="10px"
+                    widget="popover_widget"
+                    attrs="{'invisible': [('analytic_account_id', '=', False)]}"
+                    groups="budget_control.group_budget_control_user"
+                />
+                <field name="fund_all" widget="many2many_tags" invisible="1" />
+                <field name="fund_id" />
+                <field name="domain_tag_ids" invisible="1" />
+                <field name="analytic_tag_all" invisible="1" />
+            </xpath>
+            <xpath
+                expr="/form//page[@name='invoice_line']/field[@name='contract_line_ids']/tree/field[@name='analytic_tag_ids']"
+                position="attributes"
+            >
+                <attribute
+                    name="domain"
+                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
