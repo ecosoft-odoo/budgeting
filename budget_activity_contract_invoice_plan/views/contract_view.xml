@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="contract_contract_form_view" model="ir.ui.view">
+        <field name="name">contract.contract.form.view</field>
+        <field name="model">contract.contract</field>
+        <field
+            name="inherit_id"
+            ref="contract_invoice_plan.contract_contract_form_view"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="/form//page[@name='invoice_line']/field[@name='contract_line_ids']/tree/field[@name='product_id']"
+                position="after"
+            >
+                <field
+                    name="activity_id"
+                    attrs="{'required': [('analytic_account_id', '!=', False)]}"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
