@@ -10,7 +10,7 @@ class ContractLine(models.Model):
     def _prepare_invoice_line(self, move_form):
         self.ensure_one()
         invoice_line_vals = super()._prepare_invoice_line(move_form)
-        if self.activity_id:
+        if self.activity_id and invoice_line_vals:
             invoice_line_vals["activity_id"] = self.activity_id.id
             invoice_line_vals["account_id"] = self.activity_id.account_id.id
         return invoice_line_vals
