@@ -12,7 +12,11 @@
                 expr="//page[@name='adjust_item_ids']//tree/field[@name='account_id']"
                 position="before"
             >
-                <field name="activity_id" optional="show" />
+                <field
+                    name="activity_id"
+                    attrs="{'required': [('analytic_account_id', '!=', False)]}"
+                    optional="show"
+                />
             </xpath>
             <xpath
                 expr="//page[@name='adjust_item_ids']//form//field[@name='account_id']"
