@@ -1,6 +1,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from . import base_budget_move
+from . import account_budget_move
 from . import contract_budget_move
 from . import budget_period
 from . import contract
