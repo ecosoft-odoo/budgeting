@@ -13,6 +13,14 @@ class BudgetMoveAdjustmentItem(models.Model):
         index=True,
     )
 
+    _sql_constraints = [
+        (
+            "amount_positive",
+            "CHECK(amount >= 0)",
+            "The adjusted budget must be positive.",
+        )
+    ]
+
     @api.onchange("activity_id")
     def _onchange_activity_id(self):
         if self.activity_id:
