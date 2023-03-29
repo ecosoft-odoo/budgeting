@@ -66,3 +66,10 @@ class BudgetAllocation(models.Model):
                     "You cannot unarchive a budget allocation that is not the current revision."
                 )
             )
+
+    def copy_revision_with_context(self):
+        """Update allocated from released each line"""
+        new_revision = super().copy_revision_with_context()
+        for line in new_revision.line_ids:
+            line.write({"allocated_amount": line.released_amount})
+        return new_revision
