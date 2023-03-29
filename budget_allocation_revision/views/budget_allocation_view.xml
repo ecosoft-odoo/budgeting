@@ -65,7 +65,7 @@
                 >
                     <field
                         name="old_revision_ids"
-                        context="{'form_view_ref': 'budget_plan.view_budget_plan_form_without_header'}"
+                        context="{'form_view_ref': 'budget_allocation.view_budget_allocation_form_without_header'}"
                         attrs="{'invisible': [('has_old_revisions', '=', False)]}"
                     >
                         <tree>

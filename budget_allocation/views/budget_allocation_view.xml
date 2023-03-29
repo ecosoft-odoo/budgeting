@@ -238,6 +238,18 @@
             </form>
         </field>
     </record>
+    <record id="view_budget_allocation_form_without_header" model="ir.ui.view">
+        <field name="name">budget.allocation.form.without.header</field>
+        <field name="model">budget.allocation</field>
+        <field name="inherit_id" ref="budget_allocation_view_form" />
+        <field name="priority" eval="35" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="attributes">
+                <attribute name="invisible">True</attribute>
+            </xpath>
+        </field>
+    </record>
     <record id="budget_allocation_action" model="ir.actions.act_window">
         <field name="name">Budget Allocation</field>
         <field name="res_model">budget.allocation</field>
