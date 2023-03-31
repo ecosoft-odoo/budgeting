@@ -1,7 +1,8 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class BudgetActivity(models.Model):
@@ -57,6 +58,27 @@ class BudgetActivity(models.Model):
             ]
         activitys = self.search(domain + args, limit=limit)
         return activitys.name_get()
+
+    @api.onchange("account_id")
+    def onchange_account_id(self):
+        """Not allow edit account after use it in commit budgeting"""
+        BudgetPeriod = self.env["budget.period"]
+        MonitorReport = self.env["budget.monitor.report"]
+        query = BudgetPeriod._budget_info_query()
+
+        domain = [("activity", "=", self._origin.name)]
+        dataset_all = MonitorReport.read_group(
+            domain=domain,
+            fields=query["fields"],
+            groupby=query["groupby"],
+            lazy=False,
+        )
+        if dataset_all:
+            raise UserError(
+                _(
+                    "You cannot change the account because it is already used in a commit."
+                )
+            )
 
 
 class BudgetActivityKeyword(models.Model):
