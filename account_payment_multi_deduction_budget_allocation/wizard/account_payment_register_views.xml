@@ -9,14 +9,19 @@
         />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='writeoff_analytic_tag_ids']" position="after">
-                <field name="analytic_tag_all" invisible="1" />
+                <field name="writeoff_analytic_tag_all" invisible="1" />
                 <field name="domain_tag_ids" invisible="1" />
                 <div
                     attrs="{'invisible': [('payment_difference_handling', '!=', 'reconcile')]}"
                 >
-                    <field name="fund_all" widget="many2many_tags" invisible="1" />
-                    <label for="fund_id" class="oe_edit_only" />
-                    <field name="fund_id" />
+                    <label for="writeoff_fund_all" class="oe_edit_only" />
+                    <field
+                        name="writeoff_fund_all"
+                        widget="many2many_tags"
+                        invisible="1"
+                    />
+                    <label for="writeoff_fund_id" class="oe_edit_only" />
+                    <field name="writeoff_fund_id" />
                 </div>
             </xpath>
             <xpath
@@ -25,22 +30,21 @@
             >
                 <attribute
                     name="domain"
-                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
+                >[('id', 'in', writeoff_analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
             </xpath>
             <!-- Multi Deduction -->
             <xpath
                 expr="//field[@name='deduction_ids']/tree/field[@name='analytic_tag_ids']"
-                position="before"
-            >
-                <field name="analytic_tag_all" invisible="1" />
-                <field name="domain_tag_ids" invisible="1" />
-            </xpath>
-            <xpath
-                expr="//field[@name='deduction_ids']/tree/field[@name='analytic_tag_ids']"
                 position="after"
             >
-                <field name="fund_all" widget="many2many_tags" invisible="1" />
-                <field name="fund_id" />
+                <field
+                    name="writeoff_analytic_tag_all"
+                    widget="many2many_tags"
+                    invisible="1"
+                />
+                <field name="domain_tag_ids" invisible="1" />
+                <field name="writeoff_fund_all" widget="many2many_tags" invisible="1" />
+                <field name="writeoff_fund_id" />
             </xpath>
             <xpath
                 expr="//field[@name='deduction_ids']/tree/field[@name='analytic_tag_ids']"
@@ -48,7 +52,7 @@
             >
                 <attribute
                     name="domain"
-                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
+                >[('id', 'in', writeoff_analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
             </xpath>
         </field>
     </record>
