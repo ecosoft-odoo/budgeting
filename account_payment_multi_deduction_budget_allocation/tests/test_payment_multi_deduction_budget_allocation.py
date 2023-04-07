@@ -50,7 +50,7 @@ class TestPaymentMultiDeductionActivity(
             f.amount = 400.0  # Reduce to 400.0, and mark fully paid
             f.payment_difference_handling = "reconcile"
             f.writeoff_analytic_account_id = self.costcenterX
-            f.fund_id = self.fund1_g1
+            f.writeoff_fund_id = self.fund1_g1
             f.writeoff_account_id = self.account_kpi1
         payment_register = f.save()
         payment_id = payment_register._create_payments()
