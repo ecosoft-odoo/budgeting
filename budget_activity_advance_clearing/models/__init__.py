@@ -4,3 +4,4 @@ from . import base_budget_move
 from . import hr_expense
 from . import budget_activity
 from . import budget_period
+from . import budget_control
