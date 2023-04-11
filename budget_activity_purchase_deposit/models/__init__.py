@@ -3,3 +3,4 @@
 from . import res_config_settings
 from . import base_budget_move
 from . import budget_period
+from . import budget_control
