@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="budget_period_view_form" model="ir.ui.view">
+        <field name="name">budget.period.view.form</field>
+        <field name="model">budget.period</field>
+        <field
+            name="inherit_id"
+            ref="budget_control_purchase.budget_period_view_form"
+        />
+        <field name="priority" eval="100" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='purchase']/span" position="replace">
+                <span>On Purchase / Agreement</span>
+            </xpath>
+        </field>
+    </record>
+</odoo>

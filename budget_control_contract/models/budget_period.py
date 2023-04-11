@@ -1,6 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+
+from odoo import api, fields, models
 
 
 class BudgetPeriod(models.Model):
@@ -8,8 +9,9 @@ class BudgetPeriod(models.Model):
 
     contract = fields.Boolean(
         string="On Contract (non-recurring)",
-        default=True,
-        readonly=True,
+        compute="_compute_control_contract",
+        store=True,
+        readonly=False,
         help="Control budget on non-recurring contract confirmation",
     )
 
@@ -37,3 +39,20 @@ class BudgetPeriod(models.Model):
         query = super()._budget_info_query()
         query["info_cols"]["amount_contract"] = ("6_ct_commit", True)
         return query
+
+    @api.depends("control_budget")
+    def _compute_control_contract(self):
+        for rec in self:
+            rec.contract = rec.control_budget
+
+    @api.model
+    def _get_eligible_budget_period(self, date=False, doc_type=False):
+        budget_period = super()._get_eligible_budget_period(date, doc_type)
+        # Get period control budget.
+        # if doctype is contract, check special control too.
+        if doc_type == "contract":
+            return budget_period.filtered(
+                lambda l: (l.control_budget and l.contract)
+                or (not l.control_budget and l.contract)
+            )
+        return budget_period
