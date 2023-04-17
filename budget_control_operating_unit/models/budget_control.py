@@ -64,3 +64,13 @@ class BudgetControl(models.Model):
         if self.check_budget_transfer_permission():
             self = self.sudo()
         return super()._read(fields)
+
+    def _get_context_monitoring(self):
+        ctx = super()._get_context_monitoring()
+        # Check module budget_control_tier_validation is installed,
+        # it will allow user approve can see data monitoring.
+        if hasattr(self, "review_ids") and self.env.user in self.mapped(
+            "review_ids.reviewer_ids"
+        ):
+            ctx["force_all_ou"] = 1
+        return ctx
