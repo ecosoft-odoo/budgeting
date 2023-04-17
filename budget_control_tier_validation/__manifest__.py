@@ -12,7 +12,6 @@
     "license": "AGPL-3",
     "depends": ["budget_control", "base_tier_validation"],
     "data": [
-        "security/budget_control_rules.xml",
         "views/budget_control_view.xml",
         "views/budget_transfer_view.xml",
     ],
