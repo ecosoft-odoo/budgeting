@@ -14,7 +14,7 @@
                 <div
                     attrs="{'invisible': [('payment_difference_handling', '!=', 'reconcile')]}"
                 >
-                    <label for="writeoff_fund_all" class="oe_edit_only" />
+                    <label for="writeoff_fund_all" class="oe_edit_only" invisible="1" />
                     <field
                         name="writeoff_fund_all"
                         widget="many2many_tags"
