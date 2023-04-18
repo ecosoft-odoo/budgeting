@@ -45,11 +45,7 @@ class AccountPaymentRegister(models.TransientModel):
     def _prepare_deduct_move_line(self, deduct):
         vals = super()._prepare_deduct_move_line(deduct)
         vals.update(
-            {
-                "fund_id": deduct.writeoff_fund_id
-                and deduct.writeoff_fund_id.id
-                or False
-            }
+            {"fund_id": deduct.writeoff_fund_id and deduct.writeoff_fund_id.id or False}
         )
         return vals
 
