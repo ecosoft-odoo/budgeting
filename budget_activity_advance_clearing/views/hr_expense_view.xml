@@ -13,13 +13,13 @@
             <field name="activity_id" position="attributes">
                 <attribute
                     name="attrs"
-                >{'required': [('analytic_account_id', '!=', False)], 'readonly': ['|', ('advance', '=', True), ('state', 'in', ['approve', 'post', 'done'])]}</attribute>
+                >{'required': [('analytic_account_id', '!=', False)], 'readonly': ['|', ('advance', '=', True), ('is_editable', '=', False)]}</attribute>
                 <attribute name="force_save">1</attribute>
             </field>
             <field name="activity_id" position="after">
                 <field
                     name="clearing_activity_id"
-                    attrs="{'invisible': [('advance', '=', False)]}"
+                    attrs="{'invisible': [('advance', '=', False)], 'readonly': [('is_editable', '=', False)]}"
                     placeholder="Optional clearing activity is used during clear advance"
                 />
             </field>
