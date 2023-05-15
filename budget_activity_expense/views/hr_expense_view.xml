@@ -8,7 +8,7 @@
             <xpath expr="//group/field['product_id']" position="after">
                 <field
                     name="activity_id"
-                    attrs="{'required': [('analytic_account_id', '!=', False)]}"
+                    attrs="{'required': [('analytic_account_id', '!=', False)], 'readonly': [('is_editable', '=', False)]}"
                 />
             </xpath>
         </field>
