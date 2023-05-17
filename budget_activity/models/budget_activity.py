@@ -23,7 +23,7 @@ class BudgetActivity(models.Model):
         domain=[("deprecated", "=", False)],
         readonly=False,
         index=True,
-        required=False,
+        required=True,
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
@@ -73,7 +73,7 @@ class BudgetActivity(models.Model):
             groupby=query["groupby"],
             lazy=False,
         )
-        if dataset_all:
+        if dataset_all and self.account_id:
             raise UserError(
                 _(
                     "You cannot change the account because it is already used in a commit."
