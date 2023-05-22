@@ -23,7 +23,6 @@ class BudgetActivity(models.Model):
         domain=[("deprecated", "=", False)],
         readonly=False,
         index=True,
-        required=True,
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
