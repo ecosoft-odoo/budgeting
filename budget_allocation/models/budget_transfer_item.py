@@ -251,10 +251,11 @@ class BudgetTransferItem(models.Model):
         query_data = budget_control.budget_period_id._get_budget_avaiable(
             budget_control.analytic_account_id.id, allocation_lines
         )
+        # Result consumed is negative (-)
         consumed_fund_amount = sum(
             q["amount"] for q in query_data if q["amount"] is not None
         )
-        return allocation_line_released - consumed_fund_amount
+        return allocation_line_released + consumed_fund_amount
 
     def _get_domain_allocation_line_from(self):
         domain = [("fund_id", "=", self.fund_from_id.id)]
