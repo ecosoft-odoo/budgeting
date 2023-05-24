@@ -142,8 +142,8 @@ class SourceFundMonitorReport(models.Model):
             aa.id as analytic_account_id,
             '1_budget' as amount_type,
             al.released_amount as amount,
-            al.date_from as date_from,
-            al.date_to as date_to,
+            bp.bm_date_from as date_from,
+            bp.bm_date_to as date_to,
             -- make sure source fund report will show only allocation active
             ba.active as allocation_active,
             bc.active as active {}
@@ -163,10 +163,12 @@ class SourceFundMonitorReport(models.Model):
                 on aa.id = al.analytic_account_id
             join budget_control bc
                 on bc.analytic_account_id = aa.id
+            join budget_period bp
+                on bc.budget_period_id = bp.id
         """
 
     def _where_budget(self):
-        return "where sf.active is true and ba.active is true"
+        return "where sf.active is true and ba.active is true and bc.active is true"
 
     def _select_statement(self, amount_type):
         return self._get_select_amount_types()[amount_type]
