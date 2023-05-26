@@ -76,6 +76,7 @@ class BudgetControl(models.Model):
         return date_to
 
     def update_consumed_plan(self, date=False):
+        self = self.with_context(edit_amount=1)
         if not date:
             date = self._get_last_date_period()
         for rec in self:
