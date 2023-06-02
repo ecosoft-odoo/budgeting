@@ -173,12 +173,12 @@ class BudgetTransferItem(models.Model):
             # check condition for not error with query data
             if rec.fund_from_id or rec.analytic_tag_from_ids:
                 allocation_line_from_available = rec._get_allocation_line_available(
-                    rec.allocation_line_from_ids._origin
+                    rec.budget_control_from_id, rec.allocation_line_from_ids._origin
                 )
                 rec.amount_from_available = allocation_line_from_available
             if rec.fund_to_id or rec.analytic_tag_to_ids:
                 allocation_line_to_available = rec._get_allocation_line_available(
-                    rec.allocation_line_to_ids._origin
+                    rec.budget_control_to_id, rec.allocation_line_to_ids._origin
                 )
                 rec.amount_to_available = allocation_line_to_available
         return res
@@ -240,14 +240,13 @@ class BudgetTransferItem(models.Model):
         domain = [("id", "in", tag_ids)]
         return {"domain": {analytic_tag_field_name: domain}}
 
-    def _get_allocation_line_available(self, allocation_lines):
+    def _get_allocation_line_available(self, budget_control, allocation_lines):
         """Find amount available from allocation released - consumed"""
         # Not found allocation line return 0
         if not allocation_lines:
             return 0
         allocation_line_released = sum(allocation_lines.mapped("released_amount"))
         # Query fund consumed
-        budget_control = self.budget_control_from_id
         query_data = budget_control.budget_period_id._get_budget_avaiable(
             budget_control.analytic_account_id.id, allocation_lines
         )
