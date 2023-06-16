@@ -21,7 +21,7 @@
                         invisible="1"
                     />
                     <label for="writeoff_fund_id" class="oe_edit_only" />
-                    <field name="writeoff_fund_id" />
+                    <field name="writeoff_fund_id" string="Fund" />
                 </div>
             </xpath>
             <xpath
@@ -44,7 +44,7 @@
                 />
                 <field name="domain_tag_ids" invisible="1" />
                 <field name="writeoff_fund_all" widget="many2many_tags" invisible="1" />
-                <field name="writeoff_fund_id" />
+                <field name="writeoff_fund_id" string="Fund" />
             </xpath>
             <xpath
                 expr="//field[@name='deduction_ids']/tree/field[@name='analytic_tag_ids']"

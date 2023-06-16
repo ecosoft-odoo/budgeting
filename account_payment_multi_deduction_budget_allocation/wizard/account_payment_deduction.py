@@ -14,10 +14,6 @@ class AccountPaymentDeduction(models.TransientModel):
     writeoff_fund_all = fields.Many2many(comodel_name="budget.source.fund")
     writeoff_fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
-        string="Fund",
-        index=True,
-        tracking=True,
-        ondelete="restrict",
         domain="[('id', 'in', writeoff_fund_all)]",
     )
     writeoff_analytic_tag_all = fields.Many2many(
