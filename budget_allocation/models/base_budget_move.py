@@ -52,8 +52,6 @@ class BaseBudgetMove(models.AbstractModel):
         return where_query
 
     def _get_budget_source_fund_report(self):
-        # TODO: Change it support OU
-        # return self.env["budget.source.fund.report"].with_context(force_all_ou=1)._table_query
         return self.env["budget.source.fund.report"]
 
     def _get_query_dict(self, docline):
