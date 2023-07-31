@@ -44,7 +44,8 @@ class BudgetControl(models.Model):
                         not in l.kpi_ids.mapped("activity_group_id").ids
                     )
                     if kpi_no_ag:  # Add in job
-                        kpi_no_ag.kpi_ids = [(4, ag_kpi.id)]
+                        for rec in ag_kpi:
+                            kpi_no_ag.kpi_ids = [(4, rec.id)]
                     continue
                 # Case2: No Job Order in plan, Add job order and kpi
                 dict_new_kpi = {
