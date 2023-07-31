@@ -5,6 +5,7 @@ import itertools
 import operator
 
 from odoo import models
+from odoo.exceptions import UserError
 
 
 class BudgetControl(models.Model):
@@ -36,6 +37,9 @@ class BudgetControl(models.Model):
                 kpi_plan_job = kpi_x_job.filtered(
                     lambda l: l.job_order_ids.id == job_order
                 )
+                # If activity_group is Null, skip this iteration
+                if not activity_group:
+                    continue
                 ag_kpi = KPI.search([("activity_group_id", "=", activity_group)])
                 if kpi_plan_job:
                     # There is Job Order, No AG in plan
@@ -43,9 +47,10 @@ class BudgetControl(models.Model):
                         lambda l: activity_group
                         not in l.kpi_ids.mapped("activity_group_id").ids
                     )
+                    if len(ag_kpi) > 1:
+                        raise UserError(f"Activity group KPI can not have more than 1, {ag_kpi}")
                     if kpi_no_ag:  # Add in job
-                        for rec in ag_kpi:
-                            kpi_no_ag.kpi_ids = [(4, rec.id)]
+                        kpi_no_ag.kpi_ids = [(4, ag_kpi.id)]
                     continue
                 # Case2: No Job Order in plan, Add job order and kpi
                 dict_new_kpi = {
