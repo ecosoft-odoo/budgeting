@@ -40,27 +40,33 @@ class BudgetPlan(models.Model):
         super().action_update_plan()
         for rec in self:
             if not (rec.init_revision or rec.budget_control_ids):
+                # Search all budget controls matched with analytics and budget period
+                BudgetControl = self.env["budget.control"]
                 analytics = rec.plan_line.mapped("analytic_account_id")
-                budget_controls = self.env["budget.control"].search(
+                budget_controls = BudgetControl.search(
                     [
                         ("analytic_account_id", "in", analytics.ids),
                         ("date_from", "<=", rec.budget_period_id.bm_date_from),
                         ("date_to", ">=", rec.budget_period_id.bm_date_to),
                     ]
                 )
+                # Group budget control (by analytic account)
+                group_budget_controls = {}
+                for budget_control in budget_controls:
+                    analytic_account_id = budget_control.analytic_account_id.id
+                    if analytic_account_id not in group_budget_controls:
+                        group_budget_controls[analytic_account_id] = budget_control
+                    else:
+                        group_budget_controls[analytic_account_id] |= budget_control
+                # Update consumed and released amount from previous budget control
                 for line in rec.plan_line:
-                    prev_control = budget_controls.filtered_domain(
-                        [
-                            (
-                                "analytic_account_id",
-                                "=",
-                                line.analytic_account_id.id,
-                            )
-                        ]
-                    ).sorted("revision_number")[-1:]
+                    prev_control = group_budget_controls.get(
+                        line.analytic_account_id.id, BudgetControl).sorted("revision_number")[-1:]
                     if prev_control:
-                        line.amount_consumed = prev_control.amount_consumed
-                        line.released_amount = prev_control.released_amount
+                        line.write({
+                            "amount_consumed": prev_control.amount_consumed,
+                            "released_amount": prev_control.released_amount,
+                        })
 
     def button_open_budget_control(self):
         # Beacuse we want to use revision number, and inactive should be shown
