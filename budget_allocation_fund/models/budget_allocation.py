@@ -17,4 +17,5 @@ class BudgetAllocationLine(models.Model):
         comodel_name="budget.source.fund.group",
         related="fund_id.fund_group_id",
         store=True,
+        index=True,
     )

@@ -7,7 +7,7 @@ from odoo import fields, models
 class BudgetMonitorRevisionReport(models.Model):
     _inherit = "budget.monitor.revision.report"
 
-    project_id = fields.Many2one(comodel_name="res.project")
+    project_id = fields.Many2one(comodel_name="res.project", index=True)
 
     def _select_budget(self):
         select_budget_query = super()._select_budget()

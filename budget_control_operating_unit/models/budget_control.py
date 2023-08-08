@@ -10,6 +10,7 @@ class BudgetControl(models.Model):
         comodel_name="operating.unit",
         compute="_compute_budget_operating_unit",
         store=True,
+        index=True,
     )
 
     @api.depends("analytic_account_id")

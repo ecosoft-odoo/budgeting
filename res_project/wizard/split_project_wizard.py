@@ -13,6 +13,7 @@ class SplitProjectWizard(models.TransientModel):
         comodel_name="res.project",
         string="Parent",
         readonly=True,
+        index=True,
     )
     parent_project_name = fields.Char(
         string="Parent Project",
@@ -22,11 +23,13 @@ class SplitProjectWizard(models.TransientModel):
         comodel_name="hr.employee",
         string="Project Manager",
         readonly=True,
+        index=True,
     )
     department_id = fields.Many2one(
         comodel_name="hr.department",
         string="Department",
         readonly=True,
+        index=True,
     )
     date_from = fields.Date(string="Project Start", readonly=True)
     date_to = fields.Date(string="Project End", readonly=True)
@@ -74,7 +77,7 @@ class SplitProjectWizardLine(models.TransientModel):
     _name = "split.project.wizard.line"
     _description = "Split Project Wizard Line"
 
-    wizard_id = fields.Many2one(comodel_name="split.project.wizard")
+    wizard_id = fields.Many2one(comodel_name="split.project.wizard", index=True)
     project_name = fields.Char(string="Project Name")
 
     def _prepare_project_val(self):

@@ -14,6 +14,7 @@ class BudgetMoveAdjustment(models.Model):
         domain="[('user_ids', '=', uid)]",
         help="This operating unit will be defaulted in the move lines.",
         readonly=True,
+        index=True,
         states={"draft": [("readonly", False)]},
     )
 

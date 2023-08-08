@@ -12,6 +12,7 @@ class BudgetTransferItem(models.Model):
         string="Source Fund",
         ondelete="restrict",
         required=True,
+        index=True,
     )
     source_fund_all = fields.Many2many(
         comodel_name="budget.source.fund",
@@ -23,6 +24,7 @@ class BudgetTransferItem(models.Model):
         string="Target Fund",
         ondelete="restrict",
         required=True,
+        index=True,
     )
     target_fund_all = fields.Many2many(
         comodel_name="budget.source.fund",

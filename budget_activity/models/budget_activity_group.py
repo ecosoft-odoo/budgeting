@@ -18,4 +18,5 @@ class BudgetActivityGroup(models.Model):
         comodel_name="account.account",
         string="Default Account",
         domain=[("deprecated", "=", False)],
+        index=True,
     )

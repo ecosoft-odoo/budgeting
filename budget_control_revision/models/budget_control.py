@@ -12,6 +12,7 @@ class BudgetControl(models.Model):
 
     current_revision_id = fields.Many2one(
         comodel_name="budget.control",
+        index=True,
     )
     old_revision_ids = fields.One2many(
         comodel_name="budget.control",

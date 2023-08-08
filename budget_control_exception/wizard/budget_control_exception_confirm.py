@@ -9,7 +9,7 @@ class BudgetControlExceptionConfirm(models.TransientModel):
     _inherit = ["exception.rule.confirm"]
     _description = "Budget Control exception wizard"
 
-    related_model_id = fields.Many2one("budget.control", "Budget Control")
+    related_model_id = fields.Many2one("budget.control", "Budget Control", index=True)
 
     def action_confirm(self):
         self.ensure_one()

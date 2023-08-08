@@ -11,6 +11,7 @@ class BudgetPlan(models.Model):
 
     budget_allocation_id = fields.Many2one(
         comodel_name="budget.allocation",
+        index=True,
     )
     init_amount = fields.Monetary(
         string="Initial Amount",

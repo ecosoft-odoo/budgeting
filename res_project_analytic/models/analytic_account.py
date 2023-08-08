@@ -6,7 +6,7 @@ from odoo import fields, models
 class AccountAnalyticAccount(models.Model):
     _inherit = "account.analytic.account"
 
-    project_id = fields.Many2one(comodel_name="res.project")
+    project_id = fields.Many2one(comodel_name="res.project", index=True)
 
     def _find_next_analytic(self, next_date_range):
         """Find next analytic from project"""

@@ -15,7 +15,7 @@ class GenerateAnalyticAccount(models.TransientModel):
     _name = "generate.analytic.account"
     _description = "Generate Analytic Account"
 
-    budget_period_id = fields.Many2one(comodel_name="budget.period")
+    budget_period_id = fields.Many2one(comodel_name="budget.period", index=True)
     bm_date_from = fields.Date(
         string="Date From",
         compute="_compute_bm_date",
@@ -42,6 +42,7 @@ class GenerateAnalyticAccount(models.TransientModel):
     )
     group_id = fields.Many2one(
         comodel_name="account.analytic.group",
+        index=True,
     )
     analytic_ids = fields.Many2many(
         comodel_name="account.analytic.account",

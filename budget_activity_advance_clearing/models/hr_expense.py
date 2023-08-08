@@ -56,6 +56,7 @@ class HRExpense(models.Model):
         ],
         tracking=True,
         ondelete="restrict",
+        index=True,
         help="Optional: On the clear advance, the clearing "
         "activity will create default activity line.",
     )

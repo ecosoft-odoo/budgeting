@@ -10,6 +10,7 @@ class BaseBudgetMove(models.AbstractModel):
         comodel_name="hr.department",
         compute="_compute_department_id",
         store=True,
+        index=True,
     )
 
     @api.depends(

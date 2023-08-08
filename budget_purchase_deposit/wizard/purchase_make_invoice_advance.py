@@ -10,6 +10,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
     account_analytic_id = fields.Many2one(
         comodel_name="account.analytic.account",
         string="Analytic Account",
+        index=True,
     )
     account_analytic_all = fields.Many2many(
         comodel_name="account.analytic.account",
@@ -19,6 +20,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
     fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
         domain="[('id', 'in', fund_all)]",
+        index=True,
     )
     fund_all = fields.Many2many(
         comodel_name="budget.source.fund",

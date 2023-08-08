@@ -10,7 +10,10 @@ class SourceFundMonitorReport(models.Model):
     date_from = fields.Date()
     date_to = fields.Date()
     active = fields.Boolean()
-    budget_period_id = fields.Many2one(comodel_name="budget.period")
+    budget_period_id = fields.Many2one(
+        comodel_name="budget.period",
+        index=True,
+    )
 
     @property
     def _table_query(self):

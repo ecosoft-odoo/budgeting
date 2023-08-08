@@ -9,6 +9,7 @@ class BudgetMonitorReport(models.Model):
     department_id = fields.Many2one(
         comodel_name="hr.department",
         string="Department",
+        index=True,
     )
 
     # Budget
