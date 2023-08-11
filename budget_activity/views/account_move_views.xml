@@ -11,16 +11,16 @@
             >
                 <field
                     name="activity_id"
-                    attrs="{'required': [('analytic_account_id', '!=', False)]}"
+                    attrs="{'required': [('analytic_account_id', '!=', False), ('parent.not_affect_budget', '=', False)]}"
                 />
             </xpath>
             <xpath
-                expr="//field[@name='line_ids']/tree/field[@name='product_id']"
-                position="after"
+                expr="//field[@name='line_ids']/tree/field[@name='account_id']"
+                position="before"
             >
                 <field
                     name="activity_id"
-                    attrs="{'required': [('analytic_account_id', '!=', False)]}"
+                    attrs="{'required': [('analytic_account_id', '!=', False), ('parent.not_affect_budget', '=', False)]}"
                 />
             </xpath>
         </field>
