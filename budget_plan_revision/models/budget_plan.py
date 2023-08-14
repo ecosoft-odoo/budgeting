@@ -50,7 +50,7 @@ class BudgetPlan(models.Model):
                         ("date_to", ">=", rec.budget_period_id.bm_date_to),
                     ]
                 )
-                # Group budget control (by analytic account)
+                # Group budget control (key: analytic_account_id)
                 group_budget_controls = {}
                 for budget_control in budget_controls:
                     analytic_account_id = budget_control.analytic_account_id.id
