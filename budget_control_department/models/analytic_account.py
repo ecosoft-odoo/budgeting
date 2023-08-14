@@ -56,6 +56,6 @@ class AccountAnalyticAccount(models.Model):
         if not next_analytic:
             dimension_analytic = self.department_id
             next_analytic = dimension_analytic.analytic_account_ids.filtered(
-                lambda l: l.bm_date_from == next_date_range
+                lambda x: x.bm_date_from == next_date_range
             )
         return next_analytic

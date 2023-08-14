@@ -114,12 +114,12 @@ class BudgetTransferItem(models.Model):
             next_tag_list = []
             for field in next_dimension.filtered_field_ids:
                 matched_tags = selected_tags.filtered(
-                    lambda l: l.resource_ref and l.resource_ref._name == field.relation
+                    lambda x: x.resource_ref and x.resource_ref._name == field.relation
                 )
                 tag_resources = matched_tags.mapped("resource_ref")
                 res_ids = tag_resources and [x.id for x in tag_resources] or []
                 tag_ids = next_dimension.analytic_tag_ids.filtered(
-                    lambda l: l.resource_ref[field.name].id in res_ids
+                    lambda x: x.resource_ref[field.name].id in res_ids
                 ).ids
                 next_tag_list.append(set(tag_ids))
             # "&" to all in next_tag_list
@@ -186,7 +186,7 @@ class BudgetTransferItem(models.Model):
                 dimension.get_field_name(dimension.code),
                 "=",
                 source_analytic_tag.filtered(
-                    lambda l: l.analytic_dimension_id == dimension
+                    lambda x: x.analytic_dimension_id == dimension
                 ).id,
             )
             for dimension in dimensions
@@ -202,7 +202,7 @@ class BudgetTransferItem(models.Model):
                 dimension.get_field_name(dimension.code),
                 "=",
                 target_analytic_tag.filtered(
-                    lambda l: l.analytic_dimension_id == dimension
+                    lambda x: x.analytic_dimension_id == dimension
                 ).id,
             )
             for dimension in dimensions
@@ -215,28 +215,28 @@ class BudgetTransferItem(models.Model):
         # Filtered with dimension,
         # for case user not selected analytic tag on budget transfer.
         source_line = source_lines.mapped("analytic_tag_ids").filtered(
-            lambda l: l.id in self.source_analytic_tag_ids.ids
+            lambda x: x.id in self.source_analytic_tag_ids.ids
         )
         target_line = target_lines.mapped("analytic_tag_ids").filtered(
-            lambda l: l.id in self.target_analytic_tag_ids.ids
+            lambda x: x.id in self.target_analytic_tag_ids.ids
         )
         if not (source_line and target_line):
             raise UserError(_("Source / Target Analytic Tags is not selected."))
         # TODO: refacter code
         analytic_tag = self.source_analytic_tag_ids + self.target_analytic_tag_ids
         dimension_constraints = analytic_tag.mapped("analytic_dimension_id").filtered(
-            lambda l: l.budget_transfer_constraint
+            lambda x: x.budget_transfer_constraint
         )
         for dimension in dimension_constraints:
             tags = analytic_tag.filtered(
-                lambda l: l.analytic_dimension_id.id == dimension.id
+                lambda x: x.analytic_dimension_id.id == dimension.id
             )
             source_analytic_tag = self.source_analytic_tag_ids.filtered(
-                lambda l: l.analytic_dimension_id.id == dimension.id
+                lambda x: x.analytic_dimension_id.id == dimension.id
             )
             cross_transfer_constraint = source_analytic_tag.analytic_tag_constraint_ids
             can_transfer = tags.filtered(
-                lambda l: l.id in cross_transfer_constraint.ids
+                lambda x: x.id in cross_transfer_constraint.ids
             )
             if can_transfer:
                 continue

@@ -70,7 +70,7 @@ class BudgetAllocation(models.Model):
                 rec.plan_id.write({"init_amount": rec.total_amount})
             # Update released amount following allocated amount
             allocation_lines = rec.allocation_line_ids.filtered(
-                lambda l: l.allocated_amount != l.released_amount
+                lambda x: x.allocated_amount != x.released_amount
             )
             for line in allocation_lines:
                 line.write({"released_amount": line.allocated_amount})

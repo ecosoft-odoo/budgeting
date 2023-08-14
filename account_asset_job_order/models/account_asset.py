@@ -32,7 +32,7 @@ class AccountAsset(models.Model):
         JobOrder = self.env["budget.job.order"].search([])
         for rec in self:
             filter_job = JobOrder.filtered(
-                lambda l: rec.account_analytic_id.id in l.analytic_account_ids.ids
-                or not l.analytic_account_ids
+                lambda x: rec.account_analytic_id.id in x.analytic_account_ids.ids
+                or not x.analytic_account_ids
             )
             rec.filter_job_order = filter_job

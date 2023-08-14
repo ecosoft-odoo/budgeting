@@ -13,8 +13,8 @@ class BudgetPeriod(models.Model):
         budget_moves = doclines.mapped(doclines._budget_field())
         # get budget move from period only
         budget_moves_period = budget_moves.filtered(
-            lambda l: l.date >= budget_period.bm_date_from
-            and l.date <= budget_period.bm_date_to
+            lambda x: x.date >= budget_period.bm_date_from
+            and x.date <= budget_period.bm_date_to
         )
         for i in budget_moves_period:
             if budget_period.control_all_analytic_accounts:

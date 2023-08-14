@@ -47,9 +47,9 @@ class BudgetDoclineMixinBase(models.AbstractModel):
         JobOrder = self.env["budget.job.order"].search([])
         for doc in self:
             filter_job = JobOrder.filtered(
-                lambda l: doc[doc._budget_analytic_field].id
-                in l.analytic_account_ids.ids
-                or not l.analytic_account_ids
+                lambda x: doc[doc._budget_analytic_field].id
+                in x.analytic_account_ids.ids
+                or not x.analytic_account_ids
             )
             doc.filter_job_order = filter_job
 

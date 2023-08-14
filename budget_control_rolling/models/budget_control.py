@@ -19,7 +19,7 @@ class BudgetControl(models.Model):
         today = fields.Date.context_today(self)
         first_month_day = today.replace(day=1)
         for rec in self:
-            item_ids = rec.item_ids.filtered(lambda l: l.date_from < first_month_day)
+            item_ids = rec.item_ids.filtered(lambda x: x.date_from < first_month_day)
             amount_past_plan = sum(item_ids.mapped("amount"))
             rec.amount_rolling = (
                 rec.released_amount - rec.amount_consumed + amount_past_plan

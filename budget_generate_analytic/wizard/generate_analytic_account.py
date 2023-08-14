@@ -69,8 +69,8 @@ class GenerateAnalyticAccount(models.TransientModel):
         analytic_accounts = objects.mapped("analytic_account_ids")
         if self.bm_date_from and self.bm_date_to:
             analytics = analytic_accounts.filtered(
-                lambda l: l.bm_date_to >= self.bm_date_from
-                and l.bm_date_from <= self.bm_date_to
+                lambda x: x.bm_date_to >= self.bm_date_from
+                and x.bm_date_from <= self.bm_date_to
             )
         self.analytic_ids = analytics
 
@@ -111,7 +111,7 @@ class GenerateAnalyticAccount(models.TransientModel):
         field_model = DICT_FIELD_MODEL[objects._name]
         for obj in objects:
             existing_analytic = analytic_accounts.filtered(
-                lambda l: l.id in self.analytic_ids.ids and l[field_model].id == obj.id
+                lambda x: x.id in self.analytic_ids.ids and x[field_model].id == obj.id
             )
             if existing_analytic:
                 continue

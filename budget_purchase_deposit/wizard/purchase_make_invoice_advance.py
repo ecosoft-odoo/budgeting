@@ -69,7 +69,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
             fund_all = []
             if order:
                 fund_all = order.order_line.filtered(
-                    lambda l: l.account_analytic_id == self.account_analytic_id
+                    lambda x: x.account_analytic_id == self.account_analytic_id
                 ).mapped("fund_id")
             doc.fund_all = fund_all
 
@@ -83,7 +83,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
             analytic_tag_all = []
             if order:
                 analytic_tag_all = order.order_line.filtered(
-                    lambda l: l.account_analytic_id == self.account_analytic_id
+                    lambda x: x.account_analytic_id == self.account_analytic_id
                 ).mapped("analytic_tag_ids")
             doc.analytic_tag_all = analytic_tag_all
 

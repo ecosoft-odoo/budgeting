@@ -61,12 +61,15 @@ class BudgetPlan(models.Model):
                 # Update consumed and released amount from previous budget control
                 for line in rec.plan_line:
                     prev_control = group_budget_controls.get(
-                        line.analytic_account_id.id, BudgetControl).sorted("revision_number")[-1:]
+                        line.analytic_account_id.id, BudgetControl
+                    ).sorted("revision_number")[-1:]
                     if prev_control:
-                        line.write({
-                            "amount_consumed": prev_control.amount_consumed,
-                            "released_amount": prev_control.released_amount,
-                        })
+                        line.write(
+                            {
+                                "amount_consumed": prev_control.amount_consumed,
+                                "released_amount": prev_control.released_amount,
+                            }
+                        )
 
     def button_open_budget_control(self):
         # Beacuse we want to use revision number, and inactive should be shown

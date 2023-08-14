@@ -39,7 +39,7 @@ class BudgetPlan(models.Model):
             for line in rec.plan_line:
                 allocation_line = line.analytic_account_id.allocation_line_ids
                 ba_line_period = allocation_line.filtered(
-                    lambda l: l.budget_period_id == period_id
+                    lambda x: x.budget_period_id == period_id
                 )
                 line.amount = sum(ba_line_period.mapped("allocated_amount"))
         return res

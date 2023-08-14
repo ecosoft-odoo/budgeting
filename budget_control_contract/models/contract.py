@@ -43,7 +43,7 @@ class ContractContract(models.Model):
         - Archived ot not check commit budget, document should delete all budget commitment
         """
         res = super().write(vals)
-        contract_not_active = self.filtered(lambda l: not l.active)
+        contract_not_active = self.filtered(lambda x: not x.active)
         if contract_not_active:
             self.mapped("budget_move_ids").unlink()
             return res

@@ -6,7 +6,9 @@ from odoo import fields, models
 class BudgetMonitorReport(models.Model):
     _inherit = "budget.monitor.report"
 
-    fund_id = fields.Many2one(comodel_name="budget.source.fund", string="Fund", index=True)
+    fund_id = fields.Many2one(
+        comodel_name="budget.source.fund", string="Fund", index=True
+    )
     fund_group_id = fields.Many2one(
         comodel_name="budget.source.fund.group", string="Fund Group", index=True
     )
