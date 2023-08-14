@@ -6,7 +6,7 @@ from odoo import fields, models
 class BudgetMonitorRevisionReport(models.Model):
     _inherit = "budget.monitor.revision.report"
 
-    operating_unit_id = fields.Many2one(comodel_name="operating.unit")
+    operating_unit_id = fields.Many2one(comodel_name="operating.unit", index=True)
 
     def _get_operating_unit(self):
         return self.env.user.operating_unit_ids

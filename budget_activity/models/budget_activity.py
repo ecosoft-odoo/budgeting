@@ -13,6 +13,7 @@ class BudgetActivityTag(models.Model):
         string="Company",
         default=lambda self: self.env.company,
         required=True,
+        index=True,
     )
     active = fields.Boolean(
         default=True,
@@ -45,6 +46,7 @@ class BudgetActivity(models.Model):
         string="Account",
         compute="_compute_account_id",
         store=True,
+        index=True,
         domain=[("deprecated", "=", False)],
         readonly=False,
         required=False,
@@ -54,6 +56,7 @@ class BudgetActivity(models.Model):
         string="Company",
         default=lambda self: self.env.company,
         required=True,
+        index=True,
     )
     code = fields.Char(related="account_id.code")
     tag_ids = fields.Many2many(

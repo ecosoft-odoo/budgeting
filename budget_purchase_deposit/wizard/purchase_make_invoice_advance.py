@@ -10,6 +10,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
     account_analytic_id = fields.Many2one(
         comodel_name="account.analytic.account",
         string="Analytic Account",
+        index=True,
     )
     account_analytic_all = fields.Many2many(
         comodel_name="account.analytic.account",
@@ -19,6 +20,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
     fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
         domain="[('id', 'in', fund_all)]",
+        index=True,
     )
     fund_all = fields.Many2many(
         comodel_name="budget.source.fund",
@@ -67,7 +69,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
             fund_all = []
             if order:
                 fund_all = order.order_line.filtered(
-                    lambda l: l.account_analytic_id == self.account_analytic_id
+                    lambda x: x.account_analytic_id == self.account_analytic_id
                 ).mapped("fund_id")
             doc.fund_all = fund_all
 
@@ -81,7 +83,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
             analytic_tag_all = []
             if order:
                 analytic_tag_all = order.order_line.filtered(
-                    lambda l: l.account_analytic_id == self.account_analytic_id
+                    lambda x: x.account_analytic_id == self.account_analytic_id
                 ).mapped("analytic_tag_ids")
             doc.analytic_tag_all = analytic_tag_all
 

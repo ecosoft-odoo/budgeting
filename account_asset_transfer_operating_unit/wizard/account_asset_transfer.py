@@ -10,6 +10,7 @@ class AccountAssetTransfer(models.TransientModel):
     operating_unit_id = fields.Many2one(
         comodel_name="operating.unit",
         string="Operating Unit",
+        index=True,
     )
 
     @api.model
@@ -48,6 +49,7 @@ class AccountAssetTransferLine(models.TransientModel):
         compute="_compute_asset_transfer_operating_unit",
         readonly=False,
         store=True,
+        index=True,
         string="Operating Unit",
     )
 

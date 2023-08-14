@@ -34,14 +34,14 @@ class BudgetControl(models.Model):
                 job_order = move.job_order_id.id
                 # There is Job Order in plan
                 kpi_plan_job = kpi_x_job.filtered(
-                    lambda l: l.job_order_ids.id == job_order
+                    lambda x: x.job_order_ids.id == job_order
                 )
                 ag_kpi = KPI.search([("activity_group_id", "=", activity_group)])
                 if kpi_plan_job:
                     # There is Job Order, No AG in plan
                     kpi_no_ag = kpi_plan_job.filtered(
-                        lambda l: activity_group
-                        not in l.kpi_ids.mapped("activity_group_id").ids
+                        lambda x: activity_group
+                        not in x.kpi_ids.mapped("activity_group_id").ids
                     )
                     if kpi_no_ag:  # Add in job
                         kpi_no_ag.kpi_ids = [(4, ag_kpi.id)]
@@ -66,12 +66,12 @@ class BudgetControl(models.Model):
             # Add value for create new line KPIs
             vals_newkpi = list(
                 map(
-                    lambda l: {
+                    lambda x: {
                         "budget_control_id": budget_control_id,
-                        "job_order_ids": l["job_order_id"]
-                        and [(6, 0, [l["job_order_id"]])]
+                        "job_order_ids": x["job_order_id"]
+                        and [(6, 0, [x["job_order_id"]])]
                         or False,
-                        "kpi_ids": [(6, 0, l["kpi_ids"])],
+                        "kpi_ids": [(6, 0, x["kpi_ids"])],
                     },
                     combine_vals,
                 )

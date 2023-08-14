@@ -68,7 +68,7 @@ class BudgetControl(models.Model):
         self._update_kpi_reset_plan(kpis)
         self.sudo().with_context(keep_item_amount=True).prepare_budget_control_matrix()
         # Filter date range to current month
-        item_ids = self.item_ids.filtered(lambda l: l.date_from <= date)
+        item_ids = self.item_ids.filtered(lambda x: x.date_from <= date)
         self._update_consumed_value(item_ids, date)
 
     def _get_last_date_period(self):

@@ -17,9 +17,10 @@ class SourceFundMonitorReport(models.Model):
     reference = fields.Char()
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
+        index=True,
     )
-    fund_id = fields.Many2one(comodel_name="budget.source.fund")
-    fund_group_id = fields.Many2one(comodel_name="budget.source.fund.group")
+    fund_id = fields.Many2one(comodel_name="budget.source.fund", index=True)
+    fund_group_id = fields.Many2one(comodel_name="budget.source.fund.group", index=True)
     amount = fields.Float()
     amount_type = fields.Selection(
         selection=lambda self: [("1_budget", "Budget")]

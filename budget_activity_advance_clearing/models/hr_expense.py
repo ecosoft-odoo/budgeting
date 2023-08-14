@@ -25,7 +25,7 @@ class HRExpenseSheet(models.Model):
     def get_domain_advance_sheet_expense_line(self):
         """Overwrite domain filter expense lines with clearing product or activity"""
         return self.advance_sheet_id.expense_line_ids.filtered(
-            lambda l: l.clearing_product_id or l.clearing_activity_id
+            lambda x: x.clearing_product_id or x.clearing_activity_id
         )
 
     def _prepare_clear_advance(self, line):
@@ -56,6 +56,7 @@ class HRExpense(models.Model):
         ],
         tracking=True,
         ondelete="restrict",
+        index=True,
         help="Optional: On the clear advance, the clearing "
         "activity will create default activity line.",
     )

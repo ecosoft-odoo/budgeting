@@ -17,6 +17,6 @@ class BudgetControl(models.Model):
     def _compute_allocation_line_ids(self):
         for rec in self:
             allocation_line = rec.analytic_account_id.allocation_line_ids.filtered(
-                lambda l: l.budget_period_id == self.budget_period_id
+                lambda x: x.budget_period_id == self.budget_period_id
             )
             rec.allocation_line_ids = allocation_line

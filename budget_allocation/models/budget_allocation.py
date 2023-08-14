@@ -19,6 +19,7 @@ class BudgetAllocation(models.Model):
         required=True,
         default=lambda self: self.env["budget.period"]._get_eligible_budget_period(),
         readonly=True,
+        index=True,
         states={"draft": [("readonly", "=", False)]},
     )
     allocation_line_ids = fields.One2many(
@@ -40,6 +41,7 @@ class BudgetAllocation(models.Model):
         comodel_name="res.company",
         default=lambda self: self.env.user.company_id,
         required=True,
+        index=True,
         string="Company",
     )
     currency_id = fields.Many2one(
@@ -68,7 +70,7 @@ class BudgetAllocation(models.Model):
                 rec.plan_id.write({"init_amount": rec.total_amount})
             # Update released amount following allocated amount
             allocation_lines = rec.allocation_line_ids.filtered(
-                lambda l: l.allocated_amount != l.released_amount
+                lambda x: x.allocated_amount != x.released_amount
             )
             for line in allocation_lines:
                 line.write({"released_amount": line.allocated_amount})
@@ -171,6 +173,7 @@ class BudgetAllocationLine(models.Model):
         comodel_name="budget.period",
         related="budget_allocation_id.budget_period_id",
         store=True,
+        index=True,
     )
     date_from = fields.Date(
         related="budget_period_id.bm_date_from",
@@ -183,6 +186,7 @@ class BudgetAllocationLine(models.Model):
     budget_control_id = fields.Many2one(
         comodel_name="budget.control",
         readonly=True,
+        index=True,
     )
     name = fields.Char(string="Description")
     analytic_account_id = fields.Many2one(
@@ -208,6 +212,7 @@ class BudgetAllocationLine(models.Model):
         comodel_name="res.company",
         default=lambda self: self.env.user.company_id,
         required=False,
+        index=True,
         string="Company",
     )
     currency_id = fields.Many2one(

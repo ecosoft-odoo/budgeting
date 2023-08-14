@@ -15,6 +15,7 @@ class BudgetSourceFundGroup(models.Model):
         comodel_name="res.company",
         default=lambda self: self.env.company,
         readonly=True,
+        index=True,
     )
     fund_line = fields.One2many(
         comodel_name="budget.source.fund",

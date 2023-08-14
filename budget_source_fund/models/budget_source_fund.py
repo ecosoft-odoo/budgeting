@@ -14,6 +14,7 @@ class BudgetSourceFund(models.Model):
         comodel_name="budget.source.fund.group",
         string="Fund Group",
         tracking=True,
+        index=True,
     )
     objective = fields.Html()
     active = fields.Boolean(default=True)
@@ -21,6 +22,7 @@ class BudgetSourceFund(models.Model):
         comodel_name="res.company",
         default=lambda self: self.env.company,
         readonly=True,
+        index=True,
     )
 
     _sql_constraints = [

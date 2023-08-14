@@ -9,6 +9,7 @@ class BudgetMonitorReport(models.Model):
 
     project_id = fields.Many2one(
         comodel_name="res.project",
+        index=True,
     )
     parent_project_name = fields.Char(string="Parent Project")
 

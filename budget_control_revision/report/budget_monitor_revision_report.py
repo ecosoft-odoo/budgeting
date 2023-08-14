@@ -14,6 +14,7 @@ class BudgetMonitorRevisionReport(models.Model):
     reference = fields.Char()
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
+        index=True,
     )
     date = fields.Date()
     budget_date_from = fields.Date()

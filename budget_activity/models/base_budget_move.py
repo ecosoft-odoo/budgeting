@@ -19,6 +19,7 @@ class BaseBudgetMove(models.AbstractModel):
     )
     account_id = fields.Many2one(
         compute="_compute_activity_account",
+        index=True,
         store=True,
         help="When activity is selected, always use activity's account to "
         "enusre that the KPI budgeting which rely on account is valid. "

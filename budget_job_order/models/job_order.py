@@ -17,6 +17,7 @@ class BudgetJobOrder(models.Model):
         string="Company",
         default=lambda self: self.env.company,
         required=True,
+        index=True,
     )
     analytic_account_ids = fields.Many2many(
         comodel_name="account.analytic.account",

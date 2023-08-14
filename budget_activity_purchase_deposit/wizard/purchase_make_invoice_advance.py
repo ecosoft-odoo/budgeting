@@ -11,6 +11,7 @@ class PurchaseAdvancePaymentInv(models.TransientModel):
     purchase_deposit_activity_id = fields.Many2one(
         comodel_name="budget.activity",
         string="Deposit Payment Activity",
+        index=True,
     )
 
     def _prepare_advance_purchase_line(self, order, product, tax_ids, amount):

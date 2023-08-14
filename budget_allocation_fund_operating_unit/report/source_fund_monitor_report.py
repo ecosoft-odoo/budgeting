@@ -6,7 +6,10 @@ from odoo import fields, models
 class SourceFundMonitorReport(models.Model):
     _inherit = "source.fund.monitor.report"
 
-    operating_unit_id = fields.Many2one(comodel_name="operating.unit")
+    operating_unit_id = fields.Many2one(
+        comodel_name="operating.unit",
+        index=True,
+    )
 
     def _get_operating_unit(self):
         return self.env.user.operating_unit_ids

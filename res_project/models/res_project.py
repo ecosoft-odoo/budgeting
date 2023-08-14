@@ -27,6 +27,7 @@ class ResProject(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
         tracking=True,
+        index=True,
     )
     parent_project_name = fields.Char(
         compute="_compute_parent_project_name",
@@ -55,6 +56,7 @@ class ResProject(models.Model):
         string="Company",
         required=True,
         readonly=True,
+        index=True,
         default=lambda self: self.env.company,
     )
     currency_id = fields.Many2one(
@@ -70,6 +72,7 @@ class ResProject(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
         tracking=True,
+        index=True,
     )
     date_from = fields.Date(
         required=True,
@@ -89,6 +92,7 @@ class ResProject(models.Model):
         comodel_name="hr.department",
         readonly=True,
         required=True,
+        index=True,
         states={"draft": [("readonly", False)]},
     )
     member_ids = fields.Many2many(

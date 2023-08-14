@@ -20,6 +20,7 @@ class BudgetConstraint(models.Model):
             ("usage", "=", "ir_actions_server"),
             ("model_id.model", "=", "budget.constraint"),
         ],
+        index=True,
         help="Server action triggered as soon as this step is check_budget",
     )
     active = fields.Boolean(default=True)

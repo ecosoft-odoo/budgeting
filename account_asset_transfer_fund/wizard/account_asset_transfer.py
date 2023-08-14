@@ -10,6 +10,7 @@ class AccountAssetTransfer(models.TransientModel):
     fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
         string="Fund",
+        index=True,
     )
 
     @api.model

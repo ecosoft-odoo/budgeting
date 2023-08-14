@@ -6,7 +6,10 @@ from odoo import fields, models
 class SourceFundMonitorReport(models.Model):
     _inherit = "source.fund.monitor.report"
 
-    department_id = fields.Many2one(comodel_name="hr.department")
+    department_id = fields.Many2one(
+        comodel_name="hr.department",
+        index=True,
+    )
 
     # Budget
     def _select_budget(self):

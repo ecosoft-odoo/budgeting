@@ -9,6 +9,7 @@ class BudgetMonitorReport(models.Model):
     job_order_id = fields.Many2one(
         comodel_name="budget.job.order",
         string="Job Order",
+        index=True,
     )
 
     # Budget
