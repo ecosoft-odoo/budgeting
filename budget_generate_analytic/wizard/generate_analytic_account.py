@@ -105,13 +105,18 @@ class GenerateAnalyticAccount(models.TransientModel):
 
     def _prepare_analytic_vals(self, objects):
         self.ensure_one()
-        analytic_accounts = objects.mapped("analytic_account_ids")
         group_id = self.group_id
         analytic_vals = []
         field_model = DICT_FIELD_MODEL[objects._name]
+        # Find all existing analytic
+        analytic_accounts = objects.mapped("analytic_account_ids")
+        all_existing_analytic = analytic_accounts.filtered(
+            lambda x: x.id in self.analytic_ids.ids
+        )
         for obj in objects:
-            existing_analytic = analytic_accounts.filtered(
-                lambda x: x.id in self.analytic_ids.ids and x[field_model].id == obj.id
+            # Find existing analytic in project / department
+            existing_analytic = all_existing_analytic.filtered(
+                lambda x: x[field_model].id == obj.id
             )
             if existing_analytic:
                 continue
