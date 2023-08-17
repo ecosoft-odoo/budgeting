@@ -40,7 +40,7 @@ class BudgetPlan(models.Model):
         super().action_update_plan()
         for rec in self:
             if not (rec.init_revision or rec.budget_control_ids):
-                # Search all budget controls matched with analytics and budget period
+                # Search all budget controls that matched with analytics and budget period
                 BudgetControl = self.env["budget.control"]
                 analytics = rec.plan_line.mapped("analytic_account_id")
                 budget_controls = BudgetControl.search(
@@ -57,7 +57,7 @@ class BudgetPlan(models.Model):
                     if analytic_account_id not in group_budget_controls:
                         group_budget_controls[analytic_account_id] = budget_control
                     else:
-                        group_budget_controls[analytic_account_id] |= budget_control
+                        group_budget_controls[analytic_account_id] += budget_control
                 # Update consumed and released amount from previous budget control
                 for line in rec.plan_line:
                     prev_control = group_budget_controls.get(
@@ -85,20 +85,28 @@ class BudgetPlan(models.Model):
         )
         plan_line_revision = self.env["budget.plan.line"]
         analytics = no_bc_lines.mapped("analytic_account_id")
-        # Find revisions of budget_controls, and use latest one to create_revision()
-        budget_controls = self.env["budget.control"].search(
+        # Search all budget controls that matched with analytics and budget period
+        BudgetControl = self.env["budget.control"]
+        budget_controls = BudgetControl.search(
             [
                 ("analytic_account_id", "in", analytics.ids),
                 ("date_from", "<=", self.budget_period_id.bm_date_from),
                 ("date_to", ">=", self.budget_period_id.bm_date_to),
             ]
         )
+        # Group budget control (by analytic account)
+        group_budget_controls = {}
+        for budget_control in budget_controls:
+            analytic_account_id = budget_control.analytic_account_id.id
+            if analytic_account_id not in group_budget_controls:
+                group_budget_controls[analytic_account_id] = budget_control
+            else:
+                group_budget_controls[analytic_account_id] += budget_control
+        # Create budget control revision
         for analytic in analytics:
-            prev_control = budget_controls.filtered_domain(
-                [("analytic_account_id", "=", analytic.id)]
-            ).sorted("revision_number")[
-                -1:
-            ]  # sorted asc and get the last one
+            prev_control = group_budget_controls.get(analytic.id, BudgetControl).sorted(
+                "revision_number"
+            )[-1:]
             if prev_control:
                 # Check state budget control for user manual cancel.
                 if prev_control.state != "cancel" and prev_control.active:
