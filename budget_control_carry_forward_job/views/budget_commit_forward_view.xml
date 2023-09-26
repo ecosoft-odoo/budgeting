@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_commit_forward_form" model="ir.ui.view">
+        <field name="name">view.budget.commit.forward.form</field>
+        <field name="model">budget.commit.forward</field>
+        <field name="inherit_id" ref="budget_control.view_budget_commit_forward_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group/group[2]" position="inside">
+                <field name="job_uuid" />
+            </xpath>
+            <xpath expr="//button[@name='preview_budget_commit_forward_info']" position="attributes">
+                <attribute name="states" />
+                <attribute name="attrs">{'invisible': ['|', ('state', '!=', 'review'), ('job_uuid', '!=', False)]}</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
