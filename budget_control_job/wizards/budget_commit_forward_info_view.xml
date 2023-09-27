@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2023 Ecosoft - (http://ecosoft.co.th)
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="view_budget_commit_forward_info_form" model="ir.ui.view">
+        <field name="name">budget.commit.forward.info.form</field>
+        <field name="model">budget.commit.forward.info</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.view_budget_commit_forward_info_form"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//footer/button[@name='action_budget_commit_forward']"
+                position="after"
+            >
+                <button
+                    name="action_budget_commit_forward_job"
+                    string="Forward Budget Commitment with job queue"
+                    class="btn-primary"
+                    type="object"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
