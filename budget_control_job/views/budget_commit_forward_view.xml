@@ -7,6 +7,7 @@
         <field name="arch" type="xml">
             <xpath expr="//group/group[2]" position="inside">
                 <field name="job_uuid" />
+                <field name="is_done" />
             </xpath>
             <xpath
                 expr="//button[@name='preview_budget_commit_forward_info']"
@@ -16,6 +17,20 @@
                 <attribute
                     name="attrs"
                 >{'invisible': ['|', ('state', '!=', 'review'), ('job_uuid', '!=', False)]}</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_budget_commit_forward_line_tree" model="ir.ui.view">
+        <field name="name">view.budget.commit.forward.line.tree</field>
+        <field name="model">budget.commit.forward.line</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.view_budget_commit_forward_line_tree"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="inside">
+                <field name="is_done" optional="hide" />
             </xpath>
         </field>
     </record>

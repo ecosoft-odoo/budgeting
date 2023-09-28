@@ -11,6 +11,7 @@ class BudgetCommitForward(models.Model):
         string="Job UUID",
         readonly=True,
     )
+    is_done = fields.Boolean(readonly=True)
 
     def action_budget_commit_forward_job(self):
         description = _("Creating forward commit budget with id %s") % (self.id,)
@@ -18,3 +19,28 @@ class BudgetCommitForward(models.Model):
         # Update UUID in forward commit
         self.job_uuid = job.uuid
         return "Job created with uuid {}".format(job.uuid)
+
+    def action_budget_commit_forward(self):
+        """Overwrite function recompute"""
+        self._do_forward_commit()
+        self.write({"state": "done"})
+        self._do_update_initial_commit()
+        # Recompute budget on document number
+        documents = []
+        for line in self.forward_line_ids:
+            if line.is_done:
+                continue
+            doc = line.document_number
+            if doc not in documents:
+                doc.recompute_budget_move()
+                documents.append(doc)
+            line.is_done = True
+            self.env.cr.commit()
+        if all(line.is_done for line in self.forward_line_ids):
+            self.is_done = True
+
+
+class BudgetCommitForwardLine(models.Model):
+    _inherit = "budget.commit.forward.line"
+
+    is_done = fields.Boolean(readonly=True)
