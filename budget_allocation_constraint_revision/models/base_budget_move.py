@@ -14,7 +14,8 @@ class BaseBudgetMove(models.AbstractModel):
             [("active", "=", True)], order="revision_number desc", limit=1
         )
         # commitment is not revision
-        where_revision = "(revision_number = '{}' or revision_number is null)".format(
+        where_revision = "(revision_number = '{}' or revision_number is null \
+            or revision_number = '0')".format(
             bc_max_revision.revision_number
         )
         return " and ".join([where_query, where_revision])

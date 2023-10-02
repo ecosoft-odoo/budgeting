@@ -36,7 +36,8 @@ class BaseBudgetMove(models.AbstractModel):
                 )
             )
         )
-        return self.env.cr.dictfetchall()
+        dict_data = self.env.cr.dictfetchall()
+        return dict_data
 
     @api.model
     def check_budget_allocation_limit(self, doclines):
