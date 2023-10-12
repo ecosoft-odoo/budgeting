@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <record id="contract_contract_supplier_form_view" model="ir.ui.view">
-        <field name="name">contract.contract.supplier.form.view</field>
+    <record id="contract_contract_form_view" model="ir.ui.view">
+        <field name="name">contract.contract.form.view</field>
         <field name="model">contract.contract</field>
-        <field name="inherit_id" ref="contract.contract_contract_supplier_form_view" />
+        <field name="inherit_id" ref="contract.contract_contract_form_view" />
         <field name="arch" type="xml">
             <xpath
                 expr="//group[@name='main']//field[@name='tag_ids']"
