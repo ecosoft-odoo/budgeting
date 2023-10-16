@@ -48,7 +48,7 @@
                     class="oe_highlight"
                     string="New Revision"
                     type="object"
-                    attrs="{'invisible': ['|', ('budget_control_count', '=', 0), ('state', '!=', 'done')]}"
+                    states="done"
                     confirm="This operation cannot be undone. Are you sure to continue?"
                 />
             </xpath>
