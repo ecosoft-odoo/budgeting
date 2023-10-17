@@ -7,7 +7,7 @@
     "version": "15.0.1.0.0",
     "category": "Generic Modules/Budget Control",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-analytic",
+    "website": "https://github.com/ecosoft-odoo/budgeting",
     "depends": ["budget_control", "base_exception"],
     "license": "AGPL-3",
     "data": [

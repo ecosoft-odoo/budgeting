@@ -7,7 +7,7 @@
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-analytic",
+    "website": "https://github.com/ecosoft-odoo/budgeting",
     "depends": [
         "purchase_deposit",
         "budget_activity_purchase",

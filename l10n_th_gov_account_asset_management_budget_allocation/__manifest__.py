@@ -7,7 +7,7 @@
     "version": "15.0.1.0.0",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-analytic",
+    "website": "https://github.com/ecosoft-odoo/budgeting",
     "category": "Localization / Accounting",
     "depends": [
         "l10n_th_gov_account_asset_management",
