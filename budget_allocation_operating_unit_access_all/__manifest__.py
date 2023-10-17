@@ -7,7 +7,7 @@
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "category": "Budget Management",
     "license": "AGPL-3",
-    "website": "https://github.com/OCA/account-analytic",
+    "website": "https://github.com/ecosoft-odoo/budgeting",
     "depends": [
         "budget_allocation_operating_unit",
         "budget_control_operating_unit_access_all",

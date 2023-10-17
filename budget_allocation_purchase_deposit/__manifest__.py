@@ -7,7 +7,7 @@
     "category": "Purchase Management",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-analytic",
+    "website": "https://github.com/ecosoft-odoo/budgeting",
     "depends": [
         "purchase_deposit_analytic",
         "budget_allocation_purchase",

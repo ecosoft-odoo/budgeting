@@ -8,7 +8,7 @@
     "license": "AGPL-3",
     "depends": ["budget_control", "purchase_work_acceptance_late_fines"],
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-analytic",
+    "website": "https://github.com/ecosoft-odoo/budgeting",
     "category": "Accounting & Finance",
     "data": [],
     "maintainers": ["Saran440"],
