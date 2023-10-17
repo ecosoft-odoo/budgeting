@@ -6,7 +6,7 @@
     "version": "15.0.1.0.0",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "license": "AGPL-3",
-    "website": "https://github.com/OCA/account-analytic",
+    "website": "https://github.com/ecosoft-odoo/budgeting",
     "category": "Accounting",
     "depends": [
         "account_payment_multi_deduction",
