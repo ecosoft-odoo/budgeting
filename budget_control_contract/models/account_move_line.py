@@ -8,6 +8,7 @@ class AccountMoveLine(models.Model):
 
     def uncommit_contract_budget(self):
         """For vendor bill in valid state, do uncommit for related contract."""
+        ForwardLine = self.env["budget.commit.forward.line"]
         for ml in self:
             inv_state = ml.move_id.state
             move_type = ml.move_id.move_type
@@ -31,9 +32,31 @@ class AccountMoveLine(models.Model):
                         contract_line = contract_line.with_context(
                             return_amount_commit=ml.amount_commit
                         )
+                    # Check case forward commit,
+                    # it should uncommit with forward commit or old analytic
+                    analytic_account = False
+                    if contract_line.fwd_analytic_account_id:
+                        # Case actual use analytic same as CT Commit,
+                        # it will uncommit with CT analytic
+                        if contract_line.analytic_account_id == ml.analytic_account_id:
+                            analytic_account = contract_line.analytic_account_id
+                        else:
+                            # Case actual commit is use analytic not same as PO Commit
+                            domain_fwd_line = self._get_domain_fwd_line(contract_line)
+                            fwd_lines = ForwardLine.search(domain_fwd_line)
+                            for fwd_line in fwd_lines:
+                                if (
+                                    fwd_line.forward_id.to_budget_period_id.bm_date_from
+                                    <= ml.date_commit
+                                    <= fwd_line.forward_id.to_budget_period_id.bm_date_to
+                                ):
+                                    analytic_account = fwd_line.to_analytic_account_id
+                                    break
+                    # Confirm vendor bill, do uncommit budget
                     contract_line.commit_budget(
                         reverse=rev,
                         move_line_id=ml.id,
+                        analytic_account_id=analytic_account,
                         quantity=qty,
                         date=ml.date_commit,
                     )
