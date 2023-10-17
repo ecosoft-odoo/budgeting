@@ -8,7 +8,7 @@
     "license": "AGPL-3",
     "depends": ["budget_control", "account_asset_management"],
     "author": "Ecosoft, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/account-analytic",
+    "website": "https://github.com/ecosoft-odoo/budgeting",
     "category": "Accounting & Finance",
     "data": ["views/account_asset.xml"],
     "maintainers": ["Saran440"],
