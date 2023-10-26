@@ -12,48 +12,6 @@
             >
                 <field name="commit_budget" />
             </xpath>
-        </field>
-    </record>
-
-    <record id="contract_contract_supplier_form_view" model="ir.ui.view">
-        <field name="name">contract.contract.supplier.form.view</field>
-        <field name="model">contract.contract</field>
-        <field name="inherit_id" ref="contract.contract_contract_supplier_form_view" />
-        <field name="arch" type="xml">
-            <xpath
-                expr="//field[@name='contract_line_fixed_ids']/tree//field[@name='analytic_account_id']"
-                position="after"
-            >
-                <field
-                    name="json_budget_popover"
-                    optional="show"
-                    nolabel="1"
-                    string="Budget Figure"
-                    width="10px"
-                    widget="popover_widget"
-                    attrs="{'invisible': [('analytic_account_id', '=', False)]}"
-                    groups="budget_control.group_budget_control_user"
-                />
-            </xpath>
-
-            <xpath
-                expr="//field[@name='contract_line_fixed_ids']/tree//field[last()]"
-                position="after"
-            >
-                <field name="auto_adjust_date_commit" optional="hide" />
-                <field name="amount_commit" optional="hide" readonly="1" />
-                <field name="date_commit" optional="hide" />
-                <field
-                    name="fwd_analytic_account_id"
-                    optional="hide"
-                    groups="budget_control.group_budget_control_manager"
-                />
-                <field
-                    name="fwd_date_commit"
-                    optional="hide"
-                    groups="budget_control.group_budget_control_manager"
-                />
-            </xpath>
             <xpath expr="/form/sheet/notebook/page[last()]" position="after">
                 <page
                     string="Budget Commitment"
@@ -96,6 +54,48 @@
                         </tree>
                     </field>
                 </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="contract_contract_supplier_form_view" model="ir.ui.view">
+        <field name="name">contract.contract.supplier.form.view</field>
+        <field name="model">contract.contract</field>
+        <field name="inherit_id" ref="contract.contract_contract_supplier_form_view" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='contract_line_fixed_ids']/tree//field[@name='analytic_account_id']"
+                position="after"
+            >
+                <field
+                    name="json_budget_popover"
+                    optional="show"
+                    nolabel="1"
+                    string="Budget Figure"
+                    width="10px"
+                    widget="popover_widget"
+                    attrs="{'invisible': [('analytic_account_id', '=', False)]}"
+                    groups="budget_control.group_budget_control_user"
+                />
+            </xpath>
+
+            <xpath
+                expr="//field[@name='contract_line_fixed_ids']/tree//field[last()]"
+                position="after"
+            >
+                <field name="auto_adjust_date_commit" optional="hide" />
+                <field name="amount_commit" optional="hide" readonly="1" />
+                <field name="date_commit" optional="hide" />
+                <field
+                    name="fwd_analytic_account_id"
+                    optional="hide"
+                    groups="budget_control.group_budget_control_manager"
+                />
+                <field
+                    name="fwd_date_commit"
+                    optional="hide"
+                    groups="budget_control.group_budget_control_manager"
+                />
             </xpath>
         </field>
     </record>
