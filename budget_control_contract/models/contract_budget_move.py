@@ -19,6 +19,7 @@ class ContractBudgetMove(models.Model):
         comodel_name="contract.line",
         readonly=True,
         index=True,
+        ondelete="cascade",
         help="Commit budget for this contract_line_id",
     )
     move_id = fields.Many2one(
