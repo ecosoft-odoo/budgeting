@@ -43,11 +43,6 @@
                 <field name="fund_id" string="Source of Fund" />
                 <separator orientation="vertical" />
                 <filter
-                    name="current_period"
-                    string="Current Period"
-                    domain="[('date_to', '&gt;=', context_today().strftime('%Y-%m-%d')), ('date_from', '&lt;=', context_today().strftime('%Y-%m-%d'))]"
-                />
-                <filter
                     name="active"
                     string="Unarchived"
                     domain="[('active', '=', False)]"
@@ -87,9 +82,7 @@
         <field name="name">Source of Fund Monitoring</field>
         <field name="res_model">budget.source.fund.report</field>
         <field name="view_mode">pivot,tree,graph</field>
-        <field
-            name="context"
-        >{'group_by':[], 'group_by_no_leaf':1, 'search_default_current_period': 1}</field>
+        <field name="context">{'group_by':[], 'group_by_no_leaf':1}</field>
         <field name="search_view_id" ref="view_source_fund_monitor_report_search" />
     </record>
     <menuitem
