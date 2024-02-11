@@ -212,6 +212,7 @@ class BudgetPeriod(models.Model):
         first do the normal commit, do checking, and remove commits"""
         if not doclines:
             return
+        doclines = doclines.sudo()
         # Commit budget
         budget_moves = []
         vals_date_commit = []
