@@ -90,8 +90,9 @@ class SourceFundMonitorReport(models.Model):
                 a.analytic_account_id,
                 '%s' as amount_type,
                 a.credit-a.debit as amount,
-                aa.bm_date_from as date_from,
-                aa.bm_date_to as date_to,
+                -- change aa.bm_date_from, aa.bm_date_to to a.date
+                a.date as date_from,
+                a.date as date_to,
                 1::boolean as allocation_active,
                 1::boolean as active %s
                 """
