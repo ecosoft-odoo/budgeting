@@ -26,6 +26,6 @@ class TierValidation(models.AbstractModel):
             if getattr(self, "advance", False):
                 line_type = "advance"
             self.env["budget.period"].check_budget_precommit(
-                self[lines], doc_type=line_type
+                self[lines].sudo(), doc_type=line_type
             )
         return super().validate_tier()
