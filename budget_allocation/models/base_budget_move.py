@@ -107,6 +107,7 @@ class BaseBudgetMove(models.AbstractModel):
         """
         # Base on budget source fund monitoring
         errors = []
+        budget_period_obj = self.env["budget.period"]
         for docline in doclines:
             if not docline[docline._budget_analytic_field]:
                 continue
@@ -121,8 +122,18 @@ class BaseBudgetMove(models.AbstractModel):
                     )
                 )
                 continue
+            budget_period_id = budget_period_obj.search(
+                [
+                    ("bm_date_from", "<=", docline.date_commit),
+                    ("bm_date_to", ">=", docline.date_commit),
+                ]
+            )
+            budget_period_id.ensure_one()
             total_spend = sum(
-                x["amount"] for x in query_dict if isinstance(x["amount"], float)
+                x["amount"]
+                for x in query_dict
+                if isinstance(x["amount"], float)
+                and x["budget_period_id"] == budget_period_id.id
             )
             # Check that amount after commit is more than 0.0
             prec_digits = self.env.user.company_id.currency_id.decimal_places
