@@ -22,10 +22,17 @@ class TierValidation(models.AbstractModel):
         lines = getattr(self, "_docline_rel", None)
         line_type = getattr(self, "_docline_type", None)
         if self.check_budget and lines and line_type:
+            doclines = self[lines].sudo()
             # Special case advance clearing
             if getattr(self, "advance", False):
                 line_type = "advance"
+            # --
+            if self._name == "account.move" and self.move_type in (
+                "in_invoice",
+                "in_refund",
+            ):
+                doclines = self["invoice_line_ids"].sudo()
             self.env["budget.period"].check_budget_precommit(
-                self[lines].sudo(), doc_type=line_type
+                doclines, doc_type=line_type
             )
         return super().validate_tier()

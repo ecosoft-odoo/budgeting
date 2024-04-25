@@ -64,3 +64,7 @@ class AccountMoveLine(models.Model):
         if self._name == "account.move.line":
             return self.env.company.budget_include_tax_account
         return self.env["account.tax"]
+
+    def uncommit_purchase_budget(self):
+        """This function for hooks"""
+        return
