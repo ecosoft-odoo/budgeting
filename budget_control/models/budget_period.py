@@ -426,7 +426,11 @@ class BudgetPeriod(models.Model):
                     _("Chosen KPI %s is not valid for budgeting")
                     % template_lines.display_name
                 )
-            balance = sum(q["amount"] for q in query_data if q["amount"] is not None)
+            balance = sum(
+                q["amount"]
+                for q in query_data
+                if q["amount"] is not None and q["budget_period_id"] == budget_period.id
+            )
             # Show a warning if the budget is not sufficient
             if float_compare(balance, 0.0, precision_rounding=2) == -1:
                 # Convert the balance to the document currency
