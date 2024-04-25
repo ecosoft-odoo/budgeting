@@ -213,6 +213,11 @@ class BudgetPeriod(models.Model):
         if not doclines:
             return
         doclines = doclines.sudo()
+        # Allow precommit budget with related origin document (PO)
+        if doc_type == "account":
+            budget_moves_uncommit = doclines.with_context(
+                force_commit=True
+            ).uncommit_purchase_budget()
         # Commit budget
         budget_moves = []
         vals_date_commit = []
@@ -231,6 +236,9 @@ class BudgetPeriod(models.Model):
         doclines.filtered(lambda l: l.id in vals_date_commit).write(
             {"date_commit": False}
         )
+        # Remove uncommit budget
+        if budget_moves_uncommit:
+            budget_moves_uncommit.unlink()
 
     @api.model
     def check_over_returned_budget(self, docline, reverse=False):
