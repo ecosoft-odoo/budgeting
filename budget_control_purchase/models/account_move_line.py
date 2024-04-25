@@ -35,8 +35,8 @@ class AccountMoveLine(models.Model):
         ):
             inv_state = ml.move_id.state
             move_type = ml.move_id.move_type
-            # Cancel or draft, not commitment line
-            if inv_state != "posted":
+            # State Cancel or draft and not context force commit, not commitment line
+            if not self.env.context.get("force_commit") and inv_state != "posted":
                 self.env["purchase.budget.move"].search(
                     [("move_line_id", "=", ml.id)]
                 ).unlink()

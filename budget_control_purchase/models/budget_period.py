@@ -36,3 +36,17 @@ class BudgetPeriod(models.Model):
                 or (not l.control_budget and l.purchase)
             )
         return budget_period
+
+    @api.model
+    def check_budget_precommit(self, doclines, doc_type="account"):
+        """This function add for the extension module can
+        call this function to precommit check budget"""
+        budget_moves = False
+        if doc_type == "purchase":
+            budget_moves = doclines.with_context(
+                force_commit=True
+            ).uncommit_purchase_request_budget()
+        res = super().check_budget_precommit(doclines, doc_type=doc_type)
+        if budget_moves:
+            budget_moves.unlink()
+        return res
