@@ -22,7 +22,7 @@ class PurchaseOrderLine(models.Model):
         """For purchase in valid state, do uncommit for related PR."""
         for po_line in self:
             po_state = po_line.order_id.state
-            if po_state in ("purchase", "done"):
+            if self.env.context.get("force_commit") or po_state in ("purchase", "done"):
                 for pr_line in po_line.purchase_request_lines.filtered("amount_commit"):
                     pr_line.commit_budget(
                         reverse=True,

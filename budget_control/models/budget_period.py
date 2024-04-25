@@ -213,6 +213,11 @@ class BudgetPeriod(models.Model):
         if not doclines:
             return
         doclines = doclines.sudo()
+        # Allow precommit budget with related origin document (PO)
+        if doc_type == "account":
+            budget_moves_uncommit = doclines.with_context(
+                force_commit=True
+            ).uncommit_purchase_budget()
         # Commit budget
         budget_moves = []
         vals_date_commit = []
@@ -231,6 +236,9 @@ class BudgetPeriod(models.Model):
         doclines.filtered(lambda l: l.id in vals_date_commit).write(
             {"date_commit": False}
         )
+        # Remove uncommit budget
+        if budget_moves_uncommit:
+            budget_moves_uncommit.unlink()
 
     @api.model
     def check_over_returned_budget(self, docline, reverse=False):
@@ -418,7 +426,11 @@ class BudgetPeriod(models.Model):
                     _("Chosen KPI %s is not valid for budgeting")
                     % template_lines.display_name
                 )
-            balance = sum(q["amount"] for q in query_data if q["amount"] is not None)
+            balance = sum(
+                q["amount"]
+                for q in query_data
+                if q["amount"] is not None and q["budget_period_id"] == budget_period.id
+            )
             # Show a warning if the budget is not sufficient
             if float_compare(balance, 0.0, precision_rounding=2) == -1:
                 # Convert the balance to the document currency
