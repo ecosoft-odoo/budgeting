@@ -213,6 +213,7 @@ class BudgetPeriod(models.Model):
         if not doclines:
             return
         doclines = doclines.sudo()
+        budget_moves_uncommit = False
         # Allow precommit budget with related origin document (PO)
         if doc_type == "account":
             budget_moves_uncommit = doclines.with_context(
