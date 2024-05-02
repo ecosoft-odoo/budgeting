@@ -309,18 +309,18 @@ class BudgetDoclineMixin(models.AbstractModel):
         )
         currency = hasattr(self, "currency_id") and self.currency_id or False
         amount = budget_vals["amount_currency"]  # init
+        today = fields.Date.context_today(self)
         if (
             not self.env.context.get("use_amount_commit")
             and currency
             and currency != company.currency_id
         ):
             amount = self._get_amount_convert_currency(
-                budget_vals["amount_currency"], currency, company, date_commit
+                budget_vals["amount_currency"], currency, company, date_commit or today
             )
         # By default, commit date is equal to document date
         # this is correct for normal case, but may require different date
         # in case of budget that carried to new period/year
-        today = fields.Date.context_today(self)
         res = {
             "product_id": self.product_id.id,
             "account_id": account.id,
