@@ -437,9 +437,10 @@ class BudgetDoclineMixin(models.AbstractModel):
         required_analytic = self.env.user.has_group(
             "budget_control.group_required_analytic"
         )
-        # Required all document except move type entry
+        # Required all document except move type entry or display_type is not false
         if (
             required_analytic
+            and (hasattr(self, "display_type") and not self.display_type)
             and not self[self._budget_analytic_field]
             and not (
                 self._name == "account.move.line" and self.move_id.move_type == "entry"
