@@ -10,5 +10,7 @@ class AccountMove(models.Model):
     @api.onchange("retained_move_ids")
     def _onchange_retained_move_ids(self):
         res = super()._onchange_retained_move_ids()
-        self.not_affect_budget = bool(self.retained_move_ids)
+        # Force not affect budget if have retained_move_ids
+        if self.retained_move_ids:
+            self.not_affect_budget = True
         return res
