@@ -318,6 +318,14 @@ class BudgetDoclineMixin(models.AbstractModel):
             amount = self._get_amount_convert_currency(
                 budget_vals["amount_currency"], currency, company, date_commit or today
             )
+
+        # NOTE: This is to handle the case of budget revenue.
+        if (
+            self._name == "account.move.line"
+            and self.move_id.move_type == "out_invoice"
+        ):
+            reverse = True
+
         # By default, commit date is equal to document date
         # this is correct for normal case, but may require different date
         # in case of budget that carried to new period/year
