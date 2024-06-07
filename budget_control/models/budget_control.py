@@ -241,9 +241,10 @@ class BudgetControl(models.Model):
                 )
                 if budget_info["amount_balance"] < 0:
                     raise UserError(
-                        _("Total amount in KPI {} will result in {:,.2f}").format(
-                            line.name, budget_info["amount_balance"]
-                        )
+                        _(
+                            "Total amount in KPI %(name)s will result in {:,.2f}",
+                            name=line.name,
+                        ).format(budget_info["amount_balance"])
                     )
 
     @api.onchange("use_all_kpis")
@@ -365,8 +366,10 @@ class BudgetControl(models.Model):
             ):
                 raise UserError(
                     _(
-                        "Planning amount should equal to the released amount {:,.2f} {}"
-                    ).format(rec.released_amount, rec.currency_id.symbol)
+                        "Planning amount should equal "
+                        "to the released amount {:,.2f} %(symbol)s",
+                        symbol=rec.currency_id.symbol,
+                    ).format(rec.released_amount)
                 )
             # Check plan vs intial
             if (
@@ -380,8 +383,9 @@ class BudgetControl(models.Model):
                 raise UserError(
                     _(
                         "Planning amount should be greater than "
-                        "initial balance {:,.2f} {}"
-                    ).format(rec.amount_initial, rec.currency_id.symbol)
+                        "initial balance {:,.2f} %(symbol)s",
+                        symbol=rec.currency_id.symbol,
+                    ).format(rec.amount_initial)
                 )
 
     def action_draft(self):

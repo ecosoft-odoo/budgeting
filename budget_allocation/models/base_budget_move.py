@@ -117,8 +117,12 @@ class BaseBudgetMove(models.AbstractModel):
             query_dict = self._get_query_dict(docline)
             if not any(x["amount_type"] == "1_budget" for x in query_dict):
                 errors.append(
-                    _("{} & {} & {} is not allocated on budget allocation").format(
-                        name, fund_name, tag_name or "False"
+                    _(
+                        "%(name)s & %(fund_name)s & %(tag_name)s is not allocated "
+                        "on budget allocation",
+                        name=name,
+                        fund_name=fund_name,
+                        tag_name=tag_name or "False",
                     )
                 )
                 continue
@@ -140,8 +144,12 @@ class BaseBudgetMove(models.AbstractModel):
             if float_compare(total_spend, 0.0, precision_digits=prec_digits) == -1:
                 errors.append(
                     _(
-                        "{} & {} & {} spend amount over budget allocation limit {:,.2f}"
-                    ).format(name, fund_name, tag_name or "False", total_spend)
+                        "%(name)s & %(fund_name)s & %(tag_name)s spend amount "
+                        "over budget allocation limit {:,.2f}",
+                        name=name,
+                        fund_name=fund_name,
+                        tag_name=tag_name or "False",
+                    ).format(total_spend)
                 )
         return errors
 

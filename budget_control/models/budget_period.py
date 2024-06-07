@@ -438,7 +438,7 @@ class BudgetPeriod(models.Model):
                 balance_currency = self._get_balance_currency(
                     company, balance, doc_currency, date_commit
                 )
-                fomatted_balance = format_amount(
+                formatted_balance = format_amount(
                     self.env, balance_currency, doc_currency
                 )
                 analytic_name = Analytic.browse(analytic_id).display_name
@@ -447,7 +447,11 @@ class BudgetPeriod(models.Model):
                         template_lines.display_name, analytic_name
                     )
                 warnings.append(
-                    _("{0}, will result in {1}").format(analytic_name, fomatted_balance)
+                    _(
+                        "%(analytic_name)s, will result in %(formatted_balance)s",
+                        analytic_name=analytic_name,
+                        formatted_balance=formatted_balance,
+                    )
                 )
         return list(set(warnings))
 
