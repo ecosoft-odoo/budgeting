@@ -308,13 +308,12 @@ class BudgetTransferItem(models.Model):
             allocation_lines = rec.allocation_line_from_ids + rec.allocation_line_to_ids
             budget_allocation_ids = allocation_lines.mapped("budget_allocation_id")
             message = _(
-                "{}<br/><b>transfer to</b><br/>{}<br/>with amount {:,.2f} {}"
-            ).format(
-                rec._get_message_transfer_from(),
-                rec._get_message_transfer_to(),
-                rec.amount,
-                self.env.company.currency_id.symbol,
-            )
+                "%(message_from)s<br/><b>transfer to</b><br/>%(message_to)s"
+                "<br/>with amount {:,.2f} %(symbol)s",
+                message_from=rec._get_message_transfer_from(),
+                message_to=rec._get_message_transfer_to(),
+                symbol=self.env.company.currency_id.symbol,
+            ).format(rec.amount)
             budget_allocation_ids.message_post(body=message)
         return res
 
@@ -329,12 +328,11 @@ class BudgetTransferItem(models.Model):
             allocation_lines = rec.allocation_line_from_ids + rec.allocation_line_to_ids
             budget_allocation_ids = allocation_lines.mapped("budget_allocation_id")
             message = _(
-                "{}<br/><b>reverse from</b><br/>{}<br/>with amount {:,.2f} {}"
-            ).format(
-                rec._get_message_transfer_from(),
-                rec._get_message_transfer_to(),
-                rec.amount,
-                self.env.company.currency_id.symbol,
-            )
+                "%(message_from)s<br/><b>reverse from</b><br/>%(message_to)s"
+                "<br/>with amount {:,.2f} %(symbol)s",
+                message_from=rec._get_message_transfer_from(),
+                message_to=rec._get_message_transfer_to(),
+                symbol=self.env.company.currency_id.symbol,
+            ).format(rec.amount)
             budget_allocation_ids.message_post(body=message)
         return res
