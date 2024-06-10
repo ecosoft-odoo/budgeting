@@ -16,7 +16,7 @@ class HRExpenseSheet(models.Model):
         """Clearing for its Advance and Cancel payment expense"""
         doc_cancel = self.filtered(lambda l: l.state == "cancel")
         res = super().write(vals)
-        if vals.get("state") in ("approve", "cancel"):
+        if vals.get("state") in ("approve", "cancel", "draft"):
             # If this is a clearing, return commit to the advance
             advances = self.mapped("advance_sheet_id.expense_line_ids")
             if advances:
