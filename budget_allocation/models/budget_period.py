@@ -9,11 +9,11 @@ class BudgetPeriod(models.Model):
 
     def _get_where_domain(self, analytic_id, template_lines):
         if template_lines._name == "budget.allocation.line":
-            fund_domain = (
-                "= {}".format(template_lines.fund_id.id)
-                if len(template_lines) == 1
-                else "in {}".format(tuple(template_lines.mapped("fund_id").ids))
-            )
+            unique_fuund_ids = template_lines.mapped("fund_id")
+            if len(unique_fuund_ids) > 1:
+                fund_domain = "in {}".format(tuple(unique_fuund_ids.ids))
+            else:
+                fund_domain = "= {}".format(unique_fuund_ids.id)
             return "analytic_account_id = {} and fund_id {}".format(
                 analytic_id, fund_domain
             )
