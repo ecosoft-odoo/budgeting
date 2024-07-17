@@ -24,7 +24,9 @@ class PurchaseRequisitionLine(models.Model):
             taxes_ids=taxes_ids,
         )
         # Check if date_commit is not in the fiscal year, then update it
-        fy_dates = self.company_id.compute_fiscalyear_dates(fields.date.today())
+        fy_dates = self.company_id.compute_fiscalyear_dates(
+            fields.Date.context_today(self)
+        )
         if self.date_commit > fy_dates["date_to"]:
             res["date_commit"] = self.date_commit
         return res
