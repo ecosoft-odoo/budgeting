@@ -11,7 +11,7 @@
         "budget_control_purchase_request",
         "purchase_request_to_requisition",
     ],
-    "data": [],
+    "data": ["views/purchase_requisition_views.xml"],
     "installable": True,
     "maintainers": ["Saran440"],
     "development_status": "Alpha",
