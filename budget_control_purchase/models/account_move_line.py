@@ -1,7 +1,8 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import models
+from odoo import _, models
+from odoo.exceptions import UserError
 
 
 class AccountMoveLine(models.Model):
@@ -29,7 +30,7 @@ class AccountMoveLine(models.Model):
 
     def uncommit_purchase_budget(self):
         """For vendor bill in valid state, do uncommit for related purchase."""
-        ForwardLine = self.env["budget.commit.forward.line"]
+        # ForwardLine =self.env["budget.commit.forward.line"]
         for ml in self.filtered(
             lambda l: l.move_id.move_type in ("in_invoice", "in_refund")
         ):
@@ -49,33 +50,36 @@ class AccountMoveLine(models.Model):
             qty = ml._get_qty_commit(purchase_line)
             if qty <= 0 and not ml._check_skip_negative_qty():
                 continue
+            # Check analytic distribution,
+            # Not allow to change analytic distribution is not depend on PO
+            purchase_analytic = purchase_line[purchase_line._budget_analytic_field]
+            # Add analytic_distribution from forward_commit
+            if purchase_line.fwd_analytic_distribution:
+                for (
+                    analytic_id,
+                    aa_percent,
+                ) in purchase_line.fwd_analytic_distribution.items():
+                    purchase_analytic[analytic_id] = aa_percent
+
+            ml_analytic_ids = [x for x in ml.analytic_distribution]
+            purchase_analytic_ids = [x for x in purchase_analytic]
+            if any(aa not in purchase_analytic_ids for aa in ml_analytic_ids):
+                raise UserError(
+                    _(
+                        "Analytic distribution mismatch. "
+                        "Please align with the original purchase order."
+                    )
+                )
+
             # Only case reverse and want to return_amount_commit
             context = {}
             if move_type == "in_invoice" and ml.return_amount_commit:
                 context["return_amount_commit"] = ml.amount_commit
-            # Check case forward commit, it should uncommit with forward commit or old analytic
-            analytic_account = False
-            if purchase_line.fwd_analytic_account_id:
-                # Case actual use analytic same as PO Commit, it will uncommit with PO analytic
-                if purchase_line.account_analytic_id == ml.analytic_account_id:
-                    analytic_account = purchase_line.account_analytic_id
-                else:
-                    # Case actual commit is use analytic not same as PO Commit
-                    domain_fwd_line = self._get_domain_fwd_line(purchase_line)
-                    fwd_lines = ForwardLine.search(domain_fwd_line)
-                    for fwd_line in fwd_lines:
-                        if (
-                            fwd_line.forward_id.to_budget_period_id.bm_date_from
-                            <= ml.date_commit
-                            <= fwd_line.forward_id.to_budget_period_id.bm_date_to
-                        ):
-                            analytic_account = fwd_line.to_analytic_account_id
-                            break
             # Confirm vendor bill, do uncommit budget
+            context["product_qty"] = qty
             purchase_line.with_context(**context).commit_budget(
                 reverse=move_type == "in_invoice",
+                analytic_distribution=ml.analytic_distribution,
                 move_line_id=ml.id,
-                analytic_account_id=analytic_account,
-                product_qty=qty,
                 date=ml.date_commit,
             )

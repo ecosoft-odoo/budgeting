@@ -43,9 +43,6 @@ class TestBudgetControlPurchase(BudgetControlCommon):
         cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2)[:1].write(
             {"amount": 200}
         )
-        cls.budget_control.flush()  # Need to flush data into table, so it can be sql
-        cls.budget_control.allocated_amount = 300
-        cls.budget_control.action_done()
         # Purchase method
         cls.product1.product_tmpl_id.purchase_method = "purchase"
         cls.product2.product_tmpl_id.purchase_method = "purchase"
@@ -62,7 +59,7 @@ class TestBudgetControlPurchase(BudgetControlCommon):
                     line.product_id = po_line["product_id"]
                     line.product_qty = po_line["product_qty"]
                     line.price_unit = po_line["price_unit"]
-                    line.account_analytic_id = po_line["analytic_id"]
+                    line.analytic_distribution = po_line["analytic_distribution"]
         purchase = po.save()
         return purchase
 
@@ -75,22 +72,27 @@ class TestBudgetControlPurchase(BudgetControlCommon):
         (3) Check Budget with analytic -> OK
         (2) Check Budget with analytic -> Error amount exceed
         """
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare PO
+        analytic_distribution = {str(self.costcenter1.id): 100}
         purchase = self._create_purchase(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 101 -> error
                     "product_qty": 1,
                     "price_unit": 101,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
                 {
                     "product_id": self.product2,  # KPI2 = 198
                     "product_qty": 2,
                     "price_unit": 99,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ]
         )
@@ -126,16 +128,21 @@ class TestBudgetControlPurchase(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def test_02_budget_purchase_to_invoice(self):
         """Purchase to Invoice, commit and uncommit"""
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare PO on kpi1 with qty 3 and unit_price 10
+        analytic_distribution = {str(self.costcenter1.id): 100}
         purchase = self._create_purchase(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 30
                     "product_qty": 3,
                     "price_unit": 10,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ]
         )
@@ -153,17 +160,16 @@ class TestBudgetControlPurchase(BudgetControlCommon):
         invoice = purchase.invoice_ids[:1]
         # Change qty to 1
         invoice.with_context(check_move_validity=False).invoice_line_ids[0].quantity = 1
-        invoice.with_context(check_move_validity=False)._onchange_invoice_line_ids()
         invoice.invoice_date = invoice.date
         invoice.action_post()
         # PO Commit = 20, INV Actual = 10, Balance = 270
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_commit, 20)
         self.assertEqual(self.budget_control.amount_actual, 10)
         self.assertEqual(self.budget_control.amount_balance, 270)
         # # Cancel invoice
         invoice.button_cancel()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_commit, 30)
         self.assertEqual(self.budget_control.amount_actual, 0)
         self.assertEqual(self.budget_control.amount_balance, 270)
@@ -173,20 +179,25 @@ class TestBudgetControlPurchase(BudgetControlCommon):
         """Purchase to Invoice (partial)
         - Test recompute on both Purchase and Invoice
         - Test close on both Purchase and Invoice"""
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # Prepare PO on kpi1 with qty 3 and unit_price 10
+        analytic_distribution = {str(self.costcenter1.id): 100}
         purchase = self._create_purchase(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 30
                     "product_qty": 2,
                     "price_unit": 15,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
                 {
                     "product_id": self.product2,  # KPI2 = 40
                     "product_qty": 4,
                     "price_unit": 10,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ]
         )
@@ -205,31 +216,28 @@ class TestBudgetControlPurchase(BudgetControlCommon):
         invoice = invoice.with_context(check_move_validity=False)
         invoice.invoice_line_ids[0].quantity = 1
         invoice.invoice_line_ids[1].quantity = 3
-        invoice._onchange_invoice_line_ids()
         invoice.invoice_date = invoice.date
         invoice.action_post()
         # PO Commit = 25, INV Actual = 45
-        self.budget_control.flush()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_purchase, 25)
         self.assertEqual(self.budget_control.amount_actual, 45)
         # Test recompute, must be same
         purchase.recompute_budget_move()
-        self.budget_control.flush()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_purchase, 25)
         self.assertEqual(self.budget_control.amount_actual, 45)
         invoice.recompute_budget_move()
-        self.budget_control.flush()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_actual, 45)
         self.assertEqual(self.budget_control.amount_purchase, 25)
         # Test close budget move
         purchase.close_budget_move()
-        self.budget_control.flush()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_purchase, 0)
         self.assertEqual(self.budget_control.amount_actual, 45)
         # Test close budget move
         invoice.close_budget_move()
-        self.budget_control.flush()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_purchase, 0)
         self.assertEqual(self.budget_control.amount_actual, 0)

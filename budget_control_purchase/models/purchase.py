@@ -43,7 +43,7 @@ class PurchaseOrder(models.Model):
 
     def button_confirm(self):
         res = super().button_confirm()
-        self.flush()
+        self.flush_model()
         BudgetPeriod = self.env["budget.period"]
         for doc in self.filtered(lambda l: l.state == "purchase"):
             BudgetPeriod.check_budget(doc.order_line, doc_type="purchase")
@@ -53,7 +53,7 @@ class PurchaseOrder(models.Model):
 class PurchaseOrderLine(models.Model):
     _name = "purchase.order.line"
     _inherit = ["purchase.order.line", "budget.docline.mixin"]
-    _budget_analytic_field = "account_analytic_id"
+    _budget_analytic_field = "analytic_distribution"
     _budget_date_commit_fields = ["order_id.write_date"]
     _budget_move_model = "purchase.budget.move"
     _doc_rel = "order_id"
@@ -103,21 +103,25 @@ class PurchaseOrderLine(models.Model):
         account = self.product_id.product_tmpl_id.get_product_accounts(fpos)["expense"]
         return account
 
-    def _init_docline_budget_vals(self, budget_vals):
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
-        product_qty = self.product_qty
-        if "product_qty" in budget_vals and budget_vals.get("product_qty"):
-            product_qty = budget_vals.pop("product_qty")
-        budget_vals["amount_currency"] = self.price_unit * product_qty
+        # Use product qty from context, if not, use line product_qty
+        product_qty = self.env.context.get("product_qty") or self.product_qty
+        # If not analytic_id, use 100% of the line
+        percent_analytic = (
+            self[self._budget_analytic_field].get(str(analytic_id)) or 100
+        )
+        budget_vals["amount_currency"] = (
+            self.price_unit * product_qty * percent_analytic / 100
+        )
         budget_vals["tax_ids"] = self.taxes_id.ids
         # Document specific vals
         budget_vals.update(
             {
                 "purchase_line_id": self.id,
-                "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
             }
         )
-        return super()._init_docline_budget_vals(budget_vals)
+        return super()._init_docline_budget_vals(budget_vals, analytic_id)
 
     def _valid_commit_state(self):
         return self.state in ["purchase", "done"]
@@ -125,8 +129,8 @@ class PurchaseOrderLine(models.Model):
     def _prepare_account_move_line(self, move=False):
         self.ensure_one()
         res = super()._prepare_account_move_line(move)
-        if res.get("analytic_account_id") and self.fwd_analytic_account_id:
-            res["analytic_account_id"] = self.fwd_analytic_account_id.id
+        if res.get("analytic_distribution") and self.fwd_analytic_distribution:
+            res["analytic_distribution"] = self.fwd_analytic_distribution
         return res
 
     def _get_included_tax(self):

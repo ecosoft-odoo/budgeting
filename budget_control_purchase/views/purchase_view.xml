@@ -6,19 +6,13 @@
         <field name="inherit_id" ref="purchase.purchase_order_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="//page[@name='products']/field[@name='order_line']/tree/field[@name='account_analytic_id']"
+                expr="//page[@name='products']/field[@name='order_line']/tree/field[@name='analytic_distribution']"
                 position="attributes"
             >
                 <attribute name="optional">show</attribute>
             </xpath>
             <xpath
-                expr="//page[@name='products']/field[@name='order_line']/tree/field[@name='analytic_tag_ids']"
-                position="attributes"
-            >
-                <attribute name="optional">show</attribute>
-            </xpath>
-            <xpath
-                expr="//page[@name='products']/field[@name='order_line']/tree/field[@name='account_analytic_id']"
+                expr="//page[@name='products']/field[@name='order_line']/tree/field[@name='analytic_distribution']"
                 position="after"
             >
                 <field
@@ -28,7 +22,6 @@
                     string="Budget Figure"
                     width="10px"
                     widget="popover_widget"
-                    attrs="{'invisible': [('account_analytic_id', '=', False)]}"
                     groups="budget_control.group_budget_control_user"
                 />
             </xpath>
@@ -45,7 +38,8 @@
                     attrs="{'readonly': [('state', '!=', 'draft')]}"
                 />
                 <field
-                    name="fwd_analytic_account_id"
+                    name="fwd_analytic_distribution"
+                    widget="analytic_distribution"
                     optional="hide"
                     groups="budget_control.group_budget_control_manager"
                 />
@@ -61,7 +55,7 @@
                     name="budget_commit"
                     attrs="{'invisible': [('budget_move_ids', '=', [])]}"
                 >
-                    <div class="oe_read_only oe_right" name="buttons">
+                    <div class="oe_right" name="buttons">
                         <button
                             type="object"
                             name="recompute_budget_move"
@@ -82,13 +76,8 @@
                             <field name="purchase_line_id" />
                             <field name="move_id" />
                             <field name="date" />
-                            <field name="analytic_group" optional="show" />
+                            <field name="analytic_plan" optional="show" />
                             <field name="analytic_account_id" optional="show" />
-                            <field
-                                name="analytic_tag_ids"
-                                optional="hide"
-                                widget="many2many_tags"
-                            />
                             <field name="write_uid" optional="show" />
                             <field name="write_date" optional="show" />
                             <field name="note" optionl="hide" />
