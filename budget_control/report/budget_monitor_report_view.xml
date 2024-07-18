@@ -81,9 +81,9 @@
                         context="{'group_by':'budget_period_id'}"
                     />
                     <filter
-                        string="Analytic Group"
-                        name="group_by_analytic_group"
-                        context="{'group_by':'analytic_group'}"
+                        string="Analytic Plan"
+                        name="group_by_analytic_plan"
+                        context="{'group_by':'analytic_plan'}"
                     />
                     <filter
                         string="Analytic Account"

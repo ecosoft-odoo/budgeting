@@ -56,14 +56,16 @@ class BudgetMoveAdjustment(models.Model):
         tracking=True,
     )
 
-    @api.model
-    def create(self, vals):
+    @api.model_create_multi
+    def create(self, vals_list):
         """Generate a new name using the 'budget.move.adjustment' sequence"""
-        if vals.get("name", "/") == "/":
-            vals["name"] = (
-                self.env["ir.sequence"].next_by_code("budget.move.adjustment") or "/"
-            )
-        return super().create(vals)
+        for vals in vals_list:
+            if vals.get("name", "/") == "/":
+                vals["name"] = (
+                    self.env["ir.sequence"].next_by_code("budget.move.adjustment")
+                    or "/"
+                )
+        return super().create(vals_list)
 
     def unlink(self):
         """Check that only records with state 'draft' can be deleted."""
@@ -112,6 +114,7 @@ class BudgetMoveAdjustmentItem(models.Model):
     _description = "Budget Moves Adjustment Lines"
     _budget_date_commit_fields = ["adjust_id.date_commit"]
     _budget_move_model = "account.budget.move"
+    _budget_analytic_field = "analytic_account_id"
     _doc_rel = "adjust_id"
 
     adjust_id = fields.Many2one(
@@ -148,10 +151,6 @@ class BudgetMoveAdjustmentItem(models.Model):
         required=True,
         index=True,
     )
-    analytic_tag_ids = fields.Many2many(
-        comodel_name="account.analytic.tag",
-        string="Analytic Tags",
-    )
     currency_id = fields.Many2one(
         related="adjust_id.currency_id",
         readonly=True,
@@ -178,7 +177,7 @@ class BudgetMoveAdjustmentItem(models.Model):
             item.budget_move_ids.unlink()
             item.commit_budget()
 
-    def _init_docline_budget_vals(self, budget_vals):
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
         budget_vals["amount_currency"] = (
             -self.amount if self.adjust_type == "release" else self.amount
@@ -187,10 +186,9 @@ class BudgetMoveAdjustmentItem(models.Model):
         budget_vals.update(
             {
                 "adjust_item_id": self.id,
-                "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
             }
         )
-        return super()._init_docline_budget_vals(budget_vals)
+        return super()._init_docline_budget_vals(budget_vals, analytic_id)
 
     def _valid_commit_state(self):
         return self.adjust_id.state == "done"

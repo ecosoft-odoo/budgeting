@@ -19,16 +19,11 @@ Budget Control Core Features:
   for approved expense.
   Note that, in this budget_control module, there is no extension for budget commitment yet.
 
-* **Budget KPI (budget.kpi)**
-
-  Budget KPI is used to measure the efficiency of planning compared to actual usage.
-  It is linked to Account Codes, and one Budget KPI can be associated with more than one account code.
-
 * **Budget Template (budget.template)**
 
   A Budget Template in the budget control system serves as a framework for controlling the budget,
   allowing for the budget to be managed according to the pre-defined template.
-  The budget template has a relationship with the budget kpi and accounting,
+  The budget template has a relationship with the accounting,
   and is used to control spending based on pre-configured accounts.
 
 * **Budget Period (budget.period)**
@@ -93,11 +88,10 @@ Following are brief explanation of what the extended module will do.
 
 These modules extend base.budget.move for other document budget commitment.
 
-* budget_control_advance_clearing
-* budget_control_contract
 * budget_control_expense
 * budget_control_purchase
 * budget_control_purchase_request
+* budget_control_sale
 
 **Budget Allocation**
 
@@ -106,11 +100,6 @@ until set budget control. and allow create Master Data source of fund, analytic 
 Users can view source of fund monitoring report
 
 * budget_allocation
-* budget_allocation_advance_clearing
-* budget_allocation_contract
-* budget_allocation_expense
-* budget_allocation_purchase
-* budget_allocation_purchase_request
 
 **Tier Validation**
 
@@ -128,3 +117,7 @@ we can use dimension to create persistent dimension columns
 
 Following modules ensure that, analytic_tag_dimension will work with all new
 budget control objects. These are important for reporting purposes.
+
+* budget_allocation
+* budget_allocation_expense
+* budget_allocation_purchase

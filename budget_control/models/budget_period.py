@@ -166,11 +166,40 @@ class BudgetPeriod(models.Model):
             return
         self = self.sudo()
         budget_constraints = self._get_budget_constraint()
+        all_analytics = doclines.mapped(doclines._budget_analytic_field)
+        # Get All Analytic Account
+        if doclines._budget_analytic_field == "analytic_distribution":
+            all_analytic_ids = set()
+            for data_dict in all_analytics:
+                # Check percent analytic account must be 100% only
+                total_sum = sum(data_dict.values())
+                if (
+                    float_compare(
+                        total_sum,
+                        100.0,
+                        precision_rounding=2,
+                    )
+                    != 0
+                ):
+                    raise UserError(
+                        _(
+                            "The total sum percent of Analytic Account must 100%. "
+                            "Please check again."
+                        )
+                    )
+                all_analytic_ids.update(int(key) for key in data_dict.keys())
+        else:
+            all_analytic_ids = all_analytics
         # Check budget by group analytic. For case many budget periods in one document.
-        for aa in doclines[doclines._budget_analytic_field]:
-            doclines = doclines.filtered(
-                lambda l: l[doclines._budget_analytic_field] == aa
-            )
+        for aa in all_analytic_ids:
+            if isinstance(aa, int):
+                doclines = doclines.filtered(
+                    lambda l: l[doclines._budget_analytic_field].get(str(aa))
+                )
+            else:
+                doclines = doclines.filtered(
+                    lambda l: l[doclines._budget_analytic_field] == aa
+                )
             # Find active budget.period based on latest doclines date_commit
             date_commit = doclines.filtered("date_commit").mapped("date_commit")
             if not date_commit:
@@ -186,7 +215,10 @@ class BudgetPeriod(models.Model):
             if not controls:
                 return
             # The budget_control of these analytics must be active
-            analytic_ids = [x["analytic_id"] for x in controls]
+            if isinstance(aa, int):
+                analytic_ids = all_analytic_ids
+            else:
+                analytic_ids = [x["analytic_id"] for x in controls]
             analytics = self.env["account.analytic.account"].browse(analytic_ids)
             analytics._check_budget_control_status(budget_period_id=budget_period.id)
             # Check budget on each control element against each KPI/avail (period)
@@ -213,8 +245,8 @@ class BudgetPeriod(models.Model):
         if not doclines:
             return
         doclines = doclines.sudo()
-        budget_moves_uncommit = False
         # Allow precommit budget with related origin document (PO)
+        budget_moves_uncommit = False
         if doc_type == "account":
             budget_moves_uncommit = doclines.with_context(
                 force_commit=True
@@ -381,7 +413,6 @@ class BudgetPeriod(models.Model):
         return self.env["budget.monitor.report"]
 
     def _get_budget_avaiable(self, analytic_id, template_lines):
-        self.flush()
         self._cr.execute(
             sql.SQL(
                 """SELECT * FROM ({monitoring}) report
@@ -438,7 +469,7 @@ class BudgetPeriod(models.Model):
                 balance_currency = self._get_balance_currency(
                     company, balance, doc_currency, date_commit
                 )
-                formatted_balance = format_amount(
+                fomatted_balance = format_amount(
                     self.env, balance_currency, doc_currency
                 )
                 analytic_name = Analytic.browse(analytic_id).display_name
@@ -447,10 +478,8 @@ class BudgetPeriod(models.Model):
                         template_lines.display_name, analytic_name
                     )
                 warnings.append(
-                    _(
-                        "%(analytic_name)s, will result in %(formatted_balance)s",
-                        analytic_name=analytic_name,
-                        formatted_balance=formatted_balance,
+                    _("{analytic_name}, will result in {formatted_balance}").format(
+                        analytic_name=analytic_name, formatted_balance=fomatted_balance
                     )
                 )
         return list(set(warnings))

@@ -56,26 +56,33 @@ class TestBudgetControl(BudgetControlCommon):
         """
         self.budget_period.control_budget = True
         # KPI not in control -> lock
-        bill1 = self._create_simple_bill(self.costcenter1, self.account_kpiX, 100)
+        analytic_distribution = {self.costcenter1.id: 100}
+        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpiX, 100)
         with self.assertRaises(UserError):
             bill1.action_post()
         bill1.button_draft()
         # Valid KPI + control_all_analytic_accounts is checked
         self.budget_period.control_all_analytic_accounts = True
-        bill2 = self._create_simple_bill(self.costcenter1, self.account_kpi1, 100000)
+        bill2 = self._create_simple_bill(
+            analytic_distribution, self.account_kpi1, 100000
+        )
         with self.assertRaises(UserError):
             bill2.action_post()
         bill2.button_draft()
         # Valid KPI + analytic in control_analytic_account_ids
         self.budget_period.control_analytic_account_ids = self.costcenter1
-        bill3 = self._create_simple_bill(self.costcenter1, self.account_kpi1, 100000)
+        bill3 = self._create_simple_bill(
+            analytic_distribution, self.account_kpi1, 100000
+        )
         with self.assertRaises(UserError):
             bill3.action_post()
         bill3.button_draft()
         # Else, even valid KPI
         self.budget_period.control_all_analytic_accounts = False
         self.budget_period.control_analytic_account_ids = False
-        bill4 = self._create_simple_bill(self.costcenter1, self.account_kpi1, 100000)
+        bill4 = self._create_simple_bill(
+            analytic_distribution, self.account_kpi1, 100000
+        )
         bill4.action_post()
         self.assertTrue(bill4.budget_move_ids)
 
@@ -88,7 +95,8 @@ class TestBudgetControl(BudgetControlCommon):
           invoice raise warning
         """
         self.budget_period.control_budget = True
-        bill1 = self._create_simple_bill(self.costcenter1, self.account_kpi1, 400)
+        analytic_distribution = {self.costcenter1.id: 100}
+        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 400)
         # Now, budget_control is not yet set to Done, raise error when post invoice
         with self.assertRaises(UserError):
             bill1.action_post()
@@ -114,11 +122,12 @@ class TestBudgetControl(BudgetControlCommon):
         """
         self.budget_period.control_budget = True
         self.budget_period.control_level = "analytic_kpi"
+        analytic_distribution = {self.costcenter1.id: 100}
         # Budget Controlled
         self.budget_control.allocated_amount = 2400
         self.budget_control.action_done()
         # Test with amount = 401
-        bill1 = self._create_simple_bill(self.costcenter1, self.account_kpi1, 401)
+        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 401)
         with self.assertRaises(UserError):
             bill1.action_post()
 
@@ -130,11 +139,12 @@ class TestBudgetControl(BudgetControlCommon):
         """
         self.budget_period.control_budget = True
         self.budget_period.control_level = "analytic"
+        analytic_distribution = {self.costcenter1.id: 100}
         # Budget Controlled
         self.budget_control.allocated_amount = 2400
         self.budget_control.action_done()
         # Test with amount = 2000
-        bill1 = self._create_simple_bill(self.costcenter1, self.account_kpi1, 2000)
+        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 2000)
         bill1.action_post()
         self.assertEqual(bill1.state, "posted")
         self.assertTrue(self.budget_control.amount_balance)
@@ -144,11 +154,14 @@ class TestBudgetControl(BudgetControlCommon):
         """If budget.period is not set to check budget, no budget check in all cases"""
         # No budget check
         self.budget_period.control_budget = False
+        analytic_distribution = {self.costcenter1.id: 100}
         # Budget Controlled
         self.budget_control.allocated_amount = 2400
         self.budget_control.action_done()
         # Create big amount invoice transaction > 2400
-        bill1 = self._create_simple_bill(self.costcenter1, self.account_kpi1, 100000)
+        bill1 = self._create_simple_bill(
+            analytic_distribution, self.account_kpi1, 100000
+        )
         bill1.action_post()
 
     @freeze_time("2001-02-01")
@@ -157,10 +170,15 @@ class TestBudgetControl(BudgetControlCommon):
         # First, make budget actual to exceed budget first
         self.budget_period.control_budget = False  # No budget check first
         self.budget_control.allocated_amount = 2400
+        analytic_distribution = {self.costcenter1.id: 100}
         self.budget_control.action_done()
         self.assertEqual(self.budget_control.amount_balance, 2400)
-        bill1 = self._create_simple_bill(self.costcenter1, self.account_kpi1, 100000)
+        bill1 = self._create_simple_bill(
+            analytic_distribution, self.account_kpi1, 100000
+        )
         bill1.action_post()
+        # Update budget info
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_balance, -97600)
         # Check budget, for in_refund, force no budget check
         self.budget_period.control_budget = True
@@ -169,10 +187,12 @@ class TestBudgetControl(BudgetControlCommon):
             "in_refund",
             self.vendor,
             datetime.today(),
-            self.costcenter1,
-            [{"account": self.account_kpi1, "price_unit": 100}],
+            analytic_distribution,
+            [{"account": self.account_kpi1.id, "price_unit": 100}],
         )
         invoice.action_post()
+        # Update budget info
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_balance, -97500)
 
     @freeze_time("2001-02-01")
@@ -187,9 +207,10 @@ class TestBudgetControl(BudgetControlCommon):
         # First setup self.costcenterX valid date range and auto adjust
         self.costcenterX.bm_date_from = "2001-01-01"
         self.costcenterX.bm_date_to = "2001-12-31"
+        analytic_distribution = {self.costcenterX.id: 100}
         self.costcenterX.auto_adjust_date_commit = True
         # date_commit should follow that in _budget_date_commit_fields
-        bill1 = self._create_simple_bill(self.costcenterX, self.account_kpiX, 10)
+        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpiX, 10)
         self.assertIn(
             "move_id.date",
             self.env["account.move.line"]._budget_date_commit_fields,
@@ -204,7 +225,7 @@ class TestBudgetControl(BudgetControlCommon):
         bill1.action_post()
         self.assertEqual(bill1.invoice_date, bill1.budget_move_ids.mapped("date")[0])
         # If date is out of range, adjust automatically, to analytic date range
-        bill2 = self._create_simple_bill(self.costcenterX, self.account_kpi1, 10)
+        bill2 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 10)
         self.assertIn(
             "move_id.date",
             self.env["account.move.line"]._budget_date_commit_fields,
@@ -225,12 +246,13 @@ class TestBudgetControl(BudgetControlCommon):
         - If date_commit is not inline with analytic date range, show error
         """
         self.budget_period.control_budget = False
+        analytic_distribution = {self.costcenterX.id: 100}
         # First setup self.costcenterX valid date range and auto adjust
         self.costcenterX.bm_date_from = "2001-01-01"
         self.costcenterX.bm_date_to = "2001-12-31"
         self.costcenterX.auto_adjust_date_commit = True
         # Manual Date Commit
-        bill1 = self._create_simple_bill(self.costcenterX, self.account_kpiX, 10)
+        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpiX, 10)
         bill1.invoice_date = "2001-05-05"
         bill1.date = "2001-05-05"
         # Use manual date_commit = "2002-10-10" which is not in range.
@@ -244,11 +266,14 @@ class TestBudgetControl(BudgetControlCommon):
         By passing context["force_no_budget_check"] = True, no check in all case
         """
         self.budget_period.control_budget = True
+        analytic_distribution = {self.costcenter1.id: 100}
         # Budget Controlled
         self.budget_control.allocated_amount = 2400
         self.budget_control.action_done()
         # Test with bit amount
-        bill1 = self._create_simple_bill(self.costcenter1, self.account_kpi1, 100000)
+        bill1 = self._create_simple_bill(
+            analytic_distribution, self.account_kpi1, 100000
+        )
         bill1.with_context(force_no_budget_check=True).action_post()
 
     def test_10_recompute_budget_move_date_commit(self):
@@ -256,9 +281,10 @@ class TestBudgetControl(BudgetControlCommon):
         - Date budget commit should be the same after recompute
         """
         self.budget_period.control_budget = False
+        analytic_distribution = {self.costcenterX.id: 100}
         self.costcenterX.auto_adjust_date_commit = True
         # Ma
-        bill1 = self._create_simple_bill(self.costcenterX, self.account_kpiX, 10)
+        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpiX, 10)
         bill1.invoice_date = "2002-10-10"
         bill1.date = "2002-10-10"
         # Use manual date_commit = "2002-10-10" which is not in range.
