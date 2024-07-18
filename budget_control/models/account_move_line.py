@@ -36,25 +36,24 @@ class AccountMoveLine(models.Model):
             # Commit on invoice
             invoice_line.commit_budget()
 
-    def _init_docline_budget_vals(self, budget_vals):
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
         if self.move_id.move_type == "entry":
-            budget_vals["amount_currency"] = self.amount_currency
+            total_amount = self.amount_currency
         else:
             sign = -1 if self.move_id.move_type in ("out_refund", "in_refund") else 1
             discount = (100 - self.discount) / 100 if self.discount else 1
-            budget_vals["amount_currency"] = (
-                sign * self.price_unit * self.quantity * discount
-            )
+            total_amount = sign * self.price_unit * self.quantity * discount
+        percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
+        budget_vals["amount_currency"] = total_amount * percent_analytic / 100
         budget_vals["tax_ids"] = self.tax_ids.ids
         # Document specific vals
         budget_vals.update(
             {
                 "move_line_id": self.id,
-                "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
             }
         )
-        return super()._init_docline_budget_vals(budget_vals)
+        return super()._init_docline_budget_vals(budget_vals, analytic_id)
 
     def _valid_commit_state(self):
         return self.move_id.state == "posted"

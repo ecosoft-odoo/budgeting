@@ -16,11 +16,11 @@ class GenerateBudgetControl(models.TransientModel):
         [("choose", "choose"), ("get", "get")],
         default="choose",
     )
-    analytic_group_ids = fields.Many2many(
-        comodel_name="account.analytic.group",
-        relation="analytic_group_generate_budget_control_rel",
+    analytic_plan_ids = fields.Many2many(
+        comodel_name="account.analytic.plan",
+        relation="analytic_plan_generate_budget_control_rel",
         column1="wizard_id",
-        column2="group_id",
+        column2="plan_id",
     )
     all_analytic_accounts = fields.Boolean(
         help="Generate budget control sheet for all missing analytic account",
@@ -86,13 +86,11 @@ class GenerateBudgetControl(models.TransientModel):
         values["template_id"] = period.template_id.id
         return values
 
-    @api.depends("analytic_group_ids", "budget_period_id")
+    @api.depends("analytic_plan_ids", "budget_period_id")
     def _compute_domain_analytic_account_ids(self):
         Analytic = self.env["account.analytic.account"]
         for rec in self:
-            analytics = Analytic.search(
-                [("group_id", "in", self.analytic_group_ids.ids)]
-            )
+            analytics = Analytic.search([("plan_id", "in", self.analytic_plan_ids.ids)])
             analytics = analytics.filtered_domain(
                 [
                     "|",
@@ -109,7 +107,7 @@ class GenerateBudgetControl(models.TransientModel):
             )
             rec.domain_analytic_account_ids = analytics
 
-    @api.onchange("all_analytic_accounts", "analytic_group_ids")
+    @api.onchange("all_analytic_accounts", "analytic_plan_ids")
     def _onchange_analytic_accounts(self):
         """Auto fill analytic_account_ids."""
         self.analytic_account_ids = False

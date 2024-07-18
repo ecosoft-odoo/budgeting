@@ -116,7 +116,7 @@
                                     <field name="name" optional="show" />
                                     <field name="account_id" optional="show" />
                                     <field name="analytic_account_id" />
-                                    <field
+                                    <!-- <field
                                         name="json_budget_popover"
                                         optional="show"
                                         nolabel="1"
@@ -125,13 +125,7 @@
                                         widget="popover_widget"
                                         attrs="{'invisible': [('analytic_account_id', '=', False)]}"
                                         groups="budget_control.group_budget_control_user"
-                                    />
-                                    <field
-                                        name="analytic_tag_ids"
-                                        widget="many2many_tags"
-                                        optional="show"
-                                        groups="analytic.group_analytic_tags"
-                                    />
+                                    /> -->
                                     <field name="amount" />
                                     <field name="currency_id" optional="hide" />
                                     <field name="amount_commit" optional="hide" />
@@ -147,11 +141,6 @@
                                         </group>
                                         <group>
                                             <field name="analytic_account_id" />
-                                            <field
-                                                name="analytic_tag_ids"
-                                                widget="many2many_tags"
-                                                groups="analytic.group_analytic_tags"
-                                            />
                                             <field name="amount" />
                                             <field name="amount_commit" />
                                             <field name="date_commit" />
@@ -165,7 +154,7 @@
                             name="budget_commit"
                             attrs="{'invisible': [('budget_move_ids', '=', [])]}"
                         >
-                            <div class="oe_read_only oe_right" name="buttons">
+                            <div class="oe_right" name="buttons">
                                 <button
                                     type="object"
                                     name="recompute_budget_move"
@@ -186,13 +175,8 @@
                                     <field name="adjust_item_id" />
                                     <field name="adjust_id" />
                                     <field name="date" />
-                                    <field name="analytic_group" optional="show" />
+                                    <field name="analytic_plan" optional="show" />
                                     <field name="analytic_account_id" optional="show" />
-                                    <field
-                                        name="analytic_tag_ids"
-                                        optional="hide"
-                                        widget="many2many_tags"
-                                    />
                                     <field name="write_uid" optional="show" />
                                     <field name="write_date" optional="show" />
                                     <field name="note" optionl="hide" />

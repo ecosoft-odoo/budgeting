@@ -1,13 +1,12 @@
 Before start using this module, following access right must be set.
-
-   - Budget User for Budget Control Sheet, Budget Report
-   - Budget Manager for Budget Period
+  - Budget User for Budget Control Sheet, Budget Report
+  - Budget Manager for Budget Period
 
 Followings are sample steps to start with,
 
 1. Create new Budget KPI
 
-   - To create budget KPI using in budget template
+   To create budget KPI using in budget template
 
 2. Create new Budget Template
 
@@ -22,29 +21,26 @@ Followings are sample steps to start with,
 
 4. Create Budget Control Sheet
 
-   To create budget control sheet, you can create by using the helper,
+   To create budget control sheet, you can either create manually one by one or by using the helper,
    Action > Create Budget Control Sheet
 
-    - Choose Analytic Group
-    - Check All Analytic Accounts, this will list all analytic account in selected groups
+    - Choose Analytic budget_control_purchase_tag_dimension
+    - Check All Analytic Account, this will list all analytic account in selected groups
     - Uncheck Initial Budget By Commitment, this is used only on following year to
       init budget allocation if they were committed amount carried over.
-    - Click "Generate Budget Control Sheet", and then view the newly created control sheets.
+    - Click "Create Budget Control Sheet", and then view the newly created control sheets.
 
 5. Allocate amount in Budget Control Sheets
 
    Each analytic account will have its own sheet. Form Budget Period, click on the
-   icon "Budget Control" or by Menu > Budgeting > Budget Control Sheet, to open them.
+   icon "Budget Control Sheets" or by Menu > Budgeting > Budget Control Sheet, to open them.
 
-    - Within the "Plan Date Range" period, the Plan table displays all KPIs split by Plan Date Range
-    - If you need to edit the plan, click the "Reset Options" tab, then select the KPIs you want to plan
-    - Click the "Soft Reset" button to generate KPIs. The amounts in the plan table will not disappear.
-    - Click the "Hard Reset" button to generate KPIs. The amounts in the plan table will disappear.
+    - Based on "Plan Date Range" period, Plan table will show all KPI split by Plan Date Range
     - Allocate budget amount as appropriate.
-    - Click Submit > Control, state will change to Controlled.
+    - Click Control button, state will change to Controlled.
 
    Note: Make sure the Plan Date Rang period already has date ranges that covers entire budget period.
-   Once ready, you can click on "Soft Reset" or "Hard Reset" anytime.
+   Once ready, you can click on "Reset Plan" anytime.
 
 6. Budget Reports
 

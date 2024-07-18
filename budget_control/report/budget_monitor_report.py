@@ -25,8 +25,8 @@ class BudgetMonitorReport(models.Model):
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
     )
-    analytic_group = fields.Many2one(
-        comodel_name="account.analytic.group",
+    analytic_plan = fields.Many2one(
+        comodel_name="account.analytic.plan",
     )
     date = fields.Date()
     amount = fields.Float()
@@ -99,7 +99,7 @@ class BudgetMonitorReport(models.Model):
                 '%s,' || a.%s as res_id,
                 a.kpi_id,
                 a.analytic_account_id,
-                a.analytic_group,
+                a.analytic_plan,
                 a.date as date,
                 '%s' as amount_type,
                 a.credit-a.debit as amount,
@@ -141,7 +141,7 @@ class BudgetMonitorReport(models.Model):
             'budget.control.line,' || a.id as res_id,
             a.kpi_id,
             a.analytic_account_id,
-            b.analytic_group,
+            b.analytic_plan,
             a.date_to as date,  -- approx date
             '1_budget' as amount_type,
             a.amount as amount,
