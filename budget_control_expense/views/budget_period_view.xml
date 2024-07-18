@@ -5,13 +5,9 @@
         <field name="model">budget.period</field>
         <field name="inherit_id" ref="budget_control.budget_period_view_form" />
         <field name="arch" type="xml">
-            <div name="account" position="after">
-                <label for="expense" invisible="1" />
-                <div name="expense" class="o_row">
-                    <field name="expense" />
-                    <span>On Expense</span>
-                </div>
-            </div>
+            <xpath expr="//group[@name='budget_period_control']" position="inside">
+                <field name="expense" />
+            </xpath>
         </field>
     </record>
 </odoo>

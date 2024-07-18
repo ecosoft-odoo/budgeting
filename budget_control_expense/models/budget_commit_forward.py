@@ -29,17 +29,11 @@ class BudgetCommitForward(models.Model):
             return f"{doc.sheet_id._name},{doc.sheet_id.id}"
         return super()._get_document_number(doc)
 
-    def _get_commit_docline(self, res_model):
+    def _get_base_domain_extension(self, res_model):
+        """For module extension"""
         if res_model == "hr.expense":
-            domain = self._get_base_domain()
-            domain.extend(
-                [
-                    ("analytic_account_id", "!=", False),
-                    ("state", "!=", "cancel"),
-                ]
-            )
-            return self.env[res_model].search(domain)
-        return super()._get_commit_docline(res_model)
+            return " AND a.state != 'cancel'"
+        return super()._get_base_domain_extension(res_model)
 
 
 class BudgetCommitForwardLine(models.Model):

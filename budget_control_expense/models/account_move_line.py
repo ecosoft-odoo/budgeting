@@ -7,9 +7,9 @@ from odoo import models
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
-    def _init_docline_budget_vals(self, budget_vals):
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
-        res = super()._init_docline_budget_vals(budget_vals)
+        res = super()._init_docline_budget_vals(budget_vals, analytic_id)
         expense = self.expense_id
         if expense:  # case expense (support with include tax)
             budget_vals["amount_currency"] = (
@@ -24,8 +24,7 @@ class AccountMoveLine(models.Model):
         Expense = self.env["hr.expense"]
         for ml in self:
             inv_state = ml.move_id.state
-            move_type = ml.move_id.move_type
-            if move_type != "entry":
+            if not ml.move_id.expense_sheet_id:
                 continue
             if inv_state == "posted":
                 expense = ml.expense_id.filtered("amount_commit")
@@ -39,7 +38,7 @@ class AccountMoveLine(models.Model):
                     reverse=True,
                     move_line_id=ml.id,
                     date=ml.date_commit,
-                    analytic_account_id=expense.fwd_analytic_account_id or False,
+                    analytic_distribution=expense.fwd_analytic_distribution or False,
                 )
             else:  # Cancel or draft, not commitment line
                 self.env[Expense._budget_model()].search(

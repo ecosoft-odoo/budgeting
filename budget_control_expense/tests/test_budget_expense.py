@@ -3,6 +3,7 @@
 
 from freezegun import freeze_time
 
+from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tests.common import Form
@@ -41,9 +42,9 @@ class TestBudgetControlExpense(BudgetControlCommon):
         cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2)[:1].write(
             {"amount": 200}
         )
-        cls.budget_control.flush()  # Need to flush data into table, so it can be sql
-        cls.budget_control.allocated_amount = 300
-        cls.budget_control.action_done()
+        # cls.budget_control.flush_model()  # Need to flush data into table, so it can be sql
+        # cls.budget_control.allocated_amount = 300
+        # cls.budget_control.action_done()
 
     @freeze_time("2001-02-01")
     def _create_expense_sheet(self, ex_lines):
@@ -55,16 +56,15 @@ class TestBudgetControlExpense(BudgetControlCommon):
             with Form(Expense, view=view_id) as ex:
                 ex.employee_id = user.employee_id
                 ex.product_id = ex_line["product_id"]
-                ex.quantity = ex_line["product_qty"]
-                ex.unit_amount = ex_line["price_unit"]
-                ex.analytic_account_id = ex_line["analytic_id"]
+                ex.total_amount = ex_line["price_unit"] * ex_line["product_qty"]
+                ex.analytic_distribution = ex_line["analytic_distribution"]
             expense = ex.save()
             expense_ids.append(expense.id)
         expense_sheet = self.env["hr.expense.sheet"].create(
             {
                 "name": "Test Expense",
                 "employee_id": user.employee_id.id,
-                "expense_line_ids": [(6, 0, expense_ids)],
+                "expense_line_ids": [Command.set(expense_ids)],
             }
         )
         return expense_sheet
@@ -78,22 +78,26 @@ class TestBudgetControlExpense(BudgetControlCommon):
         (3) Check Budget with analytic -> OK
         (2) Check Budget with analytic -> Error amount exceed
         """
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare Expense Sheet
+        analytic_distribution = {str(self.costcenter1.id): 100}
         expense = self._create_expense_sheet(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 101 -> error
                     "product_qty": 1,
                     "price_unit": 101,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
                 {
                     "product_id": self.product2,  # KPI2 = 198
                     "product_qty": 2,
                     "price_unit": 99,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ]
         )
@@ -119,7 +123,7 @@ class TestBudgetControlExpense(BudgetControlCommon):
         expense.reset_expense_sheets()
         self.assertEqual(self.budget_control.amount_balance, 300)
         # (4) Amount exceed -> Error
-        expense.expense_line_ids.write({"unit_amount": 101})
+        expense.expense_line_ids.write({"total_amount": 301})
         # CostCenter1, will result in $ -1.00
         with self.assertRaises(UserError):
             expense.action_submit_sheet()
@@ -127,16 +131,21 @@ class TestBudgetControlExpense(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def test_02_budget_expense_to_journal_posting(self):
         """Expense to Journal Posting, commit and uncommit"""
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare Expense on kpi1 with qty 3 and unit_price 10
+        analytic_distribution = {str(self.costcenter1.id): 100}
         expense = self._create_expense_sheet(
             [
                 {
                     "product_id": self.product1,  # KPI1
                     "product_qty": 3,
                     "price_unit": 10,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ]
         )
@@ -156,44 +165,51 @@ class TestBudgetControlExpense(BudgetControlCommon):
         move = expense.account_move_id
         self.assertEqual(move.state, "posted")
         # EX Commit = 0, JE Actual = 30, Balance = 270
-        self.budget_control.invalidate_cache()
+        # Update budget info
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_expense, 0)
         self.assertEqual(self.budget_control.amount_actual, 30)
         self.assertEqual(self.budget_control.amount_balance, 270)
         # Set to draft
         move.button_draft()
-        self.budget_control.invalidate_cache()
+        # Update budget info
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_expense, 30)
         self.assertEqual(self.budget_control.amount_actual, 0)
         self.assertEqual(self.budget_control.amount_balance, 270)
-        # Cancel journal entry, expense will also be cancelled
+        # Cancel journal entry, expense no change
         move.button_cancel()
-        self.budget_control.invalidate_cache()
-        self.assertEqual(self.budget_control.amount_expense, 0)
+        # Update budget info
+        self.budget_control._compute_budget_info()
+        self.assertEqual(self.budget_control.amount_expense, 30)
         self.assertEqual(self.budget_control.amount_actual, 0)
-        self.assertEqual(self.budget_control.amount_balance, 300)
+        self.assertEqual(self.budget_control.amount_balance, 270)
 
     @freeze_time("2001-02-01")
     def test_03_budget_recompute_and_close_budget_move(self):
         """EX to JE
         - Test recompute on both EX and JE
         - Test close on both EX and JE"""
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare Expense on kpi1 with qty 3 and unit_price 10
+        analytic_distribution = {str(self.costcenter1.id): 100}
         expense = self._create_expense_sheet(
             [
                 {
                     "product_id": self.product1,
                     "product_qty": 2,
                     "price_unit": 15,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
                 {
                     "product_id": self.product2,
                     "product_qty": 4,
                     "price_unit": 10,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ]
         )
@@ -212,26 +228,24 @@ class TestBudgetControlExpense(BudgetControlCommon):
         move = expense.account_move_id
         self.assertEqual(move.state, "posted")
         # EX Commit = 0, JE Actual = 70
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_expense, 0)
         self.assertEqual(self.budget_control.amount_actual, 70)
         # Recompute
         expense.recompute_budget_move()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_expense, 0)
         self.assertEqual(self.budget_control.amount_actual, 70)
         move.recompute_budget_move()
-        self.budget_control.flush()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_expense, 0)
         self.assertEqual(self.budget_control.amount_actual, 70)
         # Close
         expense.close_budget_move()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_expense, 0)
         self.assertEqual(self.budget_control.amount_actual, 70)
         move.close_budget_move()
-        self.budget_control.flush()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_expense, 0)
         self.assertEqual(self.budget_control.amount_actual, 0)
