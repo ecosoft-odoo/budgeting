@@ -3,13 +3,14 @@
 
 {
     "name": "Budget Control on Purchase",
-    "version": "15.0.1.0.0",
+    "version": "16.0.1.0.0",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",
     "depends": ["budget_control", "purchase"],
     "data": [
         "security/ir.model.access.csv",
+        "views/purchase_budget_move.xml",
         "views/budget_period_view.xml",
         "views/purchase_view.xml",
         "views/budget_control_view.xml",
