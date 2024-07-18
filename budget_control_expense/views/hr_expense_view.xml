@@ -6,9 +6,11 @@
         <field name="inherit_id" ref="hr_expense.view_hr_expense_sheet_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="//page[@name='expenses']/field[@name='expense_line_ids']/tree/field[@name='analytic_account_id']"
+                expr="//page[@name='expenses']/field[@name='expense_line_ids']/tree/field[@name='analytic_distribution']"
                 position="after"
             >
+                <!-- Add new field no permission -->
+                <field name="analytic_distribution" invisible="1" />
                 <field
                     name="json_budget_popover"
                     optional="show"
@@ -16,7 +18,7 @@
                     string="Budget Figure"
                     width="10px"
                     widget="popover_widget"
-                    attrs="{'invisible': [('analytic_account_id', '=', False)]}"
+                    attrs="{'invisible': [('analytic_distribution', '=', False)]}"
                     groups="budget_control.group_budget_control_user"
                 />
             </xpath>
@@ -28,12 +30,13 @@
                 <field name="amount_commit" optional="hide" readonly="1" />
                 <field
                     name="date_commit"
-                    groups="budget_control.group_budget_date_commit"
                     optional="hide"
+                    groups="budget_control.group_budget_date_commit"
                     attrs="{'readonly': [('state', '!=', 'draft')]}"
                 />
                 <field
-                    name="fwd_analytic_account_id"
+                    name="fwd_analytic_distribution"
+                    widget="analytic_distribution"
                     optional="hide"
                     groups="budget_control.group_budget_control_manager"
                 />
@@ -49,7 +52,7 @@
                     name="budget_commit"
                     attrs="{'invisible': [('budget_move_ids', '=', [])]}"
                 >
-                    <div class="oe_read_only oe_right" name="buttons">
+                    <div class="oe_right" name="buttons">
                         <button
                             type="object"
                             name="recompute_budget_move"
@@ -68,14 +71,10 @@
                     <field name="budget_move_ids" readonly="1">
                         <tree>
                             <field name="expense_id" optional="show" />
+                            <field name="move_line_id" optional="show" />
                             <field name="date" />
-                            <field name="analytic_group" optional="show" />
+                            <field name="analytic_plan" optional="show" />
                             <field name="analytic_account_id" optional="show" />
-                            <field
-                                name="analytic_tag_ids"
-                                optional="hide"
-                                widget="many2many_tags"
-                            />
                             <field name="write_uid" optional="show" />
                             <field name="write_date" optional="show" />
                             <field name="note" optionl="hide" />

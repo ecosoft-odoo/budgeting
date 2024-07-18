@@ -83,34 +83,29 @@ class HRExpense(models.Model):
             expense.forward_commit()
             move_lines.uncommit_expense_budget()
 
-    def _init_docline_budget_vals(self, budget_vals):
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
         if not budget_vals.get("amount_currency", False):
-            budget_vals["amount_currency"] = (
+            percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
+            total_amount = (
                 (self.quantity * self.unit_amount)
                 if self.product_has_cost
                 else self.total_amount
             )
+            budget_vals["amount_currency"] = total_amount * percent_analytic / 100
             budget_vals["tax_ids"] = self.tax_ids.ids
         # Document specific vals
-        budget_vals.update(
-            {
-                "expense_id": self.id,
-                "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
-            }
-        )
-        return super()._init_docline_budget_vals(budget_vals)
+        budget_vals.update({"expense_id": self.id})
+        return super()._init_docline_budget_vals(budget_vals, analytic_id)
 
     def _valid_commit_state(self):
         return self.state in ["approved", "done"]
 
-    def _get_account_move_line_values(self):
-        move_line_values_by_expense = super()._get_account_move_line_values()
-        for expense in self:
-            for ml in move_line_values_by_expense[expense.id]:
-                if ml.get("analytic_account_id") and expense.fwd_analytic_account_id:
-                    ml["analytic_account_id"] = expense.fwd_analytic_account_id.id
-        return move_line_values_by_expense
+    def _prepare_move_line_vals(self):
+        ml_vals = super()._prepare_move_line_vals()
+        if ml_vals.get("analytic_distribution") and self.fwd_analytic_distribution:
+            ml_vals["analytic_distribution"] = self.fwd_analytic_distribution
+        return ml_vals
 
     def _get_included_tax(self):
         if self._name == "hr.expense":
