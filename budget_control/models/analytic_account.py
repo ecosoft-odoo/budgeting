@@ -166,6 +166,7 @@ class AccountAnalyticAccount(models.Model):
 
     def _update_val_analytic(self, next_analytic, next_date_range):
         BudgetPeriod = self.env["budget.period"]
+        vals_update = {}
         type_id = next_analytic.budget_period_id.plan_date_range_type_id
         period_id = BudgetPeriod.search(
             [
@@ -173,11 +174,20 @@ class AccountAnalyticAccount(models.Model):
                 ("plan_date_range_type_id", "=", type_id.id),
             ]
         )
-        return {"budget_period_id": period_id.id}
+        if period_id:
+            vals_update = {"budget_period_id": period_id.id}
+        else:
+            # No budget period found, update date_from and date_to
+            vals_update = {
+                "bm_date_from": next_date_range,
+                "bm_date_to": next_analytic.bm_date_to + relativedelta(years=1),
+            }
+        return vals_update
 
     def _auto_create_next_analytic(self, next_date_range):
         self.ensure_one()
-        next_analytic = self.copy()
+        # Core odoo will add (copy) after name, but we need same name
+        next_analytic = self.copy(default={"name": self.name})
         val_update = self._update_val_analytic(next_analytic, next_date_range)
         next_analytic.write(val_update)
         return next_analytic
@@ -230,12 +240,13 @@ class AccountAnalyticAccount(models.Model):
             rec.bm_date_to = rec.budget_period_id.bm_date_to
 
     def _auto_adjust_date_commit(self, docline):
-        self.ensure_one()
-        if self.auto_adjust_date_commit:
-            if self.bm_date_from and self.bm_date_from > docline.date_commit:
-                docline.date_commit = self.bm_date_from
-            elif self.bm_date_to and self.bm_date_to < docline.date_commit:
-                docline.date_commit = self.bm_date_to
+        for rec in self:
+            if not rec.auto_adjust_date_commit:
+                continue
+            if rec.bm_date_from and rec.bm_date_from > docline.date_commit:
+                docline.date_commit = rec.bm_date_from
+            elif rec.bm_date_to and rec.bm_date_to < docline.date_commit:
+                docline.date_commit = rec.bm_date_to
 
     def action_edit_initial_available(self):
         return {

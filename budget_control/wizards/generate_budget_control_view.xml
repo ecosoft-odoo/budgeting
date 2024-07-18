@@ -11,7 +11,7 @@
                 <div states="choose">
                     <group name="criteria" states="choose">
                         <group string="Analytic Accounts">
-                            <field name="analytic_group_ids" widget="many2many_tags" />
+                            <field name="analytic_plan_ids" widget="many2many_tags" />
                             <field name="all_analytic_accounts" />
                         </group>
                         <group string="Options">

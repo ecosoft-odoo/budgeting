@@ -46,17 +46,16 @@ class AccountMove(models.Model):
     def close_budget_move(self):
         self.mapped("invoice_line_ids").close_budget_move()
 
-    @api.model
-    def create(self, vals):
+    @api.model_create_multi
+    def create(self, vals_list):
         """The default value of "Not affect budget" depends on journal.
         except in the case of a manaully created journal entry.
         """
-        not_affect_budget = vals.get("not_affect_budget", "None")
-        journal_id = vals.get("journal_id")
-        if not_affect_budget == "None" and journal_id:
-            journal = self.env["account.journal"].browse(journal_id)
-            vals["not_affect_budget"] = journal.not_affect_budget
-        return super().create(vals)
+        for vals in vals_list:
+            if "not_affect_budget" not in vals and "journal_id" in vals:
+                journal = self.env["account.journal"].browse(vals["journal_id"])
+                vals["not_affect_budget"] = journal.not_affect_budget
+        return super().create(vals_list)
 
     def write(self, vals):
         """
@@ -87,7 +86,8 @@ class AccountMove(models.Model):
 
     def action_post(self):
         res = super().action_post()
-        self.flush()
+        # Update database, then check budget
+        self.flush_model()
         BudgetPeriod = self.env["budget.period"]
         for move in self._filtered_move_check_budget():
             BudgetPeriod.check_budget(move.line_ids)

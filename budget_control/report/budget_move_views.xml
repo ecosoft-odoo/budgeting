@@ -10,8 +10,7 @@
                 <field name="move_line_id" />
                 <field name="account_id" />
                 <field name="analytic_account_id" />
-                <field name="analytic_group" />
-                <field name="analytic_tag_ids" widget="many2many_tags" />
+                <field name="analytic_plan" />
                 <field name="debit" sum="Total" />
                 <field name="credit" sum="Total" />
                 <field name="amount_currency" />
@@ -46,9 +45,9 @@
                 />
                 <group expand="1" string="Group By">
                     <filter
-                        string="Analytic Group"
-                        name="group_by_analytic_group"
-                        context="{'group_by':'analytic_group'}"
+                        string="Analytic Plan"
+                        name="group_by_analytic_plan"
+                        context="{'group_by':'analytic_plan'}"
                     />
                     <filter
                         string="Analytic Account"

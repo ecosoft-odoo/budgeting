@@ -13,7 +13,7 @@
                             <field name="currency_id" invisible="1" />
                             <field name="analytic_account_id" force_save="1" />
                             <field
-                                name="analytic_group"
+                                name="analytic_plan"
                                 force_save="1"
                                 optional="hide"
                             />

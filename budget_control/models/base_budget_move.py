@@ -34,7 +34,7 @@ class BaseBudgetMove(models.AbstractModel):
     )
     kpi_id = fields.Many2one(
         comodel_name="budget.kpi",
-        related="template_line_id.kpi_id",
+        compute="_compute_kpi_id",
         store=True,
     )
     date = fields.Date(
@@ -58,15 +58,11 @@ class BaseBudgetMove(models.AbstractModel):
         index=True,
         readonly=True,
     )
-    analytic_group = fields.Many2one(
-        comodel_name="account.analytic.group",
+    analytic_plan = fields.Many2one(
+        comodel_name="account.analytic.plan",
         auto_join=True,
         index=True,
         readonly=True,
-    )
-    analytic_tag_ids = fields.Many2many(
-        comodel_name="account.analytic.tag",
-        string="Analytic Tags",
     )
     amount_currency = fields.Float(
         required=True,
@@ -95,6 +91,11 @@ class BaseBudgetMove(models.AbstractModel):
         help="This budget move line is the result of 'Forward Budget Commitment'",
     )
 
+    @api.depends("template_line_id")
+    def _compute_kpi_id(self):
+        for rec in self:
+            rec.kpi_id = rec.template_line_id.kpi_id
+
     def _compute_reference(self):
         """Compute reference name of the budget move document"""
         self.update({"reference": False})
@@ -109,7 +110,7 @@ class BudgetDoclineMixinBase(models.AbstractModel):
     _description = (
         "Base of budget.docline.mixin, used for non budgeting model extension"
     )
-    _budget_analytic_field = "analytic_account_id"
+    _budget_analytic_field = "analytic_distribution"
     # Budget related variables
     _budget_date_commit_fields = []  # Date used for budget commitment
     _budget_move_model = False  # account.budget.move
@@ -131,7 +132,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         compute="_compute_can_commit",
         help="If True, this docline is eligible to create budget move",
     )
-    amount_commit = fields.Float(
+    amount_commit = fields.Json(
         compute="_compute_commit",
         copy=False,
         store=True,
@@ -146,12 +147,9 @@ class BudgetDoclineMixin(models.AbstractModel):
         compute="_compute_auto_adjust_date_commit",
         readonly=True,
     )
-    fwd_analytic_account_id = fields.Many2one(
-        comodel_name="account.analytic.account",
+    fwd_analytic_distribution = fields.Json(
         string="Carry Forward Analytic",
         copy=False,
-        readonly=False,
-        index=True,
         help="If specified, recompute budget will take this into account",
     )
     fwd_date_commit = fields.Date(
@@ -174,16 +172,26 @@ class BudgetDoclineMixin(models.AbstractModel):
     def _valid_commit_state(self):
         raise ValidationError(_("No implementation error!"))
 
-    @api.onchange("fwd_analytic_account_id")
-    def _onchange_fwd_analytic_account_id(self):
-        self.fwd_date_commit = self.fwd_analytic_account_id.bm_date_from
+    def _convert_analytics(self, analytic_distribution=False):
+        Analytic = self.env["account.analytic.account"]
+        analytics = analytic_distribution or self[self._budget_analytic_field]
+        if not analytics:
+            return Analytic
+        # Check analytic from distribution it send data with JSON type 'dict'
+        # and we need convert it to analytic object
+        if self._budget_analytic_field == "analytic_distribution":
+            account_analytic_ids = [int(k) for k in analytics.keys()]
+            analytics = Analytic.browse(account_analytic_ids)
+        return analytics
 
     @api.depends(lambda self: [self._budget_analytic_field])
     def _compute_auto_adjust_date_commit(self):
+        """Auto adjust is True if some analytic account is checked auto adjust"""
         for docline in self:
-            docline.auto_adjust_date_commit = docline[
-                self._budget_analytic_field
-            ].auto_adjust_date_commit
+            analytics = docline._convert_analytics()
+            docline.auto_adjust_date_commit = any(
+                aa.auto_adjust_date_commit for aa in analytics
+            )
 
     @api.depends()
     def _compute_can_commit(self):
@@ -208,9 +216,25 @@ class BudgetDoclineMixin(models.AbstractModel):
         - Calc date_commit if not exists and on 1st budget_move_ids only or False
         """
         for rec in self:
-            debit = sum(rec.budget_move_ids.mapped("debit"))
-            credit = sum(rec.budget_move_ids.mapped("credit"))
-            rec.amount_commit = debit - credit
+            analytic_distribution = rec[self._budget_analytic_field]
+            # Add analytic_distribution from forward_commit
+            if rec.fwd_analytic_distribution:
+                for analytic_id, aa_percent in rec.fwd_analytic_distribution.items():
+                    analytic_distribution[analytic_id] = aa_percent
+
+            if not analytic_distribution:
+                continue
+            # Compute amount commit each analytic
+            amount_commit_json = {}
+            for analytic_id in analytic_distribution:  # Get id only
+                budget_move = rec.budget_move_ids.filtered(
+                    lambda move: move.analytic_account_id.id == int(analytic_id)
+                )
+                debit = sum(budget_move.mapped("debit"))
+                credit = sum(budget_move.mapped("credit"))
+                amount_commit_json[analytic_id] = debit - credit
+            rec.amount_commit = amount_commit_json
+            # Compute date commit
             if rec.budget_move_ids:
                 rec.date_commit = min(rec.budget_move_ids.mapped("date"))
             else:
@@ -219,30 +243,42 @@ class BudgetDoclineMixin(models.AbstractModel):
     def _compute_json_budget_popover(self):
         FloatConverter = self.env["ir.qweb.field.float"]
         for rec in self:
-            analytic = rec[self._budget_analytic_field]
-            if not analytic:
+            analytic_distribution = rec[self._budget_analytic_field]
+            analytic_account = rec._convert_analytics(
+                analytic_distribution=analytic_distribution
+            )
+            if not analytic_account:
                 rec.json_budget_popover = False
                 continue
             # Budget Period is required, even a False one
             budget_period = self.env["budget.period"]._get_eligible_budget_period(
                 date=rec.date_commit
             )
-            analytic = analytic.with_context(budget_period_ids=[budget_period.id])
             rec.json_budget_popover = dumps(
                 {
                     "title": _("Budget Figure"),
                     "icon": "fa-info-circle",
                     "popoverTemplate": "budget_control.budgetPopOver",
-                    "analytic": analytic.display_name,
-                    "budget": FloatConverter.value_to_html(
-                        analytic.amount_budget, {"decimal_precision": "Product Price"}
-                    ),
-                    "consumed": FloatConverter.value_to_html(
-                        analytic.amount_consumed, {"decimal_precision": "Product Price"}
-                    ),
-                    "balance": FloatConverter.value_to_html(
-                        analytic.amount_balance, {"decimal_precision": "Product Price"}
-                    ),
+                    "analytic": [
+                        {
+                            "id": aa.id,
+                            "name": aa.display_name,
+                            "budget": FloatConverter.value_to_html(
+                                aa.amount_budget, {"decimal_precision": "Product Price"}
+                            ),
+                            "consumed": FloatConverter.value_to_html(
+                                aa.amount_consumed,
+                                {"decimal_precision": "Product Price"},
+                            ),
+                            "balance": FloatConverter.value_to_html(
+                                aa.amount_balance,
+                                {"decimal_precision": "Product Price"},
+                            ),
+                        }
+                        for aa in analytic_account.with_context(
+                            budget_period_ids=[budget_period.id]
+                        )
+                    ],
                 }
             )
 
@@ -274,7 +310,7 @@ class BudgetDoclineMixin(models.AbstractModel):
             return
         if not self._budget_date_commit_fields:
             raise ValidationError(_("'_budget_date_commit_fields' is not set!"))
-        analytic = docline[self._budget_analytic_field]
+        analytic = docline._convert_analytics()
         # If the analytic field is not set, set the date commit to False and return.
         if not analytic:
             docline.date_commit = False
@@ -294,14 +330,10 @@ class BudgetDoclineMixin(models.AbstractModel):
             amount_currency, company.currency_id, company, date_commit
         )
 
-    def _update_budget_commitment(self, budget_vals, reverse=False):
+    def _update_budget_commitment(self, budget_vals, analytic, reverse=False):
         self.ensure_one()
         company = self.env.user.company_id
         account = self.account_id
-        # Check params analytic_account_id, if not it should be self analytic
-        analytic_account = budget_vals.get("analytic_account_id", False)
-        if not analytic_account:
-            analytic_account = self[self._budget_analytic_field]
         budget_moves = self[self._budget_field()]
         date_commit = budget_vals.get(
             "date",
@@ -318,22 +350,20 @@ class BudgetDoclineMixin(models.AbstractModel):
             amount = self._get_amount_convert_currency(
                 budget_vals["amount_currency"], currency, company, date_commit or today
             )
-
         # NOTE: This is to handle the case of budget revenue.
         if (
             self._name == "account.move.line"
             and self.move_id.move_type == "out_invoice"
         ):
             reverse = True
-
         # By default, commit date is equal to document date
         # this is correct for normal case, but may require different date
         # in case of budget that carried to new period/year
         res = {
             "product_id": self.product_id.id,
             "account_id": account.id,
-            "analytic_account_id": analytic_account.id,
-            "analytic_group": analytic_account.group_id.id,
+            "analytic_account_id": analytic.id,
+            "analytic_plan": analytic.plan_id.id,
             "date": date_commit or today,
             "amount_currency": budget_vals["amount_currency"],
             "debit": not reverse and amount or 0,
@@ -361,6 +391,8 @@ class BudgetDoclineMixin(models.AbstractModel):
                 template_lines, controls[0]
             )
             budget_move.template_line_id = template_line.id
+            # Set KPI for check budget
+            budget_move.kpi_id = template_line.kpi_id.id
         return budget_move
 
     def _get_domain_fwd_line(self, docline):
@@ -376,14 +408,13 @@ class BudgetDoclineMixin(models.AbstractModel):
         ForwardLine = self.env["budget.commit.forward.line"]
         BudgetPeriod = self.env["budget.period"]
         for docline in self:
-            if not docline.fwd_analytic_account_id or not docline.fwd_date_commit:
+            if not docline.fwd_analytic_distribution or not docline.fwd_date_commit:
                 return
             if (
-                docline[self._budget_analytic_field] == docline.fwd_analytic_account_id
+                docline[self._budget_analytic_field]
+                == docline.fwd_analytic_distribution
                 and docline.date_commit == docline.fwd_date_commit
             ):  # no forward to same date
-                # docline.fwd_analytic_account_id = False
-                # docline.fwd_date_commit = False
                 return
             domain_fwd_line = self._get_domain_fwd_line(docline)
             fwd_lines = ForwardLine.search(domain_fwd_line)
@@ -445,48 +476,70 @@ class BudgetDoclineMixin(models.AbstractModel):
         required_analytic = self.env.user.has_group(
             "budget_control.group_required_analytic"
         )
-        # Required all document except move type entry or display_type is not false
+        # Required all document except move that check 'Not Affect Budget'
+        # and not 'Tax' and display_type is not false
         if (
             required_analytic
             and (hasattr(self, "display_type") and not self.display_type)
             and not self[self._budget_analytic_field]
             and not (
-                self._name == "account.move.line" and self.move_id.move_type == "entry"
+                self._name == "account.move.line"
+                and (self.move_id.not_affect_budget or self.tax_line_id)
             )
-            and not self._context.get("bypass_required_analytic")
         ):
             raise UserError(_("Please fill analytic account."))
         self.prepare_commit()
         to_commit = self.env.context.get("force_commit") or self._valid_commit_state()
         if self.can_commit and to_commit:
-            # Set amount_currency
-            budget_vals = self._init_docline_budget_vals(vals)
-            # Case budget_include_tax = True
-            budget_vals = self._budget_include_tax(budget_vals)
-            # Case force use_amount_commit, this should overwrite tax compute
-            if self.env.context.get("use_amount_commit"):
-                budget_vals["amount_currency"] = self.amount_commit
-            if self.env.context.get("fwd_amount_commit"):
-                budget_vals["amount_currency"] = self.env.context.get(
-                    "fwd_amount_commit"
+            budget_commit_vals = []
+            # Specific analytic account
+            if vals.get("analytic_account_id", False):
+                analytic_account = vals["analytic_account_id"]
+            else:
+                analytic_account = self._convert_analytics(
+                    analytic_distribution=vals.get("analytic_distribution", False)
                 )
-            # Only on case reverse, to force use return_amount_commit
-            if reverse and "return_amount_commit" in self.env.context:
-                budget_vals["amount_currency"] = self.env.context.get(
-                    "return_amount_commit"
+                # Delete analytic_distribution from vals
+                if vals.get("analytic_distribution", "/") != "/":
+                    del vals["analytic_distribution"]
+
+            for analytic in analytic_account:
+                # Set amount_currency
+                budget_vals = self._init_docline_budget_vals(vals, analytic.id)
+                # Case budget_include_tax = True
+                budget_vals = self._budget_include_tax(budget_vals)
+                # Case force use_amount_commit, this should overwrite tax compute
+                if self.env.context.get("use_amount_commit"):
+                    budget_vals["amount_currency"] = self.amount_commit[
+                        str(analytic.id)
+                    ]
+                # Case forward_commit
+                if self.env.context.get("fwd_amount_commit"):
+                    budget_vals["amount_currency"] = self.env.context.get(
+                        "fwd_amount_commit"
+                    )
+                # Only on case reverse, to force use return_amount_commit
+                if reverse and "return_amount_commit" in self.env.context:
+                    budget_vals["amount_currency"] = self.env.context.get(
+                        "return_amount_commit"
+                    )
+                # Complete budget commitment dict
+                budget_vals = self._update_budget_commitment(
+                    budget_vals, analytic, reverse=reverse
                 )
-            # Complete budget commitment dict
-            budget_vals = self._update_budget_commitment(budget_vals, reverse=reverse)
-            # Final note
-            budget_vals["note"] = self.env.context.get("commit_note")
-            # Is Adjustment Commit
-            budget_vals["adj_commit"] = self.env.context.get("adj_commit")
-            # Is Forward Commit
-            budget_vals["fwd_commit"] = self.env.context.get("fwd_commit")
-            # Create budget move
-            if not budget_vals["amount_currency"]:
-                return False
-            budget_move = self.env[self._budget_model()].create(budget_vals)
+                # Final note
+                budget_vals["note"] = self.env.context.get("commit_note")
+                # Is Adjustment Commit
+                budget_vals["adj_commit"] = self.env.context.get("adj_commit")
+                # Is Forward Commit
+                budget_vals["fwd_commit"] = self.env.context.get("fwd_commit")
+                # Create budget move
+                if not budget_vals["amount_currency"]:
+                    return False
+                budget_commit_vals.append(budget_vals.copy())
+                # Clear old values for case multi analytics
+                del budget_vals["amount_currency"]
+            budget_move = self.env[self._budget_model()].create(budget_commit_vals)
             # Update Template Line
             budget_move = self._update_template_line(budget_move)
             if reverse:  # On reverse, make sure not over returned
@@ -498,7 +551,7 @@ class BudgetDoclineMixin(models.AbstractModel):
     def _required_fields_to_commit(self):
         return [self._budget_analytic_field]
 
-    def _init_docline_budget_vals(self, budget_vals):
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
         """To be extended by docline to add untaxed amount_currency"""
         if "amount_currency" not in budget_vals:
             raise ValidationError(_("No amount_currency passed in!"))
@@ -557,19 +610,20 @@ class BudgetDoclineMixin(models.AbstractModel):
         """Commit date must inline with analytic account"""
         self.ensure_one()
         docline = self
-        analytic = docline[self._budget_analytic_field]
-        if analytic:
+        analytics = docline._convert_analytics()
+        if analytics:
             if not docline.date_commit:
                 raise UserError(_("No budget commitment date"))
-            date_from = analytic.bm_date_from
-            date_to = analytic.bm_date_to
-            if (date_from and date_from > docline.date_commit) or (
-                date_to and date_to < docline.date_commit
-            ):
-                raise UserError(
-                    _("Budget date commit is not within date range of - %s")
-                    % analytic.display_name
-                )
+            for analytic in analytics:
+                date_from = analytic.bm_date_from
+                date_to = analytic.bm_date_to
+                if (date_from and date_from > docline.date_commit) or (
+                    date_to and date_to < docline.date_commit
+                ):
+                    raise UserError(
+                        _("Budget date commit is not within date range of - %s")
+                        % analytic.display_name
+                    )
         else:
             if docline.date_commit:
                 raise UserError(_("Budget commitment date not required"))
@@ -582,5 +636,5 @@ class BudgetDoclineMixin(models.AbstractModel):
                 commit_note=_("Auto adjustment on close budget"),
                 adj_commit=True,
             ).commit_budget(
-                reverse=True, analytic_account_id=docline.fwd_analytic_account_id
+                reverse=True, analytic_distribution=docline.fwd_analytic_distribution
             )

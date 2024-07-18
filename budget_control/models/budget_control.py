@@ -51,13 +51,9 @@ class BudgetControl(models.Model):
         tracking=True,
         ondelete="restrict",
     )
-    analytic_tag_ids = fields.Many2many(
-        comodel_name="account.analytic.tag", string="Analytic Tags"
-    )
-    analytic_group = fields.Many2one(
-        comodel_name="account.analytic.group",
-        string="Analytic Group",
-        related="analytic_account_id.group_id",
+    analytic_plan = fields.Many2one(
+        comodel_name="account.analytic.plan",
+        related="analytic_account_id.plan_id",
         store=True,
     )
     line_ids = fields.One2many(
@@ -191,7 +187,6 @@ class BudgetControl(models.Model):
     @api.constrains("active", "state", "analytic_account_id", "budget_period_id")
     def _check_budget_control_unique(self):
         """Not allow multiple active budget control on same period"""
-        self.flush()
         query = """
             SELECT analytic_account_id, budget_period_id, COUNT(*)
             FROM budget_control
@@ -242,9 +237,10 @@ class BudgetControl(models.Model):
                 if budget_info["amount_balance"] < 0:
                     raise UserError(
                         _(
-                            "Total amount in KPI %(name)s will result in {:,.2f}",
-                            name=line.name,
-                        ).format(budget_info["amount_balance"])
+                            "Total amount in KPI {line_name} will result in {amount:,.2f}"
+                        ).format(
+                            line_name=line.name, amount=budget_info["amount_balance"]
+                        )
                     )
 
     @api.onchange("use_all_kpis")
@@ -267,7 +263,7 @@ class BudgetControl(models.Model):
     @api.depends("allocated_amount")
     def _compute_allocated_released_amount(self):
         for rec in self:
-            rec.released_amount = rec.allocated_amount
+            rec.released_amount = rec.allocated_amount + rec.transferred_amount
 
     @api.depends("released_amount", "amount_budget")
     def _compute_diff_amount(self):
@@ -366,10 +362,9 @@ class BudgetControl(models.Model):
             ):
                 raise UserError(
                     _(
-                        "Planning amount should equal "
-                        "to the released amount {:,.2f} %(symbol)s",
-                        symbol=rec.currency_id.symbol,
-                    ).format(rec.released_amount)
+                        "Planning amount should equal to the "
+                        "released amount {amount:,.2f} {symbol}"
+                    ).format(amount=rec.released_amount, symbol=rec.currency_id.symbol)
                 )
             # Check plan vs intial
             if (
@@ -383,9 +378,8 @@ class BudgetControl(models.Model):
                 raise UserError(
                     _(
                         "Planning amount should be greater than "
-                        "initial balance {:,.2f} %(symbol)s",
-                        symbol=rec.currency_id.symbol,
-                    ).format(rec.amount_initial)
+                        "initial balance {amount:,.2f} {symbol}"
+                    ).format(amount=rec.amount_initial, symbol=rec.currency_id.symbol)
                 )
 
     def action_draft(self):
@@ -550,9 +544,6 @@ class BudgetControlLine(models.Model):
     date_to = fields.Date(required=True, string="To")
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account", string="Analytic account"
-    )
-    analytic_tag_ids = fields.Many2many(
-        comodel_name="account.analytic.tag", string="Analytic Tags"
     )
     amount = fields.Float()
     template_line_id = fields.Many2one(

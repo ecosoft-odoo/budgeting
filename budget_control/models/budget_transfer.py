@@ -44,13 +44,14 @@ class BudgetTransfer(models.Model):
         tracking=True,
     )
 
-    @api.model
-    def create(self, vals):
-        if vals.get("name", "/") == "/":
-            vals["name"] = (
-                self.env["ir.sequence"].next_by_code("budget.transfer") or "/"
-            )
-        return super().create(vals)
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("name", "/") == "/":
+                vals["name"] = (
+                    self.env["ir.sequence"].next_by_code("budget.transfer") or "/"
+                )
+        return super().create(vals_list)
 
     def unlink(self):
         """Check state draft can delete only."""

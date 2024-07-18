@@ -11,9 +11,9 @@
                     <field name="forward_info_line_ids" nolabel="1" colspan="2">
                         <tree editable="bottom" create="0" delete="0">
                             <field name="currency_id" invisible="1" />
-                            <field name="analytic_account_id" force_save="1" />
+                            <field name="analytic_account_id" />
                             <field
-                                name="analytic_group"
+                                name="analytic_plan"
                                 force_save="1"
                                 optional="hide"
                             />

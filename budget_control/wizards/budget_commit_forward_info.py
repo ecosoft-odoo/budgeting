@@ -1,7 +1,7 @@
 # Copyright 2021 Ecosoft - (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class BudgetCommitForwardInfo(models.TransientModel):
@@ -46,10 +46,10 @@ class BudgetCommitForwardInfoLine(models.TransientModel):
         comodel_name="account.analytic.account",
         readonly=True,
     )
-    analytic_group = fields.Many2one(
-        comodel_name="account.analytic.group",
+    analytic_plan = fields.Many2one(
+        comodel_name="account.analytic.plan",
         string="Analytic Group",
-        related="analytic_account_id.group_id",
+        related="analytic_account_id.plan_id",
         readonly=True,
     )
     initial_available = fields.Monetary(
@@ -71,6 +71,7 @@ class BudgetCommitForwardInfoLine(models.TransientModel):
         readonly=True,
     )
 
+    @api.depends("initial_available", "initial_commit")
     def _compute_amount_balance(self):
         for rec in self:
             rec.amount_balance = rec.initial_available - rec.initial_commit

@@ -5,7 +5,8 @@ from datetime import datetime
 
 from dateutil.rrule import MONTHLY
 
-from odoo.tests.common import Form, TransactionCase
+from odoo import Command
+from odoo.tests.common import TransactionCase
 
 
 class BudgetControlCommon(TransactionCase):
@@ -14,59 +15,62 @@ class BudgetControlCommon(TransactionCase):
         super().setUpClass()
         cls.env.company.budget_include_tax = False  # Not Tax Included
         cls.year = datetime.now().year
-        RangeType = cls.env["date.range.type"]
+        cls.RangeType = cls.env["date.range.type"]
         cls.Analytic = cls.env["account.analytic.account"]
+        cls.AnalyticPlan = cls.env["account.analytic.plan"]
+        cls.Account = cls.env["account.account"]
         cls.BudgetControl = cls.env["budget.control"]
+        cls.BudgetTemplate = cls.env["budget.template"]
         cls.BudgetKPI = cls.env["budget.kpi"]
-        Partner = cls.env["res.partner"]
-        # Vendor
-        cls.vendor = Partner.create({"name": "Sample Vendor"})
+        cls.Product = cls.env["product.product"]
+        cls.Partner = cls.env["res.partner"]
+        cls.Move = cls.env["account.move"]
+
+        # Create vendor
+        cls.vendor = cls.Partner.create({"name": "Sample Vendor"})
         # Create quarterly date range for current year
-        cls.date_range_type = RangeType.create({"name": "TestQuarter"})
+        cls.date_range_type = cls.RangeType.create({"name": "TestQuarter"})
         cls._create_date_range_quarter(cls)
         # Setup some required entity
-        Account = cls.env["account.account"]
-        type_exp = cls.env.ref("account.data_account_type_expenses").id
-        type_adv = cls.env.ref("account.data_account_type_current_assets").id
-        cls.account_kpi1 = Account.create(
-            {"name": "KPI1", "code": "KPI1", "user_type_id": type_exp}
+        cls.account_kpi1 = cls.Account.create(
+            {"name": "KPI1", "code": "KPI1", "account_type": "expense"}
         )
-        cls.account_kpi2 = Account.create(
-            {"name": "KPI2", "code": "KPI2", "user_type_id": type_exp}
+        cls.account_kpi2 = cls.Account.create(
+            {"name": "KPI2", "code": "KPI2", "account_type": "expense"}
         )
-        cls.account_kpi3 = Account.create(
-            {"name": "KPI3", "code": "KPI3", "user_type_id": type_exp}
+        cls.account_kpi3 = cls.Account.create(
+            {"name": "KPI3", "code": "KPI3", "account_type": "expense"}
         )
         # Create an extra account, but not in control
-        cls.account_kpiX = Account.create(
-            {"name": "KPIX", "code": "KPIX", "user_type_id": type_exp}
+        cls.account_kpiX = cls.Account.create(
+            {"name": "KPIX", "code": "KPIX", "account_type": "expense"}
         )
         # Create an extra account, for advance
-        cls.account_kpiAV = Account.create(
+        cls.account_kpiAV = cls.Account.create(
             {
                 "name": "KPIAV",
                 "code": "KPIAV",
-                "user_type_id": type_adv,
+                "account_type": "asset_current",
                 "reconcile": True,
             }
         )
         cls.kpi1 = cls.BudgetKPI.create({"name": "kpi 1"})
         cls.kpi2 = cls.BudgetKPI.create({"name": "kpi 2"})
         cls.kpi3 = cls.BudgetKPI.create({"name": "kpi 3"})
-        Product = cls.env["product.product"]
-        cls.product1 = Product.create(
+
+        cls.product1 = cls.Product.create(
             {
                 "name": "Product 1",
                 "property_account_expense_id": cls.account_kpi1.id,
             }
         )
-        cls.product2 = Product.create(
+        cls.product2 = cls.Product.create(
             {
                 "name": "Product 2",
                 "property_account_expense_id": cls.account_kpi2.id,
             }
         )
-        cls.template = cls.env["budget.template"].create({"name": "Test KPI"})
+        cls.template = cls.BudgetTemplate.create({"name": "Test KPI"})
 
         # Create budget kpis
         cls._create_budget_template_kpi(cls)
@@ -74,10 +78,16 @@ class BudgetControlCommon(TransactionCase):
         cls.budget_period = cls._create_budget_period_fy(
             cls, cls.template.id, cls.date_range_type.id
         )
+
+        cls.aa_plan1 = cls.AnalyticPlan.create({"name": "Plan1"})
         # Create budget.control for CostCenter1,
         # by selected budget_id and date range (by quarter)
-        cls.costcenter1 = cls.Analytic.create({"name": "CostCenter1"})
-        cls.costcenterX = cls.Analytic.create({"name": "CostCenterX"})
+        cls.costcenter1 = cls.Analytic.create(
+            {"name": "CostCenter1", "plan_id": cls.aa_plan1.id}
+        )
+        cls.costcenterX = cls.Analytic.create(
+            {"name": "CostCenterX", "plan_id": cls.aa_plan1.id}
+        )
 
     def _create_date_range_quarter(self):
         Generator = self.env["date.range.generator"]
@@ -131,35 +141,45 @@ class BudgetControlCommon(TransactionCase):
         )
         return budget_period
 
-    def _create_invoice(self, inv_type, vendor, invoice_date, analytic, invoice_lines):
-        Invoice = self.env["account.move"]
-        with Form(
-            Invoice.with_context(default_move_type=inv_type),
-            view="account.view_move_form",
-        ) as inv:
-            inv.partner_id = vendor
-            inv.invoice_date = invoice_date
-            for il in invoice_lines:
-                with inv.invoice_line_ids.new() as line:
-                    line.quantity = 1
-                    line.account_id = il.get("account")
-                    line.price_unit = il.get("price_unit")
-                    line.analytic_account_id = analytic
-        invoice = inv.save()
+    def _create_invoice(
+        self, inv_type, vendor, invoice_date, analytic_distribution, invoice_lines
+    ):
+        invoice = self.Move.create(
+            {
+                "move_type": inv_type,
+                "partner_id": vendor.id,
+                "invoice_date": invoice_date,
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": il.get("account"),
+                            "price_unit": il.get("price_unit"),
+                            "analytic_distribution": analytic_distribution,
+                        },
+                    )
+                    for il in invoice_lines
+                ],
+            }
+        )
         return invoice
 
-    def _create_simple_bill(self, analytic, account, amount):
-        Invoice = self.env["account.move"]
-        view_id = "account.view_move_form"
-        with Form(
-            Invoice.with_context(default_move_type="in_invoice"), view=view_id
-        ) as inv:
-            inv.partner_id = self.vendor
-            inv.invoice_date = datetime.today()
-            with inv.invoice_line_ids.new() as line:
-                line.quantity = 1
-                line.account_id = account
-                line.price_unit = amount
-                line.analytic_account_id = analytic
-        invoice = inv.save()
+    def _create_simple_bill(self, analytic_distribution, account, amount):
+        invoice = self.Move.create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.vendor.id,
+                "invoice_date": datetime.today(),
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": account.id,
+                            "price_unit": amount,
+                            "analytic_distribution": analytic_distribution,
+                        },
+                    )
+                ],
+            }
+        )
         return invoice

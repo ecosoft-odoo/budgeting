@@ -46,10 +46,9 @@ class BudgetBalanceForwardInfoLine(models.TransientModel):
         comodel_name="account.analytic.account",
         readonly=True,
     )
-    analytic_group = fields.Many2one(
-        comodel_name="account.analytic.group",
-        string="Analytic Group",
-        related="analytic_account_id.group_id",
+    analytic_plan = fields.Many2one(
+        comodel_name="account.analytic.plan",
+        related="analytic_account_id.plan_id",
         readonly=True,
     )
     initial_available = fields.Monetary(

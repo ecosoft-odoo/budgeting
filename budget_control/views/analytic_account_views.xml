@@ -7,14 +7,14 @@
         <field name="arch" type="xml">
             <xpath expr="//search/group" position="inside">
                 <filter
-                    name="budget_period"
+                    name="group_by_budget_period"
                     string="Budget Period"
                     context="{'group_by': 'budget_period_id'}"
                 />
                 <filter
-                    name="group_id"
-                    string="Group"
-                    context="{'group_by': 'group_id'}"
+                    name="group_by_plan_id"
+                    string="Analytic Plan"
+                    context="{'group_by': 'plan_id'}"
                 />
             </xpath>
         </field>
@@ -137,19 +137,11 @@
         groups="analytic.group_analytic_accounting"
     />
     <menuitem
-        id="budget_menu_analytic_account_group"
-        name="Analytic Account Groups"
+        id="budget_menu_analytic_plan"
+        name="Analytic Plans"
         parent="budget_control.budget_menu_analytic_accounting"
         sequence="2"
-        action="analytic.account_analytic_group_action"
+        action="analytic.account_analytic_plan_action"
         groups="analytic.group_analytic_accounting"
-    />
-    <menuitem
-        id="budget_menu_analytic_account_tag"
-        name="Analytic Tags"
-        parent="budget_control.budget_menu_analytic_accounting"
-        sequence="3"
-        action="analytic.account_analytic_tag_action"
-        groups="analytic.group_analytic_tags"
     />
 </odoo>
