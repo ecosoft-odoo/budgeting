@@ -24,7 +24,7 @@ class PurchaseRequestLineMakePurchaseOrder(models.TransientModel):
         if vals.get("account_analytic_id") and item.line_id.fwd_analytic_account_id:
             vals["account_analytic_id"] = item.line_id.fwd_analytic_account_id.id
         # Check if date_commit is not in the fiscal year, then update it
-        fy_dates = item.line_id.company_id.compute_fiscalyear_dates(
+        fy_dates = item.line_id.company_id.sudo().compute_fiscalyear_dates(
             fields.Date.context_today(self)
         )
         if item.line_id.date_commit > fy_dates["date_to"]:
