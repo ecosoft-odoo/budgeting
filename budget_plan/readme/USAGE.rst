@@ -1,7 +1,11 @@
-At first you have to create Source of Funds and select Funds at budget control sheet, it will generate source of fund related with budget control sheet.
+To use this module, you need to:
 
-* Go to menu Budgeting > Configurations > Source of Funds
-* Create your source of fund and Group of fund (optional)
-* Go to menu Budgeting > Budgeting > Budget Control Sheet
-* Select 1 budget control > select fund that depend on this budget control > Save
-* It will generated source of fund line
+# Go to the menu `Budgeting > Budgeting > Budget Plan`
+# Create a new budget plan
+# Specify the analytic account and the desired allocation amount
+# click `Confirm > Create/Update Budget Control`.
+# It will create a budget control for the analytic account (if it hasn't been created) 
+and update the amount in the budget control (if it has already been created).
+# If the amount is incorrect, you can go back to the budget plan, 
+update the amount, and then click `Create/Update Budget Control` until the amount is correct.
+# Once everything is correct, click `Done`.

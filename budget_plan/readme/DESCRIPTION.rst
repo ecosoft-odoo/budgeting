@@ -1,4 +1,3 @@
-This module allow create Master Data source of fund.
-there is relation between source of fund and budget control sheet
-for allocated source of fund from one budget control sheet to many source of fund.
-Users can view source of fund monitoring report
+This module aids in planning budget.
+The Budget Manager can plan for each analytic account and specify the desired allocation amount. 
+It will automatically generate budget controls according to the established plans.

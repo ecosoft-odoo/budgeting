@@ -5,6 +5,7 @@ from datetime import datetime
 
 from freezegun import freeze_time
 
+from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 
@@ -43,9 +44,6 @@ class TestBudgetPlan(BudgetControlCommon):
         cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2)[:1].write(
             {"amount": 200}
         )
-        cls.budget_control.flush()  # Need to flush data into table, so it can be sql
-        cls.budget_control.allocated_amount = 300
-        cls.budget_control.action_done()
 
     @freeze_time("2001-02-01")
     def test_01_create_budget_plan(self):
@@ -57,21 +55,17 @@ class TestBudgetPlan(BudgetControlCommon):
                 "name": "Budget Plan Test {}".format(self.year),
                 "budget_period_id": self.budget_period.id,
                 "line_ids": [
-                    (
-                        0,
-                        0,
+                    Command.create(
                         {
                             "analytic_account_id": self.costcenter1.id,
                             "amount": 100.0,
-                        },
+                        }
                     ),
-                    (
-                        0,
-                        0,
+                    Command.create(
                         {
                             "analytic_account_id": self.costcenterX.id,
                             "amount": 200.0,
-                        },
+                        }
                     ),
                 ],
             }
@@ -98,6 +92,7 @@ class TestBudgetPlan(BudgetControlCommon):
         budget_plan.action_create_update_budget_control()
         self.assertEqual(len(budget_plan.line_ids[0].budget_control_ids), 1)
         self.assertEqual(len(budget_plan.line_ids[1].budget_control_ids), 1)
+        budget_plan._compute_budget_control()
         # Budget count is not include active
         self.assertEqual(budget_plan.budget_control_count, 2)
         action = budget_plan.button_open_budget_control()
@@ -105,14 +100,17 @@ class TestBudgetPlan(BudgetControlCommon):
         budget_plan.action_done()
         # Test update consumed amount
         self.assertEqual(budget_plan.line_ids[0].amount_consumed, 0.0)
+        analytic_distribution = {self.costcenter1.id: 100}
         invoice = self._create_invoice(
             "in_invoice",
             self.vendor,
             datetime.today(),
-            self.costcenter1,
-            [{"account": self.account_kpi1, "price_unit": 100}],
+            analytic_distribution,
+            [{"account": self.account_kpi1.id, "price_unit": 100}],
         )
         invoice.action_post()
+        # Update budget control
+        self.budget_control._compute_budget_info()
         budget_plan.action_update_plan()
         self.assertEqual(budget_plan.line_ids[0].amount_consumed, 100.0)
         self.assertEqual(budget_plan.state, "done")

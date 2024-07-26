@@ -17,15 +17,14 @@ Budget Plan
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github
-    :target: https://github.com/ecosoft-odoo/budgeting/tree/15.0/budget_plan
+    :target: https://github.com/ecosoft-odoo/budgeting/tree/16.0/budget_plan
     :alt: ecosoft-odoo/budgeting
 
 |badge1| |badge2| |badge3|
 
-This module allow create Master Data source of fund.
-there is relation between source of fund and budget control sheet
-for allocated source of fund from one budget control sheet to many source of fund.
-Users can view source of fund monitoring report
+This module aids in planning budget.
+The Budget Manager can plan for each analytic account and specify the desired allocation amount. 
+It will automatically generate budget controls according to the established plans.
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
@@ -40,13 +39,17 @@ Users can view source of fund monitoring report
 Usage
 =====
 
-At first you have to create Source of Funds and select Funds at budget control sheet, it will generate source of fund related with budget control sheet.
+To use this module, you need to:
 
-* Go to menu Budgeting > Configurations > Source of Funds
-* Create your source of fund and Group of fund (optional)
-* Go to menu Budgeting > Budgeting > Budget Control Sheet
-* Select 1 budget control > select fund that depend on this budget control > Save
-* It will generated source of fund line
+# Go to the menu `Budgeting > Budgeting > Budget Plan`
+# Create a new budget plan
+# Specify the analytic account and the desired allocation amount
+# click `Confirm > Create/Update Budget Control`.
+# It will create a budget control for the analytic account (if it hasn't been created) 
+and update the amount in the budget control (if it has already been created).
+# If the amount is incorrect, you can go back to the budget plan, 
+update the amount, and then click `Create/Update Budget Control` until the amount is correct.
+# Once everything is correct, click `Done`.
 
 Bug Tracker
 ===========
@@ -54,7 +57,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/ecosoft-odoo/budgeting/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_plan%0Aversion:%2015.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_plan%0Aversion:%2016.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -83,6 +86,6 @@ Current maintainer:
 
 |maintainer-Saran440| 
 
-This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/15.0/budget_plan>`_ project on GitHub.
+This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/16.0/budget_plan>`_ project on GitHub.
 
 You are welcome to contribute.

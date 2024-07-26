@@ -281,7 +281,7 @@ class BudgetPlanLine(models.Model):
 
     def _update_budget_control_data(self):
         """Push data budget control, i.e., alloc amount, active status"""
-        self.invalidate_cache()
+        self.invalidate_model()
         for rec in self:
             all_controls = rec.with_context(active_test=False).budget_control_ids
             # First, update the active budget_control
