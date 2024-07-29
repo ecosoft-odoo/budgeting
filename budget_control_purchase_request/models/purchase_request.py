@@ -45,7 +45,7 @@ class PurchaseRequest(models.Model):
 
     def button_approved(self):
         res = super().button_approved()
-        self.flush()
+        self.flush_model()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
             BudgetPeriod.check_budget(doc.line_ids, doc_type="purchase_request")
@@ -95,17 +95,16 @@ class PurchaseRequestLine(models.Model):
         account = self.product_id.product_tmpl_id.get_product_accounts()["expense"]
         return account
 
-    def _init_docline_budget_vals(self, budget_vals):
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
         budget_vals["amount_currency"] = self.estimated_cost
         # Document specific vals
         budget_vals.update(
             {
                 "purchase_request_line_id": self.id,
-                "analytic_tag_ids": [(6, 0, self.analytic_tag_ids.ids)],
             }
         )
-        return super()._init_docline_budget_vals(budget_vals)
+        return super()._init_docline_budget_vals(budget_vals, analytic_id)
 
     def _valid_commit_state(self):
         return self.request_id.state in ["approved", "done"]
