@@ -43,9 +43,6 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2)[:1].write(
             {"amount": 200}
         )
-        cls.budget_control.flush()  # Need to flush data into table, so it can be sql
-        cls.budget_control.allocated_amount = 300
-        cls.budget_control.action_done()
 
     @freeze_time("2001-02-01")
     def _create_purchase_request(self, pr_lines):
@@ -58,7 +55,7 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
                     line.product_id = pr_line["product_id"]
                     line.product_qty = pr_line["product_qty"]
                     line.estimated_cost = pr_line["estimated_cost"]
-                    line.analytic_account_id = pr_line["analytic_id"]
+                    line.analytic_distribution = pr_line["analytic_distribution"]
         purchase_request = pr.save()
         return purchase_request
 
@@ -71,22 +68,27 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         (3) Check Budget with analytic -> OK
         (2) Check Budget with analytic -> Error amount exceed
         """
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare PR
+        analytic_distribution = {str(self.costcenter1.id): 100}
         purchase_request = self._create_purchase_request(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 101 -> error
                     "product_qty": 1,
                     "estimated_cost": 101,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
                 {
                     "product_id": self.product2,  # KPI2 = 198
                     "product_qty": 2,
                     "estimated_cost": 198,  # This is the price of qty 2
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ]
         )
@@ -124,16 +126,21 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def test_02_budget_pr_to_po(self):
         """PR to PO normally don't care about Quantity, it will uncommit all"""
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare PR
+        analytic_distribution = {str(self.costcenter1.id): 100}
         purchase_request = self._create_purchase_request(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 30
                     "product_qty": 3,
                     "estimated_cost": 30,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ]
         )
@@ -185,22 +192,27 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         """PR to PO (partial PO, but PR will return all)
         - Test recompute on both PR and PO
         - Test close on both PR and PO"""
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare PR
+        analytic_distribution = {str(self.costcenter1.id): 100}
         purchase_request = self._create_purchase_request(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 30
                     "product_qty": 2,
                     "estimated_cost": 30,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
                 {
                     "product_id": self.product2,  # KPI2 = 40
                     "product_qty": 4,
                     "estimated_cost": 40,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ]
         )
@@ -239,19 +251,19 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         self.assertEqual(self.budget_control.amount_purchase, 45)
         # Recompute PR and PO, should be the same.
         purchase_request.recompute_budget_move()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_purchase_request, 0)
         self.assertEqual(self.budget_control.amount_purchase, 45)
         purchase.recompute_budget_move()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_purchase_request, 0)
         self.assertEqual(self.budget_control.amount_purchase, 45)
         # Close budget
         purchase_request.close_budget_move()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_purchase_request, 0)
         self.assertEqual(self.budget_control.amount_purchase, 45)
         purchase.close_budget_move()
-        self.budget_control.invalidate_cache()
+        self.budget_control._compute_budget_info()
         self.assertEqual(self.budget_control.amount_purchase_request, 0)
         self.assertEqual(self.budget_control.amount_purchase, 0)
