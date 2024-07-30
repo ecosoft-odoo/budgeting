@@ -29,31 +29,32 @@ class BudgetCommitForward(models.Model):
             return f"{doc.sheet_id._name},{doc.sheet_id.id}"
         return super()._get_document_number(doc)
 
-    def _get_commit_docline(self, res_model):
+    def _get_name_model(self, res_model, need_replace=False):
+        if res_model == "hr.expense.advance":
+            if need_replace:
+                return "hr_expense"
+            return "hr.expense"
+        return super()._get_name_model(res_model, need_replace)
+
+    def _get_base_from_extension(self, res_model):
+        """For module extension"""
+        if res_model != "hr.expense.advance":
+            return super()._get_base_from_extension(res_model)
+        query_from = "JOIN hr_expense_sheet sheet ON sheet.id = a.sheet_id"
+        return query_from
+
+    def _get_base_domain_extension(self, res_model):
+        """For module extension"""
         if res_model not in ["hr.expense.advance", "hr.expense"]:
-            return super()._get_commit_docline(res_model)
-        domain = self._get_base_domain()
-        domain.extend(
-            [
-                ("analytic_account_id", "!=", False),
-                ("state", "!=", "cancel"),
-            ]
-        )
+            return super()._get_base_domain_extension(res_model)
+
+        query_where = " AND a.state != 'cancel'"
         # Special case, model = hr.expense with advance
         if res_model == "hr.expense.advance":
-            domain.extend(
-                [
-                    ("advance", "=", True),
-                    ("sheet_id.clearing_residual", ">", 0.0),
-                ]
-            )
+            query_where += " AND a.advance = True AND sheet.clearing_residual > 0.0"
         else:
-            domain.extend(
-                [
-                    ("advance", "=", False),  # Additional criteria
-                ]
-            )
-        return self.env["hr.expense"].search(domain)
+            query_where += " AND a.advance = False"
+        return query_where
 
 
 class BudgetCommitForwardLine(models.Model):

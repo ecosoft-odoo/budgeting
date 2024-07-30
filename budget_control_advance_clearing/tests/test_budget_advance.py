@@ -54,26 +54,24 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2)[:1].write(
             {"amount": 200}
         )
-        cls.budget_control.flush()  # Need to flush data into table, so it can be sql
-        cls.budget_control.allocated_amount = 300
-        cls.budget_control.action_done()
         # Set advance account
         product = cls.env.ref("hr_expense_advance_clearing.product_emp_advance")
         product.property_account_expense_id = cls.account_kpiAV
 
     @freeze_time("2001-02-01")
-    def _create_advance_sheet(self, amount, analytic):
+    def _create_advance_sheet(self, amount, analytic_distribution):
         Expense = self.env["hr.expense"]
         view_id = "hr_expense_advance_clearing.hr_expense_view_form"
         user = self.env.ref("base.user_admin")
         with Form(Expense.with_context(default_advance=True), view=view_id) as ex:
             ex.employee_id = user.employee_id
-            ex.unit_amount = amount
-            ex.analytic_account_id = analytic
+            ex.total_amount = amount
+            ex.analytic_distribution = analytic_distribution
         advance = ex.save()
         expense_sheet = self.env["hr.expense.sheet"].create(
             {
                 "name": "Test Advance",
+                "advance": True,
                 "employee_id": user.employee_id.id,
                 "expense_line_ids": [(6, 0, [advance.id])],
             }
@@ -83,17 +81,17 @@ class TestBudgetControlAdvance(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def _create_clearing_sheet(self, advance, ex_lines):
         Expense = self.env["hr.expense"]
-        view_id = "hr_expense_advance_clearing.hr_expense_view_form"
+        view_id = "hr_expense.hr_expense_view_form"
         expense_ids = []
         user = self.env.ref("base.user_admin")
         for ex_line in ex_lines:
             with Form(Expense, view=view_id) as ex:
                 ex.employee_id = user.employee_id
                 ex.product_id = ex_line["product_id"]
-                ex.quantity = ex_line["product_qty"]
-                ex.unit_amount = ex_line["price_unit"]
-                ex.analytic_account_id = ex_line["analytic_id"]
+                ex.total_amount = ex_line["price_unit"] * ex_line["product_qty"]
+                ex.analytic_distribution = ex_line["analytic_distribution"]
             expense = ex.save()
+            expense.tax_ids = False  # Test no vat
             expense_ids.append(expense.id)
         expense_sheet = self.env["hr.expense.sheet"].create(
             {
@@ -112,10 +110,16 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         - Budget will be committed into advance.budget.move
         - No actual on JE
         """
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
+
+        analytic_distribution = {str(self.costcenter1.id): 100}
         # Create advance = 100
-        advance = self._create_advance_sheet(100, self.costcenter1)
+        advance = self._create_advance_sheet(100, analytic_distribution)
         # (1) No budget check first
         self.budget_period.advance = False
         self.budget_period.control_level = "analytic_kpi"
@@ -150,7 +154,7 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         self.assertEqual(self.budget_control.amount_advance, 0)
         self.assertEqual(self.budget_control.amount_balance, 300)
         # (4) Amount exceed -> Error
-        advance.expense_line_ids.write({"unit_amount": 301})
+        advance.expense_line_ids.write({"total_amount": 301})
         # CostCenter1, will result in $ -1.00
         with self.assertRaises(UserError):
             advance.action_submit_sheet()
@@ -161,10 +165,15 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         - Clearing 80, the uncommit advance should be 20
         - Clearing 120, the uncommit advance should be 100 (max)
         """
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
+        analytic_distribution = {str(self.costcenter1.id): 100}
         # Create advance = 100
-        advance = self._create_advance_sheet(100, self.costcenter1)
+        advance = self._create_advance_sheet(100, analytic_distribution)
         self.budget_period.control_budget = True
         self.budget_period.control_level = "analytic"
         advance = advance.with_context(
@@ -173,6 +182,8 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         advance.action_submit_sheet()
         advance.approve_expense_sheets()
         advance.action_sheet_move_create()
+        # Update budget info
+        self.budget_control._compute_budget_info()
         # Advance 100, Clearing = 0, Balance = 200
         self.assertEqual(self.budget_control.amount_advance, 100)
         self.assertEqual(self.budget_control.amount_expense, 0)
@@ -185,13 +196,13 @@ class TestBudgetControlAdvance(BudgetControlCommon):
                     "product_id": self.product1,  # KPI1 = 20
                     "product_qty": 1,
                     "price_unit": 20,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
                 {
                     "product_id": self.product2,  # KPI2 = 80
                     "product_qty": 2,
                     "price_unit": 30,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ],
         )
@@ -209,9 +220,8 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         self.assertEqual(self.budget_control.amount_advance, 100)
         self.assertEqual(self.budget_control.amount_expense, 0)
         self.assertEqual(self.budget_control.amount_balance, 200)
-        # Change line 1 amount to exceed
-        clearing.expense_line_ids[:1].unit_amount = 200
-        self.budget_control.flush()
+        # Change line 1 amount from 80 to 290 (exceed), total is 290 + 20
+        clearing.expense_line_ids[:1].total_amount = 290
         with self.assertRaises(UserError):
             clearing.action_submit_sheet()
 
@@ -222,10 +232,15 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         - Recompute both should be the same
         - Close budget both should be all zero
         """
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
+        analytic_distribution = {str(self.costcenter1.id): 100}
         # Create advance = 100
-        advance = self._create_advance_sheet(100, self.costcenter1)
+        advance = self._create_advance_sheet(100, analytic_distribution)
         self.budget_period.control_budget = True
         self.budget_period.control_level = "analytic"
         advance = advance.with_context(
@@ -242,13 +257,13 @@ class TestBudgetControlAdvance(BudgetControlCommon):
                     "product_id": self.product1,  # KPI1 = 20
                     "product_qty": 1,
                     "price_unit": 20,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
                 {
                     "product_id": self.product2,  # KPI2 = 80
                     "product_qty": 2,
                     "price_unit": 30,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                 },
             ],
         )
@@ -262,20 +277,20 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         self.assertEqual(self.budget_control.amount_expense, 80)
         # Recompute
         advance.recompute_budget_move()
-        self.budget_control.invalidate_cache()
+        self.budget_control.invalidate_model()
         self.assertEqual(self.budget_control.amount_advance, 20)
         self.assertEqual(self.budget_control.amount_expense, 80)
         clearing.recompute_budget_move()
-        self.budget_control.invalidate_cache()
+        self.budget_control.invalidate_model()
         self.assertEqual(self.budget_control.amount_advance, 20)
         self.assertEqual(self.budget_control.amount_expense, 80)
         # Close
         advance.close_budget_move()
-        self.budget_control.invalidate_cache()
+        self.budget_control.invalidate_model()
         self.assertEqual(self.budget_control.amount_advance, 0)
         self.assertEqual(self.budget_control.amount_expense, 80)
         clearing.close_budget_move()
-        self.budget_control.invalidate_cache()
+        self.budget_control.invalidate_model()
         self.assertEqual(self.budget_control.amount_advance, 0)
         self.assertEqual(self.budget_control.amount_expense, 0)
 
@@ -286,10 +301,15 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         - Return Advance 30
         - Balance should be 230
         """
+        # Allocate and Done
+        self.budget_control.allocated_amount = 300
+        self.budget_control.action_done()
+
         # KPI1 = 100, KPI2 = 200, Total = 300
         self.assertEqual(300, self.budget_control.amount_budget)
+        analytic_distribution = {str(self.costcenter1.id): 100}
         # Create advance = 100
-        advance = self._create_advance_sheet(100, self.costcenter1)
+        advance = self._create_advance_sheet(100, analytic_distribution)
         self.budget_period.control_budget = True
         self.budget_period.control_level = "analytic"
         advance = advance.with_context(
