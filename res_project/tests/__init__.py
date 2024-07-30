@@ -2,3 +2,5 @@
 
 from . import common
 from . import test_res_project
+from . import test_res_project_sequence
+
