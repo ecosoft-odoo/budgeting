@@ -1,7 +1,8 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class HRExpenseSheet(models.Model):
@@ -38,6 +39,14 @@ class HRExpenseSheet(models.Model):
             clearing_dict["date_commit"] = False
         return clearing_dict
 
+    def _prepare_bill_vals(self):
+        """Not affect budget for advance"""
+        self.ensure_one()
+        res = super()._prepare_bill_vals()
+        if self.advance:
+            res["not_affect_budget"] = True
+        return res
+
 
 class HRExpense(models.Model):
     _inherit = "hr.expense"
@@ -55,37 +64,38 @@ class HRExpense(models.Model):
             )
         return super()._filter_current_move(analytic)
 
-    @api.depends("advance_budget_move_ids", "budget_move_ids")
+    @api.depends("advance_budget_move_ids", "budget_move_ids", "budget_move_ids.date")
     def _compute_commit(self):
         advances = self.filtered("advance")
         expenses = self - advances
         # Advances
         for rec in advances:
-            debit = sum(rec.advance_budget_move_ids.mapped("debit"))
-            credit = sum(rec.advance_budget_move_ids.mapped("credit"))
-            rec.amount_commit = debit - credit
+            analytic_distribution = rec[self._budget_analytic_field]
+            # Add analytic_distribution from forward_commit
+            if rec.fwd_analytic_distribution:
+                for analytic_id, aa_percent in rec.fwd_analytic_distribution.items():
+                    analytic_distribution[analytic_id] = aa_percent
+
+            if not analytic_distribution:
+                continue
+
+            # Compute amount commit each analytic
+            amount_commit_json = {}
+            for analytic_id in analytic_distribution:  # Get id only
+                budget_move = rec.advance_budget_move_ids.filtered(
+                    lambda move: move.analytic_account_id.id == int(analytic_id)
+                )
+                debit = sum(budget_move.mapped("debit"))
+                credit = sum(budget_move.mapped("credit"))
+                amount_commit_json[analytic_id] = debit - credit
+            rec.amount_commit = amount_commit_json
+
             if rec.advance_budget_move_ids:
                 rec.date_commit = min(rec.advance_budget_move_ids.mapped("date"))
             else:
                 rec.date_commit = False
         # Expenses
         return super(HRExpense, expenses)._compute_commit()
-
-    def _get_account_move_by_sheet(self):
-        # When advance create move, do set not_affect_budget = True
-        move_grouped_by_sheet = super()._get_account_move_by_sheet()
-        for sheet in self.mapped("sheet_id").filtered("advance"):
-            move_grouped_by_sheet[sheet.id].not_affect_budget = True
-        return move_grouped_by_sheet
-
-    def _find_next_av(self, advance):
-        next_av = self.filtered(
-            lambda l: l.advance
-            and l.id != advance.id
-            and l.amount_commit
-            and l.sheet_id == advance.sheet_id
-        )
-        return next_av[0] if next_av else advance
 
     def _get_recompute_advances(self):
         advances = self.filtered(lambda l: l.advance)
@@ -106,11 +116,6 @@ class HRExpense(models.Model):
             ).recompute_budget_move()
             advance_sheet = advances.mapped("sheet_id")
             advance_sheet.ensure_one()
-            # If the advances has any clearing, uncommit them from advance
-            clearings = self.search(
-                [("sheet_id.advance_sheet_id", "=", advance_sheet.id)]
-            )
-            clearings.uncommit_advance_budget()
             # If the advances has any reconcile (return advance),
             # reverse commit them from advance
             aml_debit = advance_sheet.account_move_id.line_ids.filtered(
@@ -130,6 +135,11 @@ class HRExpense(models.Model):
                         move_line_id=return_ml.id,
                         date=return_ml.date_commit,
                     )
+            # If the advances has any clearing, uncommit them from advance
+            clearings = self.search(
+                [("sheet_id.advance_sheet_id", "=", advance_sheet.id)], order="id"
+            )
+            clearings.uncommit_advance_budget()
         return res
 
     def _close_budget_sheets_with_adj_commit(self):
@@ -189,6 +199,7 @@ class HRExpense(models.Model):
             clearing_approved.sorted(key=lambda l: l.date_commit)
             + clearing_not_approved
         )
+        config_budget_include_tax = self.env.company.budget_include_tax
         for clearing in clearing_sorted:
             cl_state = clearing.sheet_id.state
             if self.env.context.get("force_commit") or cl_state in (
@@ -200,29 +211,54 @@ class HRExpense(models.Model):
                 # just return amount line by line
                 origin_clearing_amount = (
                     clearing.total_amount
-                    if self.env.company.budget_include_tax
+                    if config_budget_include_tax
                     else clearing.untaxed_amount
                 )
-                while origin_clearing_amount > 0:
-                    advance_sheet = clearing.sheet_id.advance_sheet_id
-                    advances = advance_sheet.expense_line_ids.filtered("amount_commit")
-                    if not advances:
-                        break
-                    for advance in advances:
-                        clearing_amount = min(
-                            advance.amount_commit, origin_clearing_amount
+                clearing_analytic = clearing.analytic_distribution
+                advance_sheet = clearing.sheet_id.advance_sheet_id
+                advance_lines = advance_sheet.expense_line_ids
+
+                advances = advance_lines.filtered("amount_commit")
+                if not advances:
+                    continue
+
+                # Check analytic distribution match with advance
+                advance_analytic = {}
+                for av_line in advance_lines:
+                    if av_line.fwd_analytic_distribution:
+                        advance_analytic.update(av_line.fwd_analytic_distribution)
+                    advance_analytic.update(av_line.analytic_distribution)
+                clearing_analytic_ids = [x for x in clearing_analytic]
+                advance_analytic_ids = [x for x in advance_analytic]
+
+                if any(aa not in advance_analytic_ids for aa in clearing_analytic_ids):
+                    raise UserError(
+                        _(
+                            "Analytic distribution mismatch. "
+                            "Please align with the original advance."
                         )
-                        origin_clearing_amount -= clearing_amount
+                    )
+                # Uncommit budget to advance line by line
+                for analyic_id, aa_percent in clearing_analytic.items():
+                    clearing_amount = origin_clearing_amount * aa_percent / 100
+                    for advance in advances:
+                        if not advance.amount_commit.get(str(analyic_id)):
+                            continue
+
+                        clearing_amount_commit = min(
+                            advance.amount_commit[str(analyic_id)], clearing_amount
+                        )
+                        clearing_amount -= clearing_amount_commit
                         budget_move = advance.commit_budget(
                             reverse=True,
                             clearing_id=clearing.id,
-                            amount_currency=clearing_amount,
-                            analytic_account_id=advance.fwd_analytic_account_id
+                            amount_currency=clearing_amount_commit,
+                            analytic_account_id=advance.fwd_analytic_distribution
                             or False,
                             date=clearing.date_commit,
                         )
                         budget_moves |= budget_move
-                        if origin_clearing_amount <= 0:
+                        if clearing_amount <= 0:
                             break
             else:
                 # Cancel or draft, not commitment line
