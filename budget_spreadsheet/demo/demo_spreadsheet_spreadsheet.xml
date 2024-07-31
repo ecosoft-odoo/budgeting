@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="demo_budget_spreadsheet" model="spreadsheet.spreadsheet">
+        <field name="name">Demo budget spreadsheet</field>
+        <field
+            name="data"
+            type="base64"
+            file="budget_spreadsheet/demo/demo_budget_spreadsheet.json"
+        />
+    </record>
+</odoo>
