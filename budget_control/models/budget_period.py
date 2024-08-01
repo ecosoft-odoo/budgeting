@@ -260,6 +260,8 @@ class BudgetPeriod(models.Model):
             budget_move = line.with_context(force_commit=True).commit_budget()
             if budget_move:
                 budget_moves.append(budget_move)
+        # Update database, so we can check budget with query
+        budget_move.flush_model()
         # Check Budget
         self.env["budget.period"].check_budget(doclines, doc_type=doc_type)
         # Remove commits
