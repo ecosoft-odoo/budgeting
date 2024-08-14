@@ -9,8 +9,6 @@
                 expr="//page[@name='expenses']/field[@name='expense_line_ids']/tree/field[@name='analytic_distribution']"
                 position="after"
             >
-                <!-- Add new field no permission -->
-                <field name="analytic_distribution" invisible="1" />
                 <field
                     name="json_budget_popover"
                     optional="show"
@@ -18,7 +16,6 @@
                     string="Budget Figure"
                     width="10px"
                     widget="popover_widget"
-                    attrs="{'invisible': [('analytic_distribution', '=', False)]}"
                     groups="budget_control.group_budget_control_user"
                 />
             </xpath>
