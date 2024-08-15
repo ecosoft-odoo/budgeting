@@ -6,7 +6,7 @@ from datetime import datetime
 from freezegun import freeze_time
 
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import Form, tagged
 
 from .common import BudgetControlCommon
 
@@ -299,3 +299,23 @@ class TestBudgetControl(BudgetControlCommon):
             bill1.budget_move_ids[0].date,
             bill1.invoice_line_ids[0].date_commit,
         )
+
+    @freeze_time("2001-02-01")
+    def test_11_budget_adjustment(self):
+        self.assertEqual(self.budget_control.amount_balance, 2400.0)
+        budget_adjust = self.BudgetAdjust.create(
+            {
+                "date_commit": "2001-02-01",
+            }
+        )
+        with Form(budget_adjust.adjust_item_ids) as line:
+            line.adjust_id = budget_adjust
+            line.adjust_type = "consume"
+            line.product_id = self.product1
+            line.analytic_distribution = {self.costcenter1.id: 100}
+            line.amount = 100.0
+        adjust_line = line.save()
+        self.assertEqual(adjust_line.account_id, self.account_kpi1)
+        # balance in budget control must be 'Decrease'
+        budget_adjust.action_adjust()
+        self.assertEqual(self.budget_control.amount_balance, 2300.0)

@@ -25,6 +25,7 @@ class BudgetControlCommon(TransactionCase):
         cls.Product = cls.env["product.product"]
         cls.Partner = cls.env["res.partner"]
         cls.Move = cls.env["account.move"]
+        cls.BudgetAdjust = cls.env["budget.move.adjustment"]
 
         # Create vendor
         cls.vendor = cls.Partner.create({"name": "Sample Vendor"})
