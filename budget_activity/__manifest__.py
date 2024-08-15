@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Activity",
-    "version": "15.0.1.0.0",
+    "version": "16.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
@@ -14,6 +14,7 @@
         "security/ir.model.access.csv",
         "report/budget_monitor_report_view.xml",
         "views/account_move_views.xml",
+        "views/analytic_line_views.xml",
         "views/budget_activity_view.xml",
         "views/budget_kpi_view.xml",
         "views/budget_template_view.xml",
