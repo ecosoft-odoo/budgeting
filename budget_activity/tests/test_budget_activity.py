@@ -19,6 +19,7 @@ class TestBudgetActivity(BudgetControlCommon):
     def setUpClass(cls):
         super().setUpClass()
         BudgetActivity = cls.env["budget.activity"]  # Create sample activity
+        cls.env.company.budget_control_key = "activity_id"  # Control by activity
         cls.activity1 = BudgetActivity.create(
             {
                 "name": "Activity 1",
@@ -77,21 +78,17 @@ class TestBudgetActivity(BudgetControlCommon):
             {"amount": 300}
         )
 
-    def _create_simple_bill_activity(self, analytic, activity, account, amount):
-        Invoice = self.env["account.move"]
-        view_id = "account.view_move_form"
-        with Form(
-            Invoice.with_context(default_move_type="in_invoice"), view=view_id
-        ) as inv:
+    def _create_simple_bill_activity(self, analytic_distribution, activity, amount):
+        with Form(self.Move.with_context(default_move_type="in_invoice")) as inv:
             inv.partner_id = self.vendor
             inv.invoice_date = datetime.today()
             with inv.invoice_line_ids.new() as line:
                 line.quantity = 1
-                line.account_id = account
                 line.price_unit = amount
-                line.analytic_account_id = analytic
-                line.activity_id = activity  # required when select analytic account
+                line.analytic_distribution = analytic_distribution
+                line.activity_id = activity
         invoice = inv.save()
+
         return invoice
 
     @freeze_time("2001-02-01")
@@ -107,9 +104,13 @@ class TestBudgetActivity(BudgetControlCommon):
         self.budget_period.control_budget = True
         self.budget_control.action_done()
         price_unit = 10.0
+
+        analytic_distribution = {str(self.costcenter1.id): 100.0}
         invoice = self._create_simple_bill_activity(
-            self.costcenter1, self.activity1, self.account_kpi1, price_unit
+            analytic_distribution, self.activity1, price_unit
         )
+        # Check account is set to account in activity
+        invoice.invoice_line_ids[0]._onchange_activity_id()
         self.assertEqual(
             self.activity1.account_id, invoice.invoice_line_ids[0].account_id
         )
@@ -119,6 +120,7 @@ class TestBudgetActivity(BudgetControlCommon):
                 line_form.product_id = self.product2
                 line_form.price_unit = price_unit  # Change product, amount will reset
         invoice_form.save()
+        invoice.invoice_line_ids[0]._onchange_activity_id()
         self.assertEqual(
             self.activity1.account_id, invoice.invoice_line_ids[0].account_id
         )
@@ -164,7 +166,7 @@ class TestBudgetActivity(BudgetControlCommon):
         - User can always change account code afterwards
         """
         self.assertEqual(self.budget_control.amount_balance, 2400.0)
-        budget_adjust = self.env["budget.move.adjustment"].create(
+        budget_adjust = self.BudgetAdjust.create(
             {
                 "date_commit": "2001-02-01",
             }
@@ -173,7 +175,7 @@ class TestBudgetActivity(BudgetControlCommon):
             line.adjust_id = budget_adjust
             line.adjust_type = "consume"
             line.product_id = self.product1
-            line.analytic_account_id = self.costcenter1
+            line.analytic_distribution = {self.costcenter1.id: 100}
             line.amount = 100.0
         adjust_line = line.save()
         self.assertEqual(adjust_line.account_id, self.account_kpi1)

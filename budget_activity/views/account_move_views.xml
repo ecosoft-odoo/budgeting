@@ -11,7 +11,7 @@
             >
                 <field
                     name="activity_id"
-                    attrs="{'required': [('analytic_account_id', '!=', False), ('parent.not_affect_budget', '=', False)]}"
+                    attrs="{'required': [('parent.not_affect_budget', '=', False)]}"
                 />
             </xpath>
             <xpath
@@ -20,7 +20,7 @@
             >
                 <field
                     name="activity_id"
-                    attrs="{'required': [('analytic_account_id', '!=', False), ('parent.not_affect_budget', '=', False)]}"
+                    attrs="{'required': [('parent.not_affect_budget', '=', False)]}"
                 />
             </xpath>
         </field>
