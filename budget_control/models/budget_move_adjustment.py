@@ -110,11 +110,11 @@ class BudgetMoveAdjustment(models.Model):
 
 class BudgetMoveAdjustmentItem(models.Model):
     _name = "budget.move.adjustment.item"
-    _inherit = ["budget.docline.mixin"]
+    _inherit = ["analytic.mixin", "budget.docline.mixin"]
     _description = "Budget Moves Adjustment Lines"
     _budget_date_commit_fields = ["adjust_id.date_commit"]
     _budget_move_model = "account.budget.move"
-    _budget_analytic_field = "analytic_account_id"
+    _budget_analytic_field = "analytic_distribution"
     _doc_rel = "adjust_id"
 
     adjust_id = fields.Many2one(
@@ -145,12 +145,6 @@ class BudgetMoveAdjustmentItem(models.Model):
         comodel_name="account.account",
         required=True,
     )
-    analytic_account_id = fields.Many2one(
-        comodel_name="account.analytic.account",
-        string="Analytic Account",
-        required=True,
-        index=True,
-    )
     currency_id = fields.Many2one(
         related="adjust_id.currency_id",
         readonly=True,
@@ -179,8 +173,10 @@ class BudgetMoveAdjustmentItem(models.Model):
 
     def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
+        percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
+        amount_budget = self.amount * percent_analytic / 100
         budget_vals["amount_currency"] = (
-            -self.amount if self.adjust_type == "release" else self.amount
+            -amount_budget if self.adjust_type == "release" else amount_budget
         )
         # Document specific values
         budget_vals.update(
