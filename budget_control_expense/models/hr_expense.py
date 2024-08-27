@@ -34,6 +34,13 @@ class HRExpenseSheet(models.Model):
             doclines.recompute_budget_move()
         return res
 
+    def unlink(self):
+        # Compute commit again after unlink
+        expenses = self.mapped("expense_line_ids")
+        res = super().unlink()
+        expenses._compute_commit()
+        return res
+
     def approve_expense_sheets(self):
         res = super().approve_expense_sheets()
         BudgetPeriod = self.env["budget.period"]
