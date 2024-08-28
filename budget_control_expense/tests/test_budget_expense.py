@@ -123,6 +123,13 @@ class TestBudgetControlExpense(BudgetControlCommon):
         # CostCenter1, will result in $ -1.00
         with self.assertRaises(UserError):
             expense.action_submit_sheet()
+        # (5) Delete Expense Sheet
+        expense.expense_line_ids.write({"total_amount": 100})
+        expense.action_submit_sheet()
+        expense.approve_expense_sheets()
+        self.assertEqual(self.budget_control.amount_balance, 100)  # 2 lines
+        expense.unlink()
+        self.assertEqual(self.budget_control.amount_balance, 300)
 
     @freeze_time("2001-02-01")
     def test_02_budget_expense_to_journal_posting(self):

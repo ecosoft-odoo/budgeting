@@ -38,6 +38,21 @@ class HRExpenseSheet(models.Model):
             clearing_dict["date_commit"] = False
         return clearing_dict
 
+    def _prepare_bill_vals(self):
+        """Not affect budget for advance"""
+        self.ensure_one()
+        res = super()._prepare_bill_vals()
+        if self.advance:
+            res["not_affect_budget"] = True
+        return res
+
+    def unlink(self):
+        # Recompute budget advance after unlink
+        advance = self.advance_sheet_id
+        res = super().unlink()
+        advance.recompute_budget_move()
+        return res
+
 
 class HRExpense(models.Model):
     _inherit = "hr.expense"
