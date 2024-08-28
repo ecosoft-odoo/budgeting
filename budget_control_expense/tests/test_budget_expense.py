@@ -42,9 +42,6 @@ class TestBudgetControlExpense(BudgetControlCommon):
         cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2)[:1].write(
             {"amount": 200}
         )
-        # cls.budget_control.flush_model()  # Need to flush data into table, so it can be sql
-        # cls.budget_control.allocated_amount = 300
-        # cls.budget_control.action_done()
 
     @freeze_time("2001-02-01")
     def _create_expense_sheet(self, ex_lines):
@@ -127,6 +124,13 @@ class TestBudgetControlExpense(BudgetControlCommon):
         # CostCenter1, will result in $ -1.00
         with self.assertRaises(UserError):
             expense.action_submit_sheet()
+        # (5) Delete Expense Sheet
+        expense.expense_line_ids.write({"total_amount": 100})
+        expense.action_submit_sheet()
+        expense.approve_expense_sheets()
+        self.assertEqual(self.budget_control.amount_balance, 100)  # 2 lines
+        expense.unlink()
+        self.assertEqual(self.budget_control.amount_balance, 300)
 
     @freeze_time("2001-02-01")
     def test_02_budget_expense_to_journal_posting(self):
