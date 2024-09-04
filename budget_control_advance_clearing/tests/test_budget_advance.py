@@ -188,7 +188,7 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         self.assertEqual(self.budget_control.amount_advance, 100)
         self.assertEqual(self.budget_control.amount_expense, 0)
         self.assertEqual(self.budget_control.amount_balance, 200)
-        # Create Clearing = 80 to this advance
+        # Create Total Clearing = 80 to this advance
         clearing = self._create_clearing_sheet(
             advance,
             [
@@ -199,7 +199,7 @@ class TestBudgetControlAdvance(BudgetControlCommon):
                     "analytic_distribution": analytic_distribution,
                 },
                 {
-                    "product_id": self.product2,  # KPI2 = 80
+                    "product_id": self.product2,  # KPI2 = 60
                     "product_qty": 2,
                     "price_unit": 30,
                     "analytic_distribution": analytic_distribution,
@@ -224,6 +224,16 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         clearing.expense_line_ids[:1].total_amount = 290
         with self.assertRaises(UserError):
             clearing.action_submit_sheet()
+
+        # (5) Delete Clearing, Advance should be uncommitted
+        clearing.expense_line_ids[:1].total_amount = 50
+        clearing.action_submit_sheet()
+        clearing.approve_expense_sheets()
+        self.assertEqual(
+            self.budget_control.amount_advance, 30
+        )  # total is 100 - (50 + 20)
+        clearing.unlink()
+        self.assertEqual(self.budget_control.amount_advance, 100)
 
     @freeze_time("2001-02-01")
     def test_03_budget_recompute_and_close_budget_move(self):

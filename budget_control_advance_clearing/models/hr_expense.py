@@ -47,6 +47,13 @@ class HRExpenseSheet(models.Model):
             res["not_affect_budget"] = True
         return res
 
+    def unlink(self):
+        # Recompute budget advance after unlink
+        advance = self.advance_sheet_id
+        res = super().unlink()
+        advance.recompute_budget_move()
+        return res
+
 
 class HRExpense(models.Model):
     _inherit = "hr.expense"

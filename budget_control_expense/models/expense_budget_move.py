@@ -21,6 +21,7 @@ class ExpenseBudgetMove(models.Model):
         readonly=True,
         store=True,
         index=True,
+        ondelete="cascade",
     )
     move_id = fields.Many2one(
         comodel_name="account.move",
