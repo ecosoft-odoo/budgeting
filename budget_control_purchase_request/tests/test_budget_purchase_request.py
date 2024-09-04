@@ -183,6 +183,8 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         self.assertEqual(self.budget_control.amount_balance, 250)
         # Cancel PO
         purchase.button_cancel()
+        # Make sure, PR will state approved
+        purchase_request.button_approved()
         self.assertEqual(self.budget_control.amount_purchase_request, 30)
         self.assertEqual(self.budget_control.amount_purchase, 0)
         self.assertEqual(self.budget_control.amount_balance, 270)
