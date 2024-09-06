@@ -21,7 +21,7 @@ class AccountMoveLine(models.Model):
     def _get_qty_commit(self, purchase_line):
         """For hook, addition filter or condition i.e. purchase deposit"""
         qty = self.product_uom_id._compute_quantity(
-            self.quantity, purchase_line.product_uom
+            self.quantity, purchase_line.product_uom, round=False
         )
         qty_bf_invoice = purchase_line.qty_invoiced - qty
         qty_balance = purchase_line.product_qty - qty_bf_invoice
