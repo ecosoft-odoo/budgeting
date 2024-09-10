@@ -15,6 +15,7 @@
         "web_widget_x2many_2d_matrix",
     ],
     "data": [
+        "data/budget_data.xml",
         "data/sequence_data.xml",
         "security/budget_control_security_groups.xml",
         "security/budget_control_rules.xml",
