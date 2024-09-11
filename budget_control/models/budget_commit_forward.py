@@ -252,9 +252,16 @@ class BudgetCommitForward(models.Model):
             # For case extend
             for line in rec.forward_line_ids:
                 if not reverse and line.method_type == "extend":
-                    line.to_analytic_account_id.bm_date_to = (
-                        rec.to_budget_period_id.bm_date_to
-                    )
+                    # Update end date of analytic account,
+                    # if it is extended by max date.
+                    if line.to_analytic_account_id.bm_date_to:
+                        date_to = max(
+                            line.to_analytic_account_id.bm_date_to,
+                            rec.to_budget_period_id.bm_date_to,
+                        )
+                    else:
+                        date_to = rec.to_budget_period_id.bm_date_to
+                    line.to_analytic_account_id.bm_date_to = date_to
 
     def _do_update_initial_commit(self, reverse=False):
         """Update all Analytic Account's initial commit value related to budget period"""
