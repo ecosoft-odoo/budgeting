@@ -93,12 +93,18 @@ class HRExpense(models.Model):
     def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
         if not budget_vals.get("amount_currency", False):
+            # Amount expense is always include tax. so, we need to compute amount without tax
+            base_lines = [
+                self._convert_to_tax_base_line_dict(
+                    price_unit=self.unit_amount, quantity=self.quantity
+                )
+            ]
+            taxes_totals = self.env["account.tax"]._compute_taxes(base_lines)["totals"][
+                self.currency_id
+            ]
+            total_amount = taxes_totals["amount_untaxed"]
+            # Percent analytic
             percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
-            total_amount = (
-                (self.quantity * self.unit_amount)
-                if self.product_has_cost
-                else self.total_amount
-            )
             budget_vals["amount_currency"] = total_amount * percent_analytic / 100
             budget_vals["tax_ids"] = self.tax_ids.ids
         # Document specific vals
