@@ -3,6 +3,7 @@
 
 from freezegun import freeze_time
 
+from odoo import Command
 from odoo.tests import tagged
 from odoo.tests.common import Form
 
@@ -26,9 +27,8 @@ class TestBudgetActivityExpense(TestBudgetActivity):
             with Form(Expense, view=view_id) as ex:
                 ex.employee_id = user.employee_id
                 ex.product_id = ex_line["product_id"]
-                ex.quantity = ex_line["product_qty"]
-                ex.unit_amount = ex_line["price_unit"]
-                ex.analytic_account_id = ex_line["analytic_id"]
+                ex.total_amount = ex_line["price_unit"] * ex_line["product_qty"]
+                ex.analytic_distribution = ex_line["analytic_distribution"]
                 ex.activity_id = ex_line["activity_id"]
             expense = ex.save()
             expense_ids.append(expense.id)
@@ -36,7 +36,7 @@ class TestBudgetActivityExpense(TestBudgetActivity):
             {
                 "name": "Test Expense",
                 "employee_id": user.employee_id.id,
-                "expense_line_ids": [(6, 0, expense_ids)],
+                "expense_line_ids": [Command.set(expense_ids)],
             }
         )
         return expense_sheet
@@ -52,13 +52,14 @@ class TestBudgetActivityExpense(TestBudgetActivity):
         self.budget_period.control_budget = True
         self.budget_control.action_done()
 
+        analytic_distribution = {str(self.costcenter1.id): 100.0}
         expense = self._create_expense_sheet(
             [
                 {
                     "product_id": self.product1,  # KPI1
                     "product_qty": 3,
                     "price_unit": 10,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                     "activity_id": self.activity3,
                 },
             ]
