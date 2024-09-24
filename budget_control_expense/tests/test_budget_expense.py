@@ -56,6 +56,7 @@ class TestBudgetControlExpense(BudgetControlCommon):
                 ex.total_amount = ex_line["price_unit"] * ex_line["product_qty"]
                 ex.analytic_distribution = ex_line["analytic_distribution"]
             expense = ex.save()
+            expense.tax_ids = False  # test without tax
             expense_ids.append(expense.id)
         expense_sheet = self.env["hr.expense.sheet"].create(
             {
