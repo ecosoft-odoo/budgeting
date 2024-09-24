@@ -61,6 +61,13 @@ class BudgetDoclineMixinBase(models.AbstractModel):
 class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
 
+    required_activity = fields.Boolean(compute="_compute_required_activity", store=True)
+
+    @api.depends("company_id.budget_control_key")
+    def _compute_required_activity(self):
+        for rec in self:
+            rec.required_activity = rec.company_id.budget_control_key == "activity_id"
+
     def _update_budget_commitment(self, budget_vals, analytic, reverse=False):
         budget_vals = super()._update_budget_commitment(
             budget_vals, analytic, reverse=reverse
