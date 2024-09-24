@@ -39,6 +39,7 @@
             <tree>
                 <field name="name" />
                 <field name="description" />
+                <field name="company_id" groups="base.group_multi_company" />
                 <field
                     name="state"
                     widget="badge"
@@ -100,6 +101,10 @@
                         <group name="budget_move_adjustment_right">
                             <field name="create_uid" readonly="1" />
                             <field name="create_date" readonly="1" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
                             <field
                                 name="currency_id"
                                 groups="base.group_multi_currency"
