@@ -41,9 +41,19 @@ class BudgetMoveAdjustment(models.Model):
         states={"draft": [("readonly", False)]},
         tracking=True,
     )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        required=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+        index=True,
+    )
     currency_id = fields.Many2one(
         comodel_name="res.currency",
-        default=lambda self: self.env.user.company_id.currency_id,
+        related="company_id.currency_id",
+        store=True,
+        states={"draft": [("readonly", False)]},
     )
     state = fields.Selection(
         [
@@ -144,6 +154,13 @@ class BudgetMoveAdjustmentItem(models.Model):
     account_id = fields.Many2one(
         comodel_name="account.account",
         required=True,
+        index=True,
+    )
+    company_id = fields.Many2one(
+        related="adjust_id.company_id",
+        store=True,
+        readonly=True,
+        index=True,
     )
     currency_id = fields.Many2one(
         related="adjust_id.currency_id",

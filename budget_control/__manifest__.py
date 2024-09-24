@@ -19,6 +19,7 @@
         "data/sequence_data.xml",
         "security/budget_control_security_groups.xml",
         "security/budget_control_rules.xml",
+        "security/budget_adjustment_rules.xml",
         "security/ir.model.access.csv",
         "wizards/generate_budget_control_view.xml",
         "wizards/analytic_budget_info_view.xml",
