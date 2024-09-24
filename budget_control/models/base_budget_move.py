@@ -11,7 +11,6 @@ from odoo.exceptions import UserError, ValidationError
 class BaseBudgetMove(models.AbstractModel):
     _name = "base.budget.move"
     _description = "Document Budget Moves"
-    _budget_control_field = "account_id"
     _order = "analytic_account_id, date, id"
 
     reference = fields.Char(
