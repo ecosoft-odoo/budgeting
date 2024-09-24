@@ -40,3 +40,9 @@ class ResCompany(models.Model):
         comodel_name="budget.template",
         string="Budget Template",
     )
+    budget_control_key = fields.Selection(
+        selection=[("account_id", "Account")],
+        string="Control Key",
+        required=True,
+        default="account_id",
+    )

@@ -334,42 +334,45 @@ class BudgetPeriod(models.Model):
             lambda l: l.date >= budget_period.bm_date_from
             and l.date <= budget_period.bm_date_to
         )
+        budget_control_key = self.env.company.budget_control_key
         need_control = self.env.context.get("need_control")
         for budget_move in budget_moves_period:
             if budget_period.control_all_analytic_accounts:
-                if (
-                    budget_move.analytic_account_id
-                    and budget_move[budget_move._budget_control_field]
-                ):
+                if budget_move.analytic_account_id and budget_move[budget_control_key]:
                     controls.add(
                         (
                             budget_move.analytic_account_id.id,
-                            budget_move[budget_move._budget_control_field].id,
+                            budget_move[budget_control_key].id,
                         )
                     )
             else:  # analytic in control or force control by send context
                 if (
                     budget_move.analytic_account_id in control_analytics
-                    and budget_move[budget_move._budget_control_field]
+                    and budget_move[budget_control_key]
                 ) or need_control:
                     controls.add(
                         (
                             budget_move.analytic_account_id.id,
-                            budget_move[budget_move._budget_control_field].id,
+                            budget_move[budget_control_key].id,
                         )
                     )
         # Convert to list of dicts for readability
-        return [
-            {"analytic_id": x[0], budget_move._budget_control_field: x[1]}
-            for x in controls
-        ]
+        return [{"analytic_id": x[0], budget_control_key: x[1]} for x in controls]
 
     def _get_filter_template_line(self, all_template_lines, control):
-        account_id = control["account_id"]
-        template_lines = all_template_lines.filtered(
-            lambda l: account_id in l.account_ids.ids
-        )
+        budget_control_key = self.env.company.budget_control_key
+        if budget_control_key == "account_id":
+            control_id = control[budget_control_key]
+            template_lines = all_template_lines.filtered(
+                lambda l: control_id in l.account_ids.ids
+            )
         return template_lines
+
+    def _get_control_key_obj(self, control_key, control_id):
+        if control_key == "account_id":
+            control = self.env["account.account"].browse(control_id)
+            control_name = "account code"
+        return control, control_name
 
     @api.model
     def _get_kpi_by_control_key(self, template_lines, control):
@@ -377,23 +380,24 @@ class BudgetPeriod(models.Model):
         By default, control key is account_id as it can be used to get KPI
         In future, this can be other key, i.e., activity_id based on installed module
         """
-        account_id = control["account_id"]
+        control_key = self.env.company.budget_control_key
+        control_id = control[control_key]
         template_line = self._get_filter_template_line(template_lines, control)
         if len(template_line) == 1:
             return template_line
         # Invalid Template Lines
-        account = self.env["account.account"].browse(account_id)
+        control, control_name = self._get_control_key_obj(control_key, control_id)
         if not template_line:
             raise UserError(
-                _("Chosen account code %s is not valid in template")
-                % account.display_name
+                _("Chosen %(name)s %(display_name)s is not valid in template")
+                % ({"name": control_name, "display_name": control.display_name})
             )
         raise UserError(
             _(
                 "Template Lines has more than one KPI being "
-                "referenced by the same account code %s"
+                "referenced by the same %(name)s %(display_name)s"
             )
-            % (account.display_name)
+            % ({"name": control_name, "display_name": control.display_name})
         )
 
     def _get_where_domain(self, analytic_id, template_lines):
