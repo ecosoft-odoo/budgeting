@@ -31,7 +31,7 @@ class TestBudgetActivityPurchase(TestBudgetActivity):
                     line.product_id = po_line["product_id"]
                     line.product_qty = po_line["product_qty"]
                     line.price_unit = po_line["price_unit"]
-                    line.account_analytic_id = po_line["analytic_id"]
+                    line.analytic_distribution = po_line["analytic_distribution"]
                     line.activity_id = po_line["activity_id"]
         purchase = po.save()
         return purchase
@@ -47,13 +47,14 @@ class TestBudgetActivityPurchase(TestBudgetActivity):
         self.budget_period.control_budget = True
         self.budget_control.action_done()
 
+        analytic_distribution = {str(self.costcenter1.id): 100.0}
         purchase = self._create_purchase(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 30
                     "product_qty": 3,
                     "price_unit": 10,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                     "activity_id": self.activity3,
                 },
             ]

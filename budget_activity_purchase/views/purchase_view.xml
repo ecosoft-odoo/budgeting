@@ -11,7 +11,8 @@
             >
                 <field
                     name="activity_id"
-                    attrs="{'required': [('account_analytic_id', '!=', False)]}"
+                    attrs="{'required': [('analytic_distribution', '!=', False)]}"
+                    groups="analytic.group_analytic_accounting"
                 />
             </xpath>
             <xpath
@@ -20,7 +21,8 @@
             >
                 <field
                     name="activity_id"
-                    attrs="{'required': [('account_analytic_id', '!=', False)]}"
+                    attrs="{'required': [('analytic_distribution', '!=', False)]}"
+                    groups="analytic.group_analytic_accounting"
                 />
             </xpath>
         </field>
