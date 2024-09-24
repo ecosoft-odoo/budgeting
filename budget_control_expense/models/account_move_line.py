@@ -11,12 +11,18 @@ class AccountMoveLine(models.Model):
         self.ensure_one()
         res = super()._init_docline_budget_vals(budget_vals, analytic_id)
         expense = self.expense_id
-        if expense:  # case expense (support with include tax)
-            budget_vals["amount_currency"] = (
-                (expense.quantity * expense.unit_amount)
-                if expense.product_has_cost
-                else expense.total_amount
-            )
+        if expense:
+            # Amount from expense is tax included, need to convert to amount_untaxed
+            base_lines = [
+                expense._convert_to_tax_base_line_dict(
+                    price_unit=expense.unit_amount, quantity=expense.quantity
+                )
+            ]
+            taxes_totals = self.env["account.tax"]._compute_taxes(base_lines)["totals"][
+                expense.currency_id
+            ]
+            total_amount = taxes_totals["amount_untaxed"]
+            budget_vals["amount_currency"] = total_amount
         return res
 
     def uncommit_expense_budget(self):
@@ -24,7 +30,8 @@ class AccountMoveLine(models.Model):
         Expense = self.env["hr.expense"]
         for ml in self:
             inv_state = ml.move_id.state
-            if not ml.move_id.expense_sheet_id:
+            # Skip if not expense or tax line
+            if not ml.move_id.expense_sheet_id or ml.display_type == "tax":
                 continue
             if inv_state == "posted":
                 expense = ml.expense_id.filtered("amount_commit")
