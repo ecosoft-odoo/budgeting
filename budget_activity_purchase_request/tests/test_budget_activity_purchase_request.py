@@ -30,7 +30,7 @@ class TestBudgetActivityPurchaseRequest(TestBudgetActivity):
                     line.product_id = pr_line["product_id"]
                     line.product_qty = pr_line["product_qty"]
                     line.estimated_cost = pr_line["estimated_cost"]
-                    line.analytic_account_id = pr_line["analytic_id"]
+                    line.analytic_distribution = pr_line["analytic_distribution"]
                     line.activity_id = pr_line["activity_id"]
         purchase_request = pr.save()
         return purchase_request
@@ -46,13 +46,14 @@ class TestBudgetActivityPurchaseRequest(TestBudgetActivity):
         self.budget_period.control_budget = True
         self.budget_control.action_done()
 
+        analytic_distribution = {str(self.costcenter1.id): 100}
         purchase_request = self._create_purchase_request(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 30
                     "product_qty": 3,
                     "estimated_cost": 30,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                     "activity_id": self.activity3,
                 },
             ]
