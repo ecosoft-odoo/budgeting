@@ -5,7 +5,7 @@
         <field name="model">hr.expense</field>
         <field name="inherit_id" ref="budget_activity_expense.hr_expense_view_form" />
         <field name="arch" type="xml">
-            <xpath expr="//group/field[@name='product_id']" position="attributes">
+            <xpath expr="//group//field[@name='product_id']" position="attributes">
                 <attribute name="attrs">
                     {'invisible': [('advance', '=', True)]}
                 </attribute>
@@ -13,7 +13,7 @@
             <field name="activity_id" position="attributes">
                 <attribute
                     name="attrs"
-                >{'required': [('analytic_account_id', '!=', False)], 'readonly': ['|', ('advance', '=', True), ('is_editable', '=', False)]}</attribute>
+                >{'required': [('required_activity', '!=', False)], 'readonly': ['|', ('advance', '=', True), ('is_editable', '=', False)]}</attribute>
                 <attribute name="force_save">1</attribute>
             </field>
             <field name="activity_id" position="after">

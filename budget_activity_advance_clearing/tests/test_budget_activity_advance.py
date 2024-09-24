@@ -3,6 +3,7 @@
 
 from freezegun import freeze_time
 
+from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tests.common import Form
@@ -38,20 +39,21 @@ class TestBudgetActivityAdvance(TestBudgetActivity):
             line.kpi_id = cls.kpi_advance
 
     @freeze_time("2001-02-01")
-    def _create_advance_sheet(self, amount, analytic):
+    def _create_advance_sheet(self, amount, analytic_distribution):
         Expense = self.env["hr.expense"]
         view_id = "hr_expense_advance_clearing.hr_expense_view_form"
         user = self.env.ref("base.user_admin")
         with Form(Expense.with_context(default_advance=True), view=view_id) as ex:
             ex.employee_id = user.employee_id
-            ex.unit_amount = amount
-            ex.analytic_account_id = analytic
+            ex.total_amount = amount
+            ex.analytic_distribution = analytic_distribution
         advance = ex.save()
         expense_sheet = self.env["hr.expense.sheet"].create(
             {
                 "name": "Test Advance",
+                "advance": True,
                 "employee_id": user.employee_id.id,
-                "expense_line_ids": [(6, 0, [advance.id])],
+                "expense_line_ids": [Command.set([advance.id])],
             }
         )
         return expense_sheet
@@ -66,9 +68,8 @@ class TestBudgetActivityAdvance(TestBudgetActivity):
             with Form(Expense, view=view_id) as ex:
                 ex.employee_id = user.employee_id
                 ex.product_id = ex_line["product_id"]
-                ex.quantity = ex_line["product_qty"]
-                ex.unit_amount = ex_line["price_unit"]
-                ex.analytic_account_id = ex_line["analytic_id"]
+                ex.total_amount = ex_line["price_unit"] * ex_line["product_qty"]
+                ex.analytic_distribution = ex_line["analytic_distribution"]
             expense = ex.save()
             expense_ids.append(expense.id)
         expense_sheet = self.env["hr.expense.sheet"].create(
@@ -76,7 +77,7 @@ class TestBudgetActivityAdvance(TestBudgetActivity):
                 "name": "Test Expense",
                 "advance_sheet_id": advance and advance.id,
                 "employee_id": user.employee_id.id,
-                "expense_line_ids": [(6, 0, expense_ids)],
+                "expense_line_ids": [Command.set(expense_ids)],
             }
         )
         return expense_sheet
@@ -91,9 +92,11 @@ class TestBudgetActivityAdvance(TestBudgetActivity):
         # Control budget
         self.budget_period.control_budget = True
         self.budget_control.action_done()
+
+        analytic_distribution = {str(self.costcenter1.id): 100.0}
         # Can not create advance if not set account_id
         with self.assertRaises(UserError):
-            self._create_advance_sheet(100, self.costcenter1)
+            self._create_advance_sheet(100, analytic_distribution)
         # Configure the account in the activity advance.
         # This should also update the account in the product advance.
         self.assertFalse(self.advance_product.property_account_expense_id)
@@ -106,7 +109,7 @@ class TestBudgetActivityAdvance(TestBudgetActivity):
         )
         self.assertEqual(self.advance_activity.account_id, self.account_kpiAV)
 
-        advance = self._create_advance_sheet(100, self.costcenter1)
+        advance = self._create_advance_sheet(100, analytic_distribution)
         # Check change activity is not equal activity_advance
         with self.assertRaises(UserError):
             advance.expense_line_ids.activity_id = self.activity2.id

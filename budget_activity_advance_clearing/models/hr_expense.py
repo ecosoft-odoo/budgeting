@@ -84,10 +84,9 @@ class HRExpense(models.Model):
         advance field.
         """
         res = super().onchange_advance()
-        if self.advance:
-            self.activity_id = self.env.ref(
-                "budget_activity_advance_clearing.budget_activity_advance"
-            )
-        else:
-            self.activity_id = False
+        self.activity_id = (
+            self.env.ref("budget_activity_advance_clearing.budget_activity_advance")
+            if self.advance
+            else False
+        )
         return res
