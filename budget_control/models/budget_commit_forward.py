@@ -252,9 +252,16 @@ class BudgetCommitForward(models.Model):
             # For case extend
             for line in rec.forward_line_ids:
                 if not reverse and line.method_type == "extend":
-                    line.to_analytic_account_id.bm_date_to = (
-                        rec.to_budget_period_id.bm_date_to
-                    )
+                    # Update end date of analytic account,
+                    # if it is extended by max date.
+                    if line.to_analytic_account_id.bm_date_to:
+                        date_to = max(
+                            line.to_analytic_account_id.bm_date_to,
+                            rec.to_budget_period_id.bm_date_to,
+                        )
+                    else:
+                        date_to = rec.to_budget_period_id.bm_date_to
+                    line.to_analytic_account_id.bm_date_to = date_to
 
     def _do_update_initial_commit(self, reverse=False):
         """Update all Analytic Account's initial commit value related to budget period"""
@@ -298,15 +305,17 @@ class BudgetCommitForward(models.Model):
         self._recompute_budget_move()
 
     def action_cancel(self):
+        """Do not allow cancel document is past period."""
         forwards = self.env["budget.commit.forward"].search([("state", "=", "done")])
-        max_date_commit = max(forwards.mapped("to_date_commit"))
-        # Not allow cancel document is past period.
-        if max_date_commit and any(
-            rec.to_date_commit < max_date_commit for rec in self
-        ):
-            raise UserError(
-                _("Unable to cancel this document as it belongs to a past period.")
-            )
+        if forwards:
+            max_date_commit = max(forwards.mapped("to_date_commit"))
+            # Not allow cancel document is past period.
+            if max_date_commit and any(
+                rec.to_date_commit < max_date_commit for rec in self
+            ):
+                raise UserError(
+                    _("Unable to cancel this document as it belongs to a past period.")
+                )
         self.filtered(lambda l: l.state == "done")._do_forward_commit(reverse=True)
         self.write({"state": "cancel"})
         self._do_update_initial_commit(reverse=True)

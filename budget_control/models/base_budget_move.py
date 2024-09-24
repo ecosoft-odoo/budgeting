@@ -66,13 +66,16 @@ class BaseBudgetMove(models.AbstractModel):
     )
     amount_currency = fields.Float(
         required=True,
+        digits="Budget Precision",
         help="Amount in multi currency",
     )
     credit = fields.Float(
         readonly=True,
+        digits="Budget Precision",
     )
     debit = fields.Float(
         readonly=True,
+        digits="Budget Precision",
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
