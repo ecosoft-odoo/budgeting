@@ -13,10 +13,11 @@ class HRExpense(models.Model):
             self.account_id = self.activity_id.account_id
 
     @api.depends("product_id", "company_id")
-    def _compute_from_product_id_company_id(self):
-        res = super()._compute_from_product_id_company_id()
-        for expense in self.filtered("activity_id"):
-            expense.account_id = expense.activity_id.account_id
+    def _compute_account_id(self):
+        res = super()._compute_account_id()
+        for expense in self:
+            if expense.activity_id:
+                expense.account_id = expense.activity_id.account_id
         return res
 
     def _get_account_move_line_values(self):
@@ -26,3 +27,9 @@ class HRExpense(models.Model):
                 if "product_id" in move_line_values:
                     move_line_values["activity_id"] = expense.activity_id.id
         return move_line_values_by_expense
+
+    def _prepare_move_line_vals(self):
+        self.ensure_one()
+        ml_vals = super()._prepare_move_line_vals()
+        ml_vals["activity_id"] = self.activity_id.id
+        return ml_vals
