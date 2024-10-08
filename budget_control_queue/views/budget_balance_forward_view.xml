@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_balance_forward_form" model="ir.ui.view">
+        <field name="name">view.budget.balance.forward.form</field>
+        <field name="model">budget.balance.forward</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.view_budget_balance_forward_form"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//header[last()]" position="after">
+                <field name="still_running" invisible="1" />
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    style="margin-bottom:0px;"
+                    attrs="{'invisible': [('still_running', '!=', True)]}"
+                >
+                    Running by background.
+                </div>
+            </xpath>
+            <xpath expr="//group/group[2]" position="inside">
+                <field name="use_queue_job" />
+            </xpath>
+        </field>
+    </record>
+</odoo>
