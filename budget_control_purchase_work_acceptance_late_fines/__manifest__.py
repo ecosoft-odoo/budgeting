@@ -6,7 +6,7 @@
     "version": "15.0.1.0.0",
     "summary": "Config not affect budget in WA late fines",
     "license": "AGPL-3",
-    "depends": ["budget_control", "purchase_work_acceptance_late_fines"],
+    "depends": ["budget_control_purchase", "purchase_work_acceptance_late_fines"],
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",
     "category": "Accounting & Finance",
