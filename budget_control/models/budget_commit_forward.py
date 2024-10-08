@@ -237,7 +237,8 @@ class BudgetCommitForward(models.Model):
                 analytic = Analytic.browse(val["analytic_account_id"])
                 analytic.initial_commit -= val["initial_commit"]
             return
-        forward_duplicate = self.env["budget.commit.forward"].search(
+        # Use search_count to check for duplicates
+        forward_duplicate_count = self.env["budget.commit.forward"].search_count(
             [
                 ("to_budget_period_id", "=", self.to_budget_period_id.id),
                 ("state", "=", "done"),
@@ -249,7 +250,7 @@ class BudgetCommitForward(models.Model):
         for val in forward_vals:
             analytic = Analytic.browse(val["analytic_account_id"])
             # Check first forward commit in the year, it should overwrite initial commit
-            if not forward_duplicate:
+            if forward_duplicate_count == 0:
                 analytic.initial_commit = val["initial_commit"]
             else:
                 analytic.initial_commit += val["initial_commit"]
@@ -266,6 +267,12 @@ class BudgetCommitForward(models.Model):
         self._do_update_initial_commit()
         self._recompute_budget_move()
 
+    def _action_cancel(self):
+        self.filtered(lambda l: l.state == "done")._do_forward_commit(reverse=True)
+        self.write({"state": "cancel"})
+        self._do_update_initial_commit(reverse=True)
+        self._recompute_budget_move()
+
     def action_cancel(self):
         """Do not allow cancel document is past period."""
         forwards = self.env["budget.commit.forward"].search([("state", "=", "done")])
@@ -278,10 +285,7 @@ class BudgetCommitForward(models.Model):
                 raise UserError(
                     _("Unable to cancel this document as it belongs to a past period.")
                 )
-        self.filtered(lambda l: l.state == "done")._do_forward_commit(reverse=True)
-        self.write({"state": "cancel"})
-        self._do_update_initial_commit(reverse=True)
-        self._recompute_budget_move()
+        self._action_cancel()
 
     def action_draft(self):
         self.filtered(lambda l: l.state == "done")._do_forward_commit(reverse=True)
