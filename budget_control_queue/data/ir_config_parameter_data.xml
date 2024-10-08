@@ -1,0 +1,10 @@
+<odoo noupdate="1">
+    <record id="budget_control_forward_create_analytic" model="ir.config_parameter">
+        <field name="key">budget_control.forward_create_analytic</field>
+        <field name="value">100</field>
+    </record>
+    <record id="budget_control_carry_forward" model="ir.config_parameter">
+        <field name="key">budget_control.carry_forward</field>
+        <field name="value">10</field>
+    </record>
+</odoo>
