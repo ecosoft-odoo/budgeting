@@ -267,15 +267,17 @@ class BudgetCommitForward(models.Model):
         self._recompute_budget_move()
 
     def action_cancel(self):
+        """Do not allow cancel document is past period."""
         forwards = self.env["budget.commit.forward"].search([("state", "=", "done")])
-        max_date_commit = max(forwards.mapped("to_date_commit"))
-        # Not allow cancel document is past period.
-        if max_date_commit and any(
-            rec.to_date_commit < max_date_commit for rec in self
-        ):
-            raise UserError(
-                _("Unable to cancel this document as it belongs to a past period.")
-            )
+        if forwards:
+            max_date_commit = max(forwards.mapped("to_date_commit"))
+            # Not allow cancel document is past period.
+            if max_date_commit and any(
+                rec.to_date_commit < max_date_commit for rec in self
+            ):
+                raise UserError(
+                    _("Unable to cancel this document as it belongs to a past period.")
+                )
         self.filtered(lambda l: l.state == "done")._do_forward_commit(reverse=True)
         self.write({"state": "cancel"})
         self._do_update_initial_commit(reverse=True)
