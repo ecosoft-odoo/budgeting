@@ -1,0 +1,91 @@
+{
+  "version": 12.5,
+  "sheets": [
+    {
+      "id": "Sheet1",
+      "name": "Budget Spreadsheet",
+      "colNumber": 27,
+      "rowNumber": 101,
+      "rows": {},
+      "cols": {
+        "0": {"size": 133},
+        "1": {"size": 133},
+        "2": {"size": 133},
+        "3": {"size": 130}
+      },
+      "merges": [],
+      "cells": {
+        "A1": {"style": 1, "content": "Plan"},
+        "A2": {"content": "Departments"},
+        "A3": {"content": "Departments"},
+        "A4": {"content": "Departments"},
+        "A5": {"content": "Departments"},
+        "B1": {"style": 1, "content": "Analytic Account"},
+        "B2": {"content": "AA1"},
+        "B3": {"content": "AA2"},
+        "B4": {"content": "AA3"},
+        "B5": {"content": "AA4"},
+        "C1": {"style": 1, "format": 1, "content": "Request Budget"},
+        "C2": {"format": 1, "content": "500000"},
+        "C3": {"format": 1, "content": "400000"},
+        "C4": {"format": 1, "content": "300000"},
+        "C5": {"format": 1, "content": "8000000"},
+        "D1": {"style": 1, "content": "Allocated Budget"}
+      }
+    }
+  ],
+  "entities": {},
+  "styles": {
+    "1": {
+      "fillColor": "#F2F2F2",
+      "bold": true
+    }
+  },
+  "formats": {
+    "1": "#,##0.00"
+  },
+  "borders": {},
+  "revisionId": "00b727ac-9f3d-4120-94b3-083d890158fb",
+  "uniqueFigureIds": true,
+  "odooVersion": 5,
+  "globalFilters": [],
+  "pivots": {},
+  "pivotNextId": 1,
+  "lists": {
+    "1": {
+      "columns": ["name", "default_applicability", "color", "company_id"],
+      "domain": [["parent_id", "=", false]],
+      "model": "account.analytic.plan",
+      "context": {},
+      "orderBy": [],
+      "id": "1",
+      "name": "Analytic Plans",
+      "fieldMatching": {}
+    },
+    "2": {
+      "columns": [
+        "name",
+        "code",
+        "budget_period_id",
+        "budget_control_ids",
+        "initial_available",
+        "initial_commit",
+        "partner_id",
+        "plan_id",
+        "company_id",
+        "debit",
+        "credit",
+        "balance"
+      ],
+      "domain": [],
+      "model": "account.analytic.account",
+      "context": {},
+      "orderBy": [],
+      "id": "2",
+      "name": "Analytic Accounts",
+      "fieldMatching": {}
+    }
+  },
+  "listNextId": 3,
+  "chartOdooMenusReferences": {}
+}

@@ -1,0 +1,45 @@
+{
+  "version": 12.5,
+  "sheets": [
+    {
+      "id": "Sheet1",
+      "name": "Budget Spreadsheet",
+      "colNumber": 27,
+      "rowNumber": 101,
+      "rows": {},
+      "cols": {
+        "0": {"size": 133},
+        "1": {"size": 133},
+        "2": {"size": 133},
+        "3": {"size": 130}
+      },
+      "merges": [],
+      "cells": {
+        "A1": {"style": 1, "content": "Plan"},
+        "B1": {"style": 1, "content": "Analytic Account"},
+        "C1": {"style": 1, "format": 1, "content": "Request Budget"},
+        "D1": {"style": 1, "content": "Allocated Budget"}
+      }
+    }
+  ],
+  "entities": {},
+  "styles": {
+    "1": {
+      "fillColor": "#F2F2F2",
+      "bold": true
+    }
+  },
+  "formats": {
+    "1": "#,##0.00"
+  },
+  "borders": {},
+  "revisionId": "00b727ac-9f3d-4120-94b3-083d890158fb",
+  "uniqueFigureIds": true,
+  "odooVersion": 5,
+  "globalFilters": [],
+  "pivots": {},
+  "pivotNextId": 1,
+  "lists": {},
+  "listNextId": 1,
+  "chartOdooMenusReferences": {}
+}
