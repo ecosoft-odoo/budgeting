@@ -14,7 +14,8 @@ class BudgetPeriod(models.Model):
                 fund_domain = "in {}".format(tuple(unique_fund_ids.ids))
             else:
                 fund_domain = "= {}".format(unique_fund_ids.id)
-            return "analytic_account_id = {} and fund_id {}".format(
-                analytic_id, fund_domain
+            # Filter where domain budget_period_id for case 1 AA use many period
+            return "analytic_account_id = {} and fund_id {} and budget_period_id = {}".format(
+                analytic_id, fund_domain, template_lines.budget_period_id.id
             )
         return super()._get_where_domain(analytic_id, template_lines)
