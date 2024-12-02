@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_request_document_form" model="ir.ui.view">
+        <field name="name">view.request.document.form</field>
+        <field name="model">request.document</field>
+        <field
+            name="inherit_id"
+            ref="budget_control_request_document.view_request_document_form"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='budget_move_ids']/tree/field[@name='request_id']"
+                position="before"
+            >
+                <field name="expense_request_line_id" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_request_document_budget_form" model="ir.ui.view">
+        <field name="name">view.request.document.budget.form</field>
+        <field name="model">request.document</field>
+        <field
+            name="inherit_id"
+            ref="request_document_expense.view_request_document_form"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='expense_line_ids']/tree/field[last()]"
+                position="after"
+            >
+                <field name="auto_adjust_date_commit" optional="hide" />
+                <field name="amount_commit" optional="hide" readonly="1" />
+                <field
+                    name="date_commit"
+                    groups="budget_control.group_budget_date_commit"
+                    optional="hide"
+                    attrs="{'readonly': [('state', '!=', 'draft')]}"
+                />
+                <field
+                    name="fwd_analytic_account_id"
+                    optional="hide"
+                    groups="budget_control.group_budget_control_manager"
+                />
+                <field
+                    name="fwd_date_commit"
+                    optional="hide"
+                    groups="budget_control.group_budget_control_manager"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
