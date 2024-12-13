@@ -27,7 +27,7 @@ class SourceFundMonitorReport(models.Model):
     fund_group_id = fields.Many2one(comodel_name="budget.source.fund.group")
     amount = fields.Float()
     amount_type = fields.Selection(
-        selection=lambda self: [("1_budget", "Budget")]
+        selection=lambda self: [("10_budget", "Budget")]
         + self._get_budget_amount_type(),
         string="Type",
     )
@@ -50,7 +50,7 @@ class SourceFundMonitorReport(models.Model):
         return [
             {
                 "model": ("account.move.line", "Account Move Line"),
-                "type": ("8_actual", "Actual"),
+                "type": ("80_actual", "Actual"),
                 "budget_move": ("account_budget_move", "move_line_id"),
                 "source_doc": ("account_move", "move_id"),
             }
@@ -78,7 +78,7 @@ class SourceFundMonitorReport(models.Model):
                 formatted_dimension_fields = f", {formatted_dimension_fields}"
         for source in self._get_consumed_sources():
             res_model = source["model"][0]  # i.e., account.move.line
-            amount_type = source["type"][0]  # i.e., 8_actual
+            amount_type = source["type"][0]  # i.e., 80_actual
             res_field = source["budget_move"][1]  # i.e., move_line_id
             sql_select[amount_type] = {
                 0: """
@@ -97,7 +97,7 @@ class SourceFundMonitorReport(models.Model):
                 1::boolean as active %s
                 """
                 % (
-                    amount_type[:1],
+                    amount_type[:2],
                     res_model,
                     res_field,
                     amount_type,
@@ -110,7 +110,7 @@ class SourceFundMonitorReport(models.Model):
         sql_from = {}
         for source in self._get_consumed_sources():
             budget_table = source["budget_move"][0]  # i.e., account_budget_move
-            amount_type = source["type"][0]  # i.e., 8_actual
+            amount_type = source["type"][0]  # i.e., 80_actual
             sql_from[
                 amount_type
             ] = """
@@ -141,7 +141,7 @@ class SourceFundMonitorReport(models.Model):
             sf.id as fund_id,
             sf_group.id as fund_group_id,
             aa.id as analytic_account_id,
-            '1_budget' as amount_type,
+            '10_budget' as amount_type,
             al.released_amount as amount,
             bp.bm_date_from as date_from,
             bp.bm_date_to as date_to,
@@ -188,7 +188,7 @@ class SourceFundMonitorReport(models.Model):
             select_budget_query[x] for x in key_select_budget_list
         )
         # commitment
-        select_actual_query = self._select_statement("8_actual")
+        select_actual_query = self._select_statement("80_actual")
         key_select_actual_list = sorted(select_budget_query.keys())
         select_actual = ", ".join(
             select_actual_query[x] for x in key_select_actual_list
@@ -198,7 +198,7 @@ class SourceFundMonitorReport(models.Model):
             self._from_budget(),
             self._where_budget(),
             select_actual,
-            self._from_statement("8_actual"),
+            self._from_statement("80_actual"),
             self._where_actual(),
         )
 
