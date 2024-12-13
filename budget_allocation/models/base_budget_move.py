@@ -115,7 +115,7 @@ class BaseBudgetMove(models.AbstractModel):
             fund_name = docline.fund_id.name
             tag_name = ", ".join(docline.analytic_tag_ids.mapped("name"))
             query_dict = self._get_query_dict(docline)
-            if not any(x["amount_type"] == "1_budget" for x in query_dict):
+            if not any(x["amount_type"] == "10_budget" for x in query_dict):
                 errors.append(
                     _(
                         "%(name)s & %(fund_name)s & %(tag_name)s is not allocated "

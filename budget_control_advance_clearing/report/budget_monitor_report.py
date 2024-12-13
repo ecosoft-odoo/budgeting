@@ -11,7 +11,7 @@ class BudgetMonitorReport(models.Model):
         return super()._get_consumed_sources() + [
             {
                 "model": ("hr.expense", "Expense"),
-                "type": ("4_av_commit", "AV Commit"),
+                "type": ("40_av_commit", "AV Commit"),
                 "budget_move": ("advance_budget_move", "expense_id"),
                 "source_doc": ("hr_expense_sheet", "sheet_id"),
             }
@@ -21,11 +21,11 @@ class BudgetMonitorReport(models.Model):
         return ""
 
     def _get_sql(self):
-        select_av_query = self._select_statement("4_av_commit")
+        select_av_query = self._select_statement("40_av_commit")
         key_select_list = sorted(select_av_query.keys())
         select_av = ", ".join(select_av_query[x] for x in key_select_list)
         return super()._get_sql() + "union (select {} {} {})".format(
             select_av,
-            self._from_statement("4_av_commit"),
+            self._from_statement("40_av_commit"),
             self._where_advance_clearing(),
         )

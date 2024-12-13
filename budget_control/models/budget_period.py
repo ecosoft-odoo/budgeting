@@ -477,7 +477,7 @@ class BudgetPeriod(models.Model):
             if is_commit:
                 budget_info[col] = -amount  # Negate
                 budget_info["amount_commit"] += budget_info[col]
-            elif amount_type == "8_actual":  # Negate consumed
+            elif amount_type == "80_actual":  # Negate consumed
                 budget_info[col] = -amount
             else:
                 budget_info[col] = amount
@@ -493,10 +493,10 @@ class BudgetPeriod(models.Model):
         query = {
             "info_cols": {
                 "amount_budget": (
-                    "1_budget",
+                    "10_budget",
                     False,
                 ),  # (amount_type, is_commit)
-                "amount_actual": ("8_actual", False),
+                "amount_actual": ("80_actual", False),
             },
             "fields": [
                 "analytic_account_id",
