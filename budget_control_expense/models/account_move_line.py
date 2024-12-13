@@ -37,6 +37,7 @@ class AccountMoveLine(models.Model):
                     continue
                 expense.commit_budget(
                     reverse=True,
+                    amount_currency=expense.amount_commit,
                     move_line_id=ml.id,
                     date=ml.date_commit,
                     analytic_account_id=expense.fwd_analytic_account_id or False,

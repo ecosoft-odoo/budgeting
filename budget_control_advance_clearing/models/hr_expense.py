@@ -218,6 +218,13 @@ class HRExpense(models.Model):
                     if self.env.company.budget_include_tax
                     else clearing.untaxed_amount
                 )
+                if clearing.currency_id != clearing.company_id.currency_id:
+                    origin_clearing_amount = clearing.currency_id._convert(
+                        origin_clearing_amount,
+                        clearing.company_id.currency_id,
+                        clearing.company_id,
+                        clearing.date,
+                    )
                 while origin_clearing_amount > 0:
                     advance_sheet = clearing.sheet_id.advance_sheet_id
                     advances = advance_sheet.expense_line_ids.filtered("amount_commit")
