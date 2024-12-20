@@ -89,20 +89,22 @@ class BudgetControl(models.Model):
     company_id = fields.Many2one(
         comodel_name="res.company",
         string="Company",
-        default=lambda self: self.env.company,
-        required=True,
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
     currency_id = fields.Many2one(
-        comodel_name="res.currency", related="company_id.currency_id"
+        comodel_name="res.currency",
+        required=True,
+        tracking=True,
+        readonly=True,
     )
     allocated_amount = fields.Monetary(
         string="Allocated",
-        help="Initial total amount for plan",
         tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+        help="Initial total amount for plan",
     )
     released_amount = fields.Monetary(
         string="Released",

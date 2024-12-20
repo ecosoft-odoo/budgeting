@@ -341,7 +341,7 @@ class BudgetDoclineMixin(models.AbstractModel):
             "amount_currency": budget_vals["amount_currency"],
             "debit": not reverse and amount or 0,
             "credit": reverse and amount or 0,
-            "company_id": company.id,
+            "company_id": self[self._doc_rel].company_id.id,  # Document company
         }
         if sum([res["debit"], res["credit"]]) < 0:
             res["debit"], res["credit"] = abs(res["credit"]), abs(res["debit"])

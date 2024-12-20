@@ -46,6 +46,11 @@
                 <field name="amount_consumed" optional="show" />
                 <field name="amount_balance" optional="show" />
                 <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company"
+                />
+                <field
                     name="state"
                     widget='badge'
                     decoration-success="state == 'done'"
@@ -94,6 +99,13 @@
                         name="analytic_group"
                         string="Analytic Group"
                         context="{'group_by': 'analytic_group'}"
+                    />
+                    <separator />
+                    <filter
+                        string="Company"
+                        name="groupby_company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company"
                     />
                 </group>
             </search>

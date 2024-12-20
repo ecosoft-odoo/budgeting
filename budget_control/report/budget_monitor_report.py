@@ -53,6 +53,9 @@ class BudgetMonitorReport(models.Model):
         ],
     )
     fwd_commit = fields.Boolean()
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+    )
     active = fields.Boolean()
 
     @property
@@ -109,6 +112,7 @@ class BudgetMonitorReport(models.Model):
                 a.source_document as source_document,
                 null::char as budget_state,
                 a.fwd_commit,
+                b.company_id as company_id,
                 1::boolean as active
                 """
                 % (amount_type[:1], res_model, res_field, amount_type)
@@ -151,6 +155,7 @@ class BudgetMonitorReport(models.Model):
             null::char as source_document,
             b.state as budget_state,
             0::boolean as fwd_commit,
+            b.company_id as company_id,
             a.active as active
         """
         }
