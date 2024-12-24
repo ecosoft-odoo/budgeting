@@ -86,12 +86,15 @@ class BudgetControl(models.Model):
         help="If checked, the newly created budget control sheet will has "
         "initial budget equal to current budget commitment of its year.",
     )
-    company_id = fields.Many2one(
+    company_ids = fields.Many2many(
         comodel_name="res.company",
-        string="Company",
+        related="analytic_account_id.budget_company_ids",
+        relation="budget_control_company_rel",
+        column1="budget_control_id",
+        column2="company_id",
+        store=True,
+        string="Companies",
         tracking=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     currency_id = fields.Many2one(
         comodel_name="res.currency",

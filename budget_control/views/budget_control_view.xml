@@ -46,9 +46,10 @@
                 <field name="amount_consumed" optional="show" />
                 <field name="amount_balance" optional="show" />
                 <field
-                    name="company_id"
+                    name="company_ids"
                     optional="show"
                     groups="base.group_multi_company"
+                    widget="many2many_tags"
                 />
                 <field
                     name="state"
@@ -104,7 +105,7 @@
                     <filter
                         string="Company"
                         name="groupby_company"
-                        context="{'group_by': 'company_id'}"
+                        context="{'group_by': 'company_ids'}"
                         groups="base.group_multi_company"
                     />
                 </group>
@@ -224,8 +225,9 @@
                             <field name="plan_date_range_type_id" />
                             <field name="template_id" />
                             <field
-                                name="company_id"
+                                name="company_ids"
                                 groups="base.group_multi_company"
+                                widget="many2many_tags"
                             />
                             <field
                                 name="currency_id"

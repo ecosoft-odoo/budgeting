@@ -161,7 +161,6 @@ class GenerateBudgetControl(models.TransientModel):
                         or l["analytic_account_id"].name
                     ),
                     "analytic_account_id": l["analytic_account_id"].id,
-                    "company_id": l["analytic_account_id"].company_id.id,
                     "currency_id": currency_id,
                     "plan_date_range_type_id": plan_date_range_id,
                     "use_all_kpis": use_all_kpis,
