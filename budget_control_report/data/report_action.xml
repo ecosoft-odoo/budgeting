@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Budget Report -->
+    <record id="action_export_budget_report_xlsx" model="ir.actions.report">
+        <field name="name">Export Excel Budget</field>
+        <field name="model">budget.report.wizard</field>
+        <field name="type">ir.actions.report</field>
+        <field name="report_name">budget.report.wizard.xlsx</field>
+        <field name="report_type">xlsx</field>
+        <field name="print_report_name">object._get_report_base_filename()</field>
+    </record>
+
+    <!-- Budget Consumption -->
+    <record id="action_export_budget_consumption_xlsx" model="ir.actions.report">
+        <field name="name">Export Excel Budget Consumption</field>
+        <field name="model">budget.consumption.report.wizard</field>
+        <field name="type">ir.actions.report</field>
+        <field name="report_name">budget.consumption.xlsx</field>
+        <field name="report_type">xlsx</field>
+        <field name="print_report_name">object._get_report_base_filename()</field>
+    </record>
+
+</odoo>
