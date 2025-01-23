@@ -17,7 +17,7 @@ class BudgetPeriod(models.Model):
 
     def _budget_info_query(self):
         query = super()._budget_info_query()
-        query["info_cols"]["amount_expense"] = ("5_ex_commit", True)
+        query["info_cols"]["amount_expense"] = ("50_ex_commit", True)
         return query
 
     @api.depends("control_budget")

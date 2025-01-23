@@ -32,7 +32,7 @@ class BudgetControl(models.Model):
 
     def _filter_by_budget_control(self, val):
         res = super()._filter_by_budget_control(val)
-        if val["amount_type"] != "1_budget":
+        if val["amount_type"] != "10_budget":
             return res
         revision_number = (
             0 if not val["revision_number"] else int(val["revision_number"])

@@ -31,7 +31,7 @@ class BudgetMonitorReport(models.Model):
     date = fields.Date()
     amount = fields.Float()
     amount_type = fields.Selection(
-        selection=lambda self: [("1_budget", "Budget")]
+        selection=lambda self: [("10_budget", "Budget")]
         + self._get_budget_amount_type(),
         string="Type",
     )
@@ -73,7 +73,7 @@ class BudgetMonitorReport(models.Model):
         return [
             {
                 "model": ("account.move.line", "Account Move Line"),
-                "type": ("8_actual", "Actual"),
+                "type": ("80_actual", "Actual"),
                 "budget_move": ("account_budget_move", "move_line_id"),
                 "source_doc": ("account_move", "move_id"),
             }
@@ -91,7 +91,7 @@ class BudgetMonitorReport(models.Model):
         sql_select = {}
         for source in self._get_consumed_sources():
             res_model = source["model"][0]  # i.e., account.move.line
-            amount_type = source["type"][0]  # i.e., 8_actual
+            amount_type = source["type"][0]  # i.e., 80_actual
             res_field = source["budget_move"][1]  # i.e., move_line_id
             sql_select[amount_type] = {
                 0: """
@@ -111,7 +111,7 @@ class BudgetMonitorReport(models.Model):
                 a.fwd_commit,
                 1::boolean as active
                 """
-                % (amount_type[:1], res_model, res_field, amount_type)
+                % (amount_type[:2], res_model, res_field, amount_type)
             }
         return sql_select
 
@@ -121,7 +121,7 @@ class BudgetMonitorReport(models.Model):
             budget_table = source["budget_move"][0]  # i.e., account_budget_move
             doc_table = source["source_doc"][0]  # i.e., account_move
             doc_field = source["source_doc"][1]  # i.e., move_id
-            amount_type = source["type"][0]  # i.e., 8_actual
+            amount_type = source["type"][0]  # i.e., 80_actual
             sql_from[
                 amount_type
             ] = """
@@ -143,7 +143,7 @@ class BudgetMonitorReport(models.Model):
             a.analytic_account_id,
             b.analytic_group,
             a.date_to as date,  -- approx date
-            '1_budget' as amount_type,
+            '10_budget' as amount_type,
             a.amount as amount,
             null::integer as product_id,
             null::integer as account_id,
@@ -177,7 +177,7 @@ class BudgetMonitorReport(models.Model):
         select_budget = ", ".join(
             select_budget_query[x] for x in key_select_budget_list
         )
-        select_actual_query = self._select_statement("8_actual")
+        select_actual_query = self._select_statement("80_actual")
         key_select_actual_list = sorted(select_budget_query.keys())
         select_actual = ", ".join(
             select_actual_query[x] for x in key_select_actual_list
@@ -186,7 +186,7 @@ class BudgetMonitorReport(models.Model):
             select_budget,
             self._from_budget(),
             select_actual,
-            self._from_statement("8_actual"),
+            self._from_statement("80_actual"),
             self._where_actual(),
         )
 

@@ -9,5 +9,5 @@ class BudgetPeriod(models.Model):
 
     def _budget_info_query(self):
         query = super()._budget_info_query()
-        query["info_cols"]["amount_agreement"] = ("7_agreement_commit", True)
+        query["info_cols"]["amount_agreement"] = ("70_agreement_commit", True)
         return query
