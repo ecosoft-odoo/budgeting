@@ -28,15 +28,19 @@ class RequestDocumentExpenseLine(models.Model):
         string="Request Budget Moves",
     )
 
+    def uncommit_origin_budget(self):
+        return
+
     def recompute_budget_move(self):
         for line in self:
             line.budget_move_ids.unlink()
             line.commit_budget()
             # credit will not over debit (auto adjust)
             line.forward_commit()
+            line.uncommit_origin_budget()
             sheet = line.document_id.expense_sheet_ids
             if (
-                line.document_id.state == "done"
+                line.document_id.state in ("approve", "done")
                 and sheet.budget_move_ids
                 and sheet.state in ["approve", "post", "done"]
             ):
