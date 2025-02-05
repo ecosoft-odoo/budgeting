@@ -97,7 +97,8 @@ class PurchaseRequestLine(models.Model):
 
     def _init_docline_budget_vals(self, budget_vals):
         self.ensure_one()
-        budget_vals["amount_currency"] = self.estimated_cost
+        if not budget_vals.get("amount_currency", False):
+            budget_vals["amount_currency"] = self.estimated_cost
         # Document specific vals
         budget_vals.update(
             {

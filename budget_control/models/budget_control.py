@@ -345,7 +345,7 @@ class BudgetControl(models.Model):
                     q["amount"]
                     for q in query_data
                     if q["amount"] is not None
-                    and q["amount_type"] not in ["1_budget", "8_actual"]
+                    and q["amount_type"] not in ["10_budget", "80_actual"]
                 )
                 line.update({"amount": abs(balance_commit)})
 
