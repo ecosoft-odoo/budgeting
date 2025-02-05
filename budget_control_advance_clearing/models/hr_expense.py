@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import api, fields, models
+from odoo.tools import float_round
 
 
 class HRExpenseSheet(models.Model):
@@ -231,8 +232,9 @@ class HRExpense(models.Model):
                     if not advances:
                         break
                     for advance in advances:
-                        clearing_amount = min(
-                            advance.amount_commit, origin_clearing_amount
+                        clearing_amount = float_round(
+                            min(advance.amount_commit, origin_clearing_amount),
+                            precision_rounding=clearing.company_id.currency_id.rounding,
                         )
                         origin_clearing_amount -= clearing_amount
                         budget_move = advance.commit_budget(
