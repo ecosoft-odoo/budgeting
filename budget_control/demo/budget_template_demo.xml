@@ -33,5 +33,4 @@
         <field name="account_ids" eval="[(4, ref('l10n_generic_coa.expense_rent'))]" />
         <field name="template_id" eval="ref('budget_control.budget_template_demo')" />
     </record>
-
 </odoo>

@@ -45,9 +45,9 @@
                                 <p>
                                     <ol>
                                         <li><b
-                                            >Account</b>: Multiple items can be selected in each line. Used for budget commitment (PR/PO/CT/AV/EX/Actual). The template is checked to see if there is enough budget.</li>
+                                        >Account</b>: Multiple items can be selected in each line. Used for budget commitment (PR/PO/CT/AV/EX/Actual). The template is checked to see if there is enough budget.</li>
                                         <li><b
-                                            >KPI</b>: Groups of accounts can be created from the Configuration > Budget KPI menu.</li>
+                                        >KPI</b>: Groups of accounts can be created from the Configuration > Budget KPI menu.</li>
                                     </ol>
                                 </p>
                             </div>

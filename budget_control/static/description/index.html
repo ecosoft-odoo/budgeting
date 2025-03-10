@@ -369,35 +369,41 @@ ul.auto-toc {
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! source digest: sha256:353c8401879120bf194a5135e6f67838a807a00dc09ec0d8388ce36d90910040
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
-<p><a class="reference external image-reference" href="https://odoo-community.org/page/development-status"><img alt="Alpha" src="https://img.shields.io/badge/maturity-Alpha-red.png" /></a> <a class="reference external image-reference" href="http://www.gnu.org/licenses/agpl-3.0-standalone.html"><img alt="License: AGPL-3" src="https://img.shields.io/badge/licence-AGPL--3-blue.png" /></a> <a class="reference external image-reference" href="https://github.com/ecosoft-odoo/budgeting/tree/16.0/budget_control"><img alt="ecosoft-odoo/budgeting" src="https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github" /></a></p>
+<p><a class="reference external image-reference" href="https://odoo-community.org/page/development-status"><img alt="Alpha" src="https://img.shields.io/badge/maturity-Alpha-red.png" /></a> <a class="reference external image-reference" href="http://www.gnu.org/licenses/agpl-3.0-standalone.html"><img alt="License: AGPL-3" src="https://img.shields.io/badge/licence-AGPL--3-blue.png" /></a> <a class="reference external image-reference" href="https://github.com/OCA/budgeting/tree/18.0/budget_control"><img alt="OCA/budgeting" src="https://img.shields.io/badge/github-OCA%2Fbudgeting-lightgray.png?logo=github" /></a> <a class="reference external image-reference" href="https://translation.odoo-community.org/projects/budgeting-18-0/budgeting-18-0-budget_control"><img alt="Translate me on Weblate" src="https://img.shields.io/badge/weblate-Translate%20me-F47D42.png" /></a> <a class="reference external image-reference" href="https://runboat.odoo-community.org/builds?repo=OCA/budgeting&amp;target_branch=18.0"><img alt="Try me on Runboat" src="https://img.shields.io/badge/runboat-Try%20me-875A7B.png" /></a></p>
 <p>This module is the main module from a set of budget control modules.
-This module alone will allow you to work in full cycle of budget control process.
-Other modules, each one are the small enhancement of this module, to fullfill
-additional needs. Having said that, following will describe the full cycle of budget
-control already provided by this module,</p>
+This module alone will allow you to work in full cycle of budget control
+process. Other modules, each one are the small enhancement of this
+module, to fullfill additional needs. Having said that, following will
+describe the full cycle of budget control already provided by this
+module,</p>
 <div class="section" id="budget-control-core-features">
 <h1>Budget Control Core Features:</h1>
 <ul>
 <li><p class="first"><strong>Budget Commitment (base.budget.move)</strong></p>
 <p>Probably the most crucial part of budget_control.</p>
 <ul class="simple">
-<li>Budget Balance = Budget Allocated - (Budget Actuals - Budget Commitments)</li>
+<li>Budget Balance = Budget Allocated - (Budget Actuals - Budget
+Commitments)</li>
 </ul>
-<p>Actual amount are from <cite>account.move.line</cite> from posted invoice. Commitments can be sales/purchase,
-expense, purchase request, etc. Document required to be budget commitment can extend base.budget.move.
-For example, the module budget_control_expense will create budget commitment <cite>expense.budget.move</cite>
-for approved expense.
-Note that, in this budget_control module, there is no extension for budget commitment yet.</p>
+<p>Actual amount are from account.move.line from posted invoice.
+Commitments can be sales/purchase, expense, purchase request, etc.
+Document required to be budget commitment can extend base.budget.move.
+For example, the module budget_control_expense will create budget
+commitment expense.budget.move for approved expense. Note that, in
+this budget_control module, there is no extension for budget
+commitment yet.</p>
 </li>
 <li><p class="first"><strong>Budget Template (budget.template)</strong></p>
-<p>A Budget Template in the budget control system serves as a framework for controlling the budget,
-allowing for the budget to be managed according to the pre-defined template.
-The budget template has a relationship with the accounting,
-and is used to control spending based on pre-configured accounts.</p>
+<p>A Budget Template in the budget control system serves as a framework
+for controlling the budget, allowing for the budget to be managed
+according to the pre-defined template. The budget template has a
+relationship with the accounting, and is used to control spending
+based on pre-configured accounts.</p>
 </li>
 <li><p class="first"><strong>Budget Period (budget.period)</strong></p>
-<p>Budget Period is the first thing to do for new budget year, and is used to govern how budget will be
-controlled over the defined date range, i.e.,</p>
+<p>Budget Period is the first thing to do for new budget year, and is
+used to govern how budget will be controlled over the defined date
+range, i.e.,</p>
 <ul class="simple">
 <li>Duration of budget year</li>
 <li>Template to control (budget.template)</li>
@@ -405,41 +411,51 @@ controlled over the defined date range, i.e.,</p>
 <li>Analytic account in controlled</li>
 <li>Control Level</li>
 </ul>
-<p>Although not mandatory, an organization will most likely use fiscal year as budget period.
-In such case, there will be 1 budget period per fiscal year, and multiple budget control sheet (one per analytic).</p>
+<p>Although not mandatory, an organization will most likely use fiscal
+year as budget period. In such case, there will be 1 budget period per
+fiscal year, and multiple budget control sheet (one per analytic).</p>
 </li>
 <li><p class="first"><strong>Budget Control Sheet (budget.control)</strong></p>
-<p>Each analytic account can have one budget control sheet per budget period.
-The budget control is used to allocate budget amount in a simpler way.
-In the backend it simply create budget.control.line, nothing too fancy.
-Once we have budget allocations, the system is ready to perform budget check.</p>
+<p>Each analytic account can have one budget control sheet per budget
+period. The budget control is used to allocate budget amount in a
+simpler way. In the backend it simply create budget.control.line,
+nothing too fancy. Once we have budget allocations, the system is
+ready to perform budget check.</p>
 </li>
 <li><p class="first"><strong>Budget Checking</strong></p>
-<p>By calling function – check_budget(), system will check whether the confirmation
-of such document can result in negative budget balance. If so, it throw error message.
-In this module, budget check occur during posting of invoice and journal entry.
-To check budget also on more documents, do install budget_control_xxx relevant to that document.</p>
+<p>By calling function – check_budget(), system will check whether the
+confirmation of such document can result in negative budget balance.
+If so, it throw error message. In this module, budget check occur
+during posting of invoice and journal entry. To check budget also on
+more documents, do install budget_control_xxx relevant to that
+document.</p>
 </li>
 <li><p class="first"><strong>Budget Constraint</strong></p>
-<p>To make the function – check_budget() more flexible,
-additional rules or limitations can be added to the budget checking process.
-The system will perform the regular budget check and will also check the additional conditions specified
-in the added rules. An example of using budget constraints can be seen from the budget_allocation module.</p>
+<p>To make the function – check_budget() more flexible, additional rules
+or limitations can be added to the budget checking process. The system
+will perform the regular budget check and will also check the
+additional conditions specified in the added rules. An example of
+using budget constraints can be seen from the budget_allocation
+module.</p>
 </li>
 <li><p class="first"><strong>Budget Reports</strong></p>
 <p>Currently there are 2 types of report.</p>
 <ol class="arabic simple">
-<li>Budget Monitoring: combine all budget related transactions, and show them in Standard Odoo BI view.</li>
-<li>Actual Budget Moves: combine all actual commit transactions, and show them in Standard Odoo BI view.</li>
+<li>Budget Monitoring: combine all budget related transactions, and
+show them in Standard Odoo BI view.</li>
+<li>Actual Budget Moves: combine all actual commit transactions, and
+show them in Standard Odoo BI view.</li>
 </ol>
 </li>
 <li><p class="first"><strong>Budget Commitment Move Forward</strong></p>
-<p>In case budget commitment is being used. Sometime user has committed budget withing this year
-but not ready to use it and want to move the commitment amount to next year budget.
-Budget Commitment Forward can be use to change the budget move’s date to the designated year.</p>
+<p>In case budget commitment is being used. Sometime user has committed
+budget withing this year but not ready to use it and want to move the
+commitment amount to next year budget. Budget Commitment Forward can
+be use to change the budget move’s date to the designated year.</p>
 </li>
 <li><p class="first"><strong>Budget Transfer</strong></p>
-<p>This module allow transferring allocated budget from one budget control sheet to other</p>
+<p>This module allow transferring allocated budget from one budget
+control sheet to other</p>
 </li>
 </ul>
 </div>
@@ -447,7 +463,8 @@ Budget Commitment Forward can be use to change the budget move’s date to the d
 <h1>Extended Modules:</h1>
 <p>Following are brief explanation of what the extended module will do.</p>
 <p><strong>Budget Move extension</strong></p>
-<p>These modules extend base.budget.move for other document budget commitment.</p>
+<p>These modules extend base.budget.move for other document budget
+commitment.</p>
 <ul class="simple">
 <li>budget_control_expense</li>
 <li>budget_control_purchase</li>
@@ -455,9 +472,10 @@ Budget Commitment Forward can be use to change the budget move’s date to the d
 <li>budget_control_sale</li>
 </ul>
 <p><strong>Budget Allocation</strong></p>
-<p>This module is the main module for manage allocation (source of fund, analytic tag and analytic account)
-until set budget control. and allow create Master Data source of fund, analytic tag dimension.
-Users can view source of fund monitoring report</p>
+<p>This module is the main module for manage allocation (source of fund,
+analytic tag and analytic account) until set budget control. and allow
+create Master Data source of fund, analytic tag dimension. Users can
+view source of fund monitoring report</p>
 <ul class="simple">
 <li>budget_allocation</li>
 </ul>
@@ -467,14 +485,14 @@ Users can view source of fund monitoring report</p>
 <li>budget_control_tier_validation</li>
 </ul>
 <p><strong>Analytic Tag Dimension Enhancements</strong></p>
-<p>When 1 dimension (analytic account) is not enough,
-we can use dimension to create persistent dimension columns</p>
+<p>When 1 dimension (analytic account) is not enough, we can use dimension
+to create persistent dimension columns</p>
 <ul class="simple">
 <li>analytic_tag_dimension</li>
 <li>analytic_tag_dimension_enhanced</li>
 </ul>
-<p>Following modules ensure that, analytic_tag_dimension will work with all new
-budget control objects. These are important for reporting purposes.</p>
+<p>Following modules ensure that, analytic_tag_dimension will work with all
+new budget control objects. These are important for reporting purposes.</p>
 <ul class="simple">
 <li>budget_allocation</li>
 <li>budget_allocation_expense</li>
@@ -496,14 +514,11 @@ Only for development or testing purpose, do not use in production.
 </div>
 <div class="section" id="usage">
 <h2><a class="toc-backref" href="#toc-entry-1">Usage</a></h2>
-<dl class="docutils">
-<dt>Before start using this module, following access right must be set.</dt>
-<dd><ul class="first last simple">
+<p>Before start using this module, following access right must be set.</p>
+<ul class="simple">
 <li>Budget User for Budget Control Sheet, Budget Report</li>
 <li>Budget Manager for Budget Period</li>
 </ul>
-</dd>
-</dl>
 <p>Followings are sample steps to start with,</p>
 <ol class="arabic">
 <li><p class="first">Create new Budget KPI</p>
@@ -519,58 +534,70 @@ Only for development or testing purpose, do not use in production.
 <ul class="simple">
 <li>Choose Budget template</li>
 <li>Identify date range, i.e., 1 fiscal year</li>
-<li>Plan Date Range, i.e., Quarter, the slot to fill allocation in budget control will split by quarter</li>
-<li>Control Budget = True (if not check = not check budget for this period)</li>
+<li>Plan Date Range, i.e., Quarter, the slot to fill allocation in
+budget control will split by quarter</li>
+<li>Control Budget = True (if not check = not check budget for this
+period)</li>
 </ul>
 </blockquote>
 </li>
 <li><p class="first">Create Budget Control Sheet</p>
-<p>To create budget control sheet, you can either create manually one by one or by using the helper,
-Action &gt; Create Budget Control Sheet</p>
+<p>To create budget control sheet, you can either create manually one by
+one or by using the helper, Action &gt; Create Budget Control Sheet</p>
 <blockquote>
 <ul class="simple">
 <li>Choose Analytic budget_control_purchase_tag_dimension</li>
-<li>Check All Analytic Account, this will list all analytic account in selected groups</li>
-<li>Uncheck Initial Budget By Commitment, this is used only on following year to
-init budget allocation if they were committed amount carried over.</li>
-<li>Click “Create Budget Control Sheet”, and then view the newly created control sheets.</li>
+<li>Check All Analytic Account, this will list all analytic account
+in selected groups</li>
+<li>Uncheck Initial Budget By Commitment, this is used only on
+following year to init budget allocation if they were committed
+amount carried over.</li>
+<li>Click “Create Budget Control Sheet”, and then view the newly
+created control sheets.</li>
 </ul>
 </blockquote>
 </li>
 <li><p class="first">Allocate amount in Budget Control Sheets</p>
-<p>Each analytic account will have its own sheet. Form Budget Period, click on the
-icon “Budget Control Sheets” or by Menu &gt; Budgeting &gt; Budget Control Sheet, to open them.</p>
+<p>Each analytic account will have its own sheet. Form Budget Period,
+click on the icon “Budget Control Sheets” or by Menu &gt; Budgeting &gt;
+Budget Control Sheet, to open them.</p>
 <blockquote>
 <ul class="simple">
-<li>Based on “Plan Date Range” period, Plan table will show all KPI split by Plan Date Range</li>
+<li>Based on “Plan Date Range” period, Plan table will show all KPI
+split by Plan Date Range</li>
 <li>Allocate budget amount as appropriate.</li>
 <li>Click Control button, state will change to Controlled.</li>
 </ul>
 </blockquote>
-<p>Note: Make sure the Plan Date Rang period already has date ranges that covers entire budget period.
-Once ready, you can click on “Reset Plan” anytime.</p>
+<p>Note: Make sure the Plan Date Rang period already has date ranges
+that covers entire budget period. Once ready, you can click on “Reset
+Plan” anytime.</p>
 </li>
 <li><p class="first">Budget Reports</p>
-<p>After some document transaction (i.e., invoice for actuals), you can view report anytime.</p>
+<p>After some document transaction (i.e., invoice for actuals), you can
+view report anytime.</p>
 <blockquote>
 <ul class="simple">
-<li>On Budget Control sheet, click on Monitoring for see this budget report</li>
-<li>Menu Budgeting &gt; Budget Monitoring, to show budget report in standard Odoo BI view.</li>
+<li>On Budget Control sheet, click on Monitoring for see this budget
+report</li>
+<li>Menu Budgeting &gt; Budget Monitoring, to show budget report in
+standard Odoo BI view.</li>
 </ul>
 </blockquote>
 </li>
 <li><p class="first">Budget Checking</p>
-<p>As we have checked Control Budget = True in third step, checking will occur
-every time an invoice is validated. You can test by validate invoice with big amount to exceed.</p>
+<p>As we have checked Control Budget = True in third step, checking will
+occur every time an invoice is validated. You can test by validate
+invoice with big amount to exceed.</p>
 </li>
 </ol>
 </div>
 <div class="section" id="bug-tracker">
 <h2><a class="toc-backref" href="#toc-entry-2">Bug Tracker</a></h2>
-<p>Bugs are tracked on <a class="reference external" href="https://github.com/ecosoft-odoo/budgeting/issues">GitHub Issues</a>.
+<p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/budgeting/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-<a class="reference external" href="https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_control%0Aversion:%2016.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**">feedback</a>.</p>
+<a class="reference external" href="https://github.com/OCA/budgeting/issues/new?body=module:%20budget_control%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**">feedback</a>.</p>
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
@@ -592,10 +619,17 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 </div>
 <div class="section" id="maintainers">
 <h1>Maintainers</h1>
-<p>Current maintainers:</p>
+<p>This module is maintained by the OCA.</p>
+<a class="reference external image-reference" href="https://odoo-community.org">
+<img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />
+</a>
+<p>OCA, or the Odoo Community Association, is a nonprofit organization whose
+mission is to support the collaborative development of Odoo features and
+promote its widespread use.</p>
+<p>Current <a class="reference external" href="https://odoo-community.org/page/maintainer-role">maintainers</a>:</p>
 <p><a class="reference external image-reference" href="https://github.com/kittiu"><img alt="kittiu" src="https://github.com/kittiu.png?size=40px" /></a> <a class="reference external image-reference" href="https://github.com/ru3ix-bbb"><img alt="ru3ix-bbb" src="https://github.com/ru3ix-bbb.png?size=40px" /></a></p>
-<p>This module is part of the <a class="reference external" href="https://github.com/ecosoft-odoo/budgeting/tree/16.0/budget_control">ecosoft-odoo/budgeting</a> project on GitHub.</p>
-<p>You are welcome to contribute.</p>
+<p>This module is part of the <a class="reference external" href="https://github.com/OCA/budgeting/tree/18.0/budget_control">OCA/budgeting</a> project on GitHub.</p>
+<p>You are welcome to contribute. To learn how please visit <a class="reference external" href="https://odoo-community.org/page/Contribute">https://odoo-community.org/page/Contribute</a>.</p>
 </div>
 </div>
 </body>
