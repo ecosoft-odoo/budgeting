@@ -125,7 +125,7 @@ class GenerateBudgetControl(models.TransientModel):
             )
 
     def _get_budget_period_name(self):
-        budget_name = "{} :: ".format(self.budget_period_id.name)
+        budget_name = f"{self.budget_period_id.name} :: "
         return budget_name
 
     def _prepare_value_duplicate(self, vals):

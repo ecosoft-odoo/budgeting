@@ -138,7 +138,7 @@ class BudgetCommitForward(models.Model):
                         "method_type": method_type,
                         "res_model": res_model,
                         "res_id": doc.id,
-                        "document_id": "{},{}".format(doc._name, doc.id),
+                        "document_id": f"{doc._name},{doc.id}",
                         "document_number": self._get_document_number(doc),
                         "amount_commit": doc.amount_commit[str(analytic_id)],
                         "date_commit": doc.fwd_date_commit or doc.date_commit,
@@ -441,10 +441,7 @@ class BudgetCommitForwardLine(models.Model):
         return [
             (
                 r.id,
-                "{document_number} - {analytic}".format(
-                    document_number=r.document_number.display_name,
-                    analytic=r.analytic_account_id.name,
-                ),
+                f"{r.document_number.display_name} - {r.analytic_account_id.name}",
             )
             for r in self
         ]

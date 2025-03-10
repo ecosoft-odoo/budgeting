@@ -57,17 +57,15 @@ class BudgetMonitorReport(models.Model):
 
     @property
     def _table_query(self):
-        return """
+        return f"""
             select a.*, p.id as budget_period_id
-            from ({}) a
+            from ({self._get_sql()}) a
             left outer join date_range d
                 on a.date between d.date_start and d.date_end
             left outer join budget_period p
                 on a.date between p.bm_date_from and p.bm_date_to
-            {}
-        """.format(
-            self._get_sql(), self._get_where_clause()
-        )
+            {self._get_where_clause()}
+        """
 
     def _get_consumed_sources(self):
         return [
@@ -122,16 +120,10 @@ class BudgetMonitorReport(models.Model):
             doc_table = source["source_doc"][0]  # i.e., account_move
             doc_field = source["source_doc"][1]  # i.e., move_id
             amount_type = source["type"][0]  # i.e., 8_actual
-            sql_from[
-                amount_type
-            ] = """
-                from {} a
-                left outer join {} b on a.{} = b.id
-            """.format(
-                budget_table,
-                doc_table,
-                doc_field,
-            )
+            sql_from[amount_type] = f"""
+                from {budget_table} a
+                left outer join {doc_table} b on a.{doc_field} = b.id
+            """
         return sql_from
 
     def _select_budget(self):

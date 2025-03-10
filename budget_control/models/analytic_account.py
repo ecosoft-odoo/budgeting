@@ -83,9 +83,7 @@ class AccountAnalyticAccount(models.Model):
     def _compute_name_with_budget_period(self):
         for rec in self:
             if rec.budget_period_id:
-                rec.name_with_budget_period = "{}: {}".format(
-                    rec.budget_period_id.name, rec.name
-                )
+                rec.name_with_budget_period = f"{rec.budget_period_id.name}: {rec.name}"
             else:
                 rec.name_with_budget_period = rec.name
 

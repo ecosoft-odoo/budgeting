@@ -128,26 +128,26 @@
                                 <p>
                                     This operation will find amount balance (planned - consumed) in current analtyic,
                                     and set as <b
-                                    >Initial Available</b> in Carry Forward Analytic (and Accumulate Analytic)
+                                >Initial Available</b> in Carry Forward Analytic (and Accumulate Analytic)
                                 </p>
                                 <p>
                                     <ol>
                                         <li>Click <b
-                                            >Review Budget Balance</b> button, to find current balance of all analtyics.</li>
+                                        >Review Budget Balance</b> button, to find current balance of all analtyics.</li>
                                         <li>Review <b
-                                            >method</b> to forward, if required, click Create Missing Analytic.
+                                        >method</b> to forward, if required, click Create Missing Analytic.
                                             <ul>
-                                                <li
-                                                >Blank: Analytic is open end, use the same analytic</li>
-                                                <li
-                                                >New: To Analytic Account is next year analytic (need to create if missing)</li>
-                                                <li
-                                                >Extend: Use same analtyic but extend end date to next year</li>
-                                            </ul>
+                                            <li
+                                            >Blank: Analytic is open end, use the same analytic</li>
+                                            <li
+                                            >New: To Analytic Account is next year analytic (need to create if missing)</li>
+                                            <li
+                                            >Extend: Use same analtyic but extend end date to next year</li>
+                                        </ul>
                                         </li>
                                         <li
                                         >Fill in amount, both forward and accumulate (optional), and click <b
-                                            >Forward Budget Balance</b></li>
+                                        >Forward Budget Balance</b></li>
                                     </ol>
                                 </p>
                             </div>

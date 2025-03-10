@@ -83,8 +83,7 @@
                     />
                 </header>
                 <sheet>
-                    <div class="oe_right oe_button_box" name="buttons">
-                    </div>
+                    <div class="oe_right oe_button_box" name="buttons" />
                     <div class="oe_title">
                         <h1>
                             <field name="name" />
@@ -210,11 +209,11 @@
                                 <p>
                                     There are 2 adjust types,
                                     <ol>
-                                        <li><b
-                                            >Consume:</b> Create acutal budget commitment as debit amount, to lower the budget balance.</li>
-                                        <li><b
-                                            >Release:</b> Create acutal budget commitment as credit amont, to increase the budget balance.</li>
-                                    </ol>
+                                    <li><b
+                                    >Consume:</b> Create acutal budget commitment as debit amount, to lower the budget balance.</li>
+                                    <li><b
+                                    >Release:</b> Create acutal budget commitment as credit amont, to increase the budget balance.</li>
+                                </ol>
                                 </p>
                             </div>
                         </page>

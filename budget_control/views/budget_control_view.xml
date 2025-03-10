@@ -184,7 +184,9 @@
                     <group>
                         <div class="oe_title" colspan="2">
                             <label for="name" />
-                            <h1><field name="name" /></h1>
+                            <h1>
+                                <field name="name" />
+                            </h1>
                         </div>
                     </group>
                     <group>

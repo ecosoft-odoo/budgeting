@@ -407,13 +407,13 @@ class BudgetPeriod(models.Model):
             not template_lines
             or self._context.get("control_level", False) == "analytic"
         ):
-            return "analytic_account_id = {}".format(analytic_id)
+            return f"analytic_account_id = {analytic_id}"
         kpi_domain = (
-            "= {}".format(template_lines.kpi_id.id)
+            f"= {template_lines.kpi_id.id}"
             if len(template_lines) == 1
-            else "in {}".format(tuple(template_lines.kpi_id.ids))
+            else f"in {tuple(template_lines.kpi_id.ids)}"
         )
-        return "analytic_account_id = {} and kpi_id {}".format(analytic_id, kpi_domain)
+        return f"analytic_account_id = {analytic_id} and kpi_id {kpi_domain}"
 
     def _get_budget_monitor_report(self):
         """Hook for add context"""
@@ -422,11 +422,8 @@ class BudgetPeriod(models.Model):
     def _get_budget_avaiable(self, analytic_id, template_lines):
         self._cr.execute(
             sql.SQL(
-                """SELECT * FROM ({monitoring}) report
-                WHERE {where_domain}""".format(
-                    monitoring=self._get_budget_monitor_report()._table_query,
-                    where_domain=self._get_where_domain(analytic_id, template_lines),
-                )
+                f"""SELECT * FROM ({self._get_budget_monitor_report()._table_query}) report
+                WHERE {self._get_where_domain(analytic_id, template_lines)}"""
             )
         )
         return self.env.cr.dictfetchall()
@@ -481,9 +478,7 @@ class BudgetPeriod(models.Model):
                 )
                 analytic_name = Analytic.browse(analytic_id).display_name
                 if budget_period.control_level == "analytic_kpi":
-                    analytic_name = "{} & {}".format(
-                        template_lines.display_name, analytic_name
-                    )
+                    analytic_name = f"{template_lines.display_name} & {analytic_name}"
                 warnings.append(
                     _("{analytic_name}, will result in {formatted_balance}").format(
                         analytic_name=analytic_name, formatted_balance=fomatted_balance

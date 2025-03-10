@@ -3,7 +3,9 @@
     <t t-name="budget_control.budgetPopOver" owl="1">
         <t t-foreach="props.analytic" t-as="item" t-key="item.id">
             <div>
-                <b><t t-out="item.name" /></b>
+                <b>
+                    <t t-out="item.name" />
+                </b>
             </div>
             <table class="table table-borderless">
                 <tbody>

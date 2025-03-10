@@ -120,8 +120,7 @@
                         <group>
                             <field name="to_budget_period_id" />
                             <label for="name" string="Forward Budget Commitment" />
-                            <div name="docs">
-                            </div>
+                            <div name="docs" />
                         </group>
                         <group>
                             <field name="forward_line_ids" invisible="1" />
@@ -147,27 +146,27 @@
                                 <p>
                                     This operation will move budget commitment of all documents below to the new commitment date.
                                     The amount will be set in <b
-                                    >Initial Commitment</b> in Analytic.
+                                >Initial Commitment</b> in Analytic.
                                 </p>
                                 <p>
                                     <ol>
                                         <li>Select document type to <b
-                                            >Forward Budget Commitment</b>.</li>
+                                        >Forward Budget Commitment</b>.</li>
                                         <li>Click <b
-                                            >Review Budget Commitment</b>, to pull all commited documents.</li>
+                                        >Review Budget Commitment</b>, to pull all commited documents.</li>
                                         <li>Review documement's <b
-                                            >method</b> to forward, if required, click Create Missing Analytic.
+                                        >method</b> to forward, if required, click Create Missing Analytic.
                                             <ul>
-                                                <li
-                                                >Blank: Analytic is open end, use the same analytic</li>
-                                                <li
-                                                >New: To Analytic Account is next year analytic (need to create if missing)</li>
-                                                <li
-                                                >Extend: Use same analtyic but extend end date to next year</li>
-                                            </ul>
+                                            <li
+                                            >Blank: Analytic is open end, use the same analytic</li>
+                                            <li
+                                            >New: To Analytic Account is next year analytic (need to create if missing)</li>
+                                            <li
+                                            >Extend: Use same analtyic but extend end date to next year</li>
+                                        </ul>
                                         </li>
                                         <li>When ready, click <b
-                                            >Forward Budget Commitment</b> to move commitment.</li>
+                                        >Forward Budget Commitment</b> to move commitment.</li>
                                     </ol>
                                 </p>
                             </div>
