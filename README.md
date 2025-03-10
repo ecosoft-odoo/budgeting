@@ -1,15 +1,15 @@
 
-[![Runboat](https://img.shields.io/badge/runboat-Try%20me-875A7B.png)](https://runboat.odoo-community.org/builds?repo=OCA/account-budgeting&target_branch=14.0)
-[![Pre-commit Status](https://github.com/OCA/account-budgeting/actions/workflows/pre-commit.yml/badge.svg?branch=14.0)](https://github.com/OCA/account-budgeting/actions/workflows/pre-commit.yml?query=branch%3A14.0)
-[![Build Status](https://github.com/OCA/account-budgeting/actions/workflows/test.yml/badge.svg?branch=14.0)](https://github.com/OCA/account-budgeting/actions/workflows/test.yml?query=branch%3A14.0)
-[![codecov](https://codecov.io/gh/OCA/account-budgeting/branch/14.0/graph/badge.svg)](https://codecov.io/gh/OCA/account-budgeting)
-[![Translation Status](https://translation.odoo-community.org/widgets/account-budgeting-14-0/-/svg-badge.svg)](https://translation.odoo-community.org/engage/account-budgeting-14-0/?utm_source=widget)
+[![Runboat](https://img.shields.io/badge/runboat-Try%20me-875A7B.png)](https://runboat.odoo-community.org/builds?repo=OCA/budgeting&target_branch=18.0)
+[![Pre-commit Status](https://github.com/OCA/budgeting/actions/workflows/pre-commit.yml/badge.svg?branch=18.0)](https://github.com/OCA/budgeting/actions/workflows/pre-commit.yml?query=branch%3A18.0)
+[![Build Status](https://github.com/OCA/budgeting/actions/workflows/test.yml/badge.svg?branch=18.0)](https://github.com/OCA/budgeting/actions/workflows/test.yml?query=branch%3A18.0)
+[![codecov](https://codecov.io/gh/OCA/budgeting/branch/18.0/graph/badge.svg)](https://codecov.io/gh/OCA/budgeting)
+[![Translation Status](https://translation.odoo-community.org/widgets/budgeting-18-0/-/svg-badge.svg)](https://translation.odoo-community.org/engage/budgeting-18-0/?utm_source=widget)
 
 <!-- /!\ do not modify above this line -->
 
-# Account financial Tools for Odoo
+# Budgeting
 
-TODO: add repo description.
+The Budgeting module for Odoo provides a structured and efficient way to manage budgets within an organization. It allows users to define, track, and control budget allocations while ensuring financial transparency.
 
 <!-- /!\ do not modify below this line -->
 
