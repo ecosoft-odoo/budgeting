@@ -1,50 +1,58 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from psycopg2 import sql
+# from psycopg2 import sql
 
 from odoo import _, api, fields, models
-from odoo.exceptions import RedirectWarning, UserError, ValidationError
-from odoo.tools import float_compare, format_amount
+from odoo.exceptions import UserError, ValidationError
+from odoo.tools import SQL, float_compare, format_amount
 
 
 class BudgetPeriod(models.Model):
     _name = "budget.period"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "For each fiscal year, manage how budget is controlled"
 
-    name = fields.Char(required=True)
+    name = fields.Char(required=True, tracking=True)
     bm_date_from = fields.Date(
         string="Date From",
         required=True,
+        tracking=True,
     )
     bm_date_to = fields.Date(
         string="Date To",
         required=True,
+        tracking=True,
     )
     template_id = fields.Many2one(
         comodel_name="budget.template",
         string="Budget Template",
         ondelete="restrict",
         required=True,
+        tracking=True,
     )
     control_budget = fields.Boolean(
         help="Block document transaction if budget is not enough",
+        tracking=True,
     )
     account = fields.Boolean(
         string="On Account",
         compute="_compute_control_account",
         store=True,
         readonly=False,
+        tracking=True,
         help="Control budget on journal document(s), i.e., vendor bill",
     )
     control_all_analytic_accounts = fields.Boolean(
         string="Control All Analytics",
         default=True,
+        tracking=True,
     )
     control_analytic_account_ids = fields.Many2many(
         comodel_name="account.analytic.account",
         relation="budget_period_analytic_account_rel",
         string="Controlled Analytics",
+        tracking=True,
     )
     control_level = fields.Selection(
         selection=[
@@ -54,6 +62,7 @@ class BudgetPeriod(models.Model):
         string="Level of Control",
         required=True,
         default="analytic",
+        tracking=True,
         help="Level of budget check.\n"
         "1. Based on Analytic Account only\n"
         "2. Based on Analytic Account & KPI (more fine granied)",
@@ -62,17 +71,18 @@ class BudgetPeriod(models.Model):
         comodel_name="date.range.type",
         string="Plan Date Range",
         required=True,
+        tracking=True,
         help="Budget control sheet in this budget control year, will use this "
         "data range to plan the budget.",
     )
-    analytic_ids = fields.One2many(
-        comodel_name="account.analytic.account",
-        inverse_name="budget_period_id",
-    )
+    # analytic_ids = fields.One2many(
+    #     comodel_name="account.analytic.account",
+    #     inverse_name="budget_period_id",
+    # )
 
     @api.model
-    def default_get(self, field_list):
-        res = super().default_get(field_list)
+    def default_get(self, default_fields):
+        res = super().default_get(default_fields)
         res["template_id"] = self.env.company.budget_template_id.id
         return res
 
@@ -80,47 +90,6 @@ class BudgetPeriod(models.Model):
     def _compute_control_account(self):
         for rec in self:
             rec.account = rec.control_budget
-
-    def _check_budget_period_date_range(self):
-        self.ensure_one()
-        range_from = self.env["date.range"].search(
-            [
-                ("date_start", "<=", self.bm_date_from),
-                ("date_end", ">=", self.bm_date_from),
-            ]
-        )
-        range_to = self.env["date.range"].search(
-            [
-                ("date_start", "<=", self.bm_date_to),
-                ("date_end", ">=", self.bm_date_to),
-            ]
-        )
-        if not range_from or not range_to:
-            action = self.env.ref("date_range.date_range_generator_action")
-            msg = (
-                _(
-                    "There are no date ranges for the budget period, %s, yet.\n"
-                    "Please create date ranges that will cover this budget period."
-                )
-                % self.display_name
-            )
-            raise RedirectWarning(msg, action.id, _("Generate date range now"))
-
-    def action_view_budget_control(self):
-        """View all budget.control sharing same budget period."""
-        self.ensure_one()
-        action = self.env["ir.actions.act_window"]._for_xml_id(
-            "budget_control.budget_control_action"
-        )
-        budget_controls = self.env["budget.control"].search(
-            [("budget_period_id", "=", self.id)]
-        )
-        action.update(
-            {
-                "domain": [("id", "in", budget_controls.ids)],
-            }
-        )
-        return action
 
     @api.model
     def check_budget_constraint(self, budget_constraints, doclines):
@@ -156,8 +125,10 @@ class BudgetPeriod(models.Model):
         """
         Check the budget based on the input budget moves, i.e., account_move_line.
         1. Get a valid budget period (how budget is being controlled).
-        2. Determine which account (KPI) and analytic to control based on (1) and doclines.
-        3. Check for negative budget and return warnings based on (2) and the KPI matrix.
+        2. Determine which account (KPI) and analytic
+            to control based on (1) and doclines.
+        3. Check for negative budget and return warnings
+            based on (2) and the KPI matrix.
         """
         if self._context.get("force_no_budget_check"):
             return
@@ -182,7 +153,7 @@ class BudgetPeriod(models.Model):
                     != 0
                 ):
                     raise UserError(
-                        _(
+                        self.env._(
                             "The total sum percent of Analytic Account must 100%. "
                             "Please check again."
                         )
@@ -194,11 +165,16 @@ class BudgetPeriod(models.Model):
         for aa in all_analytic_ids:
             if isinstance(aa, int):
                 doclines = doclines.filtered(
-                    lambda l: l[doclines._budget_analytic_field].get(str(aa))
+                    lambda line, aa=aa, doclines=doclines: line[
+                        doclines._budget_analytic_field
+                    ].get(str(aa))
                 )
             else:
                 doclines = doclines.filtered(
-                    lambda l: l[doclines._budget_analytic_field] == aa
+                    lambda line, aa=aa, doclines=doclines: line[
+                        doclines._budget_analytic_field
+                    ]
+                    == aa
                 )
             # Find active budget.period based on latest doclines date_commit
             date_commit = doclines.filtered("date_commit").mapped("date_commit")
@@ -269,9 +245,9 @@ class BudgetPeriod(models.Model):
         for budget_move in budget_moves:
             budget_move.unlink()
         # Delete date commit from system create auto only
-        doclines.filtered(lambda l: l.id in vals_date_commit).write(
-            {"date_commit": False}
-        )
+        doclines.filtered(
+            lambda line, vals_date_commit=vals_date_commit: line.id in vals_date_commit
+        ).write({"date_commit": False})
         # Remove uncommit budget
         if budget_moves_uncommit:
             budget_moves_uncommit.unlink()
@@ -289,8 +265,9 @@ class BudgetPeriod(models.Model):
         if float_compare(amount_credit, amount_debit, 2) == 1:
             docline.with_context(
                 use_amount_commit=True,
-                commit_note=_("Over returned auto adjustment, %s")
-                % docline.display_name,
+                commit_note=self.env._(
+                    f"Over returned auto adjustment, {docline.display_name}"
+                ),
                 adj_commit=True,
             ).commit_budget(reverse=True)
 
@@ -307,11 +284,10 @@ class BudgetPeriod(models.Model):
         )
         if budget_period and len(budget_period) > 1:
             raise ValidationError(
-                _(
-                    "Multiple Budget Periods found for date %s.\nPlease ensure "
+                self.env._(
+                    f"Multiple Budget Periods found for date {date}.\nPlease ensure "
                     "there is only one Budget Period valid for this date."
                 )
-                % date
             )
         if not doc_type:
             return budget_period
@@ -319,8 +295,8 @@ class BudgetPeriod(models.Model):
         # if doctype is account, check special control too.
         if doc_type == "account":
             return budget_period.filtered(
-                lambda l: (l.control_budget and l.account)
-                or (not l.control_budget and l.account)
+                lambda bp: (bp.control_budget and bp.account)
+                or (not bp.control_budget and bp.account)
             )
         # Other module control budget must hook it for filter
         return budget_period
@@ -332,8 +308,9 @@ class BudgetPeriod(models.Model):
         budget_moves = doclines.mapped(doclines._budget_field())
         # Get budget moves from the period only
         budget_moves_period = budget_moves.filtered(
-            lambda l: l.date >= budget_period.bm_date_from
-            and l.date <= budget_period.bm_date_to
+            lambda move, budget_period=budget_period: move.date
+            >= budget_period.bm_date_from
+            and move.date <= budget_period.bm_date_to
         )
         budget_control_key = self.env.company.budget_control_key
         need_control = self.env.context.get("need_control")
@@ -365,7 +342,7 @@ class BudgetPeriod(models.Model):
         if budget_control_key == "account_id":
             control_id = control[budget_control_key]
             template_lines = all_template_lines.filtered(
-                lambda l: control_id in l.account_ids.ids
+                lambda line, control_id=control_id: control_id in line.account_ids.ids
             )
         return template_lines
 
@@ -390,22 +367,23 @@ class BudgetPeriod(models.Model):
         control, control_name = self._get_control_key_obj(control_key, control_id)
         if not template_line:
             raise UserError(
-                _("Chosen %(name)s %(display_name)s is not valid in template")
-                % ({"name": control_name, "display_name": control.display_name})
+                self.env._(
+                    f"Chosen {control_name} {control.display_name} is not valid "
+                    "in template"
+                )
             )
         raise UserError(
-            _(
-                "Template Lines has more than one KPI being "
-                "referenced by the same %(name)s %(display_name)s"
+            self.env._(
+                f"Template Lines has more than one KPI being "
+                f"referenced by the same {control_name} {control.display_name}"
             )
-            % ({"name": control_name, "display_name": control.display_name})
         )
 
     def _get_where_domain(self, analytic_id, template_lines):
         """Return the WHERE clause for the budget monitoring query."""
         if (
             not template_lines
-            or self._context.get("control_level", False) == "analytic"
+            or self.env.context.get("control_level", False) == "analytic"
         ):
             return f"analytic_account_id = {analytic_id}"
         kpi_domain = (
@@ -420,10 +398,14 @@ class BudgetPeriod(models.Model):
         return self.env["budget.monitor.report"]
 
     def _get_budget_avaiable(self, analytic_id, template_lines):
-        self._cr.execute(
-            sql.SQL(
-                f"""SELECT * FROM ({self._get_budget_monitor_report()._table_query}) report
-                WHERE {self._get_where_domain(analytic_id, template_lines)}"""
+        self.env.cr.execute(
+            SQL(
+                f"""
+                    SELECT *
+                    FROM (%s) report
+                    WHERE {self._get_where_domain(analytic_id, template_lines)}
+                """,
+                SQL(self._get_budget_monitor_report()._table_query),
             )
         )
         return self.env.cr.dictfetchall()
@@ -499,16 +481,22 @@ class BudgetPeriod(models.Model):
         budget_info = {col: 0 for col in query["info_cols"].keys()}
         budget_info["amount_commit"] = 0
         for col, (amount_type, is_commit) in query["info_cols"].items():
-            info = list(filter(lambda l: l["amount_type"] == amount_type, dataset))
+            info = list(
+                filter(
+                    lambda dataset, amount_type=amount_type: dataset["amount_type"]
+                    == amount_type,
+                    dataset,
+                )
+            )
             if len(info) > 1:
-                raise ValidationError(_("Error retrieving budget info!"))
+                raise ValidationError(self.env._("Error retrieving budget info!"))
             if not info:
                 continue
             amount = info[0]["amount"]
             if is_commit:
                 budget_info[col] = -amount  # Negate
                 budget_info["amount_commit"] += budget_info[col]
-            elif amount_type == "8_actual":  # Negate consumed
+            elif amount_type == "80_actual":  # Negate consumed
                 budget_info[col] = -amount
             else:
                 budget_info[col] = amount
@@ -524,10 +512,10 @@ class BudgetPeriod(models.Model):
         query = {
             "info_cols": {
                 "amount_budget": (
-                    "1_budget",
+                    "10_budget",
                     False,
                 ),  # (amount_type, is_commit)
-                "amount_actual": ("8_actual", False),
+                "amount_actual": ("80_actual", False),
             },
             "fields": [
                 "analytic_account_id",

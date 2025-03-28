@@ -7,5 +7,6 @@ from odoo import fields, models
 class BudgetKPI(models.Model):
     _name = "budget.kpi"
     _description = "Budget KPI"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
 
     name = fields.Char(required=True)

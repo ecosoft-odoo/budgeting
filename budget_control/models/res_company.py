@@ -8,7 +8,6 @@ class ResCompany(models.Model):
     _inherit = "res.company"
 
     budget_include_tax = fields.Boolean(
-        string="Budget Included Tax",
         help="If checked, all budget moves amount will include tax",
     )
     budget_include_tax_method = fields.Selection(
@@ -38,7 +37,7 @@ class ResCompany(models.Model):
     )
     budget_template_id = fields.Many2one(
         comodel_name="budget.template",
-        string="Budget Template",
+        help="Budget Template to be used for this company",
     )
     budget_control_key = fields.Selection(
         selection=[("account_id", "Account")],

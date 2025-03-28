@@ -95,8 +95,8 @@ class BudgetControlCommon(TransactionCase):
         Generator = self.env["date.range.generator"]
         generator = Generator.create(
             {
-                "date_start": "%s-01-01" % self.year,
-                "name_prefix": "%s/Test/Q-" % self.year,
+                "date_start": f"{self.year}-01-01",
+                "name_prefix": f"{self.year}/Test/Q-",
                 "type_id": self.date_range_type.id,
                 "duration_count": 3,
                 "unit_of_time": str(MONTHLY),
@@ -133,10 +133,10 @@ class BudgetControlCommon(TransactionCase):
         BudgetPeriod = self.env["budget.period"]
         budget_period = BudgetPeriod.create(
             {
-                "name": "Budget for FY%s" % self.year,
+                "name": f"Budget for FY{self.year}",
                 "template_id": template_id,
-                "bm_date_from": "%s-01-01" % self.year,
-                "bm_date_to": "%s-12-31" % self.year,
+                "bm_date_from": f"{self.year}-01-01",
+                "bm_date_to": f"{self.year}-12-31",
                 "plan_date_range_type_id": date_range_type_id,
                 "control_level": "analytic_kpi",
             }

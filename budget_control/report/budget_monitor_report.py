@@ -1,7 +1,8 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import fields, models
+from odoo import api, fields, models
+from odoo.tools import SQL
 
 
 class BudgetMonitorReport(models.Model):
@@ -31,7 +32,7 @@ class BudgetMonitorReport(models.Model):
     date = fields.Date()
     amount = fields.Float()
     amount_type = fields.Selection(
-        selection=lambda self: [("1_budget", "Budget")]
+        selection=lambda self: [("10_budget", "Budget")]
         + self._get_budget_amount_type(),
         string="Type",
     )
@@ -56,22 +57,61 @@ class BudgetMonitorReport(models.Model):
     active = fields.Boolean()
 
     @property
-    def _table_query(self):
-        return f"""
-            select a.*, p.id as budget_period_id
-            from ({self._get_sql()}) a
-            left outer join date_range d
-                on a.date between d.date_start and d.date_end
-            left outer join budget_period p
-                on a.date between p.bm_date_from and p.bm_date_to
-            {self._get_where_clause()}
-        """
+    def _table_query(self) -> SQL:
+        return SQL("%s %s %s", self._select(), self._from(), self._where())
+
+    @api.model
+    def _select(self) -> SQL:
+        return SQL(
+            """SELECT a.*, p.id AS budget_period_id""",
+        )
+
+    @api.model
+    def _from(self) -> SQL:
+        return SQL(
+            """
+            FROM (%(table)s) a
+            LEFT JOIN budget_period p ON a.date between p.bm_date_from AND p.bm_date_to
+            LEFT JOIN date_range d ON a.date between d.date_start AND d.date_end
+                AND d.type_id = p.plan_date_range_type_id
+            """,
+            table=self._get_sql(),
+        )
+
+    @api.model
+    def _where(self) -> SQL:
+        return SQL("")
+
+    @api.model
+    def _get_sql(self) -> SQL:
+        select_budget_query = self._select_budget()
+        key_select_budget_list = sorted(select_budget_query.keys())
+        select_budget = ", ".join(
+            select_budget_query[x] for x in key_select_budget_list
+        )
+        select_actual_query = self._select_statement("80_actual")
+        key_select_actual_list = sorted(select_budget_query.keys())
+        select_actual = ", ".join(
+            select_actual_query[x] for x in key_select_actual_list
+        )
+        return SQL(
+            """
+            (SELECT %(select_budget)s %(from_budget)s)
+            UNION ALL
+            (SELECT %(select_actual)s %(from_actual)s %(where_actual)s)
+            """,
+            select_budget=SQL(select_budget),
+            from_budget=self._from_budget(),
+            select_actual=SQL(select_actual),
+            from_actual=self._from_statement("80_actual"),
+            where_actual=self._where_actual(),
+        )
 
     def _get_consumed_sources(self):
         return [
             {
                 "model": ("account.move.line", "Account Move Line"),
-                "type": ("8_actual", "Actual"),
+                "type": ("80_actual", "Actual"),
                 "budget_move": ("account_budget_move", "move_line_id"),
                 "source_doc": ("account_move", "move_id"),
             }
@@ -89,17 +129,17 @@ class BudgetMonitorReport(models.Model):
         sql_select = {}
         for source in self._get_consumed_sources():
             res_model = source["model"][0]  # i.e., account.move.line
-            amount_type = source["type"][0]  # i.e., 8_actual
+            amount_type = source["type"][0]  # i.e., 80_actual
             res_field = source["budget_move"][1]  # i.e., move_line_id
             sql_select[amount_type] = {
-                0: """
-                %s000000000 + a.id as id,
-                '%s,' || a.%s as res_id,
+                0: f"""
+                {amount_type[:1]}000000000 + a.id as id,
+                '{res_model},' || a.{res_field} as res_id,
                 a.kpi_id,
                 a.analytic_account_id,
                 a.analytic_plan,
                 a.date as date,
-                '%s' as amount_type,
+                '{amount_type}' as amount_type,
                 a.credit-a.debit as amount,
                 a.product_id,
                 a.account_id,
@@ -109,7 +149,6 @@ class BudgetMonitorReport(models.Model):
                 a.fwd_commit,
                 1::boolean as active
                 """
-                % (amount_type[:1], res_model, res_field, amount_type)
             }
         return sql_select
 
@@ -119,10 +158,10 @@ class BudgetMonitorReport(models.Model):
             budget_table = source["budget_move"][0]  # i.e., account_budget_move
             doc_table = source["source_doc"][0]  # i.e., account_move
             doc_field = source["source_doc"][1]  # i.e., move_id
-            amount_type = source["type"][0]  # i.e., 8_actual
+            amount_type = source["type"][0]  # i.e., 80_actual
             sql_from[amount_type] = f"""
-                from {budget_table} a
-                left outer join {doc_table} b on a.{doc_field} = b.id
+                FROM {budget_table} a
+                LEFT OUTER JOIN {doc_table} b ON a.{doc_field} = b.id
             """
         return sql_from
 
@@ -135,7 +174,7 @@ class BudgetMonitorReport(models.Model):
             a.analytic_account_id,
             b.analytic_plan,
             a.date_to as date,  -- approx date
-            '1_budget' as amount_type,
+            '10_budget' as amount_type,
             a.amount as amount,
             null::integer as product_id,
             null::integer as account_id,
@@ -147,40 +186,23 @@ class BudgetMonitorReport(models.Model):
         """
         }
 
-    def _from_budget(self):
-        return """
-            from budget_control_line a
-            join budget_control b on a.budget_control_id = b.id
-            and b.active = true
-        """
+    @api.model
+    def _from_budget(self) -> SQL:
+        return SQL(
+            """
+            FROM budget_control_line a
+            INNER JOIN budget_control b ON a.budget_control_id = b.id
+            WHERE b.active = TRUE
+            """,
+        )
 
     def _select_statement(self, amount_type):
         return self._get_select_amount_types()[amount_type]
 
-    def _from_statement(self, amount_type):
-        return self._get_from_amount_types()[amount_type]
+    @api.model
+    def _from_statement(self, amount_type) -> SQL:
+        return SQL(self._get_from_amount_types()[amount_type])
 
-    def _where_actual(self):
-        return ""
-
-    def _get_sql(self):
-        select_budget_query = self._select_budget()
-        key_select_budget_list = sorted(select_budget_query.keys())
-        select_budget = ", ".join(
-            select_budget_query[x] for x in key_select_budget_list
-        )
-        select_actual_query = self._select_statement("8_actual")
-        key_select_actual_list = sorted(select_budget_query.keys())
-        select_actual = ", ".join(
-            select_actual_query[x] for x in key_select_actual_list
-        )
-        return "(select {} {}) union (select {} {} {})".format(
-            select_budget,
-            self._from_budget(),
-            select_actual,
-            self._from_statement("8_actual"),
-            self._where_actual(),
-        )
-
-    def _get_where_clause(self):
-        return "where d.type_id = p.plan_date_range_type_id"
+    @api.model
+    def _where_actual(self) -> SQL:
+        return SQL("")

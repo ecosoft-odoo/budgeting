@@ -87,7 +87,8 @@ class BaseBudgetMove(models.AbstractModel):
         readonly=True,
     )
     adj_commit = fields.Boolean(
-        help="This budget move line is the result of Over returned 'Automatic Adjustment'",
+        help="This budget move line is the result of "
+        "Over returned 'Automatic Adjustment'",
     )
     fwd_commit = fields.Boolean(
         help="This budget move line is the result of 'Forward Budget Commitment'",
@@ -208,7 +209,7 @@ class BudgetDoclineMixin(models.AbstractModel):
     def _filter_current_move(self, analytic):
         self.ensure_one()
         return self.budget_move_ids.filtered(
-            lambda l: l.analytic_account_id == analytic
+            lambda move, analytic=analytic: move.analytic_account_id == analytic
         )
 
     @api.depends("budget_move_ids", "budget_move_ids.date")
@@ -230,7 +231,8 @@ class BudgetDoclineMixin(models.AbstractModel):
             amount_commit_json = {}
             for analytic_id in analytic_distribution:  # Get id only
                 budget_move = rec.budget_move_ids.filtered(
-                    lambda move: move.analytic_account_id.id == int(analytic_id)
+                    lambda move, analytic_id=analytic_id: move.analytic_account_id.id
+                    == int(analytic_id)
                 )
                 debit = sum(budget_move.mapped("debit"))
                 credit = sum(budget_move.mapped("credit"))
@@ -425,13 +427,14 @@ class BudgetDoclineMixin(models.AbstractModel):
             if self.env.context.get("active_model") == "budget.commit.forward":
                 active_id = self.env.context.get("active_id", False)
                 fwd_lines.filtered(
-                    lambda l: (
-                        l.forward_id.state == "review" and l.forward_id.id == active_id
+                    lambda line, active_id=active_id: (
+                        line.forward_id.state == "review"
+                        and line.forward_id.id == active_id
                     )
-                    or l.forward_id.state == "done"
+                    or line.forward_id.state == "done"
                 )
             else:  # recompute budget
-                fwd_lines.filtered(lambda l: l.forward_id.state == "done")
+                fwd_lines.filtered(lambda line: line.forward_id.state == "done")
             for fwd_line in fwd_lines:
                 # find last date of carry forward
                 budget_period = BudgetPeriod._get_eligible_budget_period(
@@ -463,33 +466,48 @@ class BudgetDoclineMixin(models.AbstractModel):
                     )
                 # Remove forward commitment from unused subsequent year budget lines
                 # If a budget line was forwarded to the next year but the budget
-                # for that year is not utilized, this code removes the forward commitment,
+                # for that year is not utilized,
+                # this code removes the forward commitment,
                 # allowing the line to be forwarded again in the following year.
                 budget_move_previous_forward = self[self._budget_field()].filtered(
-                    lambda l: l.fwd_commit
-                    and l.date < fwd_line.forward_id.to_date_commit
-                    and l.debit > 0.0
+                    lambda line, fwd_line=fwd_line: line.fwd_commit
+                    and line.date < fwd_line.forward_id.to_date_commit
+                    and line.debit > 0.0
                 )
                 if budget_move_previous_forward:
                     budget_move_previous_forward.write({"fwd_commit": False})
 
-    def commit_budget(self, reverse=False, **vals):
-        """Create budget commit for each docline"""
+    def _check_required_analytic(self):
+        """
+        Required all document except
+            - move that check 'Not Affect Budget'
+            - move that have 'Tax'
+            - display_type is not false
+        """
         required_analytic = self.env.user.has_group(
             "budget_control.group_required_analytic"
         )
-        # Required all document except move that check 'Not Affect Budget'
-        # and not 'Tax' and display_type is not false
-        if (
+        return (
             required_analytic
-            and (hasattr(self, "display_type") and not self.display_type)
             and not self[self._budget_analytic_field]
             and not (
                 self._name == "account.move.line"
                 and (self.move_id.not_affect_budget or self.tax_line_id)
             )
-        ):
-            raise UserError(_("Please fill analytic account."))
+            # Account move line with display_type is not False
+            # but purchase, sale or other module don't have display_type if selected
+            # product in line
+            and (
+                self._name == "account.move.line"
+                and self.display_type == "product"
+                or (hasattr(self, "display_type") and not self.display_type)
+            )
+        )
+
+    def commit_budget(self, reverse=False, **vals):
+        """Create budget commit for each docline"""
+        if self._check_required_analytic():
+            raise UserError(self.env._("Please fill analytic account."))
         self.prepare_commit()
         to_commit = self.env.context.get("force_commit") or self._valid_commit_state()
         if self.can_commit and to_commit:

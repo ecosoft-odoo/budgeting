@@ -1,13 +1,13 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 
 class BudgetMoveAdjustment(models.Model):
     _name = "budget.move.adjustment"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Budget Moves Adjustment"
 
     budget_move_ids = fields.One2many(
@@ -23,37 +23,27 @@ class BudgetMoveAdjustment(models.Model):
         readonly=True,
     )
     description = fields.Text(
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     adjust_item_ids = fields.One2many(
         comodel_name="budget.move.adjustment.item",
         inverse_name="adjust_id",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
-        tracking=True,
     )
     date_commit = fields.Date(
         string="Budget Commit Date",
         required=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
         default=lambda self: self.env.company,
         required=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         index=True,
     )
     currency_id = fields.Many2one(
         comodel_name="res.currency",
         related="company_id.currency_id",
         store=True,
-        states={"draft": [("readonly", False)]},
     )
     state = fields.Selection(
         [
@@ -81,15 +71,17 @@ class BudgetMoveAdjustment(models.Model):
         """Check that only records with state 'draft' can be deleted."""
         if any(rec.state != "draft" for rec in self):
             raise UserError(
-                _("You are trying to delete a record that is still referenced!")
+                self.env._(
+                    "You are trying to delete a record that is still referenced!"
+                )
             )
         return super().unlink()
 
     def action_draft(self):
-        self.write({"state": "draft"})
+        return self.write({"state": "draft"})
 
     def action_cancel(self):
-        self.write({"state": "cancel"})
+        return self.write({"state": "cancel"})
 
     def action_adjust(self):
         res = self.write({"state": "done"})
@@ -177,8 +169,9 @@ class BudgetMoveAdjustmentItem(models.Model):
 
     @api.depends("amount")
     def _compute_amount_balance(self):
-        if self.filtered(lambda l: l.amount <= 0):
-            raise UserError(_("Given amount must be positive"))
+        if any(rec.amount <= 0 for rec in self):
+            raise UserError(self.env._("Given amount must be positive"))
+
         for rec in self:
             # If the adjust type is 'release', negate the amount, else leave it as is
             rec.amount = -rec.amount if rec.adjust_type == "release" else rec.amount
@@ -191,7 +184,7 @@ class BudgetMoveAdjustmentItem(models.Model):
     def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
         percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
-        amount_budget = self.amount * percent_analytic / 100
+        amount_budget = self.amount * (percent_analytic / 100)
         budget_vals["amount_currency"] = (
             -amount_budget if self.adjust_type == "release" else amount_budget
         )

@@ -22,35 +22,29 @@ class BudgetTransferItem(models.Model):
     budget_control_from_id = fields.Many2one(
         comodel_name="budget.control",
         string="From",
-        domain="[('budget_period_id', '=', budget_period_id)]",
         required=True,
         index=True,
     )
     budget_control_to_id = fields.Many2one(
         comodel_name="budget.control",
         string="To",
-        domain="[('budget_period_id', '=', budget_period_id)]",
         required=True,
         index=True,
     )
     amount_from_available = fields.Float(
         compute="_compute_amount_available",
         store="True",
-        readonly=True,
     )
     amount_to_available = fields.Float(
         compute="_compute_amount_available",
         store="True",
-        readonly=True,
     )
     state_from = fields.Selection(
         related="budget_control_from_id.state",
-        string="State From",
         store=True,
     )
     state_to = fields.Selection(
         related="budget_control_to_id.state",
-        string="State To",
         store=True,
     )
     amount = fields.Float(
@@ -62,26 +56,35 @@ class BudgetTransferItem(models.Model):
     )
     state = fields.Selection(related="transfer_id.state", store=True)
 
-    def _get_budget_control_transfer(self):
-        from_budget_ctrl = self.budget_control_from_id
-        to_budget_ctrl = self.budget_control_to_id
-        return from_budget_ctrl, to_budget_ctrl
+    def _add_context(self):
+        """Add context to self"""
+        return self
 
-    @api.depends("budget_control_from_id", "budget_control_to_id")
+    @api.depends(
+        "budget_control_from_id.amount_balance", "budget_control_to_id.amount_balance"
+    )
     def _compute_amount_available(self):
+        """Compute available amounts for budget transfer"""
+        budget_controls = self.mapped("budget_control_from_id") + self.mapped(
+            "budget_control_to_id"
+        )
+        budget_balances = {bc.id: bc.amount_balance for bc in budget_controls}
+
         for transfer in self:
-            (
-                from_budget_ctrl,
-                to_budget_ctrl,
-            ) = transfer._get_budget_control_transfer()
-            transfer.amount_from_available = from_budget_ctrl.amount_balance
-            transfer.amount_to_available = to_budget_ctrl.amount_balance
+            from_budget_ctrl, to_budget_ctrl = (
+                transfer.budget_control_from_id,
+                transfer.budget_control_to_id,
+            )
+            transfer.amount_from_available = budget_balances.get(
+                from_budget_ctrl.id, 0.0
+            )
+            transfer.amount_to_available = budget_balances.get(to_budget_ctrl.id, 0.0)
 
     def _check_constraint_transfer(self):
         self.ensure_one()
         if self.budget_control_from_id == self.budget_control_to_id:
             raise UserError(
-                _("You can not transfer from the same budget control sheet!")
+                self.env._("You can not transfer from the same budget control sheet!")
             )
         # check amount transfer must be positive
         if (
@@ -90,9 +93,9 @@ class BudgetTransferItem(models.Model):
                 0.0,
                 precision_rounding=self.currency_id.rounding,
             )
-            != 1
+            <= 0
         ):
-            raise UserError(_("Transfer amount must be positive!"))
+            raise UserError(self.env._("Transfer amount must be positive!"))
         # check amount transfer must less than amount available (source budget)
         if (
             float_compare(
@@ -100,10 +103,10 @@ class BudgetTransferItem(models.Model):
                 self.amount_from_available,
                 precision_rounding=self.currency_id.rounding,
             )
-            == 1
+            > 0
         ):
             raise UserError(
-                _("Transfer amount can not be exceeded {:,.2f}").format(
+                self.env._("Transfer amount can not be exceeded {:,.2f}").format(
                     self.amount_from_available
                 )
             )
@@ -111,12 +114,17 @@ class BudgetTransferItem(models.Model):
     def transfer(self):
         for transfer in self:
             transfer._check_constraint_transfer()
+            # Update released amounts
             transfer.budget_control_from_id.released_amount -= transfer.amount
+            # Check if released amount is negative
+            if transfer.budget_control_from_id.released_amount < 0:
+                raise ValidationError(
+                    _("Negative balance for {} after transfer!").format(
+                        transfer.budget_control_from_id.display_name
+                    )
+                )
+
             transfer.budget_control_to_id.released_amount += transfer.amount
-        # Final check
-        from_amounts = self.mapped("budget_control_from_id.released_amount")
-        if list(filter(lambda a: a < 0, from_amounts)):
-            raise ValidationError(_("Negative from amount after transfer!"))
 
     def reverse(self):
         for transfer in self:
@@ -147,7 +155,7 @@ class BudgetTransferItem(models.Model):
             budget_not_draft = ", ".join(budget_not_draft.mapped("name"))
             if is_state_transfer_valid and budget_not_draft:
                 raise UserError(
-                    _(
+                    self.env._(
                         "Following budget controls must be in state 'Draft', "
                         "before transferring.\n{}"
                     ).format(budget_not_draft)

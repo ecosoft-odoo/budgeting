@@ -9,30 +9,22 @@ from odoo.exceptions import UserError, ValidationError
 
 class BudgetBalanceForward(models.Model):
     _name = "budget.balance.forward"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Budget Balance Forward"
-    _inherit = ["mail.thread"]
 
     name = fields.Char(
         required=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     from_budget_period_id = fields.Many2one(
         comodel_name="budget.period",
-        string="From Budget Period",
         required=True,
         ondelete="restrict",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         default=lambda self: self.env["budget.period"]._get_eligible_budget_period(),
     )
     to_budget_period_id = fields.Many2one(
         comodel_name="budget.period",
-        string="To Budget Period",
         required=True,
         ondelete="restrict",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     state = fields.Selection(
         [
@@ -52,7 +44,6 @@ class BudgetBalanceForward(models.Model):
         comodel_name="budget.balance.forward.line",
         inverse_name="forward_id",
         string="Forward Lines",
-        readonly=True,
     )
     currency_id = fields.Many2one(
         comodel_name="res.currency",
@@ -74,7 +65,9 @@ class BudgetBalanceForward(models.Model):
                 <= rec.from_budget_period_id.bm_date_to
             ):
                 raise ValidationError(
-                    _("'To Budget Period' must be later than 'From Budget Period'")
+                    self.env._(
+                        "'To Budget Period' must be later than 'From Budget Period'"
+                    )
                 )
 
     def _compute_missing_analytic(self):
@@ -167,7 +160,8 @@ class BudgetBalanceForward(models.Model):
             raise UserError(
                 _(
                     "Some carry forward analytic accounts are missing.\n"
-                    "Click 'Create Missing Analytics' button to create for next budget period."
+                    "Click 'Create Missing Analytics' button to create "
+                    "for next budget period."
                 )
             )
         wizard = self.env.ref("budget_control.view_budget_balance_forward_info_form")
@@ -221,7 +215,8 @@ class BudgetBalanceForward(models.Model):
         return res
 
     def _do_update_initial_avaliable(self):
-        """Update all Analytic Account's initial commit value related to budget period"""
+        """Update all Analytic Account's initial commit value
+        related to budget period"""
         self.ensure_one()
         # Reset all lines
         Analytic = self.env["account.analytic.account"]
@@ -289,7 +284,8 @@ class BudgetBalanceForwardLine(models.Model):
         ],
         string="Method",
         help="New: if the analytic has ended, 'To Analytic Account' is required\n"
-        "Extended: if the analytic has ended, but want to extend to next period date end",
+        "Extended: if the analytic has ended, "
+        "but want to extend to next period date end",
     )
     to_analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
@@ -324,10 +320,12 @@ class BudgetBalanceForwardLine(models.Model):
     def _check_amount(self):
         for rec in self:
             if rec.amount_balance_forward < 0 or rec.amount_balance_accumulate < 0:
-                raise ValidationError(_("Negative amount is not allowed"))
+                raise ValidationError(self.env._("Negative amount is not allowed"))
             if rec.amount_balance_accumulate and not rec.accumulate_analytic_account_id:
                 raise ValidationError(
-                    _("Accumulate Analytic is requried for lines when Accumulate > 0")
+                    self.env._(
+                        "Accumulate Analytic is requried for lines when Accumulate > 0"
+                    )
                 )
 
     @api.depends("method_type")
@@ -338,7 +336,8 @@ class BudgetBalanceForwardLine(models.Model):
                 rec.to_analytic_account_id = rec.analytic_account_id
                 rec.method_type = False
                 continue
-            # Case analytic has extended end date that cover new balance date, use same analytic
+            # Case analytic has extended end date that cover new balance date,
+            # use same analytic
             if (
                 rec.analytic_account_id.bm_date_to
                 and rec.analytic_account_id.bm_date_to

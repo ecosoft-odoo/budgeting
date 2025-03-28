@@ -3,22 +3,16 @@
 
 from dateutil.relativedelta import relativedelta
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 
 class AccountAnalyticAccount(models.Model):
     _inherit = "account.analytic.account"
+    _rec_names_search = ["name", "code", "budget_period_id"]
 
-    name_with_budget_period = fields.Char(
-        compute="_compute_name_with_budget_period",
-        store=True,
-        help="This field hold analytic name with budget period indicator.\n"
-        "This name will work with name_get() and name_search() to ensure usability",
-    )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
-        index=True,
     )
     budget_control_ids = fields.One2many(
         string="Budget Control(s)",
@@ -79,42 +73,22 @@ class AccountAnalyticAccount(models.Model):
         help="Initial Balance from carry forward commitment",
     )
 
-    @api.depends("name", "budget_period_id")
-    def _compute_name_with_budget_period(self):
-        for rec in self:
-            if rec.budget_period_id:
-                rec.name_with_budget_period = f"{rec.budget_period_id.name}: {rec.name}"
-            else:
-                rec.name_with_budget_period = rec.name
-
-    def name_get(self):
-        res = []
+    @api.depends("code", "partner_id", "budget_period_id")
+    def _compute_display_name(self):
+        res = super()._compute_display_name()
         for analytic in self:
-            name = analytic.name_with_budget_period
-            if analytic.code:
-                name = ("[%(code)s] %(name)s") % {"code": analytic.code, "name": name}
-            if analytic.partner_id:
-                name = _("%(name)s - %(partner)s") % {
-                    "name": name,
-                    "partner": analytic.partner_id.commercial_partner_id.name,
-                }
-            res.append((analytic.id, name))
+            name = analytic.display_name
+            if analytic.budget_period_id:
+                name = f"{analytic.budget_period_id.name}: {name}"
+            analytic.display_name = name
         return res
 
-    @api.model
-    def name_search(self, name="", args=None, operator="ilike", limit=100):
-        # Make a search with default criteria
-        args = args or []
-        names1 = super(models.Model, self).name_search(
-            name=name, args=args, operator=operator, limit=limit
-        )
-        # Make search with name_with_budget_period
-        names2 = []
-        if name:
-            domain = args + [("name_with_budget_period", "=ilike", name + "%")]
-            names2 = self.search(domain, limit=limit).name_get()
-        # Merge both results
-        return list(set(names1) | set(names2))[:limit]
+    @api.depends("budget_period_id")
+    def _compute_bm_date(self):
+        """Default effective date, but changable"""
+        for rec in self:
+            rec.bm_date_from = rec.budget_period_id.bm_date_from
+            rec.bm_date_to = rec.budget_period_id.bm_date_to
 
     def _filter_by_analytic_account(self, val):
         if val["analytic_account_id"][0] == self.id:
@@ -146,7 +120,10 @@ class AccountAnalyticAccount(models.Model):
         for rec in self:
             # Filter according to budget_control parameter
             dataset = list(
-                filter(lambda l: rec._filter_by_analytic_account(l), dataset_all)
+                filter(
+                    lambda dataset: rec._filter_by_analytic_account(dataset),
+                    dataset_all,
+                )
             )
             # Get data from dataset
             budget_info = BudgetPeriod.get_budget_info_from_dataset(query, dataset)
@@ -207,35 +184,52 @@ class AccountAnalyticAccount(models.Model):
         domain = [("analytic_account_id", "in", self.ids)]
         if budget_period_id:
             domain.append(("budget_period_id", "=", budget_period_id))
-        budget_controls = self.env["budget.control"].search(domain)
-        # Find analytics has no budget control sheet
-        bc_analytics = budget_controls.mapped("analytic_account_id")
-        no_bc_analytics = set(self) - set(bc_analytics)
-        if no_bc_analytics:
-            names = ", ".join([analytic.display_name for analytic in no_bc_analytics])
+
+        # Use search_read to fetch only required fields
+        budget_controls = self.env["budget.control"].search_read(
+            domain, ["analytic_account_id", "state"]
+        )
+        if not budget_controls:
+            names = ", ".join(self.mapped("display_name"))
             raise UserError(
-                _("Following analytics has no budget control sheet:\n%s") % names
-            )
-        # Find analytics has no controlled budget control sheet
-        budget_controlled = budget_controls.filtered_domain([("state", "=", "done")])
-        cbc_analytics = budget_controlled.mapped("analytic_account_id")
-        no_cbc_analytics = set(self) - set(cbc_analytics)
-        if no_cbc_analytics:
-            names = ", ".join([analytic.display_name for analytic in no_cbc_analytics])
-            raise UserError(
-                _(
-                    "Budget control sheet for following analytics are not in "
-                    "control:\n%s"
+                self.env._(
+                    "No budget control sheet found for the selected analytics:\n"
+                    f"{names}"
                 )
-                % names
             )
 
-    @api.depends("budget_period_id")
-    def _compute_bm_date(self):
-        """Default effective date, but changable"""
-        for rec in self:
-            rec.bm_date_from = rec.budget_period_id.bm_date_from
-            rec.bm_date_to = rec.budget_period_id.bm_date_to
+        bc_analytics_ids = {
+            bc["analytic_account_id"][0]
+            for bc in budget_controls
+            if bc["analytic_account_id"]
+        }
+        no_bc_analytics = self.filtered(lambda x: x.id not in bc_analytics_ids)
+
+        # No budget control sheet found
+        if no_bc_analytics:
+            names = ", ".join(no_bc_analytics.mapped("display_name"))
+            raise UserError(
+                self.env._(
+                    f"Following analytics have no budget control sheet:\n{names}"
+                )
+            )
+
+        # Find analytics has no controlled budget control sheet
+        budget_controlled_ids = {
+            bc["analytic_account_id"][0]
+            for bc in budget_controls
+            if bc["state"] == "done"
+        }
+        no_cbc_analytics = self.filtered(lambda x: x.id not in budget_controlled_ids)
+
+        if no_cbc_analytics:
+            names = ", ".join(no_cbc_analytics.mapped("display_name"))
+            raise UserError(
+                self.env._(
+                    f"Budget control sheets for the following analytics "
+                    f"are not in control:\n{names}"
+                )
+            )
 
     def _auto_adjust_date_commit(self, docline):
         for rec in self:
@@ -248,7 +242,7 @@ class AccountAnalyticAccount(models.Model):
 
     def action_edit_initial_available(self):
         return {
-            "name": _("Edit Analytic Budget"),
+            "name": self.env._("Edit Analytic Budget"),
             "type": "ir.actions.act_window",
             "res_model": "analytic.budget.edit",
             "view_mode": "form",
