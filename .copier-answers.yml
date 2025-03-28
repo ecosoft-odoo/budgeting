@@ -1,5 +1,5 @@
 # Do NOT update manually; changes here will be overwritten by Copier
-_commit: v1.29
+_commit: v1.30
 _src_path: gh:oca/oca-addons-repo-template
 additional_ruff_rules: []
 ci: GitHub
@@ -15,8 +15,8 @@ github_enforce_dev_status_compatibility: true
 include_wkhtmltopdf: false
 odoo_test_flavor: Both
 odoo_version: 18.0
-org_name: Odoo Community Association (OCA)
-org_slug: OCA
+org_name: Ecosoft
+org_slug: ecosoft-odoo
 rebel_module_groups:
 - account_move_name_sequence
 - account_sequence_option
