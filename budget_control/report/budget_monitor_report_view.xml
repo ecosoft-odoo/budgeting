@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <record id="view_budget_monitor_report_tree" model="ir.ui.view">
-        <field name="name">budget.monitor.report.tree</field>
+    <record id="view_budget_monitor_report_list" model="ir.ui.view">
+        <field name="name">budget.monitor.report.list</field>
         <field name="model">budget.monitor.report</field>
         <field name="arch" type="xml">
-            <tree>
+            <list create="0" edit="0" delete="0">
                 <field name="amount_type" />
                 <field name="reference" />
                 <field name="source_document" />
@@ -13,7 +13,7 @@
                 <field name="analytic_account_id" />
                 <field name="kpi_id" />
                 <field name="amount" />
-            </tree>
+            </list>
         </field>
     </record>
     <record id="view_budget_monitor_report_pivot" model="ir.ui.view">
@@ -113,7 +113,7 @@
     <record id="action_budget_monitor_report_all" model="ir.actions.act_window">
         <field name="name">Budget Monitoring</field>
         <field name="res_model">budget.monitor.report</field>
-        <field name="view_mode">pivot,tree,graph</field>
+        <field name="view_mode">pivot,list,graph</field>
         <field name="context">{
             'group_by':[],
             'group_by_no_leaf':1,

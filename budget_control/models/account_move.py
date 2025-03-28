@@ -10,8 +10,6 @@ class AccountMove(models.Model):
     _docline_type = "account"
 
     not_affect_budget = fields.Boolean(
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         help="If checked, lines does not create budget move",
     )
     budget_move_ids = fields.One2many(
@@ -87,7 +85,7 @@ class AccountMove(models.Model):
     def action_post(self):
         res = super().action_post()
         # Update database, then check budget
-        self.flush_model()
+        # self.flush_model()
         BudgetPeriod = self.env["budget.period"]
         for move in self._filtered_move_check_budget():
             BudgetPeriod.check_budget(move.line_ids)

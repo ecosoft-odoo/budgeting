@@ -32,11 +32,11 @@
             </search>
         </field>
     </record>
-    <record id="view_budget_move_adjustment_tree" model="ir.ui.view">
-        <field name="name">view.budget.move.adjustment.tree</field>
+    <record id="view_budget_move_adjustment_list" model="ir.ui.view">
+        <field name="name">view.budget.move.adjustment.list</field>
         <field name="model">budget.move.adjustment</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="name" />
                 <field name="description" />
                 <field name="company_id" groups="base.group_multi_company" />
@@ -47,7 +47,7 @@
                     decoration-info="state == 'draft'"
                     optional="show"
                 />
-            </tree>
+            </list>
         </field>
     </record>
     <record id="view_budget_move_adjustment_form" model="ir.ui.view">
@@ -58,23 +58,23 @@
                 <header>
                     <button
                         name="action_adjust"
-                        states="draft"
                         string="Adjust"
                         type="object"
+                        invisible="state != 'draft'"
                         class="oe_highlight"
                     />
                     <button
                         name="action_cancel"
-                        states="done"
                         string="Cancel"
-                        confirm="Are you sure?"
                         type="object"
+                        invisible="state != 'done'"
+                        confirm="Are you sure?"
                     />
                     <button
                         name="action_draft"
-                        states="cancel"
                         string="Set to Draft"
                         type="object"
+                        invisible="state != 'cancel'"
                     />
                     <field
                         name="state"
@@ -91,10 +91,11 @@
                     </div>
                     <group>
                         <group name="budget_move_adjustment_left">
-                            <field name="date_commit" />
+                            <field name="date_commit" readonly="state != 'draft'" />
                             <field
                                 name="description"
                                 placeholder="Reason of adjustment..."
+                                readonly="state != 'draft'"
                             />
                         </group>
                         <group name="budget_move_adjustment_right">
@@ -103,18 +104,15 @@
                             <field
                                 name="company_id"
                                 groups="base.group_multi_company"
+                                readonly="state != 'draft'"
                             />
-                            <field
-                                name="currency_id"
-                                groups="base.group_multi_currency"
-                                invisible="1"
-                            />
+                            <field name="currency_id" invisible="1" />
                         </group>
                     </group>
                     <notebook>
                         <page name="adjust_item_ids" string="Adjustments">
-                            <field name="adjust_item_ids" nolabel="1">
-                                <tree editable="bottom">
+                            <field name="adjust_item_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
                                     <field name="adjust_type" />
                                     <field name="product_id" optional="hide" />
                                     <field name="name" optional="show" />
@@ -136,7 +134,7 @@
                                     <field name="currency_id" optional="hide" />
                                     <field name="amount_commit" optional="hide" />
                                     <field name="date_commit" optional="hide" />
-                                </tree>
+                                </list>
                                 <form>
                                     <group>
                                         <group>
@@ -161,7 +159,7 @@
                         <page
                             string="Budget Commitment"
                             name="budget_commit"
-                            attrs="{'invisible': [('budget_move_ids', '=', [])]}"
+                            invisible="not budget_move_ids"
                         >
                             <div class="oe_right" name="buttons">
                                 <button
@@ -180,7 +178,7 @@
                                 />
                             </div>
                             <field name="budget_move_ids" readonly="1">
-                                <tree>
+                                <list>
                                     <field name="adjust_item_id" />
                                     <field name="adjust_id" />
                                     <field name="date" />
@@ -191,7 +189,7 @@
                                     <field name="note" optionl="hide" />
                                     <field name="debit" sum="Total Debit" />
                                     <field name="credit" sum="Total Credit" />
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page name="help" string="Help">
@@ -219,19 +217,16 @@
                         </page>
                     </notebook>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers" />
-                    <field name="message_ids" widget="mail_thread" />
-                </div>
+                <chatter />
             </form>
         </field>
     </record>
 
     <record id="action_budget_move_adjustment" model="ir.actions.act_window">
         <field name="name">Budget Moves Adjustment</field>
-        <field name="view_id" ref="view_budget_move_adjustment_tree" />
+        <field name="view_id" ref="view_budget_move_adjustment_list" />
         <field name="res_model">budget.move.adjustment</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <menuitem
         id="menu_budget_move_adjustment"

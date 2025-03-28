@@ -9,8 +9,8 @@
             <form>
                 <group>
                     <field name="forward_info_line_ids" nolabel="1" colspan="2">
-                        <tree editable="bottom" create="0" delete="0">
-                            <field name="currency_id" invisible="1" />
+                        <list editable="bottom" create="0" delete="0">
+                            <field name="currency_id" column_invisible="1" />
                             <field name="analytic_account_id" />
                             <field
                                 name="analytic_plan"
@@ -35,7 +35,7 @@
                                 optional="show"
                                 sum="Total"
                             />
-                        </tree>
+                        </list>
                     </field>
                 </group>
                 <footer>

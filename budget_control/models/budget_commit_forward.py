@@ -7,21 +7,16 @@ from odoo.exceptions import UserError
 
 class BudgetCommitForward(models.Model):
     _name = "budget.commit.forward"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Budget Commit Forward"
-    _inherit = ["mail.thread"]
 
     name = fields.Char(
         required=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     to_budget_period_id = fields.Many2one(
         comodel_name="budget.period",
-        string="To Budget Period",
         required=True,
         ondelete="restrict",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     to_date_commit = fields.Date(
         related="to_budget_period_id.bm_date_from",
@@ -52,7 +47,6 @@ class BudgetCommitForward(models.Model):
         comodel_name="budget.commit.forward.line",
         inverse_name="forward_id",
         string="Forward Lines",
-        readonly=True,
     )
     missing_analytic = fields.Boolean(
         compute="_compute_missing_analytic",
@@ -156,6 +150,12 @@ class BudgetCommitForward(models.Model):
         for rec in self:
             rec.forward_line_ids = rec.filter_lines
 
+    def action_reset_filter_lines(self):
+        """Reset lines and review again"""
+        self.forward_line_ids.unlink()
+        for rec in self:
+            rec.action_review_budget_commit()
+
     def get_budget_commit_forward(self, res_model):
         """Get budget commitment forward for each new commit document type."""
         self = self.sudo()
@@ -166,21 +166,20 @@ class BudgetCommitForward(models.Model):
             Line.create(vals)
 
     def create_missing_analytic(self):
-        for rec in self:
-            for line in rec.forward_line_ids.filtered_domain(
-                [("to_analytic_account_id", "=", False)]
-            ):
-                line.to_analytic_account_id = (
-                    line.analytic_account_id.next_year_analytic()
-                )
+        forward_lines = self.mapped("forward_line_ids").filtered_domain(
+            [("to_analytic_account_id", "=", False)]
+        )
+        for line in forward_lines:
+            line.to_analytic_account_id = line.analytic_account_id.next_year_analytic()
 
     def preview_budget_commit_forward_info(self):
         self.ensure_one()
         if self.missing_analytic:
             raise UserError(
-                _(
+                self.env._(
                     "Some carry forward analytic accounts are missing.\n"
-                    "Click 'Create Missing Analytics' button to create for next budget period."
+                    "Click 'Create Missing Analytics' button to create for "
+                    "next budget period."
                 )
             )
         wizard = self.env.ref("budget_control.view_budget_commit_forward_info_form")
@@ -190,7 +189,7 @@ class BudgetCommitForward(models.Model):
         ]
         forward_vals = self._get_forward_initial_commit(domain)
         return {
-            "name": _("Preview Budget Commitment"),
+            "name": self.env._("Preview Budget Commitment"),
             "type": "ir.actions.act_window",
             "view_mode": "form",
             "res_model": "budget.commit.forward.info",
@@ -228,66 +227,78 @@ class BudgetCommitForward(models.Model):
         _analytic_field = "analytic_account_id" if reverse else "to_analytic_account_id"
         for rec in self:
             group_document = {}
+
             # Group by document
             for line in rec.forward_line_ids:
                 if line.document_id in group_document:
                     group_document[line.document_id].append(line)
                 else:
                     group_document[line.document_id] = [line]
-            for doc, fwd_line in group_document.items():
+            for doc, fwd_lines in group_document.items():
                 # Convert to json
-                fwd_analytic_distribution = {}
-                for line in fwd_line:
-                    fwd_analytic_distribution[str(line[_analytic_field].id)] = (
-                        line.analytic_percent * 100
-                    )
+                fwd_analytic_distribution = {
+                    str(line[_analytic_field].id): line.analytic_percent * 100
+                    for line in fwd_lines
+                }
                 doc.write(
                     {
                         "fwd_analytic_distribution": fwd_analytic_distribution,
-                        "fwd_date_commit": reverse
-                        and fwd_line[0].date_commit
-                        or rec.to_date_commit,
+                        "fwd_date_commit": fwd_lines[0].date_commit
+                        if reverse
+                        else rec.to_date_commit,
                     }
                 )
-            # For case extend
-            for line in rec.forward_line_ids:
-                if not reverse and line.method_type == "extend":
-                    # Update end date of analytic account,
-                    # if it is extended by max date.
-                    if line.to_analytic_account_id.bm_date_to:
-                        date_to = max(
-                            line.to_analytic_account_id.bm_date_to,
-                            rec.to_budget_period_id.bm_date_to,
+
+            # For case extend, update end date of analytic account.
+            if not reverse:
+                max_date_to = rec.to_budget_period_id.bm_date_to
+                for line in rec.forward_line_ids:
+                    if line.method_type == "extend" and line.to_analytic_account_id:
+                        current_date_to = line.to_analytic_account_id.bm_date_to
+                        line.to_analytic_account_id.bm_date_to = (
+                            max(current_date_to, max_date_to)
+                            if current_date_to
+                            else max_date_to
                         )
-                    else:
-                        date_to = rec.to_budget_period_id.bm_date_to
-                    line.to_analytic_account_id.bm_date_to = date_to
 
     def _do_update_initial_commit(self, reverse=False):
-        """Update all Analytic Account's initial commit value related to budget period"""
+        """Update all Analytic Account's initial commit value
+        related to budget period"""
         self.ensure_one()
         # Reset initial when cancel document only
         AnalyticAccount = self.env["account.analytic.account"]
         domain = [("forward_id", "=", self.id)]
+
         if reverse:
             forward_vals = self._get_forward_initial_commit(domain)
-            for val in forward_vals:
-                analytic = AnalyticAccount.browse(val["analytic_account_id"])
+            analytics = AnalyticAccount.browse(
+                val["analytic_account_id"] for val in forward_vals
+            )
+            for analytic, val in zip(analytics, forward_vals, strict=False):
                 analytic.initial_commit -= val["initial_commit"]
             return
-        forward_duplicate = self.env["budget.commit.forward"].search(
-            [
-                ("to_budget_period_id", "=", self.to_budget_period_id.id),
-                ("state", "=", "done"),
-                ("id", "!=", self.id),
-            ]
+
+        # Check if there are existing "done" forward commits in the same period
+        forward_exists = (
+            self.env["budget.commit.forward"].search_count(
+                [
+                    ("to_budget_period_id", "=", self.to_budget_period_id.id),
+                    ("state", "=", "done"),
+                    ("id", "!=", self.id),
+                ]
+            )
+            > 0
         )
+
         domain.append(("forward_id.state", "in", ["review", "done"]))
         forward_vals = self._get_forward_initial_commit(domain)
-        for val in forward_vals:
-            analytic = AnalyticAccount.browse(val["analytic_account_id"])
+        analytics = AnalyticAccount.browse(
+            val["analytic_account_id"] for val in forward_vals
+        )
+
+        for analytic, val in zip(analytics, forward_vals, strict=False):
             # Check first forward commit in the year, it should overwrite initial commit
-            if not forward_duplicate:
+            if not forward_exists:
                 analytic.initial_commit = val["initial_commit"]
             else:
                 analytic.initial_commit += val["initial_commit"]
@@ -316,13 +327,13 @@ class BudgetCommitForward(models.Model):
                 raise UserError(
                     _("Unable to cancel this document as it belongs to a past period.")
                 )
-        self.filtered(lambda l: l.state == "done")._do_forward_commit(reverse=True)
+        self.filtered(lambda fwd: fwd.state == "done")._do_forward_commit(reverse=True)
         self.write({"state": "cancel"})
         self._do_update_initial_commit(reverse=True)
         self._recompute_budget_move()
 
     def action_draft(self):
-        self.filtered(lambda l: l.state == "done")._do_forward_commit(reverse=True)
+        self.filtered(lambda fwd: fwd.state == "done")._do_forward_commit(reverse=True)
         self.mapped("forward_line_ids").unlink()
         self.write({"state": "draft"})
         self._do_update_initial_commit(reverse=True)
@@ -358,7 +369,8 @@ class BudgetCommitForwardLine(models.Model):
         ],
         string="Method",
         help="New: if the analytic has ended, 'To Analytic Account' is required\n"
-        "Extended: if the analytic has ended, but want to extend to next period date end",
+        "Extended: if the analytic has ended, "
+        "but want to extend to next period date end",
     )
     to_analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
@@ -419,7 +431,8 @@ class BudgetCommitForwardLine(models.Model):
                 rec.to_analytic_account_id = rec.analytic_account_id
                 rec.method_type = False
                 continue
-            # Case analytic has extended end date that cover new commit date, use same analytic
+            # Case analytic has extended end date that cover new commit date,
+            # use same analytic
             if (
                 rec.analytic_account_id.bm_date_to
                 and rec.analytic_account_id.bm_date_to >= rec.forward_id.to_date_commit
@@ -437,11 +450,11 @@ class BudgetCommitForwardLine(models.Model):
                     auto_create=False
                 )
 
-    def name_get(self):
-        return [
-            (
-                r.id,
-                f"{r.document_number.display_name} - {r.analytic_account_id.name}",
-            )
-            for r in self
-        ]
+    @api.depends("document_number", "analytic_account_id")
+    def _compute_display_name(self):
+        res = super()._compute_display_name()
+        for fwd_line in self:
+            doc_name = fwd_line.document_number.display_name
+            analytic_name = fwd_line.analytic_account_id.name
+            fwd_line.display_name = f"{doc_name} - {analytic_name}"
+        return res

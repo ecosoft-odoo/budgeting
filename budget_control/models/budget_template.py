@@ -7,6 +7,7 @@ from odoo import api, fields, models
 class BudgetTemplate(models.Model):
     _name = "budget.template"
     _description = "Budget Template"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
 
     name = fields.Char(required=True)
     line_ids = fields.One2many(

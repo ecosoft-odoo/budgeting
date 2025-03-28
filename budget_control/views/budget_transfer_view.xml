@@ -43,11 +43,11 @@
             </search>
         </field>
     </record>
-    <record id="view_budget_transfer_tree" model="ir.ui.view">
-        <field name="name">view.budget.transfer.tree</field>
+    <record id="view_budget_transfer_list" model="ir.ui.view">
+        <field name="name">view.budget.transfer.list</field>
         <field name="model">budget.transfer</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="name" />
                 <field name="budget_period_id" />
                 <field
@@ -57,7 +57,7 @@
                     decoration-info="state in ['draft', 'submit']"
                     optional="show"
                 />
-            </tree>
+            </list>
         </field>
     </record>
     <record id="view_budget_transfer_form" model="ir.ui.view">
@@ -68,30 +68,30 @@
                 <header>
                     <button
                         name="action_submit"
-                        states="draft"
                         string="Submit"
                         type="object"
+                        invisible="state != 'draft'"
                         class="oe_highlight"
                     />
                     <button
                         name="action_transfer"
-                        states="submit"
                         string="Transfer"
                         type="object"
+                        invisible="state != 'submit'"
                         class="oe_highlight"
                     />
                     <button
                         name="action_cancel"
-                        states="draft,submit"
                         string="Cancel"
-                        confirm="Are you sure?"
+                        confirm="Do you want to cancel this transfer?"
+                        invisible="state not in ['draft', 'submit']"
                         type="object"
                     />
                     <button
                         name="action_reverse"
-                        states="transfer"
                         string="Reverse"
-                        confirm="Are you sure?"
+                        confirm="Do you want to reverse this transfer?"
+                        invisible="state != 'transfer'"
                         type="object"
                     />
                     <field
@@ -104,7 +104,7 @@
                     <div class="oe_right oe_button_box" name="buttons" />
                     <div class="oe_title">
                         <h1>
-                            <field name="name" />
+                            <field name="name" readonly="1" />
                         </h1>
                     </div>
                     <group>
@@ -112,24 +112,22 @@
                             <field
                                 name="budget_period_id"
                                 options="{'no_open': True}"
+                                readonly="1"
                             />
                         </group>
                         <group name="budget_transfer_right" />
                     </group>
-                    <field name="transfer_item_ids" nolabel="1" />
+                    <field name="transfer_item_ids" readonly="state != 'draft'" />
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers" />
-                    <field name="message_ids" widget="mail_thread" />
-                </div>
+                <chatter />
             </form>
         </field>
     </record>
     <record id="action_budget_transfer" model="ir.actions.act_window">
         <field name="name">Budget Transfer</field>
-        <field name="view_id" ref="view_budget_transfer_tree" />
+        <field name="view_id" ref="view_budget_transfer_list" />
         <field name="res_model">budget.transfer</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <menuitem
         id="menu_budget_transfer"

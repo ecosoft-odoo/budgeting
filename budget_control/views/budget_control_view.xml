@@ -1,33 +1,34 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <!-- Budget Control Lines -->
-    <record id="budget_control_line_tree_view_readonly" model="ir.ui.view">
-        <field name="name">budget.control.line.tree.view.readonly</field>
+    <record id="budget_control_line_list_view_readonly" model="ir.ui.view">
+        <field name="name">budget.control.line.list.view.readonly</field>
         <field name="model">budget.control.line</field>
         <field name="arch" type="xml">
-            <tree create="0" edit="0">
+            <list create="0" edit="0">
                 <field name="kpi_id" />
                 <field name="date_range_id" />
                 <field name="date_from" />
                 <field name="date_to" />
                 <field name="amount" />
-            </tree>
+                <field name="currency_id" column_invisible="1" />
+            </list>
         </field>
     </record>
     <record id="budget_control_line_action" model="ir.actions.act_window">
         <field name="name">Budget Control Lines</field>
         <field name="res_model">budget.control.line</field>
-        <field name="view_mode">tree</field>
+        <field name="view_mode">list</field>
         <field name="domain">[('budget_control_id', '=', active_id)]</field>
-        <field name="view_id" ref="budget_control_line_tree_view_readonly" />
+        <field name="view_id" ref="budget_control_line_list_view_readonly" />
     </record>
 
     <!-- Budget Control -->
-    <record id="budget_control_view_tree" model="ir.ui.view">
-        <field name="name">budget.control.view.tree</field>
+    <record id="budget_control_view_list" model="ir.ui.view">
+        <field name="name">budget.control.view.list</field>
         <field name="model">budget.control</field>
         <field name="arch" type="xml">
-            <tree
+            <list
                 create="0"
                 decoration-muted="active == False or state == 'cancel'"
                 decoration-danger="diff_amount != 0.0 and active == True"
@@ -51,8 +52,9 @@
                     decoration-success="state == 'done'"
                     decoration-info="state in ['draft', 'submit']"
                 />
-                <field name="active" invisible="1" />
-            </tree>
+                <field name="currency_id" column_invisible="1" />
+                <field name="active" column_invisible="1" />
+            </list>
         </field>
     </record>
     <record id="view_budget_control_filter" model="ir.ui.view">
@@ -111,7 +113,7 @@
                         string="Submit"
                         class="btn-primary"
                         type="object"
-                        states="draft"
+                        invisible="state != 'draft'"
                     />
                     <button
                         id="action_done"
@@ -119,21 +121,21 @@
                         string="Control"
                         class="btn-primary"
                         type="object"
-                        states="submit"
+                        invisible="state != 'submit'"
                     />
                     <button
                         id="action_draft"
                         name="action_draft"
                         string="Set to Draft"
                         type="object"
-                        states="submit,done,cancel"
+                        invisible="state not in ['submit', 'done', 'cancel']"
                     />
                     <button
                         id="action_cancel"
                         name="action_cancel"
                         string="Cancel"
                         type="object"
-                        states="draft,submit"
+                        invisible="state not in ['draft', 'submit']"
                     />
                     <field
                         name="state"
@@ -146,7 +148,7 @@
                         name="web_ribbon"
                         title="Archived"
                         bg_color="bg-danger"
-                        attrs="{'invisible': [('active', '=', True)]}"
+                        invisible="active"
                     />
                     <div class="oe_button_box" name="button_box">
                         <button
@@ -185,28 +187,28 @@
                         <div class="oe_title" colspan="2">
                             <label for="name" />
                             <h1>
-                                <field name="name" />
+                                <field name="name" readonly="state != 'draft'" />
                             </h1>
                         </div>
                     </group>
                     <group>
                         <group name="budget_control_left">
-                            <field name="analytic_account_id" />
-                            <field name="assignee_id" />
+                            <field name="analytic_account_id" readonly="1" />
+                            <field name="assignee_id" readonly="state != 'draft'" />
                         </group>
                         <group name="budget_control_right">
                             <field name="active" invisible="1" />
-                            <field
-                                name="budget_period_id"
-                                attrs="{'invisible': [('budget_period_id', '=', False)]}"
-                            />
+                            <field name="budget_period_id" readonly="1" />
                             <label for="date_from" string="Date Range" />
                             <div name="date_range" class="o_row">
                                 <field name="date_from" />
                                 <span>To</span>
                                 <field name="date_to" />
                             </div>
-                            <field name="plan_date_range_type_id" />
+                            <field
+                                name="plan_date_range_type_id"
+                                readonly="state != 'draft'"
+                            />
                             <field name="template_id" />
                             <field
                                 name="company_id"
@@ -215,9 +217,10 @@
                             <field
                                 name="currency_id"
                                 groups="base.group_multi_currency"
+                                readonly="1"
                             />
                             <field name="amount_initial" />
-                            <field name="allocated_amount" />
+                            <field name="allocated_amount" readonly="1" />
                             <field name="released_amount" />
                             <field
                                 name="diff_amount"
@@ -227,7 +230,7 @@
                     </group>
                     <notebook>
                         <page name="items" string="Plan">
-                            <div class="oe_right" name="buttons">
+                            <div class="d-flex justify-content-end" name="buttons">
                                 <button
                                     id="reset_plan"
                                     name="prepare_budget_control_matrix"
@@ -249,21 +252,20 @@
                                     title="Reset lines but not clear the planned amount."
                                 />
                             </div>
-                            <br />
-                            <br />
-                            <group>
+                            <group class="mt16">
                                 <field
                                     name="line_ids"
                                     widget="x2many_2d_matrix"
                                     field_x_axis="date_range_id"
-                                    field_y_axis="name"
+                                    field_y_axis="kpi_id"
                                     field_value="amount"
+                                    readonly="state not in ['draft', 'submit']"
                                 >
-                                    <tree limit="1000000">
+                                    <list limit="1000000">
                                         <field name="date_range_id" />
-                                        <field name="name" />
+                                        <field name="kpi_id" />
                                         <field name="amount" />
-                                    </tree>
+                                    </list>
                                 </field>
                                 <!-- Totals Amount -->
                                 <group
@@ -308,40 +310,41 @@
                                     <field
                                         name="use_all_kpis"
                                         widget="boolean_toggle"
+                                        readonly="state != 'draft'"
                                     />
-                                    <field name="init_budget_commit" />
+                                    <field
+                                        name="init_budget_commit"
+                                        readonly="state != 'draft'"
+                                    />
                                 </group>
                                 <group>
                                     <field
                                         name="template_line_ids"
                                         widget="many2many_tags"
+                                        readonly="state != 'draft'"
+                                        domain="[('template_id', '=', template_id)]"
                                     />
                                 </group>
                             </group>
                         </page>
                     </notebook>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers" />
-                    <field name="activity_ids" widget="mail_activity" />
-                    <field name="message_ids" widget="mail_thread" />
-                </div>
+                <chatter />
             </form>
         </field>
     </record>
     <record id="budget_control_action" model="ir.actions.act_window">
         <field name="name">Budget Control Sheet</field>
-        <field name="view_id" ref="budget_control_view_tree" />
+        <field name="view_id" ref="budget_control_view_list" />
         <field name="res_model">budget.control</field>
-        <field name="context">{}</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="budget_control_action_filter_period" model="ir.actions.act_window">
         <field name="name">Budget Control Sheet</field>
-        <field name="view_id" ref="budget_control_view_tree" />
+        <field name="view_id" ref="budget_control_view_list" />
         <field name="res_model">budget.control</field>
         <field name="context">{'search_default_current_period': 1}</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!-- Server action -->

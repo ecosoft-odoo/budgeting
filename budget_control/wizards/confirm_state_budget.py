@@ -21,7 +21,7 @@ class BudgetControlStateConfirmation(models.TransientModel):
 
     def confirm(self):
         self.ensure_one()
-        active_ids = self._context.get("active_ids")
+        active_ids = self.env.context.get("active_ids")
         budget_control = self.env["budget.control"].browse(active_ids)
         if self.state == "draft":
             return budget_control.action_draft()

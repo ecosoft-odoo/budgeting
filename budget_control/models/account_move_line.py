@@ -11,9 +11,6 @@ class AccountMoveLine(models.Model):
     _budget_move_model = "account.budget.move"
     _doc_rel = "move_id"
 
-    can_commit = fields.Boolean(
-        compute="_compute_can_commit",
-    )
     budget_move_ids = fields.One2many(
         comodel_name="account.budget.move",
         inverse_name="move_line_id",
@@ -25,6 +22,11 @@ class AccountMoveLine(models.Model):
 
     @api.depends()
     def _compute_can_commit(self):
+        """
+        Compute whether this account move line can commit budget.
+        Checks if the move is marked as not affecting budget - if so,
+        sets can_commit=False on those lines.
+        """
         res = super()._compute_can_commit()
         no_budget_moves = self.mapped("move_id").filtered("not_affect_budget")
         no_budget_moves.mapped("line_ids").update({"can_commit": False})
@@ -41,11 +43,11 @@ class AccountMoveLine(models.Model):
         if self.move_id.move_type == "entry":
             total_amount = self.amount_currency
         else:
-            sign = -1 if self.move_id.move_type in ("out_refund", "in_refund") else 1
+            sign = -1 if self.is_refund else 1
             discount = (100 - self.discount) / 100 if self.discount else 1
             total_amount = sign * self.price_unit * self.quantity * discount
         percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
-        budget_vals["amount_currency"] = total_amount * percent_analytic / 100
+        budget_vals["amount_currency"] = total_amount * (percent_analytic / 100)
         budget_vals["tax_ids"] = self.tax_ids.ids
         # Document specific vals
         budget_vals.update(
