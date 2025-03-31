@@ -10,7 +10,9 @@ class PurchaseBudgetMove(models.Model):
     @api.depends("purchase_id")
     def _compute_source_document(self):
         res = super()._compute_source_document()
-        for rec in self.filtered(lambda l: l.purchase_line_id.purchase_request_lines):
+        for rec in self.filtered(
+            lambda move: move.purchase_line_id.purchase_request_lines
+        ):
             rec.source_document = (
                 rec.source_document
                 if rec.source_document

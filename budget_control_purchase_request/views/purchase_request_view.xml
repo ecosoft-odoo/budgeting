@@ -6,7 +6,7 @@
         <field name="inherit_id" ref="purchase_request.view_purchase_request_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="//page/field[@name='line_ids']/tree/field[@name='analytic_distribution']"
+                expr="//page/field[@name='line_ids']/list/field[@name='analytic_distribution']"
                 position="after"
             >
                 <field
@@ -20,7 +20,7 @@
                 />
             </xpath>
             <xpath
-                expr="//page/field[@name='line_ids']/tree/field[last()]"
+                expr="//page/field[@name='line_ids']/list/field[last()]"
                 position="after"
             >
                 <field name="auto_adjust_date_commit" optional="hide" />
@@ -41,13 +41,13 @@
                     groups="budget_control.group_budget_control_manager"
                 />
             </xpath>
-            <xpath expr="/form/sheet/notebook/page[last()]" position="after">
+            <xpath expr="//notebook/page[last()]" position="after">
                 <page
                     string="Budget Commitment"
                     name="budget_commit"
-                    attrs="{'invisible': [('budget_move_ids', '=', [])]}"
+                    invisible="not budget_move_ids"
                 >
-                    <div class="oe_read_only oe_right" name="buttons">
+                    <div class="d-flex justify-content-end" name="buttons">
                         <button
                             type="object"
                             name="recompute_budget_move"
@@ -64,18 +64,18 @@
                         />
                     </div>
                     <field name="budget_move_ids" readonly="1">
-                        <tree>
+                        <list>
                             <field name="purchase_request_line_id" optional="show" />
                             <field name="purchase_id" />
                             <field name="date" />
                             <field name="analytic_plan" optional="show" />
                             <field name="analytic_account_id" optional="show" />
-                            <field name="write_uid" optional="show" />
-                            <field name="write_date" optional="show" />
-                            <field name="note" optionl="hide" />
+                            <field name="write_uid" optional="hide" />
+                            <field name="write_date" optional="hide" />
+                            <field name="note" optionl="show" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </xpath>

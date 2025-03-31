@@ -5,9 +5,9 @@ from datetime import datetime
 
 from freezegun import freeze_time
 
+from odoo import Command
 from odoo.exceptions import UserError
-from odoo.tests import tagged
-from odoo.tests.common import Form
+from odoo.tests import Form, tagged
 
 from odoo.addons.budget_control.tests.common import BudgetControlCommon
 
@@ -18,31 +18,49 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def setUpClass(cls):
         super().setUpClass()
-        # Create sample ready to use Budget Control
-        cls.budget_control = cls.BudgetControl.create(
-            {
-                "name": "CostCenter1/%s" % cls.year,
-                "template_id": cls.budget_period.template_id.id,
-                "budget_period_id": cls.budget_period.id,
-                "analytic_account_id": cls.costcenter1.id,
-                "plan_date_range_type_id": cls.date_range_type.id,
-                "template_line_ids": [
-                    cls.template_line1.id,
-                    cls.template_line2.id,
-                    cls.template_line3.id,
-                ],
-            }
+        # Create budget plan with 1 analytic
+        lines = [
+            Command.create(
+                {"analytic_account_id": cls.costcenter1.id, "amount": 2400.0}
+            )
+        ]
+        cls.budget_plan = cls.create_budget_plan(
+            cls,
+            name="Test - Plan {cls.budget_period.name}",
+            budget_period=cls.budget_period,
+            lines=lines,
         )
+        cls.budget_plan.action_confirm()
+        cls.budget_plan.action_create_update_budget_control()
+        cls.budget_plan.action_done()
+
+        # Refresh data
+        cls.budget_plan.invalidate_recordset()
+
+        cls.budget_control = cls.budget_plan.budget_control_ids
+        cls.budget_control.template_line_ids = [
+            cls.template_line1.id,
+            cls.template_line2.id,
+            cls.template_line3.id,
+        ]
+
         # Test item created for 3 kpi x 4 quarters = 12 budget items
         cls.budget_control.prepare_budget_control_matrix()
         assert len(cls.budget_control.line_ids) == 12
-        # Assign budget.control amount: KPI1 = 100, KPI2=800, Total=300
-        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi1)[:1].write(
+        # Assign budget.control amount: KPI1 = 100x4=400, KPI2=800, KPI3=1,200
+        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi1).write(
             {"amount": 100}
         )
-        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2)[:1].write(
+        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2).write(
             {"amount": 200}
         )
+        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi3).write(
+            {"amount": 300}
+        )
+
+        # # Purchase method
+        # cls.product1.product_tmpl_id.purchase_method = "purchase"
+        # cls.product2.product_tmpl_id.purchase_method = "purchase"
 
     @freeze_time("2001-02-01")
     def _create_purchase_request(self, pr_lines):
@@ -68,26 +86,25 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         (3) Check Budget with analytic -> OK
         (2) Check Budget with analytic -> Error amount exceed
         """
-        # Allocate and Done
-        self.budget_control.allocated_amount = 300
+        # Controlled budget
+        self.budget_control.action_submit()
         self.budget_control.action_done()
+        self.assertAlmostEqual(self.budget_control.amount_budget, 2400.0)
 
-        # KPI1 = 100, KPI2 = 200, Total = 300
-        self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare PR
         analytic_distribution = {str(self.costcenter1.id): 100}
         purchase_request = self._create_purchase_request(
             [
                 {
-                    "product_id": self.product1,  # KPI1 = 101 -> error
+                    "product_id": self.product1,  # KPI1 = 401 -> error
                     "product_qty": 1,
-                    "estimated_cost": 101,
+                    "estimated_cost": 401,
                     "analytic_distribution": analytic_distribution,
                 },
                 {
-                    "product_id": self.product2,  # KPI2 = 198
+                    "product_id": self.product2,  # KPI2 = 798
                     "product_qty": 2,
-                    "estimated_cost": 198,  # This is the price of qty 2
+                    "estimated_cost": 798,  # This is the price of qty 2
                     "analytic_distribution": analytic_distribution,
                 },
             ]
@@ -99,26 +116,31 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         purchase_request = purchase_request.with_context(
             force_date_commit=purchase_request.date_start
         )
-        self.assertEqual(self.budget_control.amount_balance, 300)
         purchase_request.button_to_approve()
         purchase_request.button_approved()  # No budget check no error
+        self.assertTrue(purchase_request.budget_move_ids)
+
         # (2) Check Budget with analytic_kpi -> Error
         purchase_request.button_draft()
-        self.assertEqual(self.budget_control.amount_balance, 300)
+        self.assertAlmostEqual(self.budget_control.amount_budget, 2400.0)
         self.budget_period.control_budget = True  # Set to check budget
         # kpi 1 (kpi1) & CostCenter1, will result in $ -1.00
-        with self.assertRaises(UserError):
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
             purchase_request.button_to_approve()
         purchase_request.button_draft()
+
         # (3) Check Budget with analytic -> OK
         self.budget_period.control_level = "analytic"
         purchase_request.button_to_approve()
         purchase_request.button_approved()
-        self.assertEqual(self.budget_control.amount_balance, 1)
+        self.assertAlmostEqual(
+            self.budget_control.amount_balance, 1201.0
+        )  # 2400-1199 = 1201
         purchase_request.button_draft()
-        self.assertEqual(self.budget_control.amount_balance, 300)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2400.0)
+
         # (4) Amount exceed -> Error
-        purchase_request.line_ids.write({"estimated_cost": 150.5})  # Total 301
+        purchase_request.line_ids.write({"estimated_cost": 1200.5})  # Total is 2401.0
         # CostCenter1, will result in $ -1.00
         with self.assertRaises(UserError):
             purchase_request.button_to_approve()
@@ -126,20 +148,19 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
     @freeze_time("2001-02-01")
     def test_02_budget_pr_to_po(self):
         """PR to PO normally don't care about Quantity, it will uncommit all"""
-        # Allocate and Done
-        self.budget_control.allocated_amount = 300
+        # Controlled budget
+        self.budget_control.action_submit()
         self.budget_control.action_done()
+        self.assertAlmostEqual(self.budget_control.amount_budget, 2400.0)
 
-        # KPI1 = 100, KPI2 = 200, Total = 300
-        self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare PR
         analytic_distribution = {str(self.costcenter1.id): 100}
         purchase_request = self._create_purchase_request(
             [
                 {
-                    "product_id": self.product1,  # KPI1 = 30
+                    "product_id": self.product1,  # KPI1 = 2000
                     "product_qty": 3,
-                    "estimated_cost": 30,
+                    "estimated_cost": 2000.0,
                     "analytic_distribution": analytic_distribution,
                 },
             ]
@@ -152,14 +173,14 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         purchase_request = purchase_request.with_context(
             force_date_commit=purchase_request.date_start
         )
-        self.assertEqual(self.budget_control.amount_balance, 300)
         purchase_request.button_to_approve()
         purchase_request.button_approved()  # No budget check no error
         # PR Commit = 30, PO Commit = 0, Balance = 270
-        self.assertEqual(self.budget_control.amount_purchase_request, 30)
-        self.assertEqual(self.budget_control.amount_purchase, 0)
-        self.assertEqual(self.budget_control.amount_balance, 270)
-        # Create PR from PO
+        self.assertAlmostEqual(self.budget_control.amount_purchase_request, 2000.0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 400.0)
+
+        # Create PO from PR
         MakePO = self.env["purchase.request.line.make.purchase.order"]
         view_id = "purchase_request.view_purchase_request_line_make_purchase_order"
         ctx = {
@@ -177,43 +198,42 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         purchase.order_line[0].price_unit = 25
         purchase = purchase.with_context(force_date_commit=purchase.date_order)
         purchase.button_confirm()
-        # PR will return all, PR Commit = 0, PO Commit = 40, Balance = 260
-        self.assertEqual(self.budget_control.amount_purchase_request, 0)
-        self.assertEqual(self.budget_control.amount_purchase, 50)
-        self.assertEqual(self.budget_control.amount_balance, 250)
+        # PR will return all, PR Commit = 0, PO Commit = 50, Balance = 2350
+        self.assertAlmostEqual(self.budget_control.amount_purchase_request, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 50.0)
+        self.assertAlmostEqual(
+            self.budget_control.amount_balance, 2350.0
+        )  # 2400-50 = 2350
         # Cancel PO
         purchase.button_cancel()
-        # Make sure, PR will state approved
-        purchase_request.button_approved()
-        self.assertEqual(self.budget_control.amount_purchase_request, 30)
-        self.assertEqual(self.budget_control.amount_purchase, 0)
-        self.assertEqual(self.budget_control.amount_balance, 270)
+        self.assertAlmostEqual(self.budget_control.amount_purchase_request, 2000.0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 400.0)
 
     @freeze_time("2001-02-01")
     def test_03_budget_recompute_and_close_budget_move(self):
         """PR to PO (partial PO, but PR will return all)
         - Test recompute on both PR and PO
         - Test close on both PR and PO"""
-        # Allocate and Done
-        self.budget_control.allocated_amount = 300
+        # Controlled budget
+        self.budget_control.action_submit()
         self.budget_control.action_done()
+        self.assertAlmostEqual(self.budget_control.amount_budget, 2400.0)
 
-        # KPI1 = 100, KPI2 = 200, Total = 300
-        self.assertEqual(300, self.budget_control.amount_budget)
         # Prepare PR
         analytic_distribution = {str(self.costcenter1.id): 100}
         purchase_request = self._create_purchase_request(
             [
                 {
-                    "product_id": self.product1,  # KPI1 = 30
+                    "product_id": self.product1,  # KPI1 = 300
                     "product_qty": 2,
-                    "estimated_cost": 30,
+                    "estimated_cost": 300,
                     "analytic_distribution": analytic_distribution,
                 },
                 {
-                    "product_id": self.product2,  # KPI2 = 40
+                    "product_id": self.product2,  # KPI2 = 400
                     "product_qty": 4,
-                    "estimated_cost": 40,
+                    "estimated_cost": 400,
                     "analytic_distribution": analytic_distribution,
                 },
             ]
@@ -225,13 +245,12 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         purchase_request = purchase_request.with_context(
             force_date_commit=purchase_request.date_start
         )
-        self.assertEqual(self.budget_control.amount_balance, 300)
         purchase_request.button_to_approve()
         purchase_request.button_approved()
         # PR Commit = 30, PO Commit = 0, Balance = 270
-        self.assertEqual(self.budget_control.amount_purchase_request, 70)
-        self.assertEqual(self.budget_control.amount_purchase, 0)
-        # Create PR from PO
+        self.assertAlmostEqual(self.budget_control.amount_purchase_request, 700.0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 0.0)
+        # Create PO from PR
         MakePO = self.env["purchase.request.line.make.purchase.order"]
         view_id = "purchase_request.view_purchase_request_line_make_purchase_order"
         ctx = {
@@ -249,23 +268,26 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         purchase = purchase.with_context(force_date_commit=purchase.date_order)
         purchase.button_confirm()
         # PR will return all, PR Commit = 0, PO Commit = 45
-        self.assertEqual(self.budget_control.amount_purchase_request, 0)
-        self.assertEqual(self.budget_control.amount_purchase, 45)
+        self.assertAlmostEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 45)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2355.0)
         # Recompute PR and PO, should be the same.
         purchase_request.recompute_budget_move()
-        self.budget_control._compute_budget_info()
-        self.assertEqual(self.budget_control.amount_purchase_request, 0)
-        self.assertEqual(self.budget_control.amount_purchase, 45)
+        self.assertAlmostEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 45)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2355.0)
         purchase.recompute_budget_move()
-        self.budget_control._compute_budget_info()
-        self.assertEqual(self.budget_control.amount_purchase_request, 0)
-        self.assertEqual(self.budget_control.amount_purchase, 45)
+        self.assertAlmostEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 45)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2355.0)
         # Close budget
         purchase_request.close_budget_move()
-        self.budget_control._compute_budget_info()
-        self.assertEqual(self.budget_control.amount_purchase_request, 0)
-        self.assertEqual(self.budget_control.amount_purchase, 45)
+        self.budget_control.invalidate_recordset()
+        self.assertAlmostEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 45)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2355.0)
         purchase.close_budget_move()
-        self.budget_control._compute_budget_info()
-        self.assertEqual(self.budget_control.amount_purchase_request, 0)
-        self.assertEqual(self.budget_control.amount_purchase, 0)
+        self.budget_control.invalidate_recordset()
+        self.assertAlmostEqual(self.budget_control.amount_purchase_request, 0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2400.0)

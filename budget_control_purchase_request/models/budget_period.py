@@ -17,7 +17,7 @@ class BudgetPeriod(models.Model):
 
     def _budget_info_query(self):
         query = super()._budget_info_query()
-        query["info_cols"]["amount_purchase_request"] = ("2_pr_commit", True)
+        query["info_cols"]["amount_purchase_request"] = ("20_pr_commit", True)
         return query
 
     @api.depends("control_budget")
@@ -32,7 +32,7 @@ class BudgetPeriod(models.Model):
         # if doctype is purchase_request, check special control too.
         if doc_type == "purchase_request":
             return budget_period.filtered(
-                lambda l: (l.control_budget and l.purchase_request)
-                or (not l.control_budget and l.purchase_request)
+                lambda bp: (bp.control_budget and bp.purchase_request)
+                or (not bp.control_budget and bp.purchase_request)
             )
         return budget_period

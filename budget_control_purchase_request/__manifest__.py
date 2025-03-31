@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control on Purchase Request",
-    "version": "16.0.1.0.0",
+    "version": "18.0.1.0.0",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",
@@ -17,8 +17,9 @@
         "views/purchase_request_view.xml",
         "views/budget_control_view.xml",
         "views/budget_commit_forward_view.xml",
+        "views/purchase_request_budget_move.xml",
     ],
     "installable": True,
-    "maintainers": ["kittiu"],
+    "maintainers": ["kittiu", "Saran440"],
     "development_status": "Alpha",
 }

@@ -107,4 +107,4 @@ class PurchaseRequestLine(models.Model):
         return super()._init_docline_budget_vals(budget_vals, analytic_id)
 
     def _valid_commit_state(self):
-        return self.request_id.state in ["approved", "done"]
+        return self.request_id.state in ["approved", "in_progress", "done"]

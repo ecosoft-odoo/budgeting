@@ -9,7 +9,8 @@ class BudgetCommitForward(models.Model):
 
     purchase_request = fields.Boolean(
         default=True,
-        help="If checked, click review budget commitment will pull purchase request commitment",
+        help="If checked, click review budget commitment "
+        "will pull purchase request commitment",
     )
     forward_purchase_request_ids = fields.One2many(
         comodel_name="budget.commit.forward.line",
