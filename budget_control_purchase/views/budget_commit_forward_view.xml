@@ -8,22 +8,16 @@
         <field name="arch" type="xml">
             <div name="docs" position="inside">
                 <div>
-                    <field
-                        name="purchase"
-                        attrs="{'readonly': [('state', '!=', 'draft')]}"
-                    />
+                    <field name="purchase" readonly="state != 'draft'" />
                     <label for="purchase" />
                 </div>
             </div>
             <page name="help" position="before">
-                <page
-                    string="Purchase Order"
-                    attrs="{'invisible': [('purchase', '=', False)]}"
-                >
+                <page string="Purchase Order" invisible="not purchase">
                     <field
                         name="forward_purchase_ids"
-                        attrs="{'readonly': [('state', '!=', 'review')]}"
-                        tree_view_ref="budget_control.view_budget_commit_forward_line_tree"
+                        readonly="state != 'review'"
+                        tree_view_ref="budget_control.view_budget_commit_forward_line_list"
                         form_view_ref="budget_control.view_budget_commit_forward_line_form"
                     />
                 </page>
