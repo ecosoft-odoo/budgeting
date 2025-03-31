@@ -10,7 +10,9 @@ class AccountBudgetMove(models.Model):
     @api.depends("move_id")
     def _compute_source_document(self):
         res = super()._compute_source_document()
-        for rec in self.filtered(lambda l: l.move_line_id.purchase_line_id):
+        for rec in self:
+            if not rec.move_line_id.purchase_line_id:
+                continue
             rec.source_document = (
                 rec.source_document
                 or rec.move_line_id.purchase_line_id.order_id.display_name

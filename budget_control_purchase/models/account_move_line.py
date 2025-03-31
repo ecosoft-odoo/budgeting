@@ -1,7 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, models
+from odoo import models
 from odoo.exceptions import UserError
 
 
@@ -30,9 +30,8 @@ class AccountMoveLine(models.Model):
 
     def uncommit_purchase_budget(self):
         """For vendor bill in valid state, do uncommit for related purchase."""
-        # ForwardLine =self.env["budget.commit.forward.line"]
         for ml in self.filtered(
-            lambda l: l.move_id.move_type in ("in_invoice", "in_refund")
+            lambda line: line.move_id.move_type in ("in_invoice", "in_refund")
         ):
             inv_state = ml.move_id.state
             move_type = ml.move_id.move_type
@@ -42,7 +41,8 @@ class AccountMoveLine(models.Model):
                     [("move_line_id", "=", ml.id)]
                 ).unlink()
                 continue
-            # Vendor bills and purchase order must be related and po must commit budget already
+            # Vendor bills and purchase order must be related
+            # and po must commit budget already
             purchase_line = ml._get_po_line_amount_commit()
             if not purchase_line:
                 continue
@@ -65,7 +65,7 @@ class AccountMoveLine(models.Model):
             purchase_analytic_ids = [x for x in purchase_analytic]
             if any(aa not in purchase_analytic_ids for aa in ml_analytic_ids):
                 raise UserError(
-                    _(
+                    self.env._(
                         "Analytic distribution mismatch. "
                         "Please align with the original purchase order."
                     )

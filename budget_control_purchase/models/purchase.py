@@ -45,7 +45,7 @@ class PurchaseOrder(models.Model):
         res = super().button_confirm()
         self.flush_model()
         BudgetPeriod = self.env["budget.period"]
-        for doc in self.filtered(lambda l: l.state == "purchase"):
+        for doc in self.filtered(lambda po: po.state == "purchase"):
             BudgetPeriod.check_budget(doc.order_line, doc_type="purchase")
         return res
 
@@ -76,11 +76,16 @@ class PurchaseOrderLine(models.Model):
     def _compute_commit(self):
         """Move amount commit negative to first line positive"""
         res = super()._compute_commit()
-        for purchase_line in self.filtered(lambda l: l.price_subtotal < 0.0):
-            available_lines = purchase_line.order_id.order_line.filtered(
-                lambda l: l.price_subtotal > 0.0 and l.amount_commit > 0.0
-            )
+
+        negative_lines = self.filtered(lambda po: po.price_subtotal < 0.0)
+        for purchase_line in negative_lines:
             amount_commit = abs(purchase_line.amount_commit)
+
+            # Get all positive lines in the same order (computed once per purchase_line)
+            available_lines = purchase_line.order_id.order_line.filtered(
+                lambda line: line.price_subtotal > 0.0 and line.amount_commit > 0.0
+            )
+
             # Check amount commit each line
             for line in available_lines:
                 if amount_commit > 0 and line.amount_commit > 0:
@@ -112,7 +117,7 @@ class PurchaseOrderLine(models.Model):
             self[self._budget_analytic_field].get(str(analytic_id)) or 100
         )
         budget_vals["amount_currency"] = (
-            self.price_unit * product_qty * percent_analytic / 100
+            self.price_unit * product_qty * (percent_analytic / 100)
         )
         budget_vals["tax_ids"] = self.taxes_id.ids
         # Document specific vals

@@ -1,10 +1,17 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from . import account_budget_move
-from . import purchase_budget_move
+# Master Data
 from . import budget_period
-from . import purchase
-from . import account_move
-from . import account_move_line
+
+# Operation Data
 from . import budget_control
 from . import budget_commit_forward
+
+# Account Module
+from . import account_budget_move
+from . import account_move
+from . import account_move_line
+
+# Purchase Module
+from . import purchase_budget_move
+from . import purchase
