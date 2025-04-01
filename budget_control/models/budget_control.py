@@ -67,21 +67,16 @@ class BudgetControl(models.Model):
         help="If checked, the newly created budget control sheet will has "
         "initial budget equal to current budget commitment of its year.",
     )
-    company_id = fields.Many2one(
+    company_ids = fields.Many2many(
         comodel_name="res.company",
-        default=lambda self: self.env.company,
-        required=True,
+        related="analytic_account_id.budget_company_ids",
+        relation="budget_control_company_rel",
+        column1="budget_control_id",
+        column2="company_id",
+        store=True,
+        string="Companies",
+        tracking=True,
     )
-    # company_ids = fields.Many2many(
-    #     comodel_name="res.company",
-    #     related="analytic_account_id.budget_company_ids",
-    #     relation="budget_control_company_rel",
-    #     column1="budget_control_id",
-    #     column2="company_id",
-    #     store=True,
-    #     string="Companies",
-    #     tracking=True,
-    # )
     currency_id = fields.Many2one(
         comodel_name="res.currency",
         required=True,
@@ -293,6 +288,9 @@ class BudgetControl(models.Model):
         return self.env.context.copy()
 
     def _get_query_dataset_all(self):
+        # Refresh data up to date
+        self.env.flush_all()
+
         BudgetPeriod = self.env["budget.period"]
         MonitorReport = self.env["budget.monitor.report"]
         ctx = self._get_context_monitoring()
@@ -306,6 +304,7 @@ class BudgetControl(models.Model):
         )
         return query, dataset_all
 
+    @api.depends("line_ids.amount")
     def _compute_budget_info(self):
         BudgetPeriod = self.env["budget.period"]
         query, dataset_all = self._get_query_dataset_all()

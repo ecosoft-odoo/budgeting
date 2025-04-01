@@ -183,7 +183,9 @@ class BudgetDoclineMixin(models.AbstractModel):
         # Check analytic from distribution it send data with JSON type 'dict'
         # and we need convert it to analytic object
         if self._budget_analytic_field == "analytic_distribution":
-            account_analytic_ids = [int(k) for k in analytics.keys()]
+            account_analytic_ids = [
+                int(v) for k in analytics.keys() for v in k.split(",")
+            ]
             analytics = Analytic.browse(account_analytic_ids)
         return analytics
 
@@ -218,8 +220,9 @@ class BudgetDoclineMixin(models.AbstractModel):
         - Calc amount_commit from all budget_move_ids
         - Calc date_commit if not exists and on 1st budget_move_ids only or False
         """
+        analytic_field = self._budget_analytic_field
         for rec in self:
-            analytic_distribution = rec[self._budget_analytic_field]
+            analytic_distribution = rec[analytic_field]
             # Add analytic_distribution from forward_commit
             if rec.fwd_analytic_distribution:
                 for analytic_id, aa_percent in rec.fwd_analytic_distribution.items():
@@ -229,15 +232,26 @@ class BudgetDoclineMixin(models.AbstractModel):
                 continue
             # Compute amount commit each analytic
             amount_commit_json = {}
-            for analytic_id in analytic_distribution:  # Get id only
-                budget_move = rec.budget_move_ids.filtered(
+            analytic_ids = {
+                int(aa)
+                for analytic in analytic_distribution
+                for aa in analytic.split(",")
+            }
+            budget_moves = rec.budget_move_ids.filtered(
+                lambda move, analytic_ids=analytic_ids: move.analytic_account_id.id
+                in analytic_ids
+            )
+
+            for analytic_id in analytic_ids:
+                filtered_moves = budget_moves.filtered(
                     lambda move, analytic_id=analytic_id: move.analytic_account_id.id
-                    == int(analytic_id)
+                    == analytic_id
                 )
-                debit = sum(budget_move.mapped("debit"))
-                credit = sum(budget_move.mapped("credit"))
-                amount_commit_json[analytic_id] = debit - credit
+                amount_commit_json[str(analytic_id)] = sum(
+                    filtered_moves.mapped("debit")
+                ) - sum(filtered_moves.mapped("credit"))
             rec.amount_commit = amount_commit_json
+
             # Compute date commit
             if rec.budget_move_ids:
                 rec.date_commit = min(rec.budget_move_ids.mapped("date"))
@@ -336,7 +350,8 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     def _update_budget_commitment(self, budget_vals, analytic, reverse=False):
         self.ensure_one()
-        company = self.env.user.company_id
+        # Document company
+        document_company = self[self._doc_rel].company_id
         account = self.account_id
         budget_moves = self[self._budget_field()]
         date_commit = budget_vals.get(
@@ -349,10 +364,13 @@ class BudgetDoclineMixin(models.AbstractModel):
         if (
             not self.env.context.get("use_amount_commit")
             and currency
-            and currency != company.currency_id
+            and currency != document_company.currency_id
         ):
             amount = self._get_amount_convert_currency(
-                budget_vals["amount_currency"], currency, company, date_commit or today
+                budget_vals["amount_currency"],
+                currency,
+                document_company,
+                date_commit or today,
             )
         # NOTE: This is to handle the case of budget revenue.
         if (
@@ -372,7 +390,7 @@ class BudgetDoclineMixin(models.AbstractModel):
             "amount_currency": budget_vals["amount_currency"],
             "debit": not reverse and amount or 0,
             "credit": reverse and amount or 0,
-            "company_id": company.id,
+            "company_id": document_company.id,
         }
         if sum([res["debit"], res["credit"]]) < 0:
             res["debit"], res["credit"] = abs(res["credit"]), abs(res["debit"])

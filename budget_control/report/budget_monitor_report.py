@@ -54,6 +54,7 @@ class BudgetMonitorReport(models.Model):
         ],
     )
     fwd_commit = fields.Boolean()
+    companies = fields.Char()
     active = fields.Boolean()
 
     @property
@@ -147,6 +148,7 @@ class BudgetMonitorReport(models.Model):
                 a.source_document as source_document,
                 null::char as budget_state,
                 a.fwd_commit,
+                c.name::text AS companies,
                 1::boolean as active
                 """
             }
@@ -162,6 +164,7 @@ class BudgetMonitorReport(models.Model):
             sql_from[amount_type] = f"""
                 FROM {budget_table} a
                 LEFT OUTER JOIN {doc_table} b ON a.{doc_field} = b.id
+                LEFT OUTER JOIN res_company c ON b.company_id = c.id
             """
         return sql_from
 
@@ -182,6 +185,7 @@ class BudgetMonitorReport(models.Model):
             null::char as source_document,
             b.state as budget_state,
             0::boolean as fwd_commit,
+            string_agg(d.name::text, ', ') AS companies,
             a.active as active
         """
         }
@@ -192,7 +196,14 @@ class BudgetMonitorReport(models.Model):
             """
             FROM budget_control_line a
             INNER JOIN budget_control b ON a.budget_control_id = b.id
+            LEFT JOIN budget_control_company_rel c
+                ON b.id = c.budget_control_id
+            LEFT JOIN res_company d ON d.id = c.company_id
             WHERE b.active = TRUE
+            GROUP BY
+                a.id, a.kpi_id, a.analytic_account_id,
+                b.analytic_plan, a.date_to, a.amount,
+                b.name, b.state, a.active
             """,
         )
 

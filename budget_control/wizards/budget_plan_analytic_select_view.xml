@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2020 Ecosoft - (http://ecosoft.co.th)
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="view_budget_plan_analytic_select_form" model="ir.ui.view">
+        <field name="name">budget.plan.analytic.select.form</field>
+        <field name="model">budget.plan.analytic.select</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <p>
+                        This wizard will update plan allocation.
+                    </p>
+                    <group>
+                        <field
+                            name="company_ids"
+                            widget="many2many_tags"
+                            readonly="1"
+                            groups="base.group_multi_company"
+                        />
+                    </group>
+                    <notebook>
+                        <page name="analytic_account" string="Analytic Account">
+                            <field
+                                name="analytic_account_ids"
+                                domain="['|', ('budget_company_ids','in', company_ids), ('budget_company_ids', '=', False)] if company_ids else []"
+                            />
+                        </page>
+                    </notebook>
+                </sheet>
+                <footer>
+                    <button
+                        name="action_add"
+                        string="Add"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Discard" class="btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

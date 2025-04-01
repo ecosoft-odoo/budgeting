@@ -106,6 +106,12 @@
                         name="group_by_date"
                         context="{'group_by':'date'}"
                     />
+                    <separator orientation="company_groupby" />
+                    <filter
+                        string="Company"
+                        name="group_by_company"
+                        context="{'group_by':'companies'}"
+                    />
                 </group>
             </search>
         </field>
