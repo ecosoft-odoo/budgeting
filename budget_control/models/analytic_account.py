@@ -44,6 +44,14 @@ class AccountAnalyticAccount(models.Model):
         "is setup, but the budget system set date_commit out of this date range "
         "it it can be adjusted automatically.",
     )
+    budget_company_ids = fields.Many2many(
+        comodel_name="res.company",
+        compute="_compute_budget_company",
+        store=True,
+        readonly=False,
+        string="Allowed Budget Companies",
+        help="Companies that this analytic account is allowed to use",
+    )
     amount_budget = fields.Monetary(
         string="Budgeted",
         compute="_compute_amount_budget_info",
@@ -89,6 +97,28 @@ class AccountAnalyticAccount(models.Model):
         for rec in self:
             rec.bm_date_from = rec.budget_period_id.bm_date_from
             rec.bm_date_to = rec.budget_period_id.bm_date_to
+
+    @api.depends("company_id")
+    def _compute_budget_company(self):
+        for rec in self:
+            rec.budget_company_ids = rec.company_id
+
+    @api.constrains("company_id", "budget_company_ids")
+    def _check_budget_company(self):
+        """
+        If analytic account is in company,
+        then it must be in Allowed Budget Companies only
+        """
+        for rec in self:
+            if not rec.company_id:
+                continue
+
+            if rec.company_id and rec.company_id != rec.budget_company_ids:
+                raise UserError(
+                    self.env._(
+                        "Analytic Account Company must be in Allowed Budget Companies"
+                    )
+                )
 
     def _filter_by_analytic_account(self, val):
         if val["analytic_account_id"][0] == self.id:

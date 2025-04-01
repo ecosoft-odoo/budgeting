@@ -52,6 +52,16 @@
                 <field name="bm_date_to" />
                 <field name="budget_control_ids" widget="many2many_tags" />
             </xpath>
+            <xpath
+                expr="//group[@name='main']//field[@name='company_id']"
+                position="after"
+            >
+                <field
+                    name="budget_company_ids"
+                    widget="many2many_tags"
+                    groups="base.group_multi_company"
+                />
+            </xpath>
             <xpath expr="//group[@name='main']/group[2]" position="inside">
                 <field name="auto_adjust_date_commit" />
                 <label for="initial_available" />
@@ -88,6 +98,12 @@
                 <field name="active" invisible="1" />
                 <field
                     name="company_id"
+                    groups="base.group_multi_company"
+                    optional="show"
+                />
+                <field
+                    name="budget_company_ids"
+                    widget="many2many_tags"
                     groups="base.group_multi_company"
                     optional="show"
                 />

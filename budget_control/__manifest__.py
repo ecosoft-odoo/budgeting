@@ -14,9 +14,12 @@
         "web_widget_x2many_2d_matrix",
     ],
     "data": [
+        "security/analytic_security.xml",
         "security/budget_adjustment_rules.xml",
         "security/budget_control_security_groups.xml",
         "security/budget_control_rules.xml",
+        "security/budget_plan_rules.xml",
+        "security/budget_transfer_rules.xml",
         "security/ir.model.access.csv",
         "data/budget_data.xml",
         "data/sequence_data.xml",
@@ -26,6 +29,7 @@
         "wizards/confirm_state_budget_view.xml",
         "wizards/budget_commit_forward_info_view.xml",
         "wizards/budget_balance_forward_info_view.xml",
+        "wizards/budget_plan_analytic_select_view.xml",
         # Budget
         "views/budget_menuitem.xml",
         "views/res_config_settings_views.xml",

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <function model="ir.rule" name="write">
+        <value eval="[ref('analytic.analytic_comp_rule')]" />
+        <value
+            eval="{'domain_force': &quot;['|', ('budget_company_ids', 'in', company_ids), ('budget_company_ids', '=', False)]&quot;}"
+        />
+    </function>
+</odoo>

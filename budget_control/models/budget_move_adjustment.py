@@ -114,6 +114,7 @@ class BudgetMoveAdjustmentItem(models.Model):
     _name = "budget.move.adjustment.item"
     _inherit = ["analytic.mixin", "budget.docline.mixin"]
     _description = "Budget Moves Adjustment Lines"
+    _check_company_auto = True
     _budget_date_commit_fields = ["adjust_id.date_commit"]
     _budget_move_model = "account.budget.move"
     _budget_analytic_field = "analytic_distribution"
@@ -142,10 +143,12 @@ class BudgetMoveAdjustmentItem(models.Model):
     )
     product_id = fields.Many2one(
         comodel_name="product.product",
+        check_company=True,
     )
     account_id = fields.Many2one(
         comodel_name="account.account",
         required=True,
+        check_company=True,
         index=True,
     )
     company_id = fields.Many2one(

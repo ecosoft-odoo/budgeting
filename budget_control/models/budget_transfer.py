@@ -27,6 +27,17 @@ class BudgetTransfer(models.Model):
         inverse_name="transfer_id",
         copy=True,
     )
+    company_ids = fields.Many2many(
+        comodel_name="res.company",
+        relation="budget_transfer_company_rel",
+        column1="budget_transfer_id",
+        column2="company_id",
+        compute="_compute_company_ids",
+        store=True,
+        string="Companies",
+        tracking=True,
+    )
+
     state = fields.Selection(
         [
             ("draft", "Draft"),
@@ -39,6 +50,13 @@ class BudgetTransfer(models.Model):
         default="draft",
         tracking=True,
     )
+
+    @api.depends("transfer_item_ids")
+    def _compute_company_ids(self):
+        for rec in self:
+            bc_from = rec.transfer_item_ids.mapped("budget_control_from_id")
+            bc_to = rec.transfer_item_ids.mapped("budget_control_to_id")
+            rec.company_ids = (bc_from + bc_to).company_ids
 
     @api.model_create_multi
     def create(self, vals_list):

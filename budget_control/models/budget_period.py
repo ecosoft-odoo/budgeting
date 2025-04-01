@@ -1,8 +1,6 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-# from psycopg2 import sql
-
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import SQL, float_compare, format_amount
@@ -158,7 +156,9 @@ class BudgetPeriod(models.Model):
                             "Please check again."
                         )
                     )
-                all_analytic_ids.update(int(key) for key in data_dict.keys())
+                all_analytic_ids.update(
+                    int(aa) for key in data_dict.keys() for aa in key.split(",")
+                )
         else:
             all_analytic_ids = all_analytics
         # Check budget by group analytic. For case many budget periods in one document.
@@ -398,6 +398,7 @@ class BudgetPeriod(models.Model):
         return self.env["budget.monitor.report"]
 
     def _get_budget_avaiable(self, analytic_id, template_lines):
+        self.env.flush_all()
         self.env.cr.execute(
             SQL(
                 f"""
@@ -439,7 +440,10 @@ class BudgetPeriod(models.Model):
                 control_level=budget_period.control_level
             )._get_budget_avaiable(analytic_id, template_lines)
             # Check kpi not valid for budgeting when control level analytic & kpi
-            if budget_period.control_level == "analytic_kpi" and not query_data:
+            data_budget = any(
+                query["amount_type"] == "10_budget" for query in query_data
+            )
+            if budget_period.control_level == "analytic_kpi" and not data_budget:
                 raise UserError(
                     _("Chosen KPI %s is not valid for budgeting")
                     % template_lines.display_name

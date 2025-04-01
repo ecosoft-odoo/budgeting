@@ -47,6 +47,12 @@
                 <field name="amount_consumed" optional="show" />
                 <field name="amount_balance" optional="show" />
                 <field
+                    name="company_ids"
+                    optional="show"
+                    groups="base.group_multi_company"
+                    widget="many2many_tags"
+                />
+                <field
                     name="state"
                     widget='badge'
                     decoration-success="state == 'done'"
@@ -96,6 +102,13 @@
                         name="analytic_plan"
                         string="Analytic Plan"
                         context="{'group_by': 'analytic_plan'}"
+                    />
+                    <separator />
+                    <filter
+                        string="Company"
+                        name="groupby_company"
+                        context="{'group_by': 'company_ids'}"
+                        groups="base.group_multi_company"
                     />
                 </group>
             </search>
@@ -211,7 +224,8 @@
                             />
                             <field name="template_id" />
                             <field
-                                name="company_id"
+                                name="company_ids"
+                                widget="many2many_tags"
                                 groups="base.group_multi_company"
                             />
                             <field

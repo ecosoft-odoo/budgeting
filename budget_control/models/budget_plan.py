@@ -1,3 +1,7 @@
+# Copyright 2025 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
+
 from odoo import Command, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import float_compare
@@ -29,13 +33,17 @@ class BudgetPlan(models.Model):
         help="Count budget control in Plan",
     )
     total_amount = fields.Monetary(compute="_compute_total_amount")
-    company_id = fields.Many2one(
+    company_ids = fields.Many2many(
         comodel_name="res.company",
-        default=lambda self: self.env.user.company_id,
-        required=False,
+        relation="budget_plan_company_rel",
+        column1="budget_plan_id",
+        column2="company_id",
+        string="Companies",
+        default=lambda self: self.env.context.get("allowed_company_ids"),
+        tracking=True,
     )
     currency_id = fields.Many2one(
-        comodel_name="res.currency", related="company_id.currency_id"
+        comodel_name="res.currency", compute="_compute_currency_id"
     )
     line_ids = fields.One2many(
         comodel_name="budget.plan.line",
@@ -51,9 +59,24 @@ class BudgetPlan(models.Model):
             ("done", "Done"),
             ("cancel", "Cancelled"),
         ],
+        string="Status",
         default="draft",
         tracking=True,
     )
+
+    @api.depends("company_ids")
+    def _compute_currency_id(self):
+        for rec in self:
+            currencies = rec.company_ids.mapped(
+                "currency_id"
+            )  # Get all currencies from companies
+            unique_currencies = set(currencies.ids)  # Get unique currency IDs
+            if len(unique_currencies) > 1:
+                raise UserError(
+                    self.env._("Selected companies have different currencies!")
+                )
+
+            rec.currency_id = next(iter(currencies), self.env.company.currency_id)
 
     @api.depends("line_ids")
     def _compute_total_amount(self):
@@ -235,6 +258,22 @@ class BudgetPlan(models.Model):
                 )
             rec.write({"line_ids": lines})
 
+    def _get_context_plan_analytic(self):
+        ctx = self.env.context.copy()
+        ctx["default_company_ids"] = self.company_ids.ids
+        return ctx
+
+    def action_get_all_analytic_accounts(self):
+        ctx = self._get_context_plan_analytic()
+        return {
+            "name": self.env._("Analytic Account"),
+            "type": "ir.actions.act_window",
+            "res_model": "budget.plan.analytic.select",
+            "view_mode": "form",
+            "target": "new",
+            "context": ctx,
+        }
+
     def action_confirm(self):
         # Update amount consumed and released
         self.action_update_amount_consumed()
@@ -257,6 +296,7 @@ class BudgetPlan(models.Model):
 class BudgetPlanLine(models.Model):
     _name = "budget.plan.line"
     _description = "Budget Plan Line"
+    _check_company_auto = True
 
     plan_id = fields.Many2one(
         comodel_name="budget.plan",
@@ -282,8 +322,8 @@ class BudgetPlanLine(models.Model):
     released_amount = fields.Monetary(string="Released")
     amount = fields.Monetary(string="New Amount")
     amount_consumed = fields.Monetary(string="Consumed")
-    company_id = fields.Many2one(
-        comodel_name="res.company", related="plan_id.company_id"
+    company_ids = fields.Many2many(
+        comodel_name="res.company", related="analytic_account_id.budget_company_ids"
     )
     currency_id = fields.Many2one(
         comodel_name="res.currency", related="plan_id.currency_id"
@@ -296,3 +336,32 @@ class BudgetPlanLine(models.Model):
     def _compute_budget_control_ids(self):
         for rec in self.sudo():
             rec.budget_control_ids = rec.analytic_account_id.budget_control_ids
+
+    @api.constrains("analytic_account_id")
+    def _check_duplicate_analytic_account(self):
+        if not self:
+            return
+
+        PlanLine = self.env["budget.plan.line"]
+        analytic_ids = self.mapped("analytic_account_id.id")
+
+        # Group by analytic_account_id and count occurrences
+        duplicates = PlanLine.read_group(
+            [
+                ("analytic_account_id", "in", analytic_ids),
+                ("plan_id", "=", self.plan_id.id),
+            ],
+            ["analytic_account_id"],
+            ["analytic_account_id"],
+        )
+
+        # Check for duplicates
+        duplicate_analytics = {
+            dup["analytic_account_id"][1]
+            for dup in duplicates
+            if dup["analytic_account_id_count"] > 1
+        }
+        if duplicate_analytics:
+            raise UserError(
+                self.env._(f"Duplicate analytic account found: {duplicate_analytics}")
+            )

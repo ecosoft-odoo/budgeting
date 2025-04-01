@@ -42,10 +42,12 @@ class BudgetTransferItem(models.Model):
     state_from = fields.Selection(
         related="budget_control_from_id.state",
         store=True,
+        string="Status (From)",
     )
     state_to = fields.Selection(
         related="budget_control_to_id.state",
         store=True,
+        string="Status (To)",
     )
     amount = fields.Float(
         string="Transfer Amount",

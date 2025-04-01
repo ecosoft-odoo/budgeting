@@ -46,7 +46,15 @@ class AccountMoveLine(models.Model):
             sign = -1 if self.is_refund else 1
             discount = (100 - self.discount) / 100 if self.discount else 1
             total_amount = sign * self.price_unit * self.quantity * discount
-        percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
+
+        percent_analytic = sum(
+            v / len(keys_list)
+            for k, v in self[self._budget_analytic_field].items()
+            if (keys_list := [x.strip() for x in k.split(",")])
+            and str(analytic_id) in keys_list
+        )
+
+        # percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
         budget_vals["amount_currency"] = total_amount * (percent_analytic / 100)
         budget_vals["tax_ids"] = self.tax_ids.ids
         # Document specific vals

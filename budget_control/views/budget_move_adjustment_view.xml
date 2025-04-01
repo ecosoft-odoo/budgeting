@@ -131,6 +131,7 @@
                                         groups="budget_control.group_budget_control_user"
                                     />
                                     <field name="amount" />
+                                    <field name="company_id" column_invisible="1" />
                                     <field name="currency_id" optional="hide" />
                                     <field name="amount_commit" optional="hide" />
                                     <field name="date_commit" optional="hide" />

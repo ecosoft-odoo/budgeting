@@ -5,10 +5,13 @@
         <field name="model">budget.plan.line</field>
         <field name="arch" type="xml">
             <list editable="bottom">
-                <field name="budget_period_id" optional="hide" />
+                <field name="budget_period_id" column_invisible="1" />
                 <field name="date_from" column_invisible="1" />
                 <field name="date_to" column_invisible="1" />
-                <field name="analytic_account_id" />
+                <field
+                    name="analytic_account_id"
+                    domain="['|', ('budget_company_ids','in', parent.company_ids), ('budget_company_ids', '=', False)] if parent.company_ids else []"
+                />
                 <field
                     name="budget_control_ids"
                     widget="many2many_tags"
@@ -18,7 +21,7 @@
                 <field name="released_amount" sum="Total Released" readonly="1" />
                 <field name="amount" sum="Total Amount" />
                 <field name="amount_consumed" sum="Total Consumed" readonly="1" />
-                <field name="company_id" column_invisible="1" />
+                <field name="company_ids" column_invisible="1" />
                 <field name="currency_id" column_invisible="1" />
                 <field name="active_status" optional="show" widget="boolean_toggle" />
             </list>
@@ -41,7 +44,8 @@
                         <field name="amount" readonly="1" />
                         <field name="amount_consumed" readonly="1" />
                         <field
-                            name="company_id"
+                            name="company_ids"
+                            widget="many2many_tags"
                             groups="base.group_multi_company"
                             readonly="1"
                         />
@@ -108,6 +112,11 @@
                 <field name="budget_period_id" />
                 <field name="total_amount" />
                 <field name="currency_id" optional="hide" />
+                <field
+                    name="company_ids"
+                    widget="many2many_tags"
+                    groups="base.group_multi_company"
+                />
                 <field
                     name="state"
                     widget="badge"
@@ -204,7 +213,8 @@
                         <group name="budget_plan_right">
                             <field name="active" invisible="1" />
                             <field
-                                name="company_id"
+                                name="company_ids"
+                                widget="many2many_tags"
                                 readonly="state != 'draft'"
                                 groups="base.group_multi_company"
                             />
@@ -219,6 +229,13 @@
                         <page name="line_ids" string="Plan Allocation">
                             <div class="d-flex justify-content-end" name="buttons">
                                 <button
+                                    name="action_get_all_analytic_accounts"
+                                    string="Get All Analytic Accounts"
+                                    type="object"
+                                    invisible="state != 'draft'"
+                                    title="Get all analytic accounts"
+                                />
+                                <button
                                     name="action_update_plan"
                                     string="Refresh"
                                     icon="fa-refresh"
@@ -226,13 +243,6 @@
                                     invisible="state not in ['draft', 'confirm', 'done']"
                                     title="Refresh released and consumed amount"
                                 />
-                                <!-- <button
-                                    name="action_get_all_analytic_accounts"
-                                    string="Get All Analytic Accounts"
-                                    type="object"
-                                    invisible="state != 'draft'"
-                                    title="Get all analytic accounts"
-                                /> -->
                             </div>
                             <field name="line_ids" readonly="state != 'draft'" />
                         </page>
