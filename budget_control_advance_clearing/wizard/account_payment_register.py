@@ -7,21 +7,13 @@ from odoo import models
 class AccountPaymentRegister(models.TransientModel):
     _inherit = "account.payment.register"
 
-    def expense_post_return_advance(self):
-        """Recompute advance budget"""
-        res = super().expense_post_return_advance()
-        reconciles = res.get("partials")
-        if not reconciles:
-            return res
-        # Return advance (debit side)
-        for reconcile in reconciles:
-            advance = reconcile.debit_move_id.expense_id
-            # make sure that return advance return budget is correct
-            advance.sheet_id.recompute_budget_move()
-        return res
+    def _create_payments(self):
+        """Recompute advance budget, after payment reconciled"""
+        payments = super()._create_payments()
 
-    def _create_payment_return_advance(self, ctx, advance_account):
-        """Make sure that move in payment must not affect budget"""
-        payment = super()._create_payment_return_advance(ctx, advance_account)
-        payment.move_id.write({"not_affect_budget": True})
-        return payment
+        for payment in payments.filtered(lambda pay: pay.advance_id):
+            ml_credit = payment.move_id.line_ids.filtered(lambda line: line.credit)
+            advance_sheet = ml_credit.expense_id.sheet_id
+            advance_sheet.recompute_budget_move()
+
+        return payments

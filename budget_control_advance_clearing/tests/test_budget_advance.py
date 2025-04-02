@@ -1,13 +1,11 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-
 from freezegun import freeze_time
 
-from odoo import fields
+from odoo import Command, fields
 from odoo.exceptions import UserError
-from odoo.tests import tagged
-from odoo.tests.common import Form
+from odoo.tests import Form, tagged
 
 from odoo.addons.budget_control.tests.common import BudgetControlCommon
 
@@ -28,32 +26,47 @@ class TestBudgetControlAdvance(BudgetControlCommon):
             }
         )
 
-        # Create sample ready to use Budget Control
-        cls.budget_control = cls.BudgetControl.create(
-            {
-                "name": "CostCenter1/%s" % cls.year,
-                "template_id": cls.budget_period.template_id.id,
-                "budget_period_id": cls.budget_period.id,
-                "analytic_account_id": cls.costcenter1.id,
-                "plan_date_range_type_id": cls.date_range_type.id,
-                "template_line_ids": [
-                    cls.template_line1.id,
-                    cls.template_line2.id,
-                    cls.template_line3.id,
-                    cls.template_lineAV.id,
-                ],
-            }
+        # Create budget plan with 1 analytic
+        lines = [
+            Command.create(
+                {"analytic_account_id": cls.costcenter1.id, "amount": 2400.0}
+            )
+        ]
+        cls.budget_plan = cls.create_budget_plan(
+            cls,
+            name="Test - Plan {cls.budget_period.name}",
+            budget_period=cls.budget_period,
+            lines=lines,
         )
+        cls.budget_plan.action_confirm()
+        cls.budget_plan.action_create_update_budget_control()
+        cls.budget_plan.action_done()
+
+        # Refresh data
+        cls.budget_plan.invalidate_recordset()
+
+        cls.budget_control = cls.budget_plan.budget_control_ids
+        cls.budget_control.template_line_ids = [
+            cls.template_line1.id,
+            cls.template_line2.id,
+            cls.template_line3.id,
+            cls.template_lineAV.id,
+        ]
+
         # Test item created for 4 kpi x 4 quarters = 16 budget items
         cls.budget_control.prepare_budget_control_matrix()
         assert len(cls.budget_control.line_ids) == 16
-        # Assign budget.control amount: KPI1 = 100, KPI2=800, Total=300
-        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi1)[:1].write(
+        # Assign budget.control amount: KPI1 = 100x4=400, KPI2=800, KPI3=1,200
+        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi1).write(
             {"amount": 100}
         )
-        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2)[:1].write(
+        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2).write(
             {"amount": 200}
         )
+        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi3).write(
+            {"amount": 300}
+        )
+
         # Set advance account
         product = cls.env.ref("hr_expense_advance_clearing.product_emp_advance")
         product.property_account_expense_id = cls.account_kpiAV
@@ -65,7 +78,7 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         user = self.env.ref("base.user_admin")
         with Form(Expense.with_context(default_advance=True), view=view_id) as ex:
             ex.employee_id = user.employee_id
-            ex.total_amount = amount
+            ex.total_amount_currency = amount
             ex.analytic_distribution = analytic_distribution
         advance = ex.save()
         expense_sheet = self.env["hr.expense.sheet"].create(
@@ -88,7 +101,9 @@ class TestBudgetControlAdvance(BudgetControlCommon):
             with Form(Expense, view=view_id) as ex:
                 ex.employee_id = user.employee_id
                 ex.product_id = ex_line["product_id"]
-                ex.total_amount = ex_line["price_unit"] * ex_line["product_qty"]
+                ex.total_amount_currency = (
+                    ex_line["price_unit"] * ex_line["product_qty"]
+                )
                 ex.analytic_distribution = ex_line["analytic_distribution"]
             expense = ex.save()
             expense.tax_ids = False  # Test no vat
@@ -110,12 +125,10 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         - Budget will be committed into advance.budget.move
         - No actual on JE
         """
-        # Allocate and Done
-        self.budget_control.allocated_amount = 300
+        # Controlled budget
+        self.budget_control.action_submit()
         self.budget_control.action_done()
-
-        # KPI1 = 100, KPI2 = 200, Total = 300
-        self.assertEqual(300, self.budget_control.amount_budget)
+        self.assertAlmostEqual(self.budget_control.amount_budget, 2400.0)
 
         analytic_distribution = {str(self.costcenter1.id): 100}
         # Create advance = 100
@@ -128,35 +141,38 @@ class TestBudgetControlAdvance(BudgetControlCommon):
             force_date_commit=advance.expense_line_ids[:1].date
         )
         advance.action_submit_sheet()  # No budget check no error
+
         # (2) Check Budget with analytic_kpi -> Error
-        advance.reset_expense_sheets()
+        advance.action_reset_expense_sheets()
         self.budget_period.control_budget = True  # Set to check budget
         # kpi 1 (kpi1) & CostCenter1, will result in $ -1.00
-        with self.assertRaises(UserError):
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
             advance.action_submit_sheet()
+
         # (3) Check Budget with analytic -> OK
         self.budget_period.control_level = "analytic"
         advance.action_submit_sheet()
-        advance.approve_expense_sheets()
-        self.assertEqual(self.budget_control.amount_advance, 100)
-        self.assertEqual(self.budget_control.amount_balance, 200)
+        advance.action_approve_expense_sheets()
+        self.assertAlmostEqual(self.budget_control.amount_advance, 100.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
         # Post journal entry
-        advance.action_sheet_move_create()
-        move = advance.account_move_id
+        advance.action_sheet_move_post()
+        move = advance.account_move_ids
         self.assertEqual(move.state, "posted")
         self.assertTrue(move.not_affect_budget)
         self.assertFalse(move.budget_move_ids)
-        self.assertEqual(self.budget_control.amount_advance, 100)
-        self.assertEqual(self.budget_control.amount_actual, 0)
-        self.assertEqual(self.budget_control.amount_balance, 200)
+        self.assertAlmostEqual(self.budget_control.amount_advance, 100.0)
+        self.assertAlmostEqual(self.budget_control.amount_actual, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
         # Reset
-        advance.reset_expense_sheets()
-        self.assertEqual(self.budget_control.amount_advance, 0)
-        self.assertEqual(self.budget_control.amount_balance, 300)
+        advance.action_reset_expense_sheets()
+        self.assertAlmostEqual(self.budget_control.amount_advance, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2400.0)
+
         # (4) Amount exceed -> Error
-        advance.expense_line_ids.write({"total_amount": 301})
+        advance.expense_line_ids.write({"total_amount": 2401})
         # CostCenter1, will result in $ -1.00
-        with self.assertRaises(UserError):
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
             advance.action_submit_sheet()
 
     @freeze_time("2001-02-01")
@@ -165,12 +181,11 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         - Clearing 80, the uncommit advance should be 20
         - Clearing 120, the uncommit advance should be 100 (max)
         """
-        # Allocate and Done
-        self.budget_control.allocated_amount = 300
+        # Controlled budget
+        self.budget_control.action_submit()
         self.budget_control.action_done()
+        self.assertAlmostEqual(self.budget_control.amount_budget, 2400.0)
 
-        # KPI1 = 100, KPI2 = 200, Total = 300
-        self.assertEqual(300, self.budget_control.amount_budget)
         analytic_distribution = {str(self.costcenter1.id): 100}
         # Create advance = 100
         advance = self._create_advance_sheet(100, analytic_distribution)
@@ -180,14 +195,12 @@ class TestBudgetControlAdvance(BudgetControlCommon):
             force_date_commit=advance.expense_line_ids[:1].date
         )
         advance.action_submit_sheet()
-        advance.approve_expense_sheets()
-        advance.action_sheet_move_create()
-        # Update budget info
-        self.budget_control._compute_budget_info()
-        # Advance 100, Clearing = 0, Balance = 200
-        self.assertEqual(self.budget_control.amount_advance, 100)
-        self.assertEqual(self.budget_control.amount_expense, 0)
-        self.assertEqual(self.budget_control.amount_balance, 200)
+        advance.action_approve_expense_sheets()
+        advance.action_sheet_move_post()
+        # Advance 100, Clearing = 0, Balance = 2300
+        self.assertAlmostEqual(self.budget_control.amount_advance, 100.0)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
         # Create Total Clearing = 80 to this advance
         clearing = self._create_clearing_sheet(
             advance,
@@ -210,30 +223,48 @@ class TestBudgetControlAdvance(BudgetControlCommon):
             force_date_commit=clearing.expense_line_ids[:1].date
         )
         clearing.action_submit_sheet()
-        clearing.approve_expense_sheets()
-        # Advance 20, Clearing = 80, Balance = 200
-        self.assertEqual(self.budget_control.amount_advance, 20)
-        self.assertEqual(self.budget_control.amount_expense, 80)
-        self.assertEqual(self.budget_control.amount_balance, 200)
+        clearing.action_approve_expense_sheets()
+        # Advance 20, Clearing = 80, Balance = 2300
+        self.assertAlmostEqual(self.budget_control.amount_advance, 20.0)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 80.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
         # Refuse
-        clearing.refuse_sheet("Refuse it!")
-        self.assertEqual(self.budget_control.amount_advance, 100)
-        self.assertEqual(self.budget_control.amount_expense, 0)
-        self.assertEqual(self.budget_control.amount_balance, 200)
-        # Change line 1 amount from 80 to 290 (exceed), total is 290 + 20
-        clearing.expense_line_ids[:1].total_amount = 290
-        with self.assertRaises(UserError):
+        clearing._do_refuse("Refuse it!")
+        self.assertAlmostEqual(self.budget_control.amount_advance, 100.0)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
+        # Change line 1 amount from 60 to 2381 (exceed), total is 2381 + 20
+        clearing.expense_line_ids[:1].total_amount_currency = 2381
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
             clearing.action_submit_sheet()
+        clearing.action_reset_expense_sheets()
 
         # (5) Delete Clearing, Advance should be uncommitted
-        clearing.expense_line_ids[:1].total_amount = 50
+        clearing.expense_line_ids[:1].total_amount_currency = 50
         clearing.action_submit_sheet()
-        clearing.approve_expense_sheets()
-        self.assertEqual(
-            self.budget_control.amount_advance, 30
-        )  # total is 100 - (50 + 20)
+        clearing.action_approve_expense_sheets()
+        # advance 100 - (50 + 20)
+        self.assertAlmostEqual(self.budget_control.amount_advance, 30.0)
+        # clearing 50 + 20
+        self.assertAlmostEqual(self.budget_control.amount_expense, 70.0)
+        self.assertAlmostEqual(self.budget_control.amount_actual, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
+        # (5) Create move from expense
+        clearing.action_sheet_move_post()
+        self.assertAlmostEqual(self.budget_control.amount_advance, 30.0)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_actual, 70.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
+        clearing.account_move_ids.button_draft()
+        self.assertAlmostEqual(self.budget_control.amount_advance, 30.0)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 70.0)
+        self.assertAlmostEqual(self.budget_control.amount_actual, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
+        # (6) Delete Clearing, Advance should be uncommitted
         clearing.unlink()
-        self.assertEqual(self.budget_control.amount_advance, 100)
+        self.assertAlmostEqual(self.budget_control.amount_advance, 100)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
 
     @freeze_time("2001-02-01")
     def test_03_budget_recompute_and_close_budget_move(self):
@@ -242,12 +273,11 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         - Recompute both should be the same
         - Close budget both should be all zero
         """
-        # Allocate and Done
-        self.budget_control.allocated_amount = 300
+        # Controlled budget
+        self.budget_control.action_submit()
         self.budget_control.action_done()
+        self.assertAlmostEqual(self.budget_control.amount_budget, 2400.0)
 
-        # KPI1 = 100, KPI2 = 200, Total = 300
-        self.assertEqual(300, self.budget_control.amount_budget)
         analytic_distribution = {str(self.costcenter1.id): 100}
         # Create advance = 100
         advance = self._create_advance_sheet(100, analytic_distribution)
@@ -257,8 +287,8 @@ class TestBudgetControlAdvance(BudgetControlCommon):
             force_date_commit=advance.expense_line_ids[:1].date
         )
         advance.action_submit_sheet()
-        advance.approve_expense_sheets()
-        advance.action_sheet_move_create()
+        advance.action_approve_expense_sheets()
+        advance.action_sheet_move_post()
         # Create Clearing = 80 to this advance
         clearing = self._create_clearing_sheet(
             advance,
@@ -270,7 +300,7 @@ class TestBudgetControlAdvance(BudgetControlCommon):
                     "analytic_distribution": analytic_distribution,
                 },
                 {
-                    "product_id": self.product2,  # KPI2 = 80
+                    "product_id": self.product2,  # KPI2 = 60
                     "product_qty": 2,
                     "price_unit": 30,
                     "analytic_distribution": analytic_distribution,
@@ -281,28 +311,31 @@ class TestBudgetControlAdvance(BudgetControlCommon):
             force_date_commit=clearing.expense_line_ids[:1].date
         )
         clearing.action_submit_sheet()
-        clearing.approve_expense_sheets()
-        # Advance 20, Clearing = 80, Balance = 200
-        self.assertEqual(self.budget_control.amount_advance, 20)
-        self.assertEqual(self.budget_control.amount_expense, 80)
+        clearing.action_approve_expense_sheets()
+        # Advance 20, Clearing = 80, Balance = 2300
+        self.assertAlmostEqual(self.budget_control.amount_advance, 20.0)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 80.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
         # Recompute
         advance.recompute_budget_move()
         self.budget_control.invalidate_model()
-        self.assertEqual(self.budget_control.amount_advance, 20)
-        self.assertEqual(self.budget_control.amount_expense, 80)
+        self.assertAlmostEqual(self.budget_control.amount_advance, 20.0)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 80.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
         clearing.recompute_budget_move()
         self.budget_control.invalidate_model()
-        self.assertEqual(self.budget_control.amount_advance, 20)
-        self.assertEqual(self.budget_control.amount_expense, 80)
+        self.assertAlmostEqual(self.budget_control.amount_advance, 20.0)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 80.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
         # Close
         advance.close_budget_move()
         self.budget_control.invalidate_model()
-        self.assertEqual(self.budget_control.amount_advance, 0)
-        self.assertEqual(self.budget_control.amount_expense, 80)
+        self.assertAlmostEqual(self.budget_control.amount_advance, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 80.0)
         clearing.close_budget_move()
         self.budget_control.invalidate_model()
-        self.assertEqual(self.budget_control.amount_advance, 0)
-        self.assertEqual(self.budget_control.amount_expense, 0)
+        self.assertAlmostEqual(self.budget_control.amount_advance, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_expense, 0.0)
 
     @freeze_time("2001-02-01")
     def test_04_return_advance(self):
@@ -311,12 +344,11 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         - Return Advance 30
         - Balance should be 230
         """
-        # Allocate and Done
-        self.budget_control.allocated_amount = 300
+        # Controlled budget
+        self.budget_control.action_submit()
         self.budget_control.action_done()
+        self.assertAlmostEqual(self.budget_control.amount_budget, 2400.0)
 
-        # KPI1 = 100, KPI2 = 200, Total = 300
-        self.assertEqual(300, self.budget_control.amount_budget)
         analytic_distribution = {str(self.costcenter1.id): 100}
         # Create advance = 100
         advance = self._create_advance_sheet(100, analytic_distribution)
@@ -326,21 +358,21 @@ class TestBudgetControlAdvance(BudgetControlCommon):
             force_date_commit=advance.expense_line_ids[:1].date
         )
         advance.action_submit_sheet()
-        advance.approve_expense_sheets()
-        advance.action_sheet_move_create()
+        advance.action_approve_expense_sheets()
+        advance.action_sheet_move_post()
         # Make payment full amount = 100
         advance.action_register_payment()
         f = Form(
             self.env["account.payment.register"].with_context(
                 active_model="account.move",
-                active_ids=[advance.account_move_id.id],
+                active_ids=[advance.account_move_ids.id],
             )
         )
         wizard = f.save()
         wizard.action_create_payments()
-        self.assertEqual(advance.clearing_residual, 100)
-        self.assertEqual(self.budget_control.amount_advance, 100)
-        self.assertEqual(self.budget_control.amount_balance, 200)
+        self.assertAlmostEqual(advance.clearing_residual, 100.0)
+        self.assertAlmostEqual(self.budget_control.amount_advance, 100.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2300.0)
         # Return advance = 30
         advance.with_context(
             hr_return_advance=True,
@@ -348,7 +380,7 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         with Form(
             self.env["account.payment.register"].with_context(
                 active_model="account.move",
-                active_ids=[advance.account_move_id.id],
+                active_ids=[advance.account_move_ids.id],
                 hr_return_advance=True,
             )
         ) as f:
@@ -358,6 +390,6 @@ class TestBudgetControlAdvance(BudgetControlCommon):
         wizard.with_context(
             hr_return_advance=True,
         ).action_create_payments()
-        self.assertEqual(advance.clearing_residual, 70)
-        self.assertEqual(self.budget_control.amount_advance, 70)
-        self.assertEqual(self.budget_control.amount_balance, 230)
+        self.assertAlmostEqual(advance.clearing_residual, 70.0)
+        self.assertAlmostEqual(self.budget_control.amount_advance, 70.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2330.0)

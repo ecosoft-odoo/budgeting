@@ -11,9 +11,8 @@
         <field name="arch" type="xml">
             <!-- Bring back, as removed from hr_expense_advance_clearing -->
             <xpath expr="//field[@name='analytic_distribution']" position="attributes">
-                <attribute name="attrs">
-                    {'readonly': [('is_editable', '=', False)], 'invisible': False}
-                </attribute>
+                <attribute name="readonly">not is_editable</attribute>
+                <attribute name="invisible">False</attribute>
             </xpath>
         </field>
     </record>
@@ -27,9 +26,9 @@
                 <page
                     string="Advance Budget Commitment"
                     name="advance_budget_commit"
-                    attrs="{'invisible': [('advance_budget_move_ids', '=', [])]}"
+                    invisible="not advance_budget_move_ids"
                 >
-                    <div class="oe_right" name="buttons">
+                    <div class="d-flex justify-content-end" name="buttons">
                         <button
                             type="object"
                             name="recompute_budget_move"
@@ -46,19 +45,19 @@
                         />
                     </div>
                     <field name="advance_budget_move_ids" readonly="1">
-                        <tree>
+                        <list>
                             <field name="expense_id" optional="show" />
                             <field name="clearing_id" optional="show" />
                             <field name="move_id" />
                             <field name="date" />
-                            <field name="analytic_plan" optional="show" />
+                            <field name="analytic_plan" optional="hide" />
                             <field name="analytic_account_id" optional="show" />
-                            <field name="write_uid" optional="show" />
-                            <field name="write_date" optional="show" />
+                            <field name="write_uid" optional="hide" />
+                            <field name="write_date" optional="hide" />
                             <field name="note" optionl="hide" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </xpath>

@@ -11,9 +11,12 @@ class ExpenseBudgetMove(models.Model):
     def _compute_source_document(self):
         res = super()._compute_source_document()
         for rec in self.filtered("sheet_id.advance_sheet_id"):
+            if rec.source_document:
+                continue
+
             if hasattr(rec.sheet_id.advance_sheet_id, "number"):
                 display_name = rec.sheet_id.advance_sheet_id.number
             else:
                 display_name = rec.sheet_id.advance_sheet_id.display_name
-            rec.source_document = rec.source_document or display_name
+            rec.source_document = display_name
         return res

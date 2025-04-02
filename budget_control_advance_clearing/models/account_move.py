@@ -8,9 +8,10 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     def _recompute_budget_return_advance(self):
+        """Recompute budget for case return advance"""
         for rec in self:
-            if rec.payment_id.advance_id:
-                rec.payment_id.advance_id.recompute_budget_move()
+            if rec.origin_payment_id.advance_id:
+                rec.origin_payment_id.advance_id.recompute_budget_move()
 
     def button_draft(self):
         res = super().button_draft()
@@ -28,3 +29,12 @@ class AccountMove(models.Model):
         )
         self._recompute_budget_return_advance()
         return res
+
+
+class AccountMoveLine(models.Model):
+    _inherit = "account.move.line"
+
+    def _condition_skip_uncommit_expense(self, move):
+        return (
+            move.move_type not in ["in_invoice", "entry"] or not move.expense_sheet_id
+        )

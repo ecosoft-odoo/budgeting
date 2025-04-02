@@ -17,7 +17,7 @@ class BudgetPeriod(models.Model):
 
     def _budget_info_query(self):
         query = super()._budget_info_query()
-        query["info_cols"]["amount_advance"] = ("4_av_commit", True)
+        query["info_cols"]["amount_advance"] = ("40_av_commit", True)
         return query
 
     @api.model
@@ -63,7 +63,7 @@ class BudgetPeriod(models.Model):
         # if doctype is advance, check special control too.
         if doc_type == "advance":
             return budget_period.filtered(
-                lambda l: (l.control_budget and l.advance)
-                or (not l.control_budget and l.advance)
+                lambda bp: (bp.control_budget and bp.advance)
+                or (not bp.control_budget and bp.advance)
             )
         return budget_period

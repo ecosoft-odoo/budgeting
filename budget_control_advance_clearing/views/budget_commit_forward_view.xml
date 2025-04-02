@@ -8,19 +8,16 @@
         <field name="arch" type="xml">
             <div name="docs" position="inside">
                 <div>
-                    <field
-                        name="advance"
-                        attrs="{'readonly': [('state', '!=', 'draft')]}"
-                    />
+                    <field name="advance" readonly="state != 'draft'" />
                     <label for="advance" />
                 </div>
             </div>
             <page name="help" position="before">
-                <page string="Advance" attrs="{'invisible': [('advance', '=', False)]}">
+                <page string="Advance" invisible="not advance">
                     <field
                         name="forward_advance_ids"
-                        attrs="{'readonly': [('state', '!=', 'review')]}"
-                        tree_view_ref="budget_control.view_budget_commit_forward_line_tree"
+                        readonly="state != 'review'"
+                        tree_view_ref="budget_control.view_budget_commit_forward_line_list"
                         form_view_ref="budget_control.view_budget_commit_forward_line_form"
                     />
                 </page>

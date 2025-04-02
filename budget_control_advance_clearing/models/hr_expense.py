@@ -1,7 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -15,16 +15,12 @@ class HRExpenseSheet(models.Model):
 
     def write(self, vals):
         """Clearing for its Advance and Cancel payment expense"""
-        doc_cancel = self.filtered(lambda l: l.state == "cancel")
         res = super().write(vals)
-        if vals.get("state") in ("approve", "cancel", "draft"):
+        if vals.get("approval_state") in ("approve", "cancel", False):
             # If this is a clearing, return commit to the advance
             advances = self.mapped("advance_sheet_id.expense_line_ids")
             if advances:
                 advances.recompute_budget_move()
-        # Support with module `hr_expense_cancel` if you change state cancel to post
-        if vals.get("state") == "post" and doc_cancel:
-            doc_cancel.mapped("expense_line_ids").recompute_budget_move()
         return res
 
     def _prepare_clear_advance(self, line):
@@ -39,10 +35,10 @@ class HRExpenseSheet(models.Model):
             clearing_dict["date_commit"] = False
         return clearing_dict
 
-    def _prepare_bill_vals(self):
+    def _prepare_bills_vals(self):
         """Not affect budget for advance"""
         self.ensure_one()
-        res = super()._prepare_bill_vals()
+        res = super()._prepare_bills_vals()
         if self.advance:
             res["not_affect_budget"] = True
         return res
@@ -67,7 +63,8 @@ class HRExpense(models.Model):
         self.ensure_one()
         if self._context.get("advance", False):
             return self.advance_budget_move_ids.filtered(
-                lambda l: l.analytic_account_id == analytic
+                lambda advance_move, analytic=analytic: advance_move.analytic_account_id
+                == analytic
             )
         return super()._filter_current_move(analytic)
 
@@ -90,7 +87,8 @@ class HRExpense(models.Model):
             amount_commit_json = {}
             for analytic_id in analytic_distribution:  # Get id only
                 budget_move = rec.advance_budget_move_ids.filtered(
-                    lambda move: move.analytic_account_id.id == int(analytic_id)
+                    lambda move, analytic_id=analytic_id: move.analytic_account_id.id
+                    == int(analytic_id)
                 )
                 debit = sum(budget_move.mapped("debit"))
                 credit = sum(budget_move.mapped("credit"))
@@ -105,82 +103,124 @@ class HRExpense(models.Model):
         return super(HRExpense, expenses)._compute_commit()
 
     def _get_recompute_advances(self):
-        advances = self.filtered(lambda l: l.advance)
-        res = False
-        if advances:
-            # date_commit return list, so we check in list again
-            if advances.mapped("date_commit") and advances.mapped("date_commit")[0]:
-                advance_date_commit = advances.mapped("date_commit")[0]
-            else:
-                advance_date_commit = self.env.context.get("force_date_commit", False)
-            res = super(
-                HRExpense,
-                advances.with_context(
-                    alt_budget_move_model="advance.budget.move",
-                    alt_budget_move_field="advance_budget_move_ids",
-                    force_date_commit=advance_date_commit,
-                ),
-            ).recompute_budget_move()
-            advance_sheet = advances.mapped("sheet_id")
-            advance_sheet.ensure_one()
-            # If the advances has any reconcile (return advance),
-            # reverse commit them from advance
-            aml_debit = advance_sheet.account_move_id.line_ids.filtered(
-                lambda l: l.debit
+        AnalyticAccount = self.env["account.analytic.account"]
+        # date_commit return list, so we check in list again
+        advance_date_commit = (
+            self.env.context.get("force_date_commit", False)
+            or self.mapped("date_commit")[:-1]
+            or False
+        )
+
+        # Commit Advance
+        res = super(
+            HRExpense,
+            self.with_context(
+                alt_budget_move_model="advance.budget.move",
+                alt_budget_move_field="advance_budget_move_ids",
+                force_date_commit=advance_date_commit,
+            ),
+        ).recompute_budget_move()
+
+        advance_sheet = self.mapped("sheet_id")
+        advance_sheet.ensure_one()
+
+        # For case return advance
+        for payment in advance_sheet.payment_return_ids:
+            ml_credit = payment.move_id.line_ids.filtered("credit").filtered(
+                "reconciled"
             )
-            ml_reconcile = aml_debit.matched_credit_ids
-            for reconcile in ml_reconcile:
-                # Debit side (Advance)
-                advance = reconcile.debit_move_id.expense_id
-                amount_return = reconcile.debit_amount_currency
-                # Credit side (Return Advance)
-                return_ml = reconcile.credit_move_id
-                if advance:
-                    advance.commit_budget(
-                        reverse=True,
-                        amount_currency=amount_return,
-                        move_line_id=return_ml.id,
-                        date=return_ml.date_commit,
-                    )
-            # If the advances has any clearing, uncommit them from advance
-            clearings = self.search(
-                [("sheet_id.advance_sheet_id", "=", advance_sheet.id)], order="id"
-            )
-            clearings.uncommit_advance_budget()
+            advance = ml_credit.expense_id
+
+            if not advance:
+                continue
+
+            analytic_distribution = advance[self._budget_analytic_field]
+            # Check return advance after carry forword
+            if advance.fwd_analytic_distribution:
+                analytic_accounts = {
+                    int(aid): AnalyticAccount.browse(int(aid))
+                    for aid in advance.fwd_analytic_distribution
+                }
+                payment_after_carry = False
+                for (
+                    analytic_id,
+                    aa_percent,
+                ) in advance.fwd_analytic_distribution.items():
+                    analytic = analytic_accounts[int(analytic_id)]
+                    # Check if payment falls within the analytic account's
+                    # budget date range
+                    if analytic.bm_date_to >= payment.date >= analytic.bm_date_from:
+                        advance.commit_budget(
+                            amount_currency=ml_credit.amount_currency
+                            * (aa_percent / 100),
+                            move_line_id=ml_credit.id,
+                            analytic_account_id=analytic,
+                            date=payment.date,
+                        )
+                        payment_after_carry = True
+
+                if payment_after_carry:
+                    continue
+            # Return advance with normal case
+            analytic_accounts = {
+                int(aid): AnalyticAccount.browse(int(aid))
+                for aid in analytic_distribution
+            }
+            for analytic_id, aa_percent in analytic_distribution.items():
+                analytic = analytic_accounts[int(analytic_id)]
+                advance.commit_budget(
+                    amount_currency=ml_credit.amount_currency * (aa_percent / 100),
+                    move_line_id=ml_credit.id,
+                    analytic_account_id=analytic,
+                    date=payment.date,
+                )
+
+        # For case clearing, uncommit them from advance
+        clearings = self.search(
+            [("sheet_id.advance_sheet_id", "=", advance_sheet.id)], order="id"
+        )
+        clearings.uncommit_advance_budget()
         return res
 
-    def _close_budget_sheets_with_adj_commit(self):
-        advance_budget_moves = self.filtered("advance_budget_move_ids.adj_commit")
-        for sheet in advance_budget_moves.mapped("sheet_id"):
-            # And only if some adjustment has occured
-            adj_moves = sheet.advance_budget_move_ids.filtered("adj_commit")
-            moves = sheet.advance_budget_move_ids - adj_moves
-            # If adjust > over returned
-            adjusted = sum(adj_moves.mapped("debit"))
-            over_returned = sum(moves.mapped(lambda l: l.credit - l.debit))
-            if adjusted > over_returned:
-                sheet.close_budget_move()
+    # def _close_budget_sheets_with_adj_commit(self):
+    #     advance_budget_moves = self.filtered("advance_budget_move_ids.adj_commit")
+    #     for sheet in advance_budget_moves.mapped("sheet_id"):
+    #         # And only if some adjustment has occured
+    #         adj_moves = sheet.advance_budget_move_ids.filtered("adj_commit")
+    #         moves = sheet.advance_budget_move_ids - adj_moves
+    #         # If adjust > over returned
+    #         adjusted = sum(adj_moves.mapped("debit"))
+    #         over_returned = sum(moves.mapped(lambda l: l.credit - l.debit))
+    #         if adjusted > over_returned:
+    #             sheet.close_budget_move()
 
     def recompute_budget_move(self):
         if not self:
             return
         # Recompute budget moves for expenses
-        expenses = self.filtered(lambda l: not l.advance)
+        expenses = self.filtered(lambda sheet: not sheet.advance)
         res = super(HRExpense, expenses).recompute_budget_move()
+
         # Recompute budget moves for advances
-        self._get_recompute_advances()
-        # Return advance, commit again because it will lose from clearing uncommit
-        # Only when advance is over returned, do close_budget_move() to final adjust
-        # Note: now, we only found case in Advance / Return / Clearing case
-        self._close_budget_sheets_with_adj_commit()
+        advance = self - expenses
+        if advance:
+            advance._get_recompute_advances()
+            # NOTE: Return advance, commit again because
+            # it will lose from clearing uncommit
+            # Only when advance is over returned, do close_budget_move() to final adjust
+            # Note: now, we only found case in Advance / Return / Clearing case
+            # NOTE: Test with no do this method.
+            # advance._close_budget_sheets_with_adj_commit()
         return res
 
     def close_budget_move(self):
         # Expenses
-        expenses = self.filtered(lambda l: not l.advance)
+        expenses = self.filtered(lambda sheet: not sheet.advance)
         super(HRExpense, expenses).close_budget_move()
-        # Advances)
-        advances = self.filtered(lambda l: l.advance).with_context(
+
+        # Advances
+        advances = self - expenses
+        advances = advances.with_context(
             alt_budget_move_model="advance.budget.move",
             alt_budget_move_field="advance_budget_move_ids",
         )
@@ -198,12 +238,13 @@ class HRExpense(models.Model):
         """For clearing in valid state,
         do uncommit for related Advance sorted by date commit."""
         budget_moves = self.env["advance.budget.move"]
+        AnalyticAccount = self.env["account.analytic.account"]
         # Sorted clearing by date_commit first. for case clearing > advance
         # it should uncommit clearing that approved first
         clearing_approved = self.filtered("date_commit")
         clearing_not_approved = self - clearing_approved
         clearing_sorted = (
-            clearing_approved.sorted(key=lambda l: l.date_commit)
+            clearing_approved.sorted(key=lambda clearing: clearing.date_commit)
             + clearing_not_approved
         )
         config_budget_include_tax = self.env.company.budget_include_tax
@@ -216,14 +257,13 @@ class HRExpense(models.Model):
             ):
                 # With possibility to have multiple advance lines,
                 # just return amount line by line
-                origin_clearing_amount = (
-                    clearing.total_amount
+                origin_clearing_amount_currency = (
+                    clearing.total_amount_currency
                     if config_budget_include_tax
-                    else clearing.untaxed_amount
+                    else clearing.untaxed_amount_currency
                 )
                 clearing_analytic = clearing.analytic_distribution
-                advance_sheet = clearing.sheet_id.advance_sheet_id
-                advance_lines = advance_sheet.expense_line_ids
+                advance_lines = clearing.sheet_id.advance_sheet_id.expense_line_ids
 
                 advances = advance_lines.filtered("amount_commit")
                 if not advances:
@@ -240,18 +280,20 @@ class HRExpense(models.Model):
 
                 if any(aa not in advance_analytic_ids for aa in clearing_analytic_ids):
                     raise UserError(
-                        _(
+                        self.env._(
                             "Analytic distribution mismatch. "
                             "Please align with the original advance."
                         )
                     )
                 # Uncommit budget to advance line by line
                 for analyic_id, aa_percent in clearing_analytic.items():
-                    clearing_amount = origin_clearing_amount * aa_percent / 100
+                    clearing_amount = origin_clearing_amount_currency * (
+                        aa_percent / 100
+                    )
+                    analytic = AnalyticAccount.browse(int(analyic_id))
                     for advance in advances:
                         if not advance.amount_commit.get(str(analyic_id)):
                             continue
-
                         clearing_amount_commit = min(
                             advance.amount_commit[str(analyic_id)], clearing_amount
                         )
@@ -260,8 +302,7 @@ class HRExpense(models.Model):
                             reverse=True,
                             clearing_id=clearing.id,
                             amount_currency=clearing_amount_commit,
-                            analytic_account_id=advance.fwd_analytic_distribution
-                            or False,
+                            analytic_account_id=analytic,  # specific AA to advance
                             date=clearing.date_commit,
                         )
                         budget_moves |= budget_move
