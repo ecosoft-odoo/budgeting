@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control on Expense",
-    "version": "16.0.1.0.1",
+    "version": "18.0.1.0.0",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",
@@ -17,6 +17,6 @@
         "views/budget_commit_forward_view.xml",
     ],
     "installable": True,
-    "maintainers": ["kittiu", "ru3ix-bbb"],
+    "maintainers": ["kittiu", "ru3ix-bbb", "Saran440"],
     "development_status": "Alpha",
 }

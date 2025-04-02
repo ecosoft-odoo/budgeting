@@ -75,10 +75,13 @@ Maintainers
 .. |maintainer-ru3ix-bbb| image:: https://github.com/ru3ix-bbb.png?size=40px
     :target: https://github.com/ru3ix-bbb
     :alt: ru3ix-bbb
+.. |maintainer-Saran440| image:: https://github.com/Saran440.png?size=40px
+    :target: https://github.com/Saran440
+    :alt: Saran440
 
 Current maintainers:
 
-|maintainer-kittiu| |maintainer-ru3ix-bbb| 
+|maintainer-kittiu| |maintainer-ru3ix-bbb| |maintainer-Saran440| 
 
 This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_control_expense>`_ project on GitHub.
 

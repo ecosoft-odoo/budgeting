@@ -17,7 +17,7 @@ class BudgetPeriod(models.Model):
 
     def _budget_info_query(self):
         query = super()._budget_info_query()
-        query["info_cols"]["amount_expense"] = ("5_ex_commit", True)
+        query["info_cols"]["amount_expense"] = ("50_ex_commit", True)
         return query
 
     @api.depends("control_budget")
@@ -32,7 +32,7 @@ class BudgetPeriod(models.Model):
         # if doctype is expense, check special control too.
         if doc_type == "expense":
             return budget_period.filtered(
-                lambda l: (l.control_budget and l.expense)
-                or (not l.control_budget and l.expense)
+                lambda bp: (bp.control_budget and bp.expense)
+                or (not bp.control_budget and bp.expense)
             )
         return budget_period

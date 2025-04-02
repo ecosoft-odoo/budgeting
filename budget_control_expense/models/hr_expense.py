@@ -23,13 +23,20 @@ class HRExpenseSheet(models.Model):
 
     def write(self, vals):
         """
-        Uncommit budget when the state is "approve" or cancel/draft the document.
-        When the document is cancelled or drafted, delete all budget commitments.
+        Uncommit the budget when the document state is "approved" or
+        when it is canceled/drafted. If the document is canceled or moved to draft,
+        all budget commitments will be deleted.
+
+        For expenses, the state is a computed field.
+        Therefore, we check the `approval_state` instead:
+            - "approve" = Approved
+            - "cancel" = Canceled
+            - False = To Submit (Draft)
         """
         res = super().write(vals)
-        if vals.get("state") in ("approve", "cancel", "draft"):
+        if vals.get("approval_state") in ("approve", "cancel", False):
             doclines = self.mapped("expense_line_ids")
-            if vals.get("state") in ("cancel", "draft"):
+            if vals.get("approval_state") in ("cancel", False):
                 doclines.write({"date_commit": False})
             doclines.recompute_budget_move()
         return res
@@ -41,8 +48,8 @@ class HRExpenseSheet(models.Model):
         expenses._compute_commit()
         return res
 
-    def approve_expense_sheets(self):
-        res = super().approve_expense_sheets()
+    def action_approve_expense_sheets(self):
+        res = super().action_approve_expense_sheets()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
             BudgetPeriod.check_budget(doc.expense_line_ids, doc_type="expense")
@@ -61,7 +68,7 @@ class HRExpenseSheet(models.Model):
         res = super().action_sheet_move_create()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
-            BudgetPeriod.check_budget(doc.account_move_id.line_ids)
+            BudgetPeriod.check_budget(doc.account_move_ids.line_ids)
         return res
 
 
@@ -78,34 +85,28 @@ class HRExpense(models.Model):
     )
 
     def recompute_budget_move(self):
+        budget_field = self._budget_field()
+        force_date_commit = self.env.context.get("force_date_commit", False)
         for expense in self:
             # Make sure that date_commit not recompute
-            ex_date_commit = expense.date_commit or self.env.context.get(
-                "force_date_commit", False
-            )
-            expense[self._budget_field()].unlink()
+            ex_date_commit = force_date_commit or expense.date_commit
+            expense[budget_field].unlink()
             expense.with_context(force_date_commit=ex_date_commit).commit_budget()
-            move_lines = expense.sheet_id.account_move_id.line_ids
             # credit will not over debit (auto adjust)
             expense.forward_commit()
-            move_lines.uncommit_expense_budget()
+        self.mapped(
+            "sheet_id.account_move_ids.invoice_line_ids"
+        ).uncommit_expense_budget()
 
     def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
         if not budget_vals.get("amount_currency", False):
-            # Amount expense is always include tax. so, we need to compute amount without tax
-            base_lines = [
-                self._convert_to_tax_base_line_dict(
-                    price_unit=self.unit_amount, quantity=self.quantity
-                )
-            ]
-            taxes_totals = self.env["account.tax"]._compute_taxes(base_lines)["totals"][
-                self.currency_id
-            ]
-            total_amount = taxes_totals["amount_untaxed"]
             # Percent analytic
             percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
-            budget_vals["amount_currency"] = total_amount * percent_analytic / 100
+
+            budget_vals["amount_currency"] = self.untaxed_amount_currency * (
+                percent_analytic / 100
+            )
             budget_vals["tax_ids"] = self.tax_ids.ids
         # Document specific vals
         budget_vals.update({"expense_id": self.id})

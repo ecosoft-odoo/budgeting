@@ -12,28 +12,30 @@ class AccountMoveLine(models.Model):
         res = super()._init_docline_budget_vals(budget_vals, analytic_id)
         expense = self.expense_id
         if expense:
+            percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
+            total_untax_amount = expense.total_amount - expense.tax_amount
             # Amount from expense is tax included, need to convert to amount_untaxed
-            base_lines = [
-                expense._convert_to_tax_base_line_dict(
-                    price_unit=expense.unit_amount, quantity=expense.quantity
-                )
-            ]
-            taxes_totals = self.env["account.tax"]._compute_taxes(base_lines)["totals"][
-                expense.currency_id
-            ]
-            total_amount = taxes_totals["amount_untaxed"]
-            budget_vals["amount_currency"] = total_amount
+            budget_vals["amount_currency"] = total_untax_amount * (
+                percent_analytic / 100
+            )
         return res
 
+    def _condition_skip_uncommit_expense(self, move):
+        return move.move_type != "in_invoice" or not move.expense_sheet_id
+
     def uncommit_expense_budget(self):
-        """Uncommit the budget for related expenses when the vendor bill is in a valid state."""
+        """Uncommit the budget for related expenses
+        when the vendor bill is in a valid state."""
         Expense = self.env["hr.expense"]
+        AnalyticAccount = self.env["account.analytic.account"]
+
         for ml in self:
-            inv_state = ml.move_id.state
-            # Skip if not expense or tax line
-            if not ml.move_id.expense_sheet_id or ml.display_type == "tax":
+            move = ml.move_id
+            # Expense created journal entry with vendor bill or not expense
+            if self._condition_skip_uncommit_expense(move):
                 continue
-            if inv_state == "posted":
+
+            if move.state == "posted":
                 expense = ml.expense_id.filtered("amount_commit")
                 # Because this is not invoice, we need to compare account
                 if not expense:
@@ -41,12 +43,19 @@ class AccountMoveLine(models.Model):
                 # Also test for future advance extension, never uncommit for advance
                 if hasattr(expense, "advance") and expense["advance"]:
                     continue
-                expense.commit_budget(
-                    reverse=True,
-                    move_line_id=ml.id,
-                    date=ml.date_commit,
-                    analytic_distribution=expense.fwd_analytic_distribution or False,
-                )
+
+                if ml.analytic_distribution:
+                    analytic_accounts = {
+                        int(aid): AnalyticAccount.browse(int(aid))
+                        for aid in ml.analytic_distribution
+                    }
+                    for analytic_id, _ in ml.analytic_distribution.items():
+                        expense.commit_budget(
+                            reverse=True,
+                            move_line_id=ml.id,
+                            date=ml.date_commit,
+                            analytic_account_id=analytic_accounts[int(analytic_id)],
+                        )
             else:  # Cancel or draft, not commitment line
                 self.env[Expense._budget_model()].search(
                     [("move_line_id", "=", ml.id)]

@@ -6,7 +6,7 @@
         <field name="inherit_id" ref="hr_expense.view_hr_expense_sheet_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="//page[@name='expenses']/field[@name='expense_line_ids']/tree/field[@name='analytic_distribution']"
+                expr="//page[@name='expenses']/field[@name='expense_line_ids']/list/field[@name='analytic_distribution']"
                 position="after"
             >
                 <field
@@ -20,7 +20,7 @@
                 />
             </xpath>
             <xpath
-                expr="//page[@name='expenses']/field[@name='expense_line_ids']/tree/field[last()]"
+                expr="//page[@name='expenses']/field[@name='expense_line_ids']/list/field[last()]"
                 position="after"
             >
                 <field name="auto_adjust_date_commit" optional="hide" />
@@ -29,7 +29,7 @@
                     name="date_commit"
                     optional="hide"
                     groups="budget_control.group_budget_date_commit"
-                    attrs="{'readonly': [('state', '!=', 'draft')]}"
+                    readonly="state != 'draft'"
                 />
                 <field
                     name="fwd_analytic_distribution"
@@ -43,13 +43,13 @@
                     groups="budget_control.group_budget_control_manager"
                 />
             </xpath>
-            <xpath expr="/form/sheet/notebook/page[last()]" position="after">
+            <xpath expr="//notebook/page[last()]" position="after">
                 <page
                     string="Budget Commitment"
                     name="budget_commit"
-                    attrs="{'invisible': [('budget_move_ids', '=', [])]}"
+                    invisible="not budget_move_ids"
                 >
-                    <div class="oe_right" name="buttons">
+                    <div class="d-flex justify-content-end" name="buttons">
                         <button
                             type="object"
                             name="recompute_budget_move"
@@ -66,18 +66,18 @@
                         />
                     </div>
                     <field name="budget_move_ids" readonly="1">
-                        <tree>
+                        <list>
                             <field name="expense_id" optional="show" />
                             <field name="move_line_id" optional="show" />
                             <field name="date" />
-                            <field name="analytic_plan" optional="show" />
+                            <field name="analytic_plan" optional="hide" />
                             <field name="analytic_account_id" optional="show" />
-                            <field name="write_uid" optional="show" />
-                            <field name="write_date" optional="show" />
+                            <field name="write_uid" optional="hide" />
+                            <field name="write_date" optional="hide" />
                             <field name="note" optionl="hide" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </xpath>

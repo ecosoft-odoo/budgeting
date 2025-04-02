@@ -11,9 +11,12 @@ class AccountBudgetMove(models.Model):
     def _compute_source_document(self):
         res = super()._compute_source_document()
         for rec in self.filtered("move_line_id.expense_id.sheet_id"):
+            if rec.source_document:
+                continue
+            # Use the number field if 'hr_expense_sequence' is installed.
             if hasattr(rec.move_line_id.expense_id.sheet_id, "number"):
                 display_name = rec.move_line_id.expense_id.sheet_id.number
             else:
                 display_name = rec.move_line_id.expense_id.sheet_id.display_name
-            rec.source_document = rec.source_document or display_name
+            rec.source_document = display_name
         return res
