@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_transfer_search" model="ir.ui.view">
+        <field name="name">view.budget.transfer.search</field>
+        <field name="model">budget.transfer</field>
+        <field name="arch" type="xml">
+            <search string="Search Budget Transfer">
+                <field name="name" />
+                <field name="budget_period_id" />
+                <separator />
+                <filter
+                    string="Draft"
+                    name="draft"
+                    domain="[('state', '=', 'draft')]"
+                />
+                <filter
+                    string="Transferred"
+                    name="transfer"
+                    domain="[('state', '=', 'transfer')]"
+                />
+                <filter
+                    string="Cancelled"
+                    name="cancel"
+                    domain="[('state', '=', 'cancel')]"
+                />
+                <filter
+                    string="Reversed"
+                    name="reverse"
+                    domain="[('state', '=', 'reverse')]"
+                />
+                <group expand="0" string="Group By">
+                    <filter
+                        string="Budget Year"
+                        name="groupby_budget_period_id"
+                        context="{'group_by':'budget_period_id'}"
+                    />
+                    <filter
+                        string="Status"
+                        name="groupby_state"
+                        context="{'group_by':'state'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="view_budget_transfer_list" model="ir.ui.view">
+        <field name="name">view.budget.transfer.list</field>
+        <field name="model">budget.transfer</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="budget_period_id" />
+                <field
+                    name="company_ids"
+                    widget="many2many_tags"
+                    groups="base.group_multi_company"
+                />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-success="state == 'transfer'"
+                    decoration-info="state in ['draft', 'submit']"
+                    optional="show"
+                />
+            </list>
+        </field>
+    </record>
+    <record id="view_budget_transfer_form" model="ir.ui.view">
+        <field name="name">view.budget.transfer.form</field>
+        <field name="model">budget.transfer</field>
+        <field name="arch" type="xml">
+            <form string="Budget Transfer">
+                <header>
+                    <button
+                        name="action_submit"
+                        string="Submit"
+                        type="object"
+                        invisible="state != 'draft'"
+                        class="oe_highlight"
+                    />
+                    <button
+                        name="action_transfer"
+                        string="Transfer"
+                        type="object"
+                        invisible="state != 'submit'"
+                        class="oe_highlight"
+                    />
+                    <button
+                        name="action_cancel"
+                        string="Cancel"
+                        confirm="Do you want to cancel this transfer?"
+                        invisible="state not in ['draft', 'submit']"
+                        type="object"
+                    />
+                    <button
+                        name="action_reverse"
+                        string="Reverse"
+                        confirm="Do you want to reverse this transfer?"
+                        invisible="state != 'transfer'"
+                        type="object"
+                    />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,submit,transfer"
+                    />
+                </header>
+                <sheet>
+                    <div class="oe_right oe_button_box" name="buttons" />
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="budget_transfer_left">
+                            <field
+                                name="budget_period_id"
+                                options="{'no_open': True}"
+                                readonly="1"
+                            />
+                        </group>
+                        <group name="budget_transfer_right">
+                            <field
+                                name="company_ids"
+                                widget="many2many_tags"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
+                    </group>
+                    <field name="transfer_item_ids" readonly="state != 'draft'" />
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+    <record id="action_budget_transfer" model="ir.actions.act_window">
+        <field name="name">Budget Transfer</field>
+        <field name="view_id" ref="view_budget_transfer_list" />
+        <field name="res_model">budget.transfer</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem
+        id="menu_budget_transfer"
+        parent="budget_control.budget_control_menu"
+        name="Budget Transfer"
+        action="action_budget_transfer"
+        sequence="30"
+    />
+</odoo>

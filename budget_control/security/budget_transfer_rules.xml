@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="rule_budget_transfer_budget_multi_company" model="ir.rule">
+        <field name="name">Budget Transfer multi-company</field>
+        <field name="model_id" ref="budget_control.model_budget_transfer" />
+        <field name="domain_force">
+            [
+                '|',
+                ('company_ids', '=', False),
+                ('company_ids', 'in', company_ids)
+            ]
+        </field>
+    </record>
+</odoo>
