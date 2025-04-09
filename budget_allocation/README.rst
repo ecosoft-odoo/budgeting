@@ -17,56 +17,61 @@ Budget Allocation
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github
-    :target: https://github.com/ecosoft-odoo/budgeting/tree/15.0/budget_allocation
+    :target: https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_allocation
     :alt: ecosoft-odoo/budgeting
 
 |badge1| |badge2| |badge3|
 
-This module is the main module for manage allocation until set budget control.
-For this module, budget constraints will be used to check the allocation to ensure that the budget is not exceeded beyond the allocated amount.
+This module is the main module for manage allocation until set budget
+control. For this module, budget constraints will be used to check the
+allocation to ensure that the budget is not exceeded beyond the
+allocated amount.
 
 Example usage:
 
 .. code:: python
 
-  Budget allocation has allocation:
-    Allocation Line | Analytic Account | Fund  | Tags | Allocated | ...
-    --------------------------------------------------------------
-    1               |               A  | Fund1 | Tag1 |     100.0 | ...
-    2               |               A  | Fund2 | Tag2 |     100.0 | ...
+   Budget allocation has allocation:
+     Allocation Line | Analytic Account | Fund  | Tags | Allocated | ...
+     --------------------------------------------------------------
+     1               |               A  | Fund1 | Tag1 |     100.0 | ...
+     2               |               A  | Fund2 | Tag2 |     100.0 | ...
 
-  Condition constraint (e.g. invoice lines)
-    - User can use:
-    Document | Line | Analytic Account | Fund  | Tags | Amount |
-    -----------------------------------------------------------------------
-    INV001   |    1 |             A    | Fund1 | Tag1 | 130.0  | >>> Error (-30)
-    -----------------------------------------------------------------------
-    INV002   |    1 |             A    | Fund1 |      | 10.0 | >>> Not allocated
-    INV002   |    1 |             A    | Fund1 | Tag1 | 10.0 | >>> balance 90
-    INV002   |    2 |             A    | Fund1 | Tag1 | 60.0 | >>> balance 30
-    ----------------------------Confirm----------------------------
-    INV003   |    1 |             A    | Fund1 | Tag1 | 10.0 | >>> balance 20
-    INV003   |    2 |             A    | Fund1 | Tag1 | 60.0 | >>> Error (-40)
-    ---------------------------------------------------------------
-    INV004   |    1 |             A    | Fund2 | Tag1 |120.0 | >>> Not allocated
-    INV004   |    1 |             A    | Fund2 | Tag2 |120.0 | >>> Error (-20)
+   Condition constraint (e.g. invoice lines)
+     - User can use:
+     Document | Line | Analytic Account | Fund  | Tags | Amount |
+     -----------------------------------------------------------------------
+     INV001   |    1 |             A    | Fund1 | Tag1 | 130.0  | >>> Error (-30)
+     -----------------------------------------------------------------------
+     INV002   |    1 |             A    | Fund1 |      | 10.0 | >>> Not allocated
+     INV002   |    1 |             A    | Fund1 | Tag1 | 10.0 | >>> balance 90
+     INV002   |    2 |             A    | Fund1 | Tag1 | 60.0 | >>> balance 30
+     ----------------------------Confirm----------------------------
+     INV003   |    1 |             A    | Fund1 | Tag1 | 10.0 | >>> balance 20
+     INV003   |    2 |             A    | Fund1 | Tag1 | 60.0 | >>> Error (-40)
+     ---------------------------------------------------------------
+     INV004   |    1 |             A    | Fund2 | Tag1 |120.0 | >>> Not allocated
+     INV004   |    1 |             A    | Fund2 | Tag2 |120.0 | >>> Error (-20)
 
 Budget Allocation Core Features:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 
-* **Budget Allocation (budget.allocation)**
-    A new menu for detailed allocation, such as projects that receive funding from multiple sources
-    and different amounts of money, must have budget control according to the source of funds
-    to avoid exceeding what has been received. Budget allocation will help manage this.
+- | **Budget Allocation (budget.allocation)**
+  | A new menu for detailed allocation, such as projects that receive
+    funding from multiple sources and different amounts of money, must
+    have budget control according to the source of funds to avoid
+    exceeding what has been received. Budget allocation will help manage
+    this.
 
-* **Source of Fund (budget.source.fund)**
-    Adding new master data `Source of Fund`
+- | **Source of Fund (budget.source.fund)**
+  | Adding new master data Source of Fund
 
-* **Budget Source Fund Monitoring (budget.source.fund.report)**
-    Add a menu for monitoring reports by source of funds.
+- | **Budget Source Fund Monitoring (budget.source.fund.report)**
+  | Add a menu for monitoring reports by source of funds.
 
-* **Analytic Tag Dimension**
-    Add a new Tag so that users can add additional perspectives for viewing reports.
+- | **Analytic Tag Dimension**
+  | Add a new Tag so that users can add additional perspectives for
+    viewing reports.
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
@@ -81,31 +86,37 @@ Budget Allocation Core Features:
 Usage
 =====
 
-At first you have to create Source of Funds Master data.
-First, you must create a Source of Fund in the master data.
-Then, you will need to create a budget allocation to control detailed budget usage.
+At first you have to create Source of Funds Master data. First, you must
+create a Source of Fund in the master data. Then, you will need to
+create a budget allocation to control detailed budget usage.
 
 Create master data (Source of fund)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 
-#. Go to menu Budgeting > Configurations > Source of Funds
-#. Create your source of fund and Group of fund (optional)
+1. Go to menu Budgeting > Configurations > Source of Funds
+2. Create your source of fund and Group of fund (optional)
 
 Create budget allocation for planning
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------
 
-#. Go to menu Budgeting > Budget Allocation
-#. Create a new budget allocation, which will depend on the budget period (1 budget allocation per budget period can be created).
-#. In each line, add details with the analytic account, fund, and amount.
-#. Click "Done" to automatically generate the budget plan.
-#. Follow the normal process for the budget plan.
-
+1. Go to menu Budgeting > Budget Allocation
+2. Create a new budget allocation, which will depend on the budget
+   period (1 budget allocation per budget period can be created).
+3. In each line, add details with the analytic account, fund, and
+   amount.
+4. Click "Done" to automatically generate the budget plan.
+5. Follow the normal process for the budget plan.
 
 NOTE: In budget allocation, there are 3 different amounts to consider:
 
-#. "Estimated Amount" refers to the total budget that is expected to be received within a particular year.
-#. "Allocated" refers to the budget that has been allocated to a particular project, to be used as needed. The allocated amount must not exceed the `Estimated amount`.
-#. "Released" refers to the budget that is currently available. Initially, the released amount is equal to the allocated amount and will change as budget transfers occur.
+1. "Estimated Amount" refers to the total budget that is expected to be
+   received within a particular year.
+2. "Allocated" refers to the budget that has been allocated to a
+   particular project, to be used as needed. The allocated amount must
+   not exceed the Estimated amount.
+3. "Released" refers to the budget that is currently available.
+   Initially, the released amount is equal to the allocated amount and
+   will change as budget transfers occur.
 
 Bug Tracker
 ===========
@@ -113,7 +124,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/ecosoft-odoo/budgeting/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_allocation%0Aversion:%2015.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_allocation%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -121,21 +132,21 @@ Credits
 =======
 
 Authors
-~~~~~~~
+-------
 
 * Ecosoft
 
 Contributors
-~~~~~~~~~~~~
+------------
 
-* `Ecosoft <http://ecosoft.co.th>`__:
+- `Ecosoft <http://ecosoft.co.th>`__:
 
-    * Kitti Upariphutthiphong <kittiu@ecosoft.co.th>
-    * Saran Lim. <saranl@ecosoft.co.th>
-    * Pimolnat Suntian <pimolnats@ecosoft.co.th>
+     - Kitti Upariphutthiphong <kittiu@ecosoft.co.th>
+     - Saran Lim. <saranl@ecosoft.co.th>
+     - Pimolnat Suntian <pimolnats@ecosoft.co.th>
 
 Maintainers
-~~~~~~~~~~~
+-----------
 
 .. |maintainer-ps-tubtim| image:: https://github.com/ps-tubtim.png?size=40px
     :target: https://github.com/ps-tubtim
@@ -145,6 +156,6 @@ Current maintainer:
 
 |maintainer-ps-tubtim| 
 
-This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/15.0/budget_allocation>`_ project on GitHub.
+This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_allocation>`_ project on GitHub.
 
 You are welcome to contribute.

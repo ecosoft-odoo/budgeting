@@ -25,9 +25,7 @@ class BaseBudgetMove(models.AbstractModel):
 
     def _get_where_commitment(self, docline):
         fund_domain = (
-            "fund_id = {}".format(docline.fund_id.id)
-            if docline.fund_id
-            else "fund_id is null"
+            f"fund_id = {docline.fund_id.id}" if docline.fund_id else "fund_id is null"
         )
         dimensions = docline._get_dimension_fields()
         analytic_tag_domain = [
@@ -44,7 +42,7 @@ class BaseBudgetMove(models.AbstractModel):
             " and {fund_domain} {analytic_tag_domain}".format(
                 analytic=docline[docline._budget_analytic_field].id,
                 fund_domain=fund_domain,
-                analytic_tag_domain="and {}".format(analytic_tag_domain)
+                analytic_tag_domain=f"and {analytic_tag_domain}"
                 if analytic_tag_domain
                 else "",
             )
@@ -57,12 +55,9 @@ class BaseBudgetMove(models.AbstractModel):
     def _get_query_dict(self, docline):
         self._cr.execute(
             sql.SQL(
-                """
-            SELECT * FROM ({monitoring}) report
-            WHERE {where_query_commitment}""".format(
-                    monitoring=self._get_budget_source_fund_report()._table_query,
-                    where_query_commitment=self._get_where_commitment(docline),
-                )
+                f"""
+            SELECT * FROM ({self._get_budget_source_fund_report()._table_query}) report
+            WHERE {self._get_where_commitment(docline)}"""
             )
         )
         dict_data = self.env.cr.dictfetchall()

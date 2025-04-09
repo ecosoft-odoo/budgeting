@@ -34,17 +34,15 @@ class SourceFundMonitorReport(models.Model):
 
     @property
     def _table_query(self):
-        return """
+        return f"""
             select a.*, d.id as date_range_id, p.id as budget_period_id
-            from ({}) a
+            from ({self._get_sql()}) a
             left outer join date_range d
                 on a.date_to between d.date_start and d.date_end
             left outer join budget_period p
                 on a.date_to between p.bm_date_from and p.bm_date_to
-            {}
-        """.format(
-            self._get_sql(), self._get_where_clause()
-        )
+            {self._get_where_clause()}
+        """
 
     def _get_consumed_sources(self):
         return [
@@ -111,15 +109,11 @@ class SourceFundMonitorReport(models.Model):
         for source in self._get_consumed_sources():
             budget_table = source["budget_move"][0]  # i.e., account_budget_move
             amount_type = source["type"][0]  # i.e., 80_actual
-            sql_from[
-                amount_type
-            ] = """
-                from {} a
+            sql_from[amount_type] = f"""
+                from {budget_table} a
                 join account_analytic_account aa
                     on aa.id = a.analytic_account_id
-            """.format(
-                budget_table,
-            )
+            """
         return sql_from
 
     def _select_budget(self):
@@ -134,7 +128,7 @@ class SourceFundMonitorReport(models.Model):
                 formatted_dimension_fields = ", ".join(dimension_fields)
                 formatted_dimension_fields = f", {formatted_dimension_fields}"
         return {
-            0: """
+            0: f"""
             1000000000 + al.id as id,
             'budget.source.fund,' || sf.id as res_id,
             sf.name as reference,
@@ -147,10 +141,8 @@ class SourceFundMonitorReport(models.Model):
             bp.bm_date_to as date_to,
             -- make sure source fund report will show only allocation active
             ba.active as allocation_active,
-            bc.active as active {}
-        """.format(
-                formatted_dimension_fields
-            )
+            bc.active as active {formatted_dimension_fields}
+        """
         }
 
     def _from_budget(self):

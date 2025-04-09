@@ -33,10 +33,8 @@ class BudgetMonitorReport(models.Model):
             else:
                 formatted_dimension_fields = ", ".join(dimension_fields)
                 formatted_dimension_fields = f", {formatted_dimension_fields}"
-        select_budget_query[
-            80
-        ] = "null::integer as fund_id, null::integer as fund_group_id {}".format(
-            formatted_dimension_fields
+        select_budget_query[80] = (
+            f"null::integer as fund_id, null::integer as fund_group_id {formatted_dimension_fields}"
         )
         return select_budget_query
 
@@ -53,7 +51,7 @@ class BudgetMonitorReport(models.Model):
             else:
                 formatted_dimension_fields = ", ".join(dimension_fields)
                 formatted_dimension_fields = f", {formatted_dimension_fields}"
-        select_statement[80] = "a.fund_id, a.fund_group_id {}".format(
-            formatted_dimension_fields
+        select_statement[80] = (
+            f"a.fund_id, a.fund_group_id {formatted_dimension_fields}"
         )
         return select_statement

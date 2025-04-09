@@ -11,11 +11,9 @@ class BudgetPeriod(models.Model):
         if template_lines._name == "budget.allocation.line":
             unique_fund_ids = template_lines.mapped("fund_id")
             if len(unique_fund_ids) > 1:
-                fund_domain = "in {}".format(tuple(unique_fund_ids.ids))
+                fund_domain = f"in {tuple(unique_fund_ids.ids)}"
             else:
-                fund_domain = "= {}".format(unique_fund_ids.id)
+                fund_domain = f"= {unique_fund_ids.id}"
             # Filter where domain budget_period_id for case 1 AA use many period
-            return "analytic_account_id = {} and fund_id {} and budget_period_id = {}".format(
-                analytic_id, fund_domain, template_lines.budget_period_id.id
-            )
+            return f"analytic_account_id = {analytic_id} and fund_id {fund_domain} and budget_period_id = {template_lines.budget_period_id.id}"
         return super()._get_where_domain(analytic_id, template_lines)

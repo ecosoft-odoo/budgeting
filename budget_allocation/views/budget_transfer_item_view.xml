@@ -48,7 +48,6 @@
                     domain="[('id', 'in', analytic_tag_to_all or []), '|', ('id', 'in', domain_tag_to_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
                     groups="analytic.group_analytic_tags"
                 />
-
             </xpath>
         </field>
     </record>

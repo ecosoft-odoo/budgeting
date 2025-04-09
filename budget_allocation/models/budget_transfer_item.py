@@ -282,15 +282,11 @@ class BudgetTransferItem(models.Model):
 
     def _get_message_transfer_from(self):
         analytic_tag_name = ", ".join(self.analytic_tag_from_ids.mapped("name"))
-        return "From Budget: {}<br/>Fund: {}<br/>Analytic Tags: {}".format(
-            self.budget_control_from_id.name, self.fund_from_id.name, analytic_tag_name
-        )
+        return f"From Budget: {self.budget_control_from_id.name}<br/>Fund: {self.fund_from_id.name}<br/>Analytic Tags: {analytic_tag_name}"
 
     def _get_message_transfer_to(self):
         analytic_tag_name = ", ".join(self.analytic_tag_to_ids.mapped("name"))
-        return "To Budget: {}<br/>Fund: {}<br/>Analytic Tags: {}".format(
-            self.budget_control_to_id.name, self.fund_to_id.name, analytic_tag_name
-        )
+        return f"To Budget: {self.budget_control_to_id.name}<br/>Fund: {self.fund_to_id.name}<br/>Analytic Tags: {analytic_tag_name}"
 
     def transfer(self):
         res = super().transfer()

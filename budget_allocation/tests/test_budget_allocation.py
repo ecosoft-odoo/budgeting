@@ -68,7 +68,7 @@ class TestBudgetAllocation(BudgetControlCommon):
         """
         budget_allocation_id = self.BudgetAllocation.create(
             {
-                "name": "Budget Allocation {}".format(self.budget_period.display_name),
+                "name": f"Budget Allocation {self.budget_period.display_name}",
                 "line_ids": [
                     (
                         0,
