@@ -28,13 +28,19 @@
         groups="budget_control.group_budget_control_manager"
         sequence="30"
     />
-    <!-- Sub Header menu -->
-    <!-- Budget Control -->
+    <!-- Sub Header menu (Budgeting)-->
     <menuitem
         id="budget_control_menu"
         parent="budget_control.budget_budget_menu"
         name="Budget Control"
         sequence="20"
+    />
+    <menuitem
+        id="budget_planning_menu"
+        parent="budget_control.budget_budget_menu"
+        name="Budget Planning"
+        sequence="40"
+        groups="budget_control.group_budget_control_manager"
     />
     <menuitem
         id="budget_menu_carry_forward"
@@ -43,6 +49,14 @@
         sequence="50"
         groups="budget_control.group_budget_control_manager"
     />
+    <!-- Sub Header menu (Reports)-->
+    <menuitem
+        id="budget_menu_monitoring"
+        name="Monitoring"
+        parent="budget_control.budget_report_menu"
+        sequence="20"
+    />
+    <!-- Sub Header menu (Configurations)-->
     <menuitem
         id="budget_config_sub_menu"
         parent="budget_control.budget_config_menu"
@@ -55,13 +69,5 @@
         parent="budget_control.budget_config_menu"
         sequence="20"
         groups="analytic.group_analytic_accounting"
-    />
-    <!-- Budget Planning -->
-    <menuitem
-        id="budget_planning_menu"
-        parent="budget_control.budget_budget_menu"
-        name="Budget Planning"
-        sequence="40"
-        groups="budget_control.group_budget_control_manager"
     />
 </odoo>

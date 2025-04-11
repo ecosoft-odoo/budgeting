@@ -3,7 +3,7 @@
 
 from collections import defaultdict
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import float_compare
 
@@ -374,7 +374,7 @@ class BudgetControl(models.Model):
                 == 1
             ):
                 raise UserError(
-                    _(
+                    self.env._(
                         "Planning amount should be greater than "
                         "initial balance {amount:,.2f} {symbol}"
                     ).format(amount=rec.amount_initial, symbol=rec.currency_id.symbol)
@@ -413,23 +413,20 @@ class BudgetControl(models.Model):
         if self._context.get("keep_item_amount", False):
             # convert dict to list
             domain_item = [(k, "=", v) for k, v in dict_value.items()]
-            item = self.line_ids.search(domain_item, limit=1)
-            dict_value["amount"] = item.amount
+            line_amount = self.line_ids.search_read(
+                domain=domain_item, fields=["amount"], limit=1
+            )
+            if line_amount:
+                dict_value["amount"] = line_amount[0].get("amount", 0.0)
         return dict_value
-
-    def _keep_item_amount(self, vals, old_items):
-        """Find amount from old plan for update new plan"""
-        for val in vals:
-            domain_item = [(k, "=", v) for k, v in val.items()]
-            item = old_items.search(domain_item)
-            val["amount"] = item.amount
 
     def prepare_budget_control_matrix(self):
         BudgetTemplateLine = self.env["budget.template.line"]
         DateRange = self.env["date.range"]
         for bc in self:
             if not bc.plan_date_range_type_id:
-                raise UserError(_("Please select range"))
+                raise UserError(self.env._("Please select range"))
+
             template_lines = BudgetTemplateLine.search(bc._domain_template_line())
             date_ranges = DateRange.search(
                 [
@@ -438,21 +435,18 @@ class BudgetControl(models.Model):
                     ("date_end", "<=", bc.date_to),
                 ]
             )
-            items = []
-            for date_range in date_ranges:
-                items += [
-                    bc._get_budget_lines(date_range, template_line)
-                    for template_line in template_lines
-                ]
-            # Delete the existing budget lines
-            bc.line_ids.unlink()
-            # Create the new budget lines and Reset the carry over budget
-            bc.write(
-                {
-                    "init_budget_commit": False,
-                    "line_ids": [(0, 0, val) for val in items],
-                }
-            )
+            items = [
+                bc._get_budget_lines(date_range, template_line)
+                for date_range in date_ranges  # Loop1
+                for template_line in template_lines  # Loop2
+            ]
+
+        # Delete the existing budget lines
+        self.mapped("line_ids").unlink()
+
+        # Create the new budget lines and Reset the carry over budget
+        self.write({"init_budget_commit": False})
+        self.env["budget.control.line"].create(items)
 
     def _get_domain_budget_monitoring(self):
         return [("analytic_account_id", "=", self.analytic_account_id.id)]

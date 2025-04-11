@@ -211,6 +211,13 @@ class TestBudgetControl(BudgetControlCommon):
         self.budget_control.action_submit()
         self.budget_control.action_done()
 
+        # View monitoring from budget control
+        action = self.budget_control.action_view_monitoring()
+        self.assertEqual(action["res_model"], "budget.monitor.report")
+        self.assertEqual(
+            action["domain"][0][2], self.budget_control.analytic_account_id.id
+        )
+
         # KPI not in control -> lock
         with self.assertRaisesRegex(UserError, "not valid for budgeting"):
             bill1.action_post()
@@ -248,6 +255,18 @@ class TestBudgetControl(BudgetControlCommon):
         # Check budget
         with self.assertRaisesRegex(UserError, "Budget not sufficient,"):
             bill2.action_post()
+
+    @freeze_time("2001-02-01")
+    def test_07_budget_control_check_soft_hard_reset(self):
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2400.0)
+        # Test Soft Reset, Amount should be 2400 (no change)
+        self.budget_control.with_context(
+            keep_item_amount=1
+        ).prepare_budget_control_matrix()
+        self.assertAlmostEqual(self.budget_control.amount_balance, 2400.0)
+        # Test Hard Reset, Amount should be 0
+        self.budget_control.prepare_budget_control_matrix()
+        self.assertAlmostEqual(self.budget_control.amount_balance, 0.0)
 
     @freeze_time("2001-02-01")
     def test_07_control_level_analytic_kpi(self):

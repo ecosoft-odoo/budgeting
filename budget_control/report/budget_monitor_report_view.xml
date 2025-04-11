@@ -131,7 +131,7 @@
         name="Budget Monitoring"
         action="action_budget_monitor_report_all"
         id="menu_action_budget_monitor_report_all"
-        parent="budget_report_menu"
+        parent="budget_menu_monitoring"
         sequence="10"
     />
 </odoo>
