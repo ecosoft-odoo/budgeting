@@ -134,7 +134,7 @@ class BudgetMonitorReport(models.Model):
             res_field = source["budget_move"][1]  # i.e., move_line_id
             sql_select[amount_type] = {
                 0: f"""
-                {amount_type[:1]}000000000 + a.id as id,
+                {amount_type[:2]}000000000 + a.id as id,
                 '{res_model},' || a.{res_field} as res_id,
                 a.kpi_id,
                 a.analytic_account_id,
@@ -171,7 +171,7 @@ class BudgetMonitorReport(models.Model):
     def _select_budget(self):
         return {
             0: """
-            1000000000 + a.id as id,
+            10000000000 + a.id as id,
             'budget.control.line,' || a.id as res_id,
             a.kpi_id,
             a.analytic_account_id,

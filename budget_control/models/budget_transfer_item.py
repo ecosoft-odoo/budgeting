@@ -15,6 +15,7 @@ class BudgetTransferItem(models.Model):
         ondelete="cascade",
         index=True,
     )
+    label_info = fields.Char(string=" ", default="→", readonly=True)
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
         related="transfer_id.budget_period_id",

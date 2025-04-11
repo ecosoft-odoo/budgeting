@@ -89,7 +89,7 @@
         name="Actual Budget Moves"
         action="action_account_budget_move"
         id="menu_action_account_budget_move"
-        parent="budget_report_menu"
+        parent="budget_menu_monitoring"
         sequence="20"
     />
 </odoo>
