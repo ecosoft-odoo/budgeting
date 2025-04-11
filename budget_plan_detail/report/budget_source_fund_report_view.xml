@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <record id="view_source_fund_monitor_report_tree" model="ir.ui.view">
-        <field name="name">budget.source.fund.report.tree</field>
+    <record id="view_source_fund_monitor_report_list" model="ir.ui.view">
+        <field name="name">budget.source.fund.report.list</field>
         <field name="model">budget.source.fund.report</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="amount_type" />
                 <field name="res_id" />
                 <field name="fund_id" />
                 <field name="fund_group_id" optional="hide" />
                 <field name="analytic_account_id" />
                 <field name="amount" />
-            </tree>
+            </list>
         </field>
     </record>
     <record id="view_source_fund_monitor_report_pivot" model="ir.ui.view">
@@ -81,15 +81,15 @@
     <record id="action_source_fund_monitor_report_all" model="ir.actions.act_window">
         <field name="name">Source of Fund Monitoring</field>
         <field name="res_model">budget.source.fund.report</field>
-        <field name="view_mode">pivot,tree,graph</field>
+        <field name="view_mode">pivot,list,graph</field>
         <field name="context">{'group_by':[], 'group_by_no_leaf':1}</field>
         <field name="search_view_id" ref="view_source_fund_monitor_report_search" />
     </record>
     <menuitem
+        id="menu_action_source_fund_monitor_report_all"
         name="Budget Source Fund Monitoring"
         action="action_source_fund_monitor_report_all"
-        id="menu_action_source_fund_monitor_report_all"
-        parent="budget_control.budget_report_menu"
-        sequence="30"
+        parent="budget_control.budget_menu_monitoring"
+        sequence="11"
     />
 </odoo>

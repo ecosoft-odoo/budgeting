@@ -1,6 +1,6 @@
-=================
-Budget Allocation
-=================
+=====================
+Budget Plan - Details
+=====================
 
 .. 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -151,10 +151,13 @@ Maintainers
 .. |maintainer-ps-tubtim| image:: https://github.com/ps-tubtim.png?size=40px
     :target: https://github.com/ps-tubtim
     :alt: ps-tubtim
+.. |maintainer-Saran440| image:: https://github.com/Saran440.png?size=40px
+    :target: https://github.com/Saran440
+    :alt: Saran440
 
-Current maintainer:
+Current maintainers:
 
-|maintainer-ps-tubtim| 
+|maintainer-ps-tubtim| |maintainer-Saran440| 
 
 This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_plan_detail>`_ project on GitHub.
 

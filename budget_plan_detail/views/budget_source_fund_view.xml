@@ -15,13 +15,13 @@
             </search>
         </field>
     </record>
-    <record id="budget_source_fund_group_tree" model="ir.ui.view">
-        <field name="name">budget.source.fund.group.tree</field>
+    <record id="budget_source_fund_group_list" model="ir.ui.view">
+        <field name="name">budget.source.fund.group.list</field>
         <field name="model">budget.source.fund.group</field>
         <field name="arch" type="xml">
-            <tree sample="1">
+            <list sample="1">
                 <field name="name" />
-            </tree>
+            </list>
         </field>
     </record>
     <record id="budget_source_fund_group_form" model="ir.ui.view">
@@ -34,7 +34,7 @@
                         name="web_ribbon"
                         title="Archived"
                         bg_color="bg-danger"
-                        attrs="{'invisible': [('active', '=', True)]}"
+                        invisible="active"
                     />
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only" />
@@ -58,28 +58,25 @@
                         </page>
                     </notebook>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers" />
-                    <field name="message_ids" widget="mail_thread" />
-                </div>
+                <chatter />
             </form>
         </field>
     </record>
     <record id="budget_source_fund_group_action" model="ir.actions.act_window">
         <field name="name">Source of Fund Groups</field>
         <field name="res_model">budget.source.fund.group</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!-- Source Fund -->
-    <record id="budget_source_fund_tree" model="ir.ui.view">
-        <field name="name">budget.source.fund.tree</field>
+    <record id="budget_source_fund_list" model="ir.ui.view">
+        <field name="name">budget.source.fund.list</field>
         <field name="model">budget.source.fund</field>
         <field name="arch" type="xml">
-            <tree sample="1">
+            <list sample="1">
                 <field name="name" />
                 <field name="fund_group_id" />
-            </tree>
+            </list>
         </field>
     </record>
     <record id="budget_source_fund_filter" model="ir.ui.view">
@@ -120,7 +117,7 @@
                         name="web_ribbon"
                         title="Archived"
                         bg_color="bg-danger"
-                        attrs="{'invisible': [('active', '=', True)]}"
+                        invisible="active"
                     />
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only" />
@@ -149,18 +146,16 @@
                         <field name="objective" nolabel="1" />
                     </group>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers" />
-                    <field name="message_ids" widget="mail_thread" />
-                </div>
+                <chatter />
             </form>
         </field>
     </record>
     <record id="budget_source_fund_action" model="ir.actions.act_window">
         <field name="name">Source of Fund</field>
         <field name="res_model">budget.source.fund</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
+
     <!-- Menu -->
     <menuitem
         id="budget_source_of_fund_menu"
@@ -170,14 +165,14 @@
     />
     <menuitem
         id="budget_source_fund_menu"
-        parent="budget_allocation.budget_source_of_fund_menu"
+        parent="budget_source_of_fund_menu"
         name="Source of Fund"
         action="budget_source_fund_action"
         sequence="10"
     />
     <menuitem
         id="budget_source_fund_group_menu"
-        parent="budget_allocation.budget_source_of_fund_menu"
+        parent="budget_source_of_fund_menu"
         name="Source of Fund Groups"
         action="budget_source_fund_group_action"
         sequence="20"

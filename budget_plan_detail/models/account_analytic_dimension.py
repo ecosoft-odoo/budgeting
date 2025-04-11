@@ -11,7 +11,7 @@ class AccountAnalyticDimension(models.Model):
     def get_model_names(self):
         res = super().get_model_names()
         return res + [
-            "budget.allocation.line",
+            "budget.plan.line.detail",
             "account.budget.move",
             "budget.move.adjustment.item",
             "budget.monitor.report",

@@ -7,19 +7,19 @@ from odoo import api, fields, models
 class BudgetControl(models.Model):
     _inherit = "budget.control"
 
-    allocation_line_ids = fields.One2many(
-        comodel_name="budget.allocation.line",
+    plan_line_detail_ids = fields.One2many(
+        comodel_name="budget.plan.line.detail",
         inverse_name="budget_control_id",
-        compute="_compute_allocation_line_ids",
-        compute_sudo=True,
+        compute="_compute_line_detail_ids",
+        store=True,
     )
     fund_ids = fields.Many2many(
         comodel_name="budget.source.fund",
         relation="budget_control_source_fund_rel",
         column1="budget_control_id",
         column2="fund_id",
-        compute="_compute_allocation_line_ids",
-        compute_sudo=True,
+        compute="_compute_line_detail_ids",
+        store=True,
         string="Funds",
         readonly=True,
     )
@@ -27,17 +27,16 @@ class BudgetControl(models.Model):
     analytic_tag_ids = fields.Many2many(
         comodel_name="account.analytic.tag",
         string="Analytic Tags",
-        compute="_compute_allocation_line_ids",
-        compute_sudo=True,
+        compute="_compute_line_detail_ids",
         store=True,
     )
 
     @api.depends("analytic_account_id")
-    def _compute_allocation_line_ids(self):
+    def _compute_line_detail_ids(self):
         for rec in self:
-            allocation_line = rec.analytic_account_id.allocation_line_ids.filtered(
-                lambda l: l.budget_period_id == self.budget_period_id
+            line_details = rec.analytic_account_id.plan_line_detail_ids.filtered(
+                lambda line, rec=rec: line.budget_period_id == rec.budget_period_id
             )
-            rec.allocation_line_ids = allocation_line
-            rec.fund_ids = allocation_line.mapped("fund_id")
-            rec.analytic_tag_ids = allocation_line.mapped("analytic_tag_ids")
+            rec.plan_line_detail_ids = line_details
+            rec.fund_ids = line_details.mapped("fund_id")
+            rec.analytic_tag_ids = line_details.mapped("analytic_tag_ids")

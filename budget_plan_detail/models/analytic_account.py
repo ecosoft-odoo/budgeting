@@ -7,7 +7,7 @@ from odoo import fields, models
 class AccountAnalyticAccount(models.Model):
     _inherit = "account.analytic.account"
 
-    allocation_line_ids = fields.One2many(
-        comodel_name="budget.allocation.line",
+    plan_line_detail_ids = fields.One2many(
+        comodel_name="budget.plan.line.detail",
         inverse_name="analytic_account_id",
     )

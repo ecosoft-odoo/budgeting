@@ -10,34 +10,29 @@
         <field name="arch" type="xml">
             <!-- Add fund -->
             <xpath
-                expr="//page[@name='adjust_item_ids']//tree/field[@name='json_budget_popover']"
+                expr="//page[@name='adjust_item_ids']//list/field[@name='json_budget_popover']"
                 position="after"
             >
-                <field name="fund_all" invisible="1" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    domain="
+                        [('id', 'in', analytic_tag_all or []),
+                        '|',
+                        ('id', 'in', domain_tag_ids or []),
+                        ('analytic_dimension_id.by_sequence', '=', False)]"
+                />
+                <field name="domain_tag_ids" column_invisible="1" />
+                <field name="analytic_tag_all" column_invisible="1" />
+                <field name="fund_all" column_invisible="1" />
                 <field name="fund_id" optional="show" />
             </xpath>
             <xpath
-                expr="//page[@name='adjust_item_ids']//form//field[@name='analytic_account_id']"
+                expr="//page[@name='adjust_item_ids']//form//field[@name='analytic_distribution']"
                 position="after"
             >
                 <field name="fund_all" invisible="1" />
                 <field name="fund_id" />
-            </xpath>
-            <!-- Add analytic tags -->
-            <xpath
-                expr="//field[@name='adjust_item_ids']/tree/field[@name='analytic_tag_ids']"
-                position="before"
-            >
-                <field name="domain_tag_ids" invisible="1" />
-                <field name="analytic_tag_all" invisible="1" />
-            </xpath>
-            <xpath
-                expr="//field[@name='adjust_item_ids']/tree/field[@name='analytic_tag_ids']"
-                position="attributes"
-            >
-                <attribute
-                    name="domain"
-                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
             </xpath>
         </field>
     </record>

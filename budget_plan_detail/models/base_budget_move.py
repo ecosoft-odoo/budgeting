@@ -1,10 +1,8 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from psycopg2 import sql
-
-from odoo import _, api, fields, models
-from odoo.tools import float_compare
+from odoo import api, fields, models
+from odoo.tools import SQL, float_compare
 
 
 class BaseBudgetMove(models.AbstractModel):
@@ -12,14 +10,16 @@ class BaseBudgetMove(models.AbstractModel):
     _inherit = ["analytic.dimension.line", "base.budget.move"]
     _analytic_tag_field_name = "analytic_tag_ids"
 
+    analytic_tag_ids = fields.Many2many(
+        comodel_name="account.analytic.tag",
+        string="Analytic Tags",
+    )
     fund_id = fields.Many2one(
         comodel_name="budget.source.fund",
-        string="Fund",
         index=True,
     )
     fund_group_id = fields.Many2one(
         comodel_name="budget.source.fund.group",
-        string="Fund Group",
         index=True,
     )
 
@@ -36,11 +36,12 @@ class BaseBudgetMove(models.AbstractModel):
             )
             for dimension in dimensions
         ]
+        analytics = docline._convert_analytics()
         analytic_tag_domain = " and ".join(analytic_tag_domain)
         where_query = (
             "analytic_account_id = {analytic} and active = True"
             " and {fund_domain} {analytic_tag_domain}".format(
-                analytic=docline[docline._budget_analytic_field].id,
+                analytic=analytics.id,
                 fund_domain=fund_domain,
                 analytic_tag_domain=f"and {analytic_tag_domain}"
                 if analytic_tag_domain
@@ -53,24 +54,47 @@ class BaseBudgetMove(models.AbstractModel):
         return self.env["budget.source.fund.report"]
 
     def _get_query_dict(self, docline):
-        self._cr.execute(
-            sql.SQL(
+        self.env.cr.execute(
+            SQL(
                 f"""
-            SELECT * FROM ({self._get_budget_source_fund_report()._table_query}) report
-            WHERE {self._get_where_commitment(docline)}"""
+                    SELECT amount, amount_type, budget_period_id
+                    FROM (%s) report
+                    WHERE {self._get_where_commitment(docline)}
+                """,
+                SQL(self._get_budget_source_fund_report()._table_query),
             )
         )
         dict_data = self.env.cr.dictfetchall()
         return dict_data
 
+    def _map_commit_dates_to_periods(self, dates_to_lookup):
+        periods_map = {}
+        if dates_to_lookup:
+            min_date = min(dates_to_lookup)
+            max_date = max(dates_to_lookup)
+            relevant_periods = self.env["budget.period"].search(
+                [
+                    ("bm_date_from", "<=", max_date),
+                    ("bm_date_to", ">=", min_date),
+                ]
+            )
+            for date_to_map in dates_to_lookup:
+                matching = relevant_periods.filtered(
+                    lambda p, date_to_map=date_to_map: p.bm_date_from
+                    <= date_to_map
+                    <= p.bm_date_to
+                )
+                periods_map[date_to_map] = matching.id if len(matching) == 1 else False
+        return periods_map
+
     @api.model
-    def check_budget_allocation_limit(self, doclines):
+    def check_budget_detail_limit(self, doclines):
         """
-        Check amount with budget allocation, based on budget source fund report.
+        Check amount with budget detail, based on budget source fund report.
 
         1. Check analytic account from commitment.
-        2. Find budget allocation line from condition with monitoring.
-        3. Calculate released amount on budget allocation (2) - commitment,
+        2. Find budget detail from condition with monitoring.
+        3. Calculate released amount on budget detail (2) - commitment,
         ensuring it is not negative (1).
 
         Note: This is a base function that can be used by server actions or installed
@@ -78,11 +102,11 @@ class BaseBudgetMove(models.AbstractModel):
 
         Example usage:
 
-        Budget allocation has allocation:
-            Allocation Line | Analytic Account | Fund  | Tags | Allocated | ...
+        Budget detail has allocate budget:
+            Plan Detail Line | Analytic Account | Fund  | Tags | Allocated | ...
             --------------------------------------------------------------
-            1               |               A  | Fund1 | Tag1 |     100.0 | ...
-            2               |               A  | Fund2 | Tag2 |     100.0 | ...
+            1                |               A  | Fund1 | Tag1 |     100.0 | ...
+            2                |               A  | Fund2 | Tag2 |     100.0 | ...
 
         Condition constraint (e.g. invoice lines)
             - User can use:
@@ -102,45 +126,76 @@ class BaseBudgetMove(models.AbstractModel):
         """
         # Base on budget source fund monitoring
         errors = []
-        budget_period_obj = self.env["budget.period"]
+        dates_to_lookup = set()
+        valid_doclines_map = {}
+
         for docline in doclines:
-            if not docline[docline._budget_analytic_field]:
+            analytic_field = docline._budget_analytic_field
+            if not docline[analytic_field]:
                 continue
+
+            valid_doclines_map[docline.id] = docline
+
+            if docline.date_commit:
+                dates_to_lookup.add(docline.date_commit)
+
+        periods_map = self._map_commit_dates_to_periods(dates_to_lookup)
+        prec_digits = self.env.user.company_id.currency_id.decimal_places
+        for docline_id in valid_doclines_map:
+            docline = valid_doclines_map[docline_id]
             name = docline.name
             fund_name = docline.fund_id.name
             tag_name = ", ".join(docline.analytic_tag_ids.mapped("name"))
-            query_dict = self._get_query_dict(docline)
+
+            period_id = False  # ค่าเริ่มต้น
+            if docline.date_commit:
+                period_id = periods_map.get(docline.date_commit, False)
+
+            if not period_id:
+                error_date_str = (
+                    str(docline.date_commit) if docline.date_commit else "missing"
+                )
+                errors.append(
+                    self.env._(
+                        "Budget period could not be uniquely determined "
+                        "for '%(name)s' on date %(date)s.",
+                        name=name,
+                        date=error_date_str,
+                    )
+                )
+                continue
+
+            try:
+                query_dict = self._get_query_dict(docline)
+            except Exception as e:
+                errors.append(f"Error querying budget for {name}: {e}")
+                continue
+
             if not any(x["amount_type"] == "10_budget" for x in query_dict):
                 errors.append(
-                    _(
+                    self.env._(
                         "%(name)s & %(fund_name)s & %(tag_name)s is not allocated "
-                        "on budget allocation",
+                        "on budget plan detail",
                         name=name,
                         fund_name=fund_name,
                         tag_name=tag_name or "False",
                     )
                 )
                 continue
-            budget_period_id = budget_period_obj.search(
-                [
-                    ("bm_date_from", "<=", docline.date_commit),
-                    ("bm_date_to", ">=", docline.date_commit),
-                ]
-            )
-            budget_period_id.ensure_one()
+
             total_spend = sum(
                 x["amount"]
                 for x in query_dict
-                if isinstance(x["amount"], float)
-                and x["budget_period_id"] == budget_period_id.id
+                if isinstance(x.get("amount"), float)
+                and x.get("budget_period_id") == period_id
             )
+
             # Check that amount after commit is more than 0.0
-            prec_digits = self.env.user.company_id.currency_id.decimal_places
             if float_compare(total_spend, 0.0, precision_digits=prec_digits) == -1:
                 errors.append(
-                    _(
+                    self.env._(
                         "%(name)s & %(fund_name)s & %(tag_name)s spend amount "
-                        "over budget allocation limit {:,.2f}",
+                        "over budget plan detail limit {:,.2f}",
                         name=name,
                         fund_name=fund_name,
                         tag_name=tag_name or "False",
@@ -160,40 +215,46 @@ class BudgetDoclineMixinBase(models.AbstractModel):
     )
     fund_all = fields.Many2many(
         comodel_name="budget.source.fund",
-        compute="_compute_allocation_line_all",
+        compute="_compute_plan_detail_all",
     )
     analytic_tag_all = fields.Many2many(
         comodel_name="account.analytic.tag",
-        compute="_compute_allocation_line_all",
+        compute="_compute_plan_detail_all",
     )
 
     def _get_dimension_fields(self):
-        if self.env.context.get("update_custom_fields"):
-            return []  # Avoid to report these columns when not yet created
-        return [x for x in self.fields_get().keys() if x.startswith("x_dimension_")]
-
-    @api.onchange("fund_all")
-    def _onchange_fund_all(self):
-        for rec in self:
-            rec.fund_id = rec.fund_all._origin.id if len(rec.fund_all) == 1 else False
+        return [x for x in self._fields if x.startswith("x_dimension_")]
 
     @api.depends(
         lambda self: (self._budget_analytic_field,)
         if self._budget_analytic_field
         else ()
     )
-    def _compute_allocation_line_all(self):
+    def _compute_plan_detail_all(self):
         for rec in self:
-            allocation_lines = rec[rec._budget_analytic_field].allocation_line_ids
-            rec.fund_all = allocation_lines.mapped("fund_id")
-            rec.analytic_tag_all = allocation_lines.mapped("analytic_tag_ids")
+            if not rec[rec._budget_analytic_field]:
+                rec.fund_all = False
+                rec.analytic_tag_all = False
+                continue
+            analytics = rec._convert_analytics(rec[rec._budget_analytic_field])
+            line_details = analytics.plan_line_detail_ids
+            fund_all = line_details.mapped("fund_id")
+            rec.fund_all = fund_all
+            rec.analytic_tag_all = line_details.mapped("analytic_tag_ids")
+            # Default if lenght is 1
+            if len(fund_all) == 1:
+                rec.fund_id = fund_all.id
+            if rec.fund_id and rec.fund_id not in fund_all:
+                rec.fund_id = False
 
 
 class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
 
-    def _update_budget_commitment(self, budget_vals, reverse=False):
-        budget_vals = super()._update_budget_commitment(budget_vals, reverse=reverse)
+    def _update_budget_commitment(self, budget_vals, analytic, reverse=False):
+        budget_vals = super()._update_budget_commitment(
+            budget_vals, analytic, reverse=reverse
+        )
         budget_vals["fund_id"] = self.fund_id.id
         budget_vals["fund_group_id"] = self.fund_id.fund_group_id.id
         return budget_vals
