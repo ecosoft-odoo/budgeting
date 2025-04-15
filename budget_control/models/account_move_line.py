@@ -20,7 +20,7 @@ class AccountMoveLine(models.Model):
         related="move_id.return_amount_commit",
     )
 
-    @api.depends()
+    @api.depends("move_id.not_affect_budget", "analytic_distribution")
     def _compute_can_commit(self):
         """
         Compute whether this account move line can commit budget.
@@ -29,7 +29,10 @@ class AccountMoveLine(models.Model):
         """
         res = super()._compute_can_commit()
         no_budget_moves = self.mapped("move_id").filtered("not_affect_budget")
-        no_budget_moves.mapped("line_ids").update({"can_commit": False})
+        if no_budget_moves:
+            lines_to_update = no_budget_moves.mapped("line_ids").filtered("can_commit")
+            if lines_to_update:
+                lines_to_update.write({"can_commit": False})
         return res
 
     def recompute_budget_move(self):

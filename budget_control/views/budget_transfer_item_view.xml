@@ -17,6 +17,7 @@
                 />
                 <field name="state_from" optional="hide" />
                 <field name="amount_from_available" string="Available" />
+                <field name="label_info" />
                 <field
                     name="budget_control_to_id"
                     options="{'no_create_edit': True, 'no_open': True, 'no_create': True}"

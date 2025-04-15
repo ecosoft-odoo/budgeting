@@ -192,10 +192,11 @@ class BudgetPlan(models.Model):
     def check_plan_consumed(self):
         prec_digits = self.currency_id.decimal_places
         for line in self.mapped("line_ids"):
+            amount = line.amount
             # Check amount + transferred is less than the amount consumed
             if (
                 float_compare(
-                    line.amount + line.budget_control_ids.transferred_amount,
+                    amount + line.budget_control_ids.transferred_amount,
                     line.amount_consumed,
                     precision_digits=prec_digits,
                 )
@@ -207,7 +208,16 @@ class BudgetPlan(models.Model):
                         f"has amount less than consumed."
                     )
                 )
-            line.allocated_amount = line.released_amount = line.amount
+            # Update allocated/released if changed
+            if line.allocated_amount != amount or line.released_amount != amount:
+                # NOTE: If lines are large, this can change to direct SQL
+                # to update the plan line
+                line.write(
+                    {
+                        "allocated_amount": amount,
+                        "released_amount": amount,
+                    }
+                )
 
     def action_update_amount_consumed(self):
         """Update amount consumed and released from budget control"""
@@ -228,35 +238,42 @@ class BudgetPlan(models.Model):
                 line.amount_consumed = active_control.amount_consumed
                 line.released_amount = active_control.released_amount
 
+    def _prepare_update_plan_lines(self, analytics):
+        lines = []
+        for analytic in analytics:
+            active_control = analytic.budget_control_ids.filtered(
+                lambda control, self=self: control.budget_period_id
+                == self.budget_period_id
+            )
+            lines.append(
+                Command.create(
+                    {
+                        "analytic_account_id": analytic.id,
+                        "amount_consumed": active_control.amount_consumed,
+                        "released_amount": active_control.released_amount,
+                    }
+                )
+            )
+        return lines
+
     def action_update_plan(self):
         """Update plan line is not in plan line"""
         Analytic = self.env["account.analytic.account"]
+
         for rec in self:
-            plan_analytic = rec.line_ids.mapped("analytic_account_id")
-            # search analytic is not add in plan line
-            new_analytic = Analytic.search(
-                [
-                    ("bm_date_from", "<=", rec.date_to),
-                    ("bm_date_to", ">=", rec.date_from),
-                    ("id", "not in", plan_analytic.ids),
-                ]
-            )
-            lines = []
-            for new_aa in new_analytic:
-                active_control = new_aa.budget_control_ids.filtered(
-                    lambda control, rec=rec: control.budget_period_id
-                    == rec.budget_period_id
-                )
-                lines.append(
-                    Command.create(
-                        {
-                            "analytic_account_id": new_aa.id,
-                            "amount_consumed": active_control.amount_consumed,
-                            "released_amount": active_control.released_amount,
-                        },
-                    )
-                )
-            rec.write({"line_ids": lines})
+            existing_analytic_ids = set(rec.line_ids.mapped("analytic_account_id.id"))
+            domain = [
+                ("bm_date_from", "<=", rec.date_to),
+                ("bm_date_to", ">=", rec.date_from),
+            ]
+            if existing_analytic_ids:
+                domain.append(("id", "not in", list(existing_analytic_ids)))
+
+            new_analytics = Analytic.search(domain)
+
+            lines = rec._prepare_update_plan_lines(new_analytics)
+            if lines:
+                rec.write({"line_ids": lines})
 
     def _get_context_plan_analytic(self):
         ctx = self.env.context.copy()

@@ -255,8 +255,6 @@ class BudgetDoclineMixin(models.AbstractModel):
             # Compute date commit
             if rec.budget_move_ids:
                 rec.date_commit = min(rec.budget_move_ids.mapped("date"))
-            else:
-                rec.date_commit = rec.date_commit
 
     def _compute_json_budget_popover(self):
         FloatConverter = self.env["ir.qweb.field.float"]
