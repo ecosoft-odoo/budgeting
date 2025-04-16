@@ -17,16 +17,18 @@ Budget Activity
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github
-    :target: https://github.com/ecosoft-odoo/budgeting/tree/16.0/budget_activity
+    :target: https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_activity
     :alt: ecosoft-odoo/budgeting
 
 |badge1| |badge2| |badge3|
 
-This module helps the system accurately record the account code for budget recording.
-It includes an "Activity" linking the two, where the activity serves as a match between what the user understands and the account code.
-The user can select from a list of activity that have been created in the system,
-and the system will then match the selected activity to the corresponding account,
-so the user does not need to understand the account themselves.
+This module helps the system accurately record the account code for
+budget recording. It includes an "Activity" linking the two, where the
+activity serves as a match between what the user understands and the
+account code. The user can select from a list of activity that have been
+created in the system, and the system will then match the selected
+activity to the corresponding account, so the user does not need to
+understand the account themselves.
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
@@ -43,16 +45,23 @@ Usage
 
 To used this module you have to configued Budget Activity first.
 
-#. Go to Budgeting > Activity > Budget Activity
-#. Create new activity, select a KPI (if you want to group it) and match the activity to an account.
-#. Add a `Keyword` if you need to search for other words to show this activity. For example, the activity name is `Activity1` and the keywords are `Ticket` and `Transportation`. In the Activity field, the user can search for the name `Ticket` to see the activity `Activity1`.
-#. Go to Budgeting > Configurations > Budget Template
-#. Create new template or use old template (if you have).
-#. When you select a KPI, it will automatically select the corresponding activity and account. If you haven't set up an activity in the KPI, you can select the activity and it will automatically select the corresponding account.
+1. Go to Budgeting > Activity > Budget Activity
+2. Create new activity, select a KPI (if you want to group it) and match
+   the activity to an account.
+3. Add a Keyword if you need to search for other words to show this
+   activity. For example, the activity name is Activity1 and the
+   keywords are Ticket and Transportation. In the Activity field, the
+   user can search for the name Ticket to see the activity Activity1.
+4. Go to Budgeting > Configurations > Budget Template
+5. Create new template or use old template (if you have).
+6. When you select a KPI, it will automatically select the corresponding
+   activity and account. If you haven't set up an activity in the KPI,
+   you can select the activity and it will automatically select the
+   corresponding account.
 
-
-In the usage window, you will see a new field called "Activity" where the user can select from a list of options.
-The system will then match the selected activity to the corresponding account that has been set up.
+In the usage window, you will see a new field called "Activity" where
+the user can select from a list of options. The system will then match
+the selected activity to the corresponding account that has been set up.
 
 Bug Tracker
 ===========
@@ -60,7 +69,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/ecosoft-odoo/budgeting/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_activity%0Aversion:%2016.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_activity%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -68,21 +77,21 @@ Credits
 =======
 
 Authors
-~~~~~~~
+-------
 
 * Ecosoft
 
 Contributors
-~~~~~~~~~~~~
+------------
 
-* `Ecosoft <http://ecosoft.co.th>`__:
+- `Ecosoft <http://ecosoft.co.th>`__:
 
-    * Kitti Upariphutthiphong <kittiu@ecosoft.co.th>
-    * Saran Lim. <saranl@ecosoft.co.th>
-    * Pimolnat Suntian <pimolnats@ecosoft.co.th>
+     - Kitti Upariphutthiphong <kittiu@ecosoft.co.th>
+     - Saran Lim. <saranl@ecosoft.co.th>
+     - Pimolnat Suntian <pimolnats@ecosoft.co.th>
 
 Maintainers
-~~~~~~~~~~~
+-----------
 
 .. |maintainer-kittiu| image:: https://github.com/kittiu.png?size=40px
     :target: https://github.com/kittiu
@@ -92,6 +101,6 @@ Current maintainer:
 
 |maintainer-kittiu| 
 
-This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/16.0/budget_activity>`_ project on GitHub.
+This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_activity>`_ project on GitHub.
 
 You are welcome to contribute.
