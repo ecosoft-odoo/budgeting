@@ -198,10 +198,11 @@ class BudgetPlan(models.Model):
         self.action_update_plan()
         prec_digits = self.env.user.company_id.currency_id.decimal_places
         for line in self.mapped("line_ids"):
+            amount = line.amount
             # Check amount + transferred is less than the amount consumed
             if (
                 float_compare(
-                    line.amount + line.budget_control_ids.transferred_amount,
+                    amount + line.budget_control_ids.transferred_amount,
                     line.amount_consumed,
                     precision_digits=prec_digits,
                 )
@@ -212,7 +213,16 @@ class BudgetPlan(models.Model):
                         line.analytic_account_id.display_name
                     )
                 )
-            line.allocated_amount = line.released_amount = line.amount
+            # Update allocated/released if changed
+            if line.allocated_amount != amount or line.released_amount != amount:
+                # NOTE: If lines are large, this can change to direct SQL
+                # to update the plan line
+                line.write(
+                    {
+                        "allocated_amount": amount,
+                        "released_amount": amount,
+                    }
+                )
 
     def action_confirm(self):
         self.check_plan_consumed()
