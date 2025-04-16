@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <!-- Budget Activity Keyword -->
-    <record id="budget_activity_keyword_view_tree" model="ir.ui.view">
-        <field name="name">budget.activity.keyword.view.tree</field>
+    <record id="budget_activity_keyword_view_list" model="ir.ui.view">
+        <field name="name">budget.activity.keyword.view.list</field>
         <field name="model">budget.activity.keyword</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="name" />
                 <field name="company_id" groups="base.group_multi_company" />
                 <field name="active" />
-            </tree>
+            </list>
         </field>
     </record>
     <record id="budget_activity_keyword_view_search" model="ir.ui.view">
@@ -49,7 +49,7 @@
                         name="web_ribbon"
                         title="Archived"
                         bg_color="bg-danger"
-                        attrs="{'invisible': [('active', '=', True)]}"
+                        invisible="active"
                     />
                     <group>
                         <group>
@@ -64,26 +64,28 @@
                         </group>
                     </group>
                 </sheet>
+                <chatter />
             </form>
         </field>
     </record>
     <record id="budget_activity_keyword_action" model="ir.actions.act_window">
         <field name="name">Budget Activity Keywords</field>
-        <field name="view_id" ref="budget_activity_keyword_view_tree" />
+        <field name="view_id" ref="budget_activity_keyword_view_list" />
         <field name="res_model">budget.activity.keyword</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
+
     <!-- Budget Activity -->
-    <record id="budget_activity_view_tree" model="ir.ui.view">
-        <field name="name">budget.activity.view.tree</field>
+    <record id="budget_activity_view_list" model="ir.ui.view">
+        <field name="name">budget.activity.view.list</field>
         <field name="model">budget.activity</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="name" />
                 <field name="kpi_id" />
                 <field name="account_id" />
                 <field name="keyword_ids" widget="many2many_tags" optional="hide" />
-            </tree>
+            </list>
         </field>
     </record>
     <record id="view_budget_activity_filter" model="ir.ui.view">
@@ -125,7 +127,7 @@
                         name="web_ribbon"
                         title="Archived"
                         bg_color="bg-danger"
-                        attrs="{'invisible': [('active', '=', True)]}"
+                        invisible="active"
                     />
                     <div class="oe_title">
                         <label for="name" class="oe_edit_only" />
@@ -150,13 +152,14 @@
                         </group>
                     </group>
                 </sheet>
+                <chatter />
             </form>
         </field>
     </record>
     <record id="budget_activity_action" model="ir.actions.act_window">
         <field name="name">Budget Activity</field>
-        <field name="view_id" ref="budget_activity_view_tree" />
+        <field name="view_id" ref="budget_activity_view_list" />
         <field name="res_model">budget.activity</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 </odoo>

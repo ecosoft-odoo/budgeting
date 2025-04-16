@@ -8,7 +8,7 @@
             <xpath expr="//sheet" position="inside">
                 <notebook>
                     <page name="activity" string="Activity">
-                        <field name="activity_ids" />
+                        <field name="budget_activity_ids" />
                     </page>
                 </notebook>
             </xpath>

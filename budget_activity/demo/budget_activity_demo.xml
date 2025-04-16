@@ -4,17 +4,17 @@
     <record id="budget_activity_expense_demo" model="budget.activity">
         <field name="name">Expense</field>
         <field name="kpi_id" ref="budget_control.budget_kpi1_demo" />
-        <field name="account_id" eval="ref('l10n_generic_coa.expense')" />
+        <field name="account_id" eval="ref('account.1_expense')" />
     </record>
     <record id="budget_activity_purchase_equipment_demo" model="budget.activity">
         <field name="name">Purchase of Equipments</field>
         <field name="kpi_id" ref="budget_control.budget_kpi2_demo" />
-        <field name="account_id" eval="ref('l10n_generic_coa.expense_invest')" />
+        <field name="account_id" eval="ref('account.1_expense_invest')" />
     </record>
     <record id="budget_activity_rent_demo" model="budget.activity">
         <field name="name">Rent</field>
         <field name="kpi_id" ref="budget_control.budget_kpi3_demo" />
-        <field name="account_id" eval="ref('l10n_generic_coa.expense_rent')" />
+        <field name="account_id" eval="ref('account.1_expense_rent')" />
     </record>
 
     <!-- Template Demo -->
@@ -23,7 +23,7 @@
         model="budget.template.line"
     >
         <field
-            name="activity_ids"
+            name="budget_activity_ids"
             eval="[(4, ref('budget_activity.budget_activity_expense_demo'))]"
         />
     </record>
@@ -32,7 +32,7 @@
         model="budget.template.line"
     >
         <field
-            name="activity_ids"
+            name="budget_activity_ids"
             eval="[(4, ref('budget_activity.budget_activity_purchase_equipment_demo'))]"
         />
     </record>
@@ -41,7 +41,7 @@
         model="budget.template.line"
     >
         <field
-            name="activity_ids"
+            name="budget_activity_ids"
             eval="[(4, ref('budget_activity.budget_activity_rent_demo'))]"
         />
     </record>

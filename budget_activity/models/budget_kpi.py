@@ -4,11 +4,10 @@
 from odoo import fields, models
 
 
-class BudgetKPITemplate(models.Model):
+class BudgetKPI(models.Model):
     _inherit = "budget.kpi"
 
-    activity_ids = fields.One2many(
+    budget_activity_ids = fields.One2many(
         comodel_name="budget.activity",
         inverse_name="kpi_id",
-        readonly=True,
     )

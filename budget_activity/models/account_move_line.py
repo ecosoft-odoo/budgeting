@@ -9,19 +9,18 @@ class AccountMoveLine(models.Model):
 
     activity_id = fields.Many2one(
         comodel_name="budget.activity",
-        string="Activity",
-        index=True,
     )
 
     def _is_realtime_inventory_product(self):
         # Case non-realtime inventory product
         # activity's account takes priority over product's account
-        if self.product_id.type != "product":
+        if self.product_id.type != "consu":
             return False
         if not hasattr(self.product_id.categ_id, "property_valuation"):
             return False
         return self.product_id.categ_id.property_valuation == "real_time"
 
+    @api.depends("activity_id")
     def _compute_account_id(self):
         """In case of Realtime Inventory Product,
         activity's account takes priority"""
@@ -37,7 +36,15 @@ class AccountMoveLine(models.Model):
             line = line.with_company(line.move_id.journal_id.company_id)
             if line.activity_id:
                 line.account_id = line.activity_id.account_id
-        return super(AccountMoveLine, self - input_lines)._compute_account_id()
+
+        line_no_realtime = self - input_lines
+
+        res = super(AccountMoveLine, line_no_realtime)._compute_account_id()
+
+        for line in line_no_realtime:
+            if line.activity_id:
+                line.account_id = line.activity_id.account_id
+        return res
 
     def _prepare_analytic_lines(self):
         """Add activity_id to analytic line"""
@@ -47,8 +54,3 @@ class AccountMoveLine(models.Model):
             for analytic_line in analytic_line_vals:
                 analytic_line["activity_id"] = self.activity_id.id
         return analytic_line_vals
-
-    @api.onchange("activity_id")
-    def _onchange_activity_id(self):
-        if self.activity_id:
-            self.account_id = self.activity_id.account_id
