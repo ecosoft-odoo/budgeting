@@ -9,8 +9,6 @@ class BudgetMoveAdjustmentItem(models.Model):
 
     activity_id = fields.Many2one(
         comodel_name="budget.activity",
-        string="Activity",
-        index=True,
     )
 
     _sql_constraints = [

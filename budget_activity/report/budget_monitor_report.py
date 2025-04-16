@@ -1,5 +1,6 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 from odoo import fields, models
 
 
@@ -21,12 +22,10 @@ class BudgetMonitorReport(models.Model):
         select_statement[20] = "ba.name as activity"
         return select_statement
 
-    def _from_statement(self, amount_type):
-        from_statment = super()._from_statement(amount_type)
-        from_statment = "\n".join(
-            [
-                from_statment,
-                "left outer join budget_activity ba on a.activity_id = ba.id ",
-            ]
-        )
-        return from_statment
+    def _get_from_amount_types(self):
+        sql_from = super()._get_from_amount_types()
+        for sql_from_key in sql_from:
+            sql_from[sql_from_key] += (
+                "LEFT OUTER JOIN budget_activity ba ON a.activity_id = ba.id\n"
+            )
+        return sql_from

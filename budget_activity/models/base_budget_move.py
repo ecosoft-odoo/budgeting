@@ -1,7 +1,7 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -10,7 +10,6 @@ class BaseBudgetMove(models.AbstractModel):
 
     activity_id = fields.Many2one(
         comodel_name="budget.activity",
-        string="Activity",
         index=True,
     )
     account_id = fields.Many2one(
@@ -25,8 +24,7 @@ class BaseBudgetMove(models.AbstractModel):
 
     @api.depends("activity_id")
     def _compute_activity_account(self):
-        budget_control_key = self.env.company.budget_control_key
-        if budget_control_key == "activity_id":
+        if self.env.company.budget_control_key == "activity_id":
             for rec in self:
                 rec.account_id = (
                     rec.activity_id.account_id if rec.activity_id else rec.account_id
@@ -34,14 +32,16 @@ class BaseBudgetMove(models.AbstractModel):
 
     @api.constrains("activity_id", "account_id")
     def _check_activity_account(self):
-        budget_control_key = self.env.company.budget_control_key
-        if budget_control_key == "activity_id":
-            for rec in self.filtered("activity_id"):
-                if rec.account_id != rec.activity_id.account_id:
-                    raise UserError(
-                        _("Account not equal to Activity's Account: %s")
-                        % rec.activity_id.account_id.display_name
-                    )
+        if self.env.company.budget_control_key != "activity_id":
+            return
+
+        records = self.filtered(lambda r: r.activity_id and r.account_id)
+        for rec in records:
+            if rec.account_id.id != rec.activity_id.account_id.id:
+                raise UserError(
+                    self.env._("Account not equal to Activity's Account: %s")
+                    % rec.activity_id.account_id.display_name
+                )
 
 
 class BudgetDoclineMixinBase(models.AbstractModel):

@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Activity",
-    "version": "16.0.1.0.0",
+    "version": "18.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
@@ -12,17 +12,19 @@
     "data": [
         "security/budget_activity_security.xml",
         "security/ir.model.access.csv",
-        "report/budget_monitor_report_view.xml",
-        "views/account_move_views.xml",
-        "views/analytic_line_views.xml",
+        # Master Data
         "views/budget_activity_view.xml",
+        "views/budget_menuitem.xml",
         "views/budget_kpi_view.xml",
         "views/budget_template_view.xml",
-        "views/budget_menuitem.xml",
         "views/budget_move_adjustment_view.xml",
+        "views/account_move_views.xml",
+        "views/account_budget_move.xml",
+        "views/analytic_line_views.xml",
+        "report/budget_monitor_report_view.xml",
     ],
     "demo": ["demo/budget_activity_demo.xml"],
     "installable": True,
-    "maintainers": ["kittiu"],
+    "maintainers": ["kittiu", "Saran440"],
     "development_status": "Alpha",
 }

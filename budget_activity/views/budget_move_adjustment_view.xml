@@ -9,7 +9,7 @@
         />
         <field name="arch" type="xml">
             <xpath
-                expr="//page[@name='adjust_item_ids']//tree/field[@name='account_id']"
+                expr="//page[@name='adjust_item_ids']//list/field[@name='account_id']"
                 position="before"
             >
                 <field name="activity_id" required="1" optional="show" />

@@ -5,9 +5,9 @@ from datetime import datetime
 
 from freezegun import freeze_time
 
+from odoo import Command
 from odoo.exceptions import UserError
-from odoo.tests import tagged
-from odoo.tests.common import Form
+from odoo.tests import Form, tagged
 
 from odoo.addons.budget_control.tests.common import BudgetControlCommon
 
@@ -48,22 +48,33 @@ class TestBudgetActivity(BudgetControlCommon):
             line.kpi_id = cls.kpi2
         with Form(cls.template_line3) as line:
             line.kpi_id = cls.kpi3
-        # Create sample ready to use Budget Control
-        cls.budget_control = cls.BudgetControl.create(
-            {
-                "name": "CostCenter1/%s" % cls.year,
-                "template_id": cls.budget_period.template_id.id,
-                "budget_period_id": cls.budget_period.id,
-                "analytic_account_id": cls.costcenter1.id,
-                "plan_date_range_type_id": cls.date_range_type.id,
-                "allocated_amount": 2400.0,
-                "template_line_ids": [
-                    cls.template_line1.id,
-                    cls.template_line2.id,
-                    cls.template_line3.id,
-                ],
-            }
+
+        # Create budget plan
+        lines = [
+            Command.create(
+                {"analytic_account_id": cls.costcenter1.id, "amount": 2400.0}
+            )
+        ]
+        cls.budget_plan = cls.create_budget_plan(
+            cls,
+            name="Test - Plan {cls.budget_period.name}",
+            budget_period=cls.budget_period,
+            lines=lines,
         )
+        cls.budget_plan.action_confirm()
+        cls.budget_plan.action_create_update_budget_control()
+        cls.budget_plan.action_done()
+
+        # Refresh data
+        cls.budget_plan.invalidate_recordset()
+
+        cls.budget_control = cls.budget_plan.budget_control_ids
+        cls.budget_control.template_line_ids = [
+            cls.template_line1.id,
+            cls.template_line2.id,
+            cls.template_line3.id,
+        ]
+
         # Test item created for 3 kpi x 4 quarters = 12 budget items
         cls.budget_control.prepare_budget_control_matrix()
         assert len(cls.budget_control.line_ids) == 12
@@ -78,17 +89,29 @@ class TestBudgetActivity(BudgetControlCommon):
             {"amount": 300}
         )
 
-    def _create_simple_bill_activity(self, analytic_distribution, activity, amount):
-        with Form(self.Move.with_context(default_move_type="in_invoice")) as inv:
-            inv.partner_id = self.vendor
-            inv.invoice_date = datetime.today()
-            with inv.invoice_line_ids.new() as line:
-                line.quantity = 1
-                line.price_unit = amount
-                line.analytic_distribution = analytic_distribution
-                line.activity_id = activity
-        invoice = inv.save()
+        # Control budget
+        cls.budget_period.control_budget = True
+        cls.budget_control.action_submit()
+        cls.budget_control.action_done()
 
+    def _create_simple_bill_activity(self, analytic_distribution, activity, amount):
+        invoice = self.Move.create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.vendor.id,
+                "invoice_date": datetime.today(),
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "activity_id": activity.id,
+                            "price_unit": amount,
+                            "analytic_distribution": analytic_distribution,
+                        },
+                    )
+                ],
+            }
+        )
         return invoice
 
     @freeze_time("2001-02-01")
@@ -100,62 +123,71 @@ class TestBudgetActivity(BudgetControlCommon):
         - User can always change account code afterwards
         - Posting invoice, will create budget move with activity
         """
-        # Control budget
-        self.budget_period.control_budget = True
-        self.budget_control.action_done()
+        analytic_distribution = {self.costcenter1.id: 100}
         price_unit = 10.0
 
-        analytic_distribution = {str(self.costcenter1.id): 100.0}
-        invoice = self._create_simple_bill_activity(
+        bill1 = self._create_simple_bill_activity(
             analytic_distribution, self.activity1, price_unit
         )
-        # Check account is set to account in activity
-        invoice.invoice_line_ids[0]._onchange_activity_id()
         self.assertEqual(
-            self.activity1.account_id, invoice.invoice_line_ids[0].account_id
+            self.activity1.account_id, bill1.invoice_line_ids[0].account_id
         )
         # Change to product2, account should not change.
-        with Form(invoice) as invoice_form:
+        with Form(bill1) as invoice_form:
             with invoice_form.invoice_line_ids.edit(0) as line_form:
                 line_form.product_id = self.product2
                 line_form.price_unit = price_unit  # Change product, amount will reset
         invoice_form.save()
-        invoice.invoice_line_ids[0]._onchange_activity_id()
         self.assertEqual(
-            self.activity1.account_id, invoice.invoice_line_ids[0].account_id
+            self.activity1.account_id, bill1.invoice_line_ids[0].account_id
         )
+        self.assertEqual(self.product2, bill1.invoice_line_ids[0].product_id)
+        self.assertEqual(self.activity1, bill1.invoice_line_ids[0].activity_id)
 
-        # Invoice line is not set up as following,
-        self.assertEqual(
-            self.activity1.account_id, invoice.invoice_line_ids[0].account_id
-        )
-        self.assertEqual(self.product2, invoice.invoice_line_ids[0].product_id)
-        self.assertEqual(self.activity1, invoice.invoice_line_ids[0].activity_id)
         # Change activity on template line for test no activity in template line
+        # It should errors `not valid in template`
         with Form(self.template_line1) as line:
             line.kpi_id = self.kpi2
-        with self.assertRaises(UserError):
-            invoice.action_post()
+        with self.assertRaisesRegex(UserError, "not valid in template"):
+            bill1.action_post()
+        bill1.button_draft()
+
         # Change activity on template line for test multi activity in template line
         with Form(self.template_line1) as line:
             line.kpi_id = self.kpi1
         with Form(self.template_line2) as line:
             line.kpi_id = self.kpi1
-        with self.assertRaises(UserError):
-            invoice.action_post()
+        with self.assertRaisesRegex(
+            UserError,
+            "Template Lines has more than one KPI being referenced by the same",
+        ):
+            bill1.action_post()
+        bill1.button_draft()
+
         # Change back to basic
         with Form(self.template_line2) as line:
             line.kpi_id = self.kpi2
         # Reset state and set account = account in activity
-        invoice.invoice_line_ids[0].account_id = self.activity1.account_id
+        bill1.invoice_line_ids[0].account_id = self.activity1.account_id
         # All values will be passed to budget move
-        invoice.action_post()
-        self.assertEqual(self.account_kpi1, invoice.budget_move_ids[0].account_id)
-        self.assertEqual(self.product2, invoice.budget_move_ids[0].product_id)
-        self.assertEqual(self.activity1, invoice.budget_move_ids[0].activity_id)
+        bill1.action_post()
+        self.assertEqual(self.account_kpi1, bill1.budget_move_ids[0].account_id)
+        self.assertEqual(self.product2, bill1.budget_move_ids[0].product_id)
+        self.assertEqual(self.activity1, bill1.budget_move_ids[0].activity_id)
+
         # Check budget move must account equal accuont in activity
-        with self.assertRaises(UserError):
-            invoice.budget_move_ids[0].account_id = self.account_kpi3.id
+        with self.assertRaisesRegex(
+            UserError, "Account not equal to Activity's Account"
+        ):
+            bill1.budget_move_ids[0].account_id = self.account_kpi3.id
+
+        # Check change account in activity, after commit. it should not allow
+        with self.assertRaisesRegex(
+            UserError,
+            "You cannot change the account because it is already used in a commit.",
+        ):
+            with Form(self.activity1) as activity:
+                activity.account_id = self.account_kpi2
 
     @freeze_time("2001-02-01")
     def test_02_budget_adjustment_activity(self):
