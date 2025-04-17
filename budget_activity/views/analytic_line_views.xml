@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_account_analytic_line_list" model="ir.ui.view">
+        <field name="name">account.analytic.line.list</field>
+        <field name="model">account.analytic.line</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_line_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='account_id']" position="after">
+                <field name="activity_id" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_analytic_line_filter" model="ir.ui.view">
+        <field name="name">account.analytic.line.select</field>
+        <field name="model">account.analytic.line</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_line_filter" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <field name="activity_id" />
+                <filter name="activity_id" context="{'group_by': 'activity_id'}" />
+            </xpath>
+            <xpath expr="//group[@name='groupby']" position="inside">
+                <filter
+                    string="Activity"
+                    name="groupby_activity"
+                    context="{'group_by': 'activity_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_analytic_line_form" model="ir.ui.view">
+        <field name="name">account.analytic.line.form</field>
+        <field name="model">account.analytic.line</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_line_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='analytic_item']" position="inside">
+                <field name="activity_id" />
+            </xpath>
+        </field>
+    </record>
+</odoo>
