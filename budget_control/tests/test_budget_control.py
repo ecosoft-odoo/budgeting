@@ -9,11 +9,11 @@ from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import Form, tagged
 
-from .common import BudgetControlCommon
+from .common import get_budget_common_class
 
 
 @tagged("post_install", "-at_install")
-class TestBudgetControl(BudgetControlCommon):
+class TestBudgetControl(get_budget_common_class()):
     @classmethod
     @freeze_time("2001-02-01")
     def setUpClass(cls):
@@ -58,26 +58,6 @@ class TestBudgetControl(BudgetControlCommon):
         cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi3).write(
             {"amount": 300}
         )
-
-    def _create_simple_bill(self, analytic_distribution, account, amount):
-        invoice = self.Move.create(
-            {
-                "move_type": "in_invoice",
-                "partner_id": self.vendor.id,
-                "invoice_date": datetime.today(),
-                "invoice_line_ids": [
-                    Command.create(
-                        {
-                            "quantity": 1,
-                            "account_id": account.id,
-                            "price_unit": amount,
-                            "analytic_distribution": analytic_distribution,
-                        },
-                    )
-                ],
-            }
-        )
-        return invoice
 
     def _create_invoice(
         self, inv_type, vendor, invoice_date, analytic_distribution, invoice_lines
@@ -174,7 +154,7 @@ class TestBudgetControl(BudgetControlCommon):
 
     @freeze_time("2001-02-01")
     def test_05_budget_control_check_control_analytic(self):
-        """ """
+        """Check control analytic account in budget control"""
         analytic_distribution = {self.costcenter1.id: 100}
         bill1 = self._create_simple_bill(analytic_distribution, self.account_kpiX, 100)
 
@@ -297,8 +277,8 @@ class TestBudgetControl(BudgetControlCommon):
         # Budget Controlled
         self.budget_control.action_submit()
         self.budget_control.action_done()
-        # Test with amount = 2000
-        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 2000)
+        # Test with amount = 500
+        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 500)
         bill1.action_post()
         self.assertEqual(bill1.state, "posted")
         self.assertTrue(self.budget_control.amount_balance)
@@ -439,7 +419,7 @@ class TestBudgetControl(BudgetControlCommon):
         self.budget_period.control_budget = False
         analytic_distribution = {self.costcenterX.id: 100}
         self.costcenterX.auto_adjust_date_commit = True
-        # Ma
+
         bill1 = self._create_simple_bill(analytic_distribution, self.account_kpiX, 10)
         bill1.invoice_date = "2002-10-10"
         bill1.date = "2002-10-10"
