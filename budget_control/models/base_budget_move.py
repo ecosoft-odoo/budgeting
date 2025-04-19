@@ -4,7 +4,7 @@
 from datetime import datetime
 from json import dumps
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
 
@@ -173,7 +173,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         return self.env.context.get("alt_budget_move_field") or self._budget_move_field
 
     def _valid_commit_state(self):
-        raise ValidationError(_("No implementation error!"))
+        raise ValidationError(self.env._("No implementation error!"))
 
     def _convert_analytics(self, analytic_distribution=False):
         Analytic = self.env["account.analytic.account"]
@@ -272,7 +272,7 @@ class BudgetDoclineMixin(models.AbstractModel):
             )
             rec.json_budget_popover = dumps(
                 {
-                    "title": _("Budget Figure"),
+                    "title": self.env._("Budget Figure"),
                     "icon": "fa-info-circle",
                     "popoverTemplate": "budget_control.budgetPopOver",
                     "analytic": [
@@ -325,7 +325,9 @@ class BudgetDoclineMixin(models.AbstractModel):
             docline.date_commit = self.env.context["force_date_commit"]
             return
         if not self._budget_date_commit_fields:
-            raise ValidationError(_("'_budget_date_commit_fields' is not set!"))
+            raise ValidationError(
+                self.env._("'_budget_date_commit_fields' is not set!")
+            )
         analytic = docline._convert_analytics()
         # If the analytic field is not set, set the date commit to False and return.
         if not analytic:
@@ -459,7 +461,7 @@ class BudgetDoclineMixin(models.AbstractModel):
                 # create commitment carry (credit)
                 budget_move = docline.with_context(
                     use_amount_commit=True,
-                    commit_note=_("Commitment carry forward"),
+                    commit_note=self.env._("Commitment carry forward"),
                     fwd_commit=True,
                     fwd_amount_commit=fwd_line.amount_commit,
                 ).commit_budget(
@@ -590,7 +592,7 @@ class BudgetDoclineMixin(models.AbstractModel):
     def _init_docline_budget_vals(self, budget_vals, analytic_id):
         """To be extended by docline to add untaxed amount_currency"""
         if "amount_currency" not in budget_vals:
-            raise ValidationError(_("No amount_currency passed in!"))
+            raise ValidationError(self.env._("No amount_currency passed in!"))
         return budget_vals
 
     def _taxes_included(self, taxes):
@@ -649,7 +651,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         analytics = docline._convert_analytics()
         if analytics:
             if not docline.date_commit:
-                raise UserError(_("No budget commitment date"))
+                raise UserError(self.env._("No budget commitment date"))
             for analytic in analytics:
                 date_from = analytic.bm_date_from
                 date_to = analytic.bm_date_to
@@ -657,19 +659,21 @@ class BudgetDoclineMixin(models.AbstractModel):
                     date_to and date_to < docline.date_commit
                 ):
                     raise UserError(
-                        _("Budget date commit is not within date range of - %s")
+                        self.env._(
+                            "Budget date commit is not within date range of - %s"
+                        )
                         % analytic.display_name
                     )
         else:
             if docline.date_commit:
-                raise UserError(_("Budget commitment date not required"))
+                raise UserError(self.env._("Budget commitment date not required"))
 
     def close_budget_move(self):
         """Reverse commit with amount_commit/date_commit to zero budget"""
         for docline in self:
             docline.with_context(
                 use_amount_commit=True,
-                commit_note=_("Auto adjustment on close budget"),
+                commit_note=self.env._("Auto adjustment on close budget"),
                 adj_commit=True,
             ).commit_budget(
                 reverse=True, analytic_distribution=docline.fwd_analytic_distribution
