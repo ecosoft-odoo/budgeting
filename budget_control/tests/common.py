@@ -5,7 +5,19 @@ from datetime import datetime
 
 from dateutil.rrule import MONTHLY
 
+from odoo import Command
 from odoo.tests.common import TransactionCase
+
+
+def get_budget_common_class():
+    try:
+        # Try import override from budget_plan_detail (if installed)
+        from odoo.addons.budget_plan_detail.tests.common import BudgetPlanDetailCommon
+
+        return BudgetPlanDetailCommon
+    except ImportError:
+        # Fallback to default
+        return BudgetControlCommon
 
 
 class BudgetControlCommon(TransactionCase):
@@ -156,3 +168,23 @@ class BudgetControlCommon(TransactionCase):
             }
         )
         return budget_plan
+
+    def _create_simple_bill(self, analytic_distribution, account, amount):
+        invoice = self.Move.create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.vendor.id,
+                "invoice_date": datetime.today(),
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": account.id,
+                            "price_unit": amount,
+                            "analytic_distribution": analytic_distribution,
+                        },
+                    )
+                ],
+            }
+        )
+        return invoice
