@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control",
-    "version": "18.0.1.1.1",
+    "version": "18.0.1.2.1",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
@@ -53,11 +53,11 @@
         "report/budget_move_views.xml",
     ],
     "demo": ["demo/budget_template_demo.xml"],
-    # "assets": {
-    #     "web.assets_backend": [
-    #         "budget_control/static/src/xml/budget_popover.xml",
-    #     ],
-    # },
+    "assets": {
+        "web.assets_backend": [
+            "budget_control/static/src/xml/budget_popover.xml",
+        ],
+    },
     "installable": True,
     "maintainers": ["kittiu", "ru3ix-bbb", "Saran440"],
     "post_init_hook": "update_data_hooks",
