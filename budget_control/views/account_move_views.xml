@@ -51,7 +51,7 @@
                     optional="show"
                     nolabel="1"
                     string="Budget Figure"
-                    width="10px"
+                    width="12px"
                     widget="popover_widget"
                     groups="budget_control.group_budget_control_user"
                 />
@@ -82,7 +82,7 @@
                     optional="show"
                     nolabel="1"
                     string="Budget Figure"
-                    width="10px"
+                    width="12px"
                     widget="popover_widget"
                     groups="budget_control.group_budget_control_user"
                 />
