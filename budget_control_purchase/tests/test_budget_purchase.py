@@ -9,11 +9,11 @@ from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import Form, tagged
 
-from odoo.addons.budget_control.tests.common import BudgetControlCommon
+from odoo.addons.budget_control.tests.common import get_budget_common_class
 
 
 @tagged("post_install", "-at_install")
-class TestBudgetControlPurchase(BudgetControlCommon):
+class TestBudgetControlPurchase(get_budget_common_class()):
     @classmethod
     @freeze_time("2001-02-01")
     def setUpClass(cls):
