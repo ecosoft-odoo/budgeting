@@ -136,6 +136,10 @@
                             <field name="budget_control_key" widget="selection" />
                         </setting>
                     </block>
+                    <block
+                        title="Budget Plan Options"
+                        name="budget_plan_options_container"
+                    />
                     <block title="Budget Period" name="budget_period_container">
                         <setting
                             id="budget_template_id"
