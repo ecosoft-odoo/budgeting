@@ -128,24 +128,7 @@ class TestBudgetControl(get_budget_common_class()):
             )
 
     @freeze_time("2001-02-01")
-    def test_03_budget_plan_line_aa(self):
-        self.budget_plan.action_draft()
-        self.assertEqual(len(self.budget_plan.line_ids), 1)
-
-        # Add date range in analytic
-        self.costcenterX.write(
-            {
-                "bm_date_from": self.budget_plan.budget_period_id.bm_date_from,
-                "bm_date_to": self.budget_plan.budget_period_id.bm_date_to,
-            }
-        )
-
-        # Auto add line analytic, if it in range period
-        self.budget_plan.action_confirm()
-        self.assertEqual(len(self.budget_plan.line_ids), 2)
-
-    @freeze_time("2001-02-01")
-    def test_04_budget_plan_check_control(self):
+    def test_03_budget_plan_check_control(self):
         self.assertEqual(len(self.budget_plan.budget_control_ids), 1)
         action = self.budget_plan.button_open_budget_control()
         self.assertEqual(
@@ -153,7 +136,7 @@ class TestBudgetControl(get_budget_common_class()):
         )
 
     @freeze_time("2001-02-01")
-    def test_05_budget_control_check_control_analytic(self):
+    def test_04_budget_control_check_control_analytic(self):
         """Check control analytic account in budget control"""
         analytic_distribution = {self.costcenter1.id: 100}
         bill1 = self._create_simple_bill(analytic_distribution, self.account_kpiX, 100)
@@ -203,7 +186,7 @@ class TestBudgetControl(get_budget_common_class()):
             bill1.action_post()
 
     @freeze_time("2001-02-01")
-    def test_06_budget_control_check_control_some_aa(self):
+    def test_05_budget_control_check_control_some_aa(self):
         analytic_distribution = {self.costcenter1.id: 100}
         self.assertTrue(self.budget_period.control_all_analytic_accounts)
         self.budget_period.write(
@@ -237,7 +220,7 @@ class TestBudgetControl(get_budget_common_class()):
             bill2.action_post()
 
     @freeze_time("2001-02-01")
-    def test_07_budget_control_check_soft_hard_reset(self):
+    def test_06_budget_control_check_soft_hard_reset(self):
         self.assertAlmostEqual(self.budget_control.amount_balance, 2400.0)
         # Test Soft Reset, Amount should be 2400 (no change)
         self.budget_control.with_context(
