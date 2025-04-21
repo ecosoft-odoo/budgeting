@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control - Revisions",
-    "version": "15.0.1.0.0",
+    "version": "18.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "summary": "Keep track of revised budget control",
@@ -13,6 +13,8 @@
     "data": [
         "security/ir.model.access.csv",
         "data/budget_revision_data.xml",
+        "views/res_config_settings_views.xml",
+        "views/budget_plan_view.xml",
         "views/budget_control_view.xml",
         "report/budget_monitor_revision_view.xml",
         "report/budget_monitor_report_view.xml",

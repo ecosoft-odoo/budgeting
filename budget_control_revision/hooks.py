@@ -6,11 +6,11 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-def post_init_hook(cr, registry):
+def post_init_hook(env):
     _logger.info("Assign unrevisioned_name for existing documents")
     query = """
-    update budget_control
-    set unrevisioned_name = name
-    where unrevisioned_name is null
+    UPDATE budget_control
+    SET unrevisioned_name = name
+    WHERE unrevisioned_name IS NULL
     """
-    cr.execute(query)
+    env.cr.execute(query)

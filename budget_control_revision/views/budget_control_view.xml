@@ -32,10 +32,10 @@
             </xpath>
         </field>
     </record>
-    <record id="budget_control_view_tree" model="ir.ui.view">
-        <field name="name">budget.control.view.tree</field>
+    <record id="budget_control_view_list" model="ir.ui.view">
+        <field name="name">budget.control.view.list</field>
         <field name="model">budget.control</field>
-        <field name="inherit_id" ref="budget_control.budget_control_view_tree" />
+        <field name="inherit_id" ref="budget_control.budget_control_view_list" />
         <field name="arch" type="xml">
             <field name="assignee_id" position="after">
                 <field name="revision_number" />
@@ -52,7 +52,7 @@
                     name="create_revision"
                     string="New Revision"
                     type="object"
-                    states="cancel"
+                    invisible="state != 'cancel'"
                     context="{'active_model': 'budget.control'}"
                 />
             </xpath>
@@ -64,25 +64,26 @@
                 <field name="revision_number" />
             </xpath>
             <xpath expr="//notebook" position="inside">
-                <page
-                    string="Revisions"
-                    attrs="{'invisible': [('has_old_revisions', '=', False)]}"
-                >
+                <field name="has_old_revisions" invisible="1" />
+                <page string="Revisions" invisible="not has_old_revisions">
                     <field
                         name="old_revision_ids"
                         context="{'form_view_ref': 'budget_control_revision.budget_control_view_form_without_header'}"
                     >
-                        <tree>
+                        <list>
                             <field name="name" />
-                            <field name="create_date" string="Superseeded on" />
-                            <field name="create_uid" string="Superseeded by" />
-                            <field name="state" invisible="1" />
-                        </tree>
+                            <field
+                                name="create_date"
+                                string="Superseeded on"
+                                optional="show"
+                            />
+                            <field
+                                name="create_uid"
+                                string="Superseeded by"
+                                optional="hide"
+                            />
+                        </list>
                     </field>
-                    <group attrs="{'invisible': [('current_revision_id', '=', False)]}">
-                        <field name="current_revision_id" />
-                        <field name="has_old_revisions" invisible="1" />
-                    </group>
                 </page>
             </xpath>
         </field>
