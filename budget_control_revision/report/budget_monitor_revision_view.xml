@@ -12,7 +12,6 @@
                 <attribute name="name">budget_revision</attribute>
             </xpath>
         </field>
-
     </record>
     <!-- Pivot View -->
     <record id="view_budget_monitor_revision_report_pivot" model="ir.ui.view">
