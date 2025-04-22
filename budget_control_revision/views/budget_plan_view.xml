@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_plan_line_list" model="ir.ui.view">
+        <field name="name">budget.plan.line.list</field>
+        <field name="model">budget.plan.line</field>
+        <field name="inherit_id" ref="budget_control.view_budget_plan_line_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="revision_number" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+    <record id="budget_plan_filter" model="ir.ui.view">
+        <field name="name">budget.plan.filter</field>
+        <field name="model">budget.plan</field>
+        <field name="inherit_id" ref="budget_control.budget_plan_filter" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter
+                    name="revision_number"
+                    string="Revision"
+                    context="{'group_by': 'revision_number'}"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_budget_plan_list" model="ir.ui.view">
+        <field name="name">budget.plan.list</field>
+        <field name="model">budget.plan</field>
+        <field name="inherit_id" ref="budget_control.view_budget_plan_list" />
+        <field name="arch" type="xml">
+            <field name="state" position="before">
+                <field name="revision_number" />
+            </field>
+        </field>
+    </record>
+    <record id="view_budget_plan_form" model="ir.ui.view">
+        <field name="name">budget.plan.form</field>
+        <field name="model">budget.plan</field>
+        <field name="inherit_id" ref="budget_control.view_budget_plan_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//header/button[@name='action_create_update_budget_control']"
+                position="after"
+            >
+                <button
+                    name="create_revision"
+                    string="New Revision"
+                    type="object"
+                    invisible="state != 'cancel'"
+                    confirm="This operation cannot be undone. Are you sure to continue?"
+                />
+            </xpath>
+            <xpath expr="//group[@name='budget_plan_right']" position="inside">
+                <field name="init_revision" />
+                <field name="revision_number" readonly="1" />
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <field name="has_old_revisions" invisible="1" />
+                <page string="Revisions" invisible="not has_old_revisions">
+                    <field
+                        name="old_revision_ids"
+                        context="{'form_view_ref': 'budget_control.view_budget_plan_form_without_header'}"
+                    >
+                        <list>
+                            <field name="name" />
+                            <field
+                                name="create_date"
+                                string="Superseeded on"
+                                optional="show"
+                            />
+                            <field
+                                name="create_uid"
+                                string="Superseeded by"
+                                optional="hide"
+                            />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
