@@ -2,22 +2,25 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 {
-    "name": "Budget Allocation - Purchase",
-    "version": "15.0.1.0.0",
+    "name": "Budget Plan Details - Purchase",
+    "version": "18.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",
     "depends": [
-        "budget_allocation",
+        "budget_plan_detail",
         "budget_control_purchase",
+        "purchase_analytic_tag",
     ],
     "data": [
         "views/purchase_view.xml",
+        "views/purchase_budget_move.xml",
     ],
     "installable": True,
     "auto_install": True,
     "post_init_hook": "post_init_hook",
     "uninstall_hook": "uninstall_hook",
     "maintainers": ["Saran440"],
+    "development_status": "Alpha",
 }
