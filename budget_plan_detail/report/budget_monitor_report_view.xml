@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_budget_monitor_report_list" model="ir.ui.view">
+        <field name="name">budget.monitor.report.list</field>
+        <field name="model">budget.monitor.report</field>
+        <field name="inherit_id" ref="budget_control.view_budget_monitor_report_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_account_id']" position="before">
+                <field name="fund_id" />
+                <field name="fund_group_id" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_budget_monitor_report_search" model="ir.ui.view">
+        <field name="name">budget.monitor.report.search</field>
+        <field name="model">budget.monitor.report</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.view_budget_monitor_report_search"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//separator[@orientation='vertical_groupby']"
+                position="before"
+            >
+                <filter
+                    string="Fund Group"
+                    name="group_by_fund_group"
+                    context="{'group_by':'fund_group_id'}"
+                />
+                <filter
+                    string="Fund"
+                    name="group_by_fund"
+                    context="{'group_by':'fund_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

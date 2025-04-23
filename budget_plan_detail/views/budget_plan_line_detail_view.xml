@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="budget_plan_line_detail_view_list" model="ir.ui.view">
+        <field name="name">budget.plan.line.detail.view.list</field>
+        <field name="model">budget.plan.line.detail</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="id" column_invisible="1" />
+                <field name="plan_id" column_invisible="not context.get('show_plan')" />
+                <field name="plan_line_id" column_invisible="1" />
+                <field name="date_from" column_invisible="1" />
+                <field name="date_to" column_invisible="1" />
+                <field name="fund_id" options="{'no_create': 1}" />
+                <field name="fund_group_id" optional="show" />
+                <field
+                    name="analytic_account_id"
+                    domain="[('bm_date_to', '&gt;=', date_from), ('bm_date_from', '&lt;=', date_to)]"
+                    options="{'no_create': 1}"
+                />
+                <field name="domain_tag_ids" column_invisible="1" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    options="{'no_create': True}"
+                    domain="['|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                    groups="account_analytic_tag.group_analytic_tags"
+                />
+                <field name="name" optional="show" />
+                <field
+                    name="estimated_amount"
+                    optional="show"
+                    sum="Total Esitmated Amount"
+                />
+                <field
+                    name="allocated_amount"
+                    optional="show"
+                    sum="Total Allocated Amount"
+                />
+                <field
+                    name="released_amount"
+                    optional="show"
+                    readonly="True"
+                    sum="Total Released Amount"
+                />
+                <field name="company_id" column_invisible="1" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="active" column_invisible="1" />
+            </list>
+        </field>
+    </record>
+    <record id="budget_plan_line_detail_view_search" model="ir.ui.view">
+        <field name="name">budget.plan.line.detail.view.search</field>
+        <field name="model">budget.plan.line.detail</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="plan_id" string="Plan" />
+                <field name="analytic_account_id" string="Analytic Account" />
+                <group name="groupby" string="Group By" expand="1">
+                    <filter
+                        name="groupby_company"
+                        string="Company"
+                        context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company"
+                    />
+                    <separator />
+                    <filter
+                        name="groupby_plan"
+                        string="Plan"
+                        context="{'group_by': 'plan_id'}"
+                    />
+                    <separator />
+                    <filter
+                        name="groupby_analytic_account"
+                        string="Analytic Account"
+                        context="{'group_by': 'analytic_account_id'}"
+                    />
+                    <filter
+                        name="groupby_fund_group_id"
+                        string="Fund Group"
+                        context="{'group_by': 'fund_group_id'}"
+                    />
+                    <filter
+                        name="groupby_fund_id"
+                        string="Fund"
+                        context="{'group_by': 'fund_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="budget_plan_detail_action" model="ir.actions.act_window">
+        <field name="name">Budget Plan Details</field>
+        <field name="res_model">budget.plan.line.detail</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'show_plan': True}</field>
+    </record>
+    <menuitem
+        id="budget_plan_detail_menu"
+        parent="budget_control.budget_planning_menu"
+        name="Budget Plan Details"
+        action="budget_plan_detail_action"
+        sequence="10"
+    />
+</odoo>

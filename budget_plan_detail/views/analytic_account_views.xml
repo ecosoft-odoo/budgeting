@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Add menu analytic tag and analytic tag dimensions for budgeting -->
+    <menuitem
+        id="budget_account_analytic_tag_menu"
+        name="Analytic Tags"
+        parent="budget_control.budget_menu_analytic_accounting"
+        sequence="5"
+        action="account_analytic_tag.account_analytic_tag_action"
+        groups="account_analytic_tag.group_analytic_tags"
+    />
+    <menuitem
+        id="budget_menu_analytic_account_tag_dimension"
+        name="Analytic Accounts Dimensions"
+        parent="budget_control.budget_menu_analytic_accounting"
+        sequence="10"
+        action="analytic_tag_dimension.account_analytic_dimension_action"
+        groups="account_analytic_tag.group_analytic_tags"
+    />
+</odoo>

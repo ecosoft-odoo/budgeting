@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_plan_form" model="ir.ui.view">
+        <field name="name">budget.plan.form</field>
+        <field name="model">budget.plan</field>
+        <field name="inherit_id" ref="budget_control.view_budget_plan_form" />
+        <field name="arch" type="xml">
+            <!-- Add plan detail button -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="button_open_budget_plan_detail"
+                    string="Plan Details"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="oi-view-list"
+                    invisible="not is_confirm_plan"
+                />
+            </xpath>
+
+            <!-- Add new button and change permission -->
+            <xpath expr="//group[@name='budget_plan_right']" position="inside">
+                <field name="is_confirm_plan" readonly="1" />
+            </xpath>
+            <xpath expr="//button[@name='action_confirm']" position="before">
+                <button
+                    name="action_confirm_plan_detail"
+                    class="oe_highlight"
+                    string="Confirm Details"
+                    invisible="is_confirm_plan"
+                    type="object"
+                />
+            </xpath>
+            <xpath expr="//button[@name='action_confirm']" position="after">
+                <button
+                    name="action_cancel_plan_detail"
+                    string="Cancel Details"
+                    invisible="state != 'draft' or not is_confirm_plan"
+                    type="object"
+                />
+            </xpath>
+            <xpath expr="//button[@name='action_confirm']" position="attributes">
+                <attribute
+                    name="invisible"
+                >state != 'draft' or not is_confirm_plan</attribute>
+            </xpath>
+            <xpath expr="//page[@name='line_ids']" position="before">
+                <page
+                    name="plan_details"
+                    string="Plan Details"
+                    invisible="is_confirm_plan"
+                >
+                    <field name="line_detail_ids" readonly="is_confirm_plan" />
+                </page>
+            </xpath>
+            <xpath expr="//page[@name='line_ids']" position="attributes">
+                <attribute name="invisible">not is_confirm_plan</attribute>
+            </xpath>
+            <xpath
+                expr="//button[@name='action_get_all_analytic_accounts']"
+                position="attributes"
+            >
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Budget Plan Line -->
+    <record id="view_budget_plan_line_list" model="ir.ui.view">
+        <field name="name">budget.plan.line.list</field>
+        <field name="model">budget.plan.line</field>
+        <field name="inherit_id" ref="budget_control.view_budget_plan_line_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="create">0</attribute>
+            </xpath>
+            <xpath expr="//list" position="inside">
+                <button
+                    name="open_plan_line_detail"
+                    type="object"
+                    string="Details"
+                    icon="fa-bars"
+                />
+            </xpath>
+            <xpath expr="//field[@name='amount']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='analytic_account_id']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

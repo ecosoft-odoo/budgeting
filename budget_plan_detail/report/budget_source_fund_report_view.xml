@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_source_fund_monitor_report_list" model="ir.ui.view">
+        <field name="name">budget.source.fund.report.list</field>
+        <field name="model">budget.source.fund.report</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="amount_type" />
+                <field name="res_id" />
+                <field name="fund_id" />
+                <field name="fund_group_id" optional="hide" />
+                <field name="analytic_account_id" />
+                <field name="amount" />
+            </list>
+        </field>
+    </record>
+    <record id="view_source_fund_monitor_report_pivot" model="ir.ui.view">
+        <field name="name">budget.source.fund.report.pivot</field>
+        <field name="model">budget.source.fund.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Source of Fund Monitoring">
+                <field name="fund_id" type="row" />
+                <field name="amount_type" type="col" />
+                <field name="amount" type="measure" />
+            </pivot>
+        </field>
+    </record>
+    <record id="view_source_fund_monitor_report_graph" model="ir.ui.view">
+        <field name="name">budget.source.fund.report.graph</field>
+        <field name="model">budget.source.fund.report</field>
+        <field name="arch" type="xml">
+            <graph string="Source of Fund Monitoring">
+                <field name="fund_id" />
+                <field name="amount" type="measure" />
+            </graph>
+        </field>
+    </record>
+    <record id="view_source_fund_monitor_report_search" model="ir.ui.view">
+        <field name="name">budget.source.fund.report.search</field>
+        <field name="model">budget.source.fund.report</field>
+        <field name="arch" type="xml">
+            <search string="Source of Fund Monitoring">
+                <field name="fund_id" string="Source of Fund" />
+                <separator orientation="vertical" />
+                <filter
+                    name="active"
+                    string="Unarchived"
+                    domain="[('active', '=', False)]"
+                />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '!=', False)]"
+                />
+                <group expand="1" string="Group By">
+                    <filter
+                        string="Budget Period"
+                        name="group_by_budget_period"
+                        context="{'group_by':'budget_period_id'}"
+                    />
+                    <separator orientation="vertical_groupby" />
+                    <filter
+                        name="group_by_fund_group"
+                        string="Fund Group"
+                        context="{'group_by':'fund_group_id'}"
+                    />
+                    <filter
+                        name="group_by_fund"
+                        string="Source of Fund"
+                        context="{'group_by':'fund_id'}"
+                    />
+                    <filter
+                        name="group_by_analytic_account"
+                        string="Analytic Account"
+                        context="{'group_by':'analytic_account_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_source_fund_monitor_report_all" model="ir.actions.act_window">
+        <field name="name">Source of Fund Monitoring</field>
+        <field name="res_model">budget.source.fund.report</field>
+        <field name="view_mode">pivot,list,graph</field>
+        <field name="context">{'group_by':[], 'group_by_no_leaf':1}</field>
+        <field name="search_view_id" ref="view_source_fund_monitor_report_search" />
+    </record>
+    <menuitem
+        id="menu_action_source_fund_monitor_report_all"
+        name="Budget Source Fund Monitoring"
+        action="action_source_fund_monitor_report_all"
+        parent="budget_control.budget_menu_monitoring"
+        sequence="11"
+    />
+</odoo>

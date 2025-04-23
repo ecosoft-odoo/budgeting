@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_move_adjustment_form" model="ir.ui.view">
+        <field name="name">view.budget.move.adjustment.form</field>
+        <field name="model">budget.move.adjustment</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.view_budget_move_adjustment_form"
+        />
+        <field name="arch" type="xml">
+            <!-- Add fund -->
+            <xpath
+                expr="//page[@name='adjust_item_ids']//list/field[@name='json_budget_popover']"
+                position="after"
+            >
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    domain="
+                        [('id', 'in', analytic_tag_all or []),
+                        '|',
+                        ('id', 'in', domain_tag_ids or []),
+                        ('analytic_dimension_id.by_sequence', '=', False)]"
+                />
+                <field name="domain_tag_ids" column_invisible="1" />
+                <field name="analytic_tag_all" column_invisible="1" />
+                <field name="fund_all" column_invisible="1" />
+                <field name="fund_id" optional="show" />
+            </xpath>
+            <xpath
+                expr="//page[@name='adjust_item_ids']//form//field[@name='analytic_distribution']"
+                position="after"
+            >
+                <field name="fund_all" invisible="1" />
+                <field name="fund_id" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!-- Check budget plan detail limit -->
+    <record id="check_budget_detail_over_limit" model="budget.constraint">
+        <field name="name">Check Budget Detail Over Limit</field>
+        <field
+            name="server_action_id"
+            ref="budget_plan_detail.action_check_budget_detail_constraint"
+        />
+        <!-- Default is unarchived for other test script is not error -->
+        <field name="active" eval="False" />
+    </record>
+</odoo>

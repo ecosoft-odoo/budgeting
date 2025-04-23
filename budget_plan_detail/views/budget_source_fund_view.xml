@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Source Fund Group -->
+    <record id="budget_source_fund_group_filter" model="ir.ui.view">
+        <field name="name">budget.source.fund.group.filter</field>
+        <field name="model">budget.source.fund.group</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+            </search>
+        </field>
+    </record>
+    <record id="budget_source_fund_group_list" model="ir.ui.view">
+        <field name="name">budget.source.fund.group.list</field>
+        <field name="model">budget.source.fund.group</field>
+        <field name="arch" type="xml">
+            <list sample="1">
+                <field name="name" />
+            </list>
+        </field>
+    </record>
+    <record id="budget_source_fund_group_form" model="ir.ui.view">
+        <field name="name">budget.source.fund.group.form</field>
+        <field name="model">budget.source.fund.group</field>
+        <field name="arch" type="xml">
+            <form string="Source of Fund Groups">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        invisible="active"
+                    />
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" />
+                        <h1>
+                            <field name="name" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="fund_group_left" />
+                        <group name="fund_group_right">
+                            <field name="active" invisible="1" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="fund_ids" string="Funds">
+                            <field name="fund_ids" />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+    <record id="budget_source_fund_group_action" model="ir.actions.act_window">
+        <field name="name">Source of Fund Groups</field>
+        <field name="res_model">budget.source.fund.group</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Source Fund -->
+    <record id="budget_source_fund_list" model="ir.ui.view">
+        <field name="name">budget.source.fund.list</field>
+        <field name="model">budget.source.fund</field>
+        <field name="arch" type="xml">
+            <list sample="1">
+                <field name="name" />
+                <field name="fund_group_id" />
+            </list>
+        </field>
+    </record>
+    <record id="budget_source_fund_filter" model="ir.ui.view">
+        <field name="name">budget.source.fund.filter</field>
+        <field name="model">budget.source.fund</field>
+        <field name="arch" type="xml">
+            <search string="Search Source of Fund">
+                <field name="name" string="Source of Fund" />
+                <separator />
+                <filter
+                    string="Fund Group"
+                    name="fund_group_id"
+                    domain="[('fund_group_id', '!=', False)]"
+                />
+                <filter
+                    string="Archived"
+                    name="inactive"
+                    domain="[('active', '=', False)]"
+                />
+                <group expand="0" string="Group By">
+                    <filter
+                        string="Fund Group"
+                        name="fund_group_id"
+                        context="{'group_by':'fund_group_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+    <!-- Main source of funds configuration -->
+    <record id="budget_source_fund_form" model="ir.ui.view">
+        <field name="name">budget.source.fund.form</field>
+        <field name="model">budget.source.fund</field>
+        <field name="arch" type="xml">
+            <form string="Source of Funds">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        invisible="active"
+                    />
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" />
+                        <h1>
+                            <field name="name" />
+                        </h1>
+                        <h4>
+                            <field
+                                name="fund_group_id"
+                                placeholder="Group of Fund"
+                                options="{'no_create': True}"
+                            />
+                        </h4>
+                    </div>
+                    <group>
+                        <field name="active" invisible="1" />
+                        <group name="left_main" />
+                        <group name="right_main">
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                        </group>
+                    </group>
+                    <group name="objective" string="Objective">
+                        <field name="objective" nolabel="1" />
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+    <record id="budget_source_fund_action" model="ir.actions.act_window">
+        <field name="name">Source of Fund</field>
+        <field name="res_model">budget.source.fund</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem
+        id="budget_source_of_fund_menu"
+        parent="budget_control.budget_config_menu"
+        name="Source of Fund"
+        sequence="15"
+    />
+    <menuitem
+        id="budget_source_fund_menu"
+        parent="budget_source_of_fund_menu"
+        name="Source of Fund"
+        action="budget_source_fund_action"
+        sequence="10"
+    />
+    <menuitem
+        id="budget_source_fund_group_menu"
+        parent="budget_source_of_fund_menu"
+        name="Source of Fund Groups"
+        action="budget_source_fund_group_action"
+        sequence="20"
+    />
+</odoo>

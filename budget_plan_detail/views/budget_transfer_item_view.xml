@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_transfer_item_list" model="ir.ui.view">
+        <field name="name">view.budget.transfer.item.list</field>
+        <field name="model">budget.transfer.item</field>
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_item_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='budget_control_from_id']" position="after">
+                <field name="fund_from_all" column_invisible="1" />
+                <field
+                    name="fund_from_id"
+                    options="{'no_create': True, 'no_open': True}"
+                    domain="[('id', 'in', fund_from_all)]"
+                />
+                <field
+                    name="detail_line_from_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                />
+                <field name="analytic_tag_from_all" column_invisible="1" />
+                <field name="domain_tag_from_ids" column_invisible="1" />
+                <field
+                    name="analytic_tag_from_ids"
+                    widget="many2many_tags"
+                    options="{'no_create': True, 'no_open': True}"
+                    domain="[('id', 'in', analytic_tag_from_all or []), '|', ('id', 'in', domain_tag_from_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                    groups="account_analytic_tag.group_analytic_tags"
+                />
+            </xpath>
+            <xpath expr="//field[@name='budget_control_to_id']" position="after">
+                <field name="fund_to_all" column_invisible="1" />
+                <field
+                    name="fund_to_id"
+                    options="{'no_create': True, 'no_open': True}"
+                    domain="[('id', 'in', fund_to_all)]"
+                />
+                <field
+                    name="detail_line_to_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                />
+                <field name="analytic_tag_to_all" column_invisible="1" />
+                <field name="domain_tag_to_ids" column_invisible="1" />
+                <field
+                    name="analytic_tag_to_ids"
+                    widget="many2many_tags"
+                    options="{'no_create': True, 'no_open': True}"
+                    domain="[('id', 'in', analytic_tag_to_all or []), '|', ('id', 'in', domain_tag_to_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                    groups="account_analytic_tag.group_analytic_tags"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_budget_transfer_item_form" model="ir.ui.view">
+        <field name="name">view.budget.transfer.item.form</field>
+        <field name="model">budget.transfer.item</field>
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_item_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='budget_transfer_item_left']" position="inside">
+                <field name="fund_from_all" invisible="1" />
+                <field
+                    name="fund_from_id"
+                    options="{'no_create': True, 'no_open': True}"
+                    domain="[('id', 'in', fund_from_all)]"
+                />
+                <field name="analytic_tag_from_all" invisible="1" />
+                <field
+                    name="analytic_tag_from_ids"
+                    widget="many2many_tags"
+                    options="{'no_create': True, 'no_open': True}"
+                    domain="[('id', 'in', analytic_tag_from_all)]"
+                />
+            </xpath>
+            <xpath expr="//group[@name='budget_transfer_item_right']" position="inside">
+                <field name="fund_to_all" invisible="1" />
+                <field
+                    name="fund_to_id"
+                    options="{'no_create': True, 'no_open': True}"
+                    domain="[('id', 'in', fund_to_all)]"
+                />
+                <field name="analytic_tag_to_all" invisible="1" />
+                <field
+                    name="analytic_tag_to_ids"
+                    widget="many2many_tags"
+                    options="{'no_create': True, 'no_open': True}"
+                    domain="[('id', 'in', analytic_tag_to_all)]"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
