@@ -41,7 +41,6 @@
                 expr="//group[@name='main']//field[@name='analytic_account_id']"
                 position="after"
             >
-
                 <field name="fund_all" invisible="1" />
                 <field
                     name="fund_id"
