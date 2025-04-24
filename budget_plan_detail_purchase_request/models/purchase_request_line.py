@@ -1,11 +1,20 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import models
+from odoo import Command, models
 
 
 class PurchaseRequestLine(models.Model):
     _name = "purchase.request.line"
     _inherit = ["analytic.dimension.line", "purchase.request.line"]
-    _budget_analytic_field = "analytic_account_id"
-    _analytic_tag_field_name = "analytic_tag_ids"
+
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
+        self.ensure_one()
+        budget_vals = super()._init_docline_budget_vals(budget_vals, analytic_id)
+        # Document specific vals
+        budget_vals.update(
+            {
+                "analytic_tag_ids": [Command.set(self.analytic_tag_ids.ids)],
+            }
+        )
+        return super()._init_docline_budget_vals(budget_vals, analytic_id)

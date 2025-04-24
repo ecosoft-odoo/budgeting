@@ -1,3 +1,4 @@
 odoo-addon-analytic_tag_dimension @ git+https://github.com/OCA/account-analytic.git@refs/pull/761/head#subdirectory=analytic_tag_dimension
 odoo-addon-analytic_tag_dimension_enhanced @ git+https://github.com/OCA/account-analytic.git@refs/pull/762/head#subdirectory=analytic_tag_dimension_enhanced
 odoo-addon-purchase_analytic_tag @ git+https://github.com/OCA/account-analytic.git@refs/pull/759/head#subdirectory=purchase_analytic_tag
+odoo-addon-purchase_request_analytic_tag @ git+https://github.com/OCA/account-analytic.git@refs/pull/775/head#subdirectory=purchase_request_analytic_tag
