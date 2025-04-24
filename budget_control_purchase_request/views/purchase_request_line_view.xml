@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="purchase_request_line_tree" model="ir.ui.view">
+        <field name="name">purchase.request.line.list</field>
+        <field name="model">purchase.request.line</field>
+        <field name="inherit_id" ref="purchase_request.purchase_request_line_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
