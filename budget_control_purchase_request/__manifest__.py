@@ -14,9 +14,10 @@
     "data": [
         "security/ir.model.access.csv",
         "views/budget_period_view.xml",
-        "views/purchase_request_view.xml",
         "views/budget_control_view.xml",
         "views/budget_commit_forward_view.xml",
+        "views/purchase_request_line_view.xml",
+        "views/purchase_request_view.xml",
         "views/purchase_request_budget_move.xml",
     ],
     "installable": True,
