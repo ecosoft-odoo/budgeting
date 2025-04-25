@@ -1,12 +1,11 @@
 # Copyright 2022 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import SUPERUSER_ID, api
+from odoo import Command
 
 
-def post_init_hook(cr, registry):
+def post_init_hook(env):
     """Update analytic tag dimension for new module"""
-    env = api.Environment(cr, SUPERUSER_ID, {})
     AnalyticDimension = env["account.analytic.dimension"]
     dimensions = AnalyticDimension.search([])
     # skip it if not dimension
@@ -16,9 +15,7 @@ def post_init_hook(cr, registry):
     _models.write(
         {
             "field_id": [
-                (
-                    0,
-                    0,
+                Command.create(
                     {
                         "name": AnalyticDimension.get_field_name(dimension.code),
                         "field_description": dimension.name,
@@ -32,15 +29,14 @@ def post_init_hook(cr, registry):
     )
 
 
-def uninstall_hook(cr, registry):
+def uninstall_hook(env):
     """Cleanup all dimensions before uninstalling."""
-    env = api.Environment(cr, SUPERUSER_ID, {})
     AnalyticDimension = env["account.analytic.dimension"]
     dimensions = AnalyticDimension.search([])
     # drop relation column x_dimension_<code>
     for dimension in dimensions:
         name_column = AnalyticDimension.get_field_name(dimension.code)
-        cr.execute(
+        env.cr.execute(
             "DELETE FROM ir_model_fields WHERE name=%s and model='advance.budget.move'",
             (name_column,),
         )
