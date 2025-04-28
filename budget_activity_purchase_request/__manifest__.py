@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Activity - Purchase Request",
-    "version": "16.0.1.0.0",
+    "version": "18.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
@@ -16,6 +16,7 @@
         "views/purchase_request_view.xml",
         "views/purchase_request_line_view.xml",
         "views/purchase_views.xml",
+        "views/purchase_request_budget_move.xml",
     ],
     "installable": True,
     "auto_install": True,
