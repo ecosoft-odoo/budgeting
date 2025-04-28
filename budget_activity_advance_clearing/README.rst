@@ -17,7 +17,7 @@ Budget Activity - Advance/Clearing
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github
-    :target: https://github.com/ecosoft-odoo/budgeting/tree/15.0/budget_activity_advance_clearing
+    :target: https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_activity_advance_clearing
     :alt: ecosoft-odoo/budgeting
 
 |badge1| |badge2| |badge3|
@@ -37,23 +37,28 @@ This module add "Activity" element for advance/clearing commitment
 Configuration
 =============
 
-This module will create a new activity and KPI "Employee Advance" automatically.
-You will need to setup the Account of this activity first.
+This module will create a new activity and KPI "Employee Advance"
+automatically. You will need to setup the Account of this activity
+first.
 
-* Go to Budgeting > Activity > Budget Activity > Open activity "Employee Advance"
-* Select appropriate employee advance account from your chart of account
-* Go to Budgeting > Configurations > Budget Template
-* Select your template that control budget and add KPI "Employee Advance" into Template
+- Go to Budgeting > Activity > Budget Activity > Open activity "Employee
+  Advance"
+- Select appropriate employee advance account from your chart of account
+- Go to Budgeting > Configurations > Budget Template
+- Select your template that control budget and add KPI "Employee
+  Advance" into Template
 
 Note:
 
-* Employee Advance account code, if not already exists, you can create one. Use type = Current Asset and check Allow Reconciliation.
+- Employee Advance account code, if not already exists, you can create
+  one. Use type = Current Asset and check Allow Reconciliation.
 
 Usage
 =====
 
-#. Go to Expenses > My Expenses > Advances > Create new advance
-#. Activity field is default Employee Advance and it will automatically change the account on the advance/clearing that your config.
+1. Go to Expenses > My Expenses > Advances > Create new advance
+2. Activity field is default Employee Advance and it will automatically
+   change the account on the advance/clearing that your config.
 
 Bug Tracker
 ===========
@@ -61,7 +66,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/ecosoft-odoo/budgeting/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_activity_advance_clearing%0Aversion:%2015.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_activity_advance_clearing%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -69,21 +74,21 @@ Credits
 =======
 
 Authors
-~~~~~~~
+-------
 
 * Ecosoft
 
 Contributors
-~~~~~~~~~~~~
+------------
 
-* `Ecosoft <http://ecosoft.co.th>`__:
+- `Ecosoft <http://ecosoft.co.th>`__:
 
-    * Kitti Upariphutthiphong <kittiu@ecosoft.co.th>
-    * Saran Lim. <saranl@ecosoft.co.th>
-    * Pimolnat Suntian <pimolnats@ecosoft.co.th>
+     - Kitti Upariphutthiphong <kittiu@ecosoft.co.th>
+     - Saran Lim. <saranl@ecosoft.co.th>
+     - Pimolnat Suntian <pimolnats@ecosoft.co.th>
 
 Maintainers
-~~~~~~~~~~~
+-----------
 
 .. |maintainer-Saran440| image:: https://github.com/Saran440.png?size=40px
     :target: https://github.com/Saran440
@@ -93,6 +98,6 @@ Current maintainer:
 
 |maintainer-Saran440| 
 
-This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/15.0/budget_activity_advance_clearing>`_ project on GitHub.
+This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_activity_advance_clearing>`_ project on GitHub.
 
 You are welcome to contribute.
