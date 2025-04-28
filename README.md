@@ -22,6 +22,7 @@ Available addons
 addon | version | maintainers | summary
 --- | --- | --- | ---
 [budget_activity](budget_activity/) | 18.0.1.0.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Activity
+[budget_activity_purchase](budget_activity_purchase/) | 18.0.1.0.0 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Activity - Purchase
 [budget_control](budget_control/) | 18.0.1.3.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![ru3ix-bbb](https://github.com/ru3ix-bbb.png?size=30px)](https://github.com/ru3ix-bbb) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Control
 [budget_control_advance_clearing](budget_control_advance_clearing/) | 18.0.1.0.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Control on Expense extension on Advance/Clearing
 [budget_control_expense](budget_control_expense/) | 18.0.1.0.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![ru3ix-bbb](https://github.com/ru3ix-bbb.png?size=30px)](https://github.com/ru3ix-bbb) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Control on Expense
