@@ -115,11 +115,11 @@ class HRExpense(models.Model):
     def _valid_commit_state(self):
         return self.state in ["approved", "done"]
 
-    def _prepare_move_line_vals(self):
-        ml_vals = super()._prepare_move_line_vals()
-        if ml_vals.get("analytic_distribution") and self.fwd_analytic_distribution:
-            ml_vals["analytic_distribution"] = self.fwd_analytic_distribution
-        return ml_vals
+    def _prepare_move_lines_vals(self):
+        vals = super()._prepare_move_lines_vals()
+        if vals.get("analytic_distribution") and self.fwd_analytic_distribution:
+            vals.update({"analytic_distribution": self.fwd_analytic_distribution})
+        return vals
 
     def _get_included_tax(self):
         if self._name == "hr.expense":
