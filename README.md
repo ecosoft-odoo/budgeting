@@ -17,7 +17,22 @@ The Budgeting module for Odoo provides a structured and efficient way to manage 
 
 [//]: # (addons)
 
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
+Available addons
+----------------
+addon | version | maintainers | summary
+--- | --- | --- | ---
+[budget_activity](budget_activity/) | 18.0.1.0.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Activity
+[budget_control](budget_control/) | 18.0.1.3.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![ru3ix-bbb](https://github.com/ru3ix-bbb.png?size=30px)](https://github.com/ru3ix-bbb) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Control
+[budget_control_advance_clearing](budget_control_advance_clearing/) | 18.0.1.0.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Control on Expense extension on Advance/Clearing
+[budget_control_expense](budget_control_expense/) | 18.0.1.0.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![ru3ix-bbb](https://github.com/ru3ix-bbb.png?size=30px)](https://github.com/ru3ix-bbb) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Control on Expense
+[budget_control_purchase](budget_control_purchase/) | 18.0.1.0.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Control on Purchase
+[budget_control_purchase_request](budget_control_purchase_request/) | 18.0.1.0.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Control on Purchase Request
+[budget_control_revision](budget_control_revision/) | 18.0.1.0.0 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Keep track of revised budget control
+[budget_plan_detail](budget_plan_detail/) | 18.0.1.0.0 | [![ps-tubtim](https://github.com/ps-tubtim.png?size=30px)](https://github.com/ps-tubtim) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Allocated budget details
+[budget_plan_detail_advance_clearing](budget_plan_detail_advance_clearing/) | 18.0.1.0.0 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Allocation - Advance Clearing
+[budget_plan_detail_expense](budget_plan_detail_expense/) | 18.0.1.0.0 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Plan Details - Expense
+[budget_plan_detail_purchase](budget_plan_detail_purchase/) | 18.0.1.0.0 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Plan Details - Purchase
+[budget_plan_detail_purchase_request](budget_plan_detail_purchase_request/) | 18.0.1.0.0 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Plan Details - Purchase Request
 
 [//]: # (end addons)
 
