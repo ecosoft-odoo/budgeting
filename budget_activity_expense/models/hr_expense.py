@@ -20,16 +20,8 @@ class HRExpense(models.Model):
                 expense.account_id = expense.activity_id.account_id
         return res
 
-    def _get_account_move_line_values(self):
-        move_line_values_by_expense = super()._get_account_move_line_values()
-        for expense in self:
-            for move_line_values in move_line_values_by_expense[expense.id]:
-                if "product_id" in move_line_values:
-                    move_line_values["activity_id"] = expense.activity_id.id
-        return move_line_values_by_expense
-
-    def _prepare_move_line_vals(self):
-        self.ensure_one()
-        ml_vals = super()._prepare_move_line_vals()
-        ml_vals["activity_id"] = self.activity_id.id
-        return ml_vals
+    def _prepare_move_lines_vals(self):
+        vals = super()._prepare_move_lines_vals()
+        if self.activity_id:
+            vals.update({"activity_id": self.activity_id.id})
+        return vals
