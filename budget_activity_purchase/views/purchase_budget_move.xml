@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_purchase_budget_move_form" model="ir.ui.view">
+        <field name="name">view.purchase.budget.move.form</field>
+        <field name="model">purchase.budget.move</field>
+        <field
+            name="inherit_id"
+            ref="budget_control_purchase.view_purchase_budget_move_form"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='account_id']" position="before">
+                <field name="activity_id" />
+            </xpath>
+        </field>
+    </record>
+</odoo>
