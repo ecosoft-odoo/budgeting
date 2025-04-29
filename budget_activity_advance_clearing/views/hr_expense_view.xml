@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="hr_expense_view_form" model="ir.ui.view">
+        <field name="name">hr.expense.view.form</field>
+        <field name="model">hr.expense</field>
+        <field name="inherit_id" ref="budget_activity_expense.hr_expense_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='activity_id']" position="attributes">
+                <attribute name="readonly">advance or not is_editable</attribute>
+            </xpath>
+            <xpath expr="//field[@name='activity_id']" position="after">
+                <field
+                    name="clearing_activity_id"
+                    invisible="not advance"
+                    readonly="not is_editable"
+                    domain="[('id', '!=', activity_id)]"
+                    placeholder="Optional clearing activity is used during clear advance"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_hr_expense_sheet_form" model="ir.ui.view">
+        <field name="name">hr.expense.sheet.form</field>
+        <field name="model">hr.expense.sheet</field>
+        <field
+            name="inherit_id"
+            ref="budget_activity_expense.view_hr_expense_sheet_form"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='expense_line_ids']/list/field[@name='activity_id']"
+                position="after"
+            >
+                <field
+                    name="clearing_activity_id"
+                    domain="[('id', '!=', activity_id)]"
+                    column_invisible="not parent.advance"
+                />
+            </xpath>
+            <xpath
+                expr="//field[@name='expense_line_ids']/list/field[@name='activity_id']"
+                position="attributes"
+            >
+                <attribute name="readonly">advance</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
