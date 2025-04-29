@@ -19,6 +19,22 @@
                     <field name="budget_plan_revision_cancel" widget="radio" />
                 </setting>
             </xpath>
+            <xpath
+                expr="//block[@name='budget_control_options_container']"
+                position="inside"
+            >
+                <setting
+                    id="budget_control_revision_lock_amount"
+                    string="Revision Lock Amount"
+                    help="Users can change this setting to prevent editing after a revision has been made."
+                >
+                    <field
+                        name="budget_control_revision_lock_amount"
+                        class="o_light_label"
+                        widget="radio"
+                    />
+                </setting>
+            </xpath>
         </field>
     </record>
 </odoo>

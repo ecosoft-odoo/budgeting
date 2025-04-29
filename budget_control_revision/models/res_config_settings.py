@@ -10,3 +10,7 @@ class ResConfigSettings(models.TransientModel):
     budget_plan_revision_cancel = fields.Selection(
         related="company_id.budget_plan_revision_cancel", readonly=False
     )
+    budget_control_revision_lock_amount = fields.Selection(
+        related="company_id.budget_control_revision_lock_amount",
+        readonly=False,
+    )
