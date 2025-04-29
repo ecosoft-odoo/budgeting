@@ -13,4 +13,4 @@ class BudgetControl(models.Model):
         kpi_advance = self.env.ref(
             "budget_activity_advance_clearing.budget_kpi_advance"
         )
-        return lines.filtered(lambda l: l.kpi_id != kpi_advance)
+        return lines.filtered(lambda line: line.kpi_id != kpi_advance)

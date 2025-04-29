@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Activity - Advance/Clearing",
-    "version": "15.0.1.0.0",
+    "version": "18.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
@@ -15,6 +15,7 @@
     "data": [
         "data/budget_advance_data.xml",
         "views/hr_expense_view.xml",
+        "views/advance_budget_move.xml",
     ],
     "installable": True,
     "auto_install": True,
