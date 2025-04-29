@@ -22,6 +22,7 @@ Available addons
 addon | version | maintainers | summary
 --- | --- | --- | ---
 [budget_activity](budget_activity/) | 18.0.1.0.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Activity
+[budget_activity_advance_clearing](budget_activity_advance_clearing/) | 18.0.1.0.0 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Activity - Advance/Clearing
 [budget_activity_expense](budget_activity_expense/) | 18.0.1.0.0 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Activity - Expense
 [budget_activity_purchase](budget_activity_purchase/) | 18.0.1.0.0 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Activity - Purchase
 [budget_activity_purchase_request](budget_activity_purchase_request/) | 18.0.1.0.0 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) | Budget Activity - Purchase Request
