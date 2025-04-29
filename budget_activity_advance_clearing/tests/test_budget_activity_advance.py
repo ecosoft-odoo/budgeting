@@ -61,33 +61,6 @@ class TestBudgetActivityAdvance(TestBudgetActivity):
         return expense_sheet
 
     @freeze_time("2001-02-01")
-    def _create_clearing_sheet(self, advance, ex_lines):
-        Expense = self.env["hr.expense"]
-        view_id = "hr_expense.hr_expense_view_form"
-        expense_ids = []
-        user = self.env.ref("base.user_admin")
-        for ex_line in ex_lines:
-            with Form(Expense, view=view_id) as ex:
-                ex.employee_id = user.employee_id
-                ex.product_id = ex_line["product_id"]
-                ex.total_amount_currency = (
-                    ex_line["price_unit"] * ex_line["product_qty"]
-                )
-                ex.analytic_distribution = ex_line["analytic_distribution"]
-            expense = ex.save()
-            expense.tax_ids = False  # Test no vat
-            expense_ids.append(expense.id)
-        expense_sheet = self.env["hr.expense.sheet"].create(
-            {
-                "name": "Test Expense",
-                "advance_sheet_id": advance and advance.id,
-                "employee_id": user.employee_id.id,
-                "expense_line_ids": [(6, 0, expense_ids)],
-            }
-        )
-        return expense_sheet
-
-    @freeze_time("2001-02-01")
     def test_01_budget_activity_advance_control_analytic(self):
         """
         On expense (advnace/clearing),
