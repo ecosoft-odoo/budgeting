@@ -4,7 +4,7 @@
 {
     "name": "Base Tier Validation - Check Budget",
     "summary": "Add option to check budget when a tier is validated",
-    "version": "15.0.1.0.0",
+    "version": "18.0.1.0.0",
     "category": "Tools",
     "website": "https://github.com/ecosoft-odoo/budgeting",
     "author": "Ecosoft, Odoo Community Association (OCA)",

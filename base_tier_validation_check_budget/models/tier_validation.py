@@ -12,7 +12,8 @@ class TierValidation(models.AbstractModel):
     def _compute_check_budget(self):
         for rec in self:
             check_budget = rec.review_ids.filtered(
-                lambda r: r.status == "pending" and (self.env.user in r.reviewer_ids)
+                lambda r: r.status in ("waiting", "pending")
+                and (self.env.user in r.reviewer_ids)
             ).mapped("check_budget")
             rec.check_budget = True in check_budget
 
@@ -21,6 +22,8 @@ class TierValidation(models.AbstractModel):
         self.ensure_one()
         lines = getattr(self, "_docline_rel", None)
         line_type = getattr(self, "_docline_type", None)
+
+        # Check budget, if model has budget
         if self.check_budget and lines and line_type:
             doclines = self[lines].sudo()
             # Special case advance clearing
