@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_request_request_form" model="ir.ui.view">
+        <field name="name">view.request.request.form</field>
+        <field name="model">request.request</field>
+        <field name="inherit_id" ref="request_document.view_request_request_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page
+                    string="Budget Commitment"
+                    name="budget_commit"
+                    attrs="{'invisible': [('budget_move_ids', '=', [])]}"
+                >
+                    <div class="oe_read_only oe_right" name="buttons">
+                        <button
+                            type="object"
+                            name="recompute_budget_move"
+                            string="Recompute"
+                            icon="fa-refresh"
+                            groups="budget_control.group_budget_control_manager"
+                        />
+                        <button
+                            type="object"
+                            name="close_budget_move"
+                            string="Close Budget"
+                            icon="fa-times-circle"
+                            groups="budget_control.group_budget_control_manager"
+                        />
+                    </div>
+                    <field name="budget_move_ids" readonly="1">
+                        <tree>
+                            <field name="request_document_id" />
+                            <field name="request_id" />
+                            <field name="date" />
+                            <field name="analytic_group" optional="show" />
+                            <field name="analytic_account_id" optional="show" />
+                            <field
+                                name="analytic_tag_ids"
+                                optional="hide"
+                                widget="many2many_tags"
+                            />
+                            <field name="write_uid" optional="show" />
+                            <field name="write_date" optional="show" />
+                            <field name="note" optionl="hide" />
+                            <field name="debit" sum="Total Debit" />
+                            <field name="credit" sum="Total Credit" />
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
