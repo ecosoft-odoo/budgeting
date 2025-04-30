@@ -12,7 +12,7 @@ class BudgetPeriod(models.Model):
         compute="_compute_control_request_document",
         store=True,
         readonly=False,
-        help="Control budget on expense approved",
+        help="Control budget on request approved",
     )
 
     def _budget_info_query(self):
@@ -32,7 +32,7 @@ class BudgetPeriod(models.Model):
         # if doctype is request, check special control too.
         if doc_type == "request":
             return budget_period.filtered(
-                lambda l: (l.control_budget and l.expense)
-                or (not l.control_budget and l.expense)
+                lambda bp: (bp.control_budget and bp.request_document)
+                or (not bp.control_budget and bp.request_document)
             )
         return budget_period

@@ -8,7 +8,7 @@ class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
 
     def _get_domain_fwd_line(self, docline):
-        """Change res_model in forward advance to hr.expense.advance"""
+        """Change res_model in forward request to request.document"""
         if self._budget_model() == "request.budget.move":
             return [
                 ("res_model", "=", "request.document"),

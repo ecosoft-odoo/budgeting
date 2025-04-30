@@ -4,8 +4,8 @@
 from odoo import api, fields, models
 
 
-class RequestRequest(models.Model):
-    _inherit = "request.request"
+class RequestOrder(models.Model):
+    _inherit = "request.order"
 
     budget_move_ids = fields.One2many(
         comodel_name="request.budget.move",
@@ -41,7 +41,6 @@ class RequestRequest(models.Model):
 
     def action_approve(self):
         res = super().action_approve()
-        self.flush()
         BudgetPeriod = self.env["budget.period"]
         for doc in self:
             for line in doc.line_ids:

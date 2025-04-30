@@ -5,13 +5,18 @@
         <field name="model">budget.period</field>
         <field name="inherit_id" ref="budget_control.budget_period_view_form" />
         <field name="arch" type="xml">
-            <div name="account" position="after">
-                <label for="request_document" invisible="1" />
-                <div name="request_document" class="o_row">
-                    <field name="request_document" />
-                    <span>On Request</span>
+            <!-- Add request with first line -->
+            <xpath expr="//field[@name='control_budget']" position="after">
+                <label
+                    for="request_document"
+                    class="d-none"
+                    invisible="not control_budget"
+                />
+                <div invisible="not control_budget">
+                    <field name="request_document" class="oe_inline" nolabel="1" />
+                    <label for="request_document" class="o_form_label oe_inline" />
                 </div>
-            </div>
+            </xpath>
         </field>
     </record>
 </odoo>

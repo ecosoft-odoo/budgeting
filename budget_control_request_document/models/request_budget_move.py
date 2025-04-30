@@ -10,7 +10,7 @@ class RequestBudgetMove(models.Model):
     _description = "Request Budget Moves"
 
     request_id = fields.Many2one(
-        comodel_name="request.request",
+        comodel_name="request.order",
         related="request_document_id.request_id",
         store=True,
         index=True,
