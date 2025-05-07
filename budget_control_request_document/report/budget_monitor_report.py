@@ -12,7 +12,7 @@ class BudgetMonitorReport(models.Model):
                 "model": ("request.document", "Request"),
                 "type": ("15_rq_commit", "Request Commit"),
                 "budget_move": ("request_budget_move", "request_document_id"),
-                "source_doc": ("request_request", "request_id"),
+                "source_doc": ("request_order", "request_id"),
             }
         ]
 

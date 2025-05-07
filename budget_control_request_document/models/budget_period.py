@@ -32,7 +32,7 @@ class BudgetPeriod(models.Model):
         # if doctype is request, check special control too.
         if doc_type == "request":
             return budget_period.filtered(
-                lambda l: (l.control_budget and l.expense)
-                or (not l.control_budget and l.expense)
+                lambda l: (l.control_budget and l.request_document)
+                or (not l.control_budget and l.request_document)
             )
         return budget_period

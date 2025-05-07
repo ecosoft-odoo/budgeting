@@ -11,10 +11,9 @@
     "data": [
         "security/ir.model.access.csv",
         "views/budget_period_view.xml",
-        "views/request_request_view.xml",
-        "views/request_document_view.xml",
         "views/budget_control_view.xml",
-        "views/budget_commit_forward_view.xml",
+        "views/request_order_view.xml",
+        "views/request_document_view.xml",
     ],
     "installable": True,
     "maintainers": ["Saran440"],

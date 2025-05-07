@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 {
-    "name": "Budget Control on Request Document",
+    "name": "Budget Control on Request Document Expense",
     "version": "15.0.1.0.0",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
@@ -12,10 +12,9 @@
         "budget_control_expense",
         "request_document_expense",
     ],
-    "data": [
-        "views/request_document_view.xml",
-    ],
+    "data": [],
     "installable": True,
+    "auto_install": True,
     "maintainers": ["Saran440"],
     "development_status": "Alpha",
 }
