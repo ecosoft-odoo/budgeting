@@ -26,7 +26,7 @@ class BudgetCommitForward(models.Model):
 
     def _get_document_number(self, doc):
         if doc._name == "hr.expense.advance":
-            return f"{doc.sheet_id._name},{doc.sheet_id.id}"
+            return "{},{}".format(doc.sheet_id._name, doc.sheet_id.id)
         return super()._get_document_number(doc)
 
     def _get_commit_docline(self, res_model):

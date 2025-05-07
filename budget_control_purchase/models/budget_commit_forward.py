@@ -25,7 +25,7 @@ class BudgetCommitForward(models.Model):
 
     def _get_document_number(self, doc):
         if doc._name == "purchase.order.line":
-            return f"{doc.order_id._name},{doc.order_id.id}"
+            return "{},{}".format(doc.order_id._name, doc.order_id.id)
         return super()._get_document_number(doc)
 
     def _get_commit_docline(self, res_model):

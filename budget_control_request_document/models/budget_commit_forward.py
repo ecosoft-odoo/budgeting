@@ -26,7 +26,7 @@ class BudgetCommitForward(models.Model):
 
     def _get_document_number(self, doc):
         if doc._name in self._get_model_request_line():
-            return f"{doc.document_id._name},{doc.document_id.id}"
+            return "{},{}".format(doc.document_id._name, doc.document_id.id)
         return super()._get_document_number(doc)
 
     def _get_model_request_line(self):
