@@ -9,7 +9,7 @@
                 <page
                     string="Budget Commitment"
                     name="budget_commit"
-                    attrs="{'invisible': [('budget_move_ids', '=', [])]}"
+                    invisible="not budget_move_ids"
                 >
                     <div class="oe_read_only oe_right" name="buttons">
                         <button
@@ -28,23 +28,18 @@
                         />
                     </div>
                     <field name="budget_move_ids" readonly="1">
-                        <tree>
+                        <list>
                             <field name="request_document_id" />
                             <field name="request_id" />
                             <field name="date" />
-                            <field name="analytic_group" optional="show" />
+                            <field name="analytic_plan" optional="hide" />
                             <field name="analytic_account_id" optional="show" />
-                            <field
-                                name="analytic_tag_ids"
-                                optional="hide"
-                                widget="many2many_tags"
-                            />
-                            <field name="write_uid" optional="show" />
-                            <field name="write_date" optional="show" />
+                            <field name="write_uid" optional="hide" />
+                            <field name="write_date" optional="hide" />
                             <field name="note" optionl="hide" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </xpath>

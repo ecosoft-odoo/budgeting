@@ -3,7 +3,8 @@
 
 import ast
 
-from odoo import _, fields, models
+from odoo import fields, models
+from odoo.exceptions import UserError
 from odoo.tools import float_is_zero
 
 
@@ -16,13 +17,26 @@ class RequestDocument(models.Model):
     )
     line_data_amount = fields.Text()
 
+    def _budget_field(self):
+        return "budget_move_ids"
+
     def _get_lines_request(self):
         mapping_type = self._get_origin_lines()
         request_line = mapping_type.get(self.request_type, False)
-        return self.mapped(request_line)
+        if not request_line:
+            raise UserError(
+                self.env._(f"Request type '{self.request_type}' is not implemented.")
+            )
+        return self.mapped(request_line).with_context(
+            alt_budget_move_model="request.budget.move",
+            alt_budget_move_field="budget_move_ids",
+        )
 
     def _get_origin_lines(self):
         return {}
+
+    def _get_data_amount(self, request_line):
+        return []
 
     def _get_line_amount_map(self):
         line_amount_map = {}
@@ -75,7 +89,7 @@ class RequestDocument(models.Model):
                 force_commit=True,
                 alt_budget_move_model="request.budget.move",
                 alt_budget_move_field="budget_move_ids",
-                commit_note=_("Auto adjustment on close budget"),
+                commit_note=self.env._("Auto adjustment on close budget"),
                 adj_commit=True,
             )
 

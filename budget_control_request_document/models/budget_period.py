@@ -26,13 +26,19 @@ class BudgetPeriod(models.Model):
             rec.request_document = rec.control_budget
 
     @api.model
+    def _prepare_controls(self, budget_period, doclines):
+        if doclines.env.context.get("alt_budget_move_model") == "request.budget.move":
+            doclines = doclines[doclines._doc_rel].request_document_id
+        return super()._prepare_controls(budget_period, doclines)
+
+    @api.model
     def _get_eligible_budget_period(self, date=False, doc_type=False):
         budget_period = super()._get_eligible_budget_period(date, doc_type)
         # Get period control budget.
         # if doctype is request, check special control too.
         if doc_type == "request":
             return budget_period.filtered(
-                lambda l: (l.control_budget and l.request_document)
-                or (not l.control_budget and l.request_document)
+                lambda bp: (bp.control_budget and bp.request_document)
+                or (not bp.control_budget and bp.request_document)
             )
         return budget_period
