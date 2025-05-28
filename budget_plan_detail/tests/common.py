@@ -99,21 +99,19 @@ class BudgetPlanDetailCommon(BudgetControlCommon):
         # Use standard from budget control
         else:
             invoice_list = {
-                {
-                    "move_type": "in_invoice",
-                    "partner_id": self.vendor.id,
-                    "invoice_date": datetime.today(),
-                    "invoice_line_ids": [
-                        Command.create(
-                            {
-                                "quantity": 1,
-                                "account_id": account.id,
-                                "price_unit": amount,
-                                "analytic_distribution": analytic_distribution,
-                            },
-                        )
-                    ],
-                }
+                "move_type": "in_invoice",
+                "partner_id": self.vendor.id,
+                "invoice_date": datetime.today(),
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": account.id,
+                            "price_unit": amount,
+                            "analytic_distribution": analytic_distribution,
+                        },
+                    )
+                ],
             }
         invoice = self.Move.create(invoice_list)
         return invoice
