@@ -4,8 +4,8 @@
 from odoo import api, fields, models
 
 
-class RequestRequest(models.Model):
-    _inherit = "request.request"
+class RequestOrder(models.Model):
+    _inherit = "request.order"
 
     budget_move_ids = fields.One2many(
         comodel_name="request.budget.move",
@@ -24,7 +24,7 @@ class RequestRequest(models.Model):
         for line in doclines:
             request_line = line._get_lines_request()
             if request_line:
-                line.mapped(request_line).write(clear_date_commit)
+                request_line.write(clear_date_commit)
 
     def write(self, vals):
         """
@@ -36,6 +36,12 @@ class RequestRequest(models.Model):
             doclines = self.mapped("line_ids")
             if vals.get("state") in ("cancel", "draft"):
                 self._clear_date_commit(doclines)
+            else:
+                doclines = doclines.with_context(
+                    force_commit=True,
+                    alt_budget_move_model="request.budget.move",
+                    alt_budget_move_field="budget_move_ids",
+                )
             doclines.recompute_budget_move()
         return res
 
@@ -47,9 +53,7 @@ class RequestRequest(models.Model):
             for line in doc.line_ids:
                 request_line = line._get_lines_request()
                 if request_line:
-                    BudgetPeriod.check_budget(
-                        line.mapped(request_line), doc_type="request"
-                    )
+                    BudgetPeriod.check_budget(request_line, doc_type="request")
         return res
 
     def action_submit(self):
@@ -60,6 +64,6 @@ class RequestRequest(models.Model):
                 request_line = line._get_lines_request()
                 if request_line:
                     BudgetPeriod.check_budget_precommit(
-                        line.mapped(request_line), doc_type="request"
+                        request_line, doc_type="request"
                     )
         return res
