@@ -10,7 +10,4 @@ class AccountAnalyticDimension(models.Model):
     @api.model
     def get_model_names(self):
         res = super().get_model_names()
-        return res + [
-            "purchase.request.budget.move",
-            "purchase.request.line",
-        ]
+        return res + ["purchase.request.line"]
