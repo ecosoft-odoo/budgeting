@@ -10,10 +10,20 @@ class AccountAnalyticDimension(models.Model):
     @api.model
     def get_model_names(self):
         res = super().get_model_names()
-        return res + [
+        # All models that have budget.move in it
+        budget_move_models = (
+            self.env["ir.model"]
+            .sudo()
+            .search(
+                [("model", "like", "%.budget.move")],
+            )
+            .mapped("model")
+        )
+        # Extra models
+        extra_models = [
             "budget.plan.line.detail",
-            "account.budget.move",
             "budget.move.adjustment.item",
             "budget.monitor.report",
             "budget.source.fund.report",
         ]
+        return res + budget_move_models + extra_models
