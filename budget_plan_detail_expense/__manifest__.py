@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Plan Details - Expense",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.1.1",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
