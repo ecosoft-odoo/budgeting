@@ -4,6 +4,16 @@
 from odoo import Command
 
 
+def _get_installed_dimension_fields(env):
+    env.cr.execute("""
+        SELECT model, name
+        FROM ir_model_fields
+        WHERE relation = 'account.analytic.tag'
+          AND name LIKE 'x_dimension_%'
+    """)
+    return {(model, name) for model, name in env.cr.fetchall()}
+
+
 def post_init_hook(env):
     """Update analytic tag dimension for new module"""
     AnalyticDimension = env["account.analytic.dimension"]
@@ -11,22 +21,33 @@ def post_init_hook(env):
     # skip it if not dimension
     if not dimensions:
         return
-    _models = env["ir.model"].search([("model", "=", "advance.budget.move")])
-    _models.write(
-        {
-            "field_id": [
-                Command.create(
-                    {
-                        "name": AnalyticDimension.get_field_name(dimension.code),
-                        "field_description": dimension.name,
-                        "ttype": "many2one",
-                        "relation": "account.analytic.tag",
-                    },
-                )
-                for dimension in dimensions
-            ],
-        }
+
+    existing_fields = _get_installed_dimension_fields(env)
+
+    model_to_update = env["ir.model"].search(
+        [("model", "like", "%.budget.move")],
+        order="id",
     )
+
+    for model in model_to_update:
+        for dimension in dimensions:
+            field_name = AnalyticDimension.get_field_name(dimension.code)
+            if (model.model, field_name) in existing_fields:
+                continue
+            model.write(
+                {
+                    "field_id": [
+                        Command.create(
+                            {
+                                "name": field_name,
+                                "field_description": dimension.name,
+                                "ttype": "many2one",
+                                "relation": "account.analytic.tag",
+                            }
+                        )
+                    ],
+                }
+            )
 
 
 def uninstall_hook(env):
