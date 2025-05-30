@@ -7,31 +7,13 @@ from odoo.tools import SQL
 
 class SourceFundMonitorReport(models.Model):
     _name = "budget.source.fund.report"
+    _inherit = "budget.common.monitoring"
     _description = "Budget Source Fund Monitoring Report"
     _auto = False
     _order = "fund_id desc"
 
-    res_id = fields.Reference(
-        selection=lambda self: [("budget.source.fund", "Budget Source Fund")]
-        + self._get_budget_docline_model(),
-        string="Resource ID",
-    )
-    reference = fields.Char()
-    analytic_account_id = fields.Many2one(
-        comodel_name="account.analytic.account",
-    )
     date_from = fields.Date()
     date_to = fields.Date()
-    active = fields.Boolean()
-    budget_period_id = fields.Many2one(comodel_name="budget.period")
-    fund_id = fields.Many2one(comodel_name="budget.source.fund")
-    fund_group_id = fields.Many2one(comodel_name="budget.source.fund.group")
-    amount = fields.Float()
-    amount_type = fields.Selection(
-        selection=lambda self: [("10_budget", "Budget")]
-        + self._get_budget_amount_type(),
-        string="Type",
-    )
 
     @property
     def _table_query(self) -> SQL:
@@ -60,31 +42,10 @@ class SourceFundMonitorReport(models.Model):
     def _where(self) -> SQL:
         return SQL("")
 
-    def _get_consumed_sources(self):
-        return [
-            {
-                "model": ("account.move.line", "Account Move Line"),
-                "type": ("80_actual", "Actual"),
-                "budget_move": ("account_budget_move", "move_line_id"),
-                "source_doc": ("account_move", "move_id"),
-            }
-        ]
-
-    def _get_budget_docline_model(self):
-        """Return list of all res_id models selection"""
-        return [x["model"] for x in self._get_consumed_sources()]
-
-    def _get_budget_amount_type(self):
-        """Return list of all amount_type selection"""
-        return [x["type"] for x in self._get_consumed_sources()]
-
     def _get_select_amount_types(self):
         sql_select = {}
-        BudgetMonitoring = self.env["budget.monitor.report"]
         formatted_dimension_fields = ""
-        budget_dimension_fields = self.env[
-            "budget.monitor.report"
-        ]._get_dimension_fields("budget.plan.line.detail")
+        budget_dimension_fields = self._get_dimension_fields("budget.plan.line.detail")
 
         for source in self._get_consumed_sources():
             res_model = source["model"][0]  # i.e., account.move.line
@@ -94,7 +55,7 @@ class SourceFundMonitorReport(models.Model):
             table_model = budget_table.replace("_", ".")
 
             # Find analytic tag dimension (if any)
-            dimension_fields = BudgetMonitoring._get_dimension_fields(table_model)
+            dimension_fields = self._get_dimension_fields(table_model)
             if dimension_fields:
                 formatted_dimension_fields = ", " + ", ".join(
                     f"a.{f} as {f}" for f in dimension_fields
@@ -138,9 +99,7 @@ class SourceFundMonitorReport(models.Model):
         return sql_from
 
     def _select_budget(self):
-        dimension_fields = self.env["budget.monitor.report"]._get_dimension_fields(
-            "budget.plan.line.detail"
-        )
+        dimension_fields = self._get_dimension_fields("budget.plan.line.detail")
         # Find analytic tag dimension (if any)
         formatted_dimension_fields = ""
         if dimension_fields:

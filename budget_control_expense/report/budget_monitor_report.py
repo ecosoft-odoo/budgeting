@@ -8,16 +8,6 @@ from odoo.tools import SQL
 class BudgetMonitorReport(models.Model):
     _inherit = "budget.monitor.report"
 
-    def _get_consumed_sources(self):
-        return super()._get_consumed_sources() + [
-            {
-                "model": ("hr.expense", "Expense"),
-                "type": ("50_ex_commit", "EX Commit"),
-                "budget_move": ("expense_budget_move", "expense_id"),
-                "source_doc": ("hr_expense_sheet", "sheet_id"),
-            }
-        ]
-
     @api.model
     def _where_expense(self) -> SQL:
         return SQL("")
