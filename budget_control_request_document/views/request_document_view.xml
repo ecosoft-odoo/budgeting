@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_request_document_list" model="ir.ui.view">
+        <field name="name">view.request.document.line.list</field>
+        <field name="model">request.document</field>
+        <field name="inherit_id" ref="request_document.view_request_document_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='total_amount_request']" position="after">
+                <field name="line_data_amount" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

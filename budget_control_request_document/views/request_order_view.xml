@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_request_order_form" model="ir.ui.view">
+        <field name="name">view.request.order.form</field>
+        <field name="model">request.order</field>
+        <field name="inherit_id" ref="request_document.view_request_order_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page
+                    string="Budget Commitment"
+                    name="budget_commit"
+                    invisible="not budget_move_ids"
+                >
+                    <div class="oe_read_only oe_right" name="buttons">
+                        <button
+                            type="object"
+                            name="recompute_budget_move"
+                            string="Recompute"
+                            icon="fa-refresh"
+                            groups="budget_control.group_budget_control_manager"
+                        />
+                        <button
+                            type="object"
+                            name="close_budget_move"
+                            string="Close Budget"
+                            icon="fa-times-circle"
+                            groups="budget_control.group_budget_control_manager"
+                        />
+                    </div>
+                    <field name="budget_move_ids" readonly="1">
+                        <list>
+                            <field name="request_document_id" />
+                            <field name="request_id" />
+                            <field name="date" />
+                            <field name="analytic_plan" optional="hide" />
+                            <field name="analytic_account_id" optional="show" />
+                            <field name="write_uid" optional="hide" />
+                            <field name="write_date" optional="hide" />
+                            <field name="note" optionl="hide" />
+                            <field name="debit" sum="Total Debit" />
+                            <field name="credit" sum="Total Credit" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
