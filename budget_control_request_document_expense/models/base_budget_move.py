@@ -7,9 +7,9 @@ from odoo import models
 class BudgetDoclineMixin(models.AbstractModel):
     _inherit = "budget.docline.mixin"
 
-    def _init_docline_budget_vals(self, budget_vals):
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
         """Use standard budget move but we need commit in request"""
-        budget_vals = super()._init_docline_budget_vals(budget_vals)
+        budget_vals = super()._init_docline_budget_vals(budget_vals, analytic_id)
         if (
             self.env.context.get("alt_budget_move_model") == "request.budget.move"
             and self._name == "hr.expense"

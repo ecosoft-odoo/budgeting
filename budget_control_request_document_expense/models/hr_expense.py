@@ -10,6 +10,6 @@ class HRExpenseSheet(models.Model):
     def write(self, vals):
         """Uncommit budget for source request document."""
         res = super().write(vals)
-        if vals.get("state") in ("approve", "cancel", "draft"):
+        if vals.get("approval_state") in ("approve", "cancel", False):
             self.mapped("request_document_id").recompute_budget_move()
         return res

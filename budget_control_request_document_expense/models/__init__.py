@@ -2,5 +2,4 @@
 
 from . import base_budget_move
 from . import request_document
-from . import request_order
 from . import hr_expense
