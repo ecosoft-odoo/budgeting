@@ -8,19 +8,6 @@ from odoo.tools import SQL
 class SourceFundMonitorReport(models.Model):
     _inherit = "budget.source.fund.report"
 
-    def _get_consumed_sources(self):
-        return super()._get_consumed_sources() + [
-            {
-                "model": ("purchase.request.line", "Purchase Request Line"),
-                "type": ("20_pr_commit", "PR Commit"),
-                "budget_move": (
-                    "purchase_request_budget_move",
-                    "purchase_request_line_id",
-                ),
-                "source_doc": ("purchase_request", "purchase_request_id"),
-            }
-        ]
-
     @api.model
     def _get_sql(self) -> SQL:
         select_pr_query = self._select_statement("20_pr_commit")
