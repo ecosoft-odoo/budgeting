@@ -13,7 +13,7 @@ from odoo.addons.budget_control.tests.common import get_budget_common_class
 
 
 @tagged("post_install", "-at_install")
-class TestBudgetControlPurchaseRequest(get_budget_common_class()):
+class TestBudgetControlRequestDocument(get_budget_common_class()):
     @classmethod
     @freeze_time("2001-02-01")
     def setUpClass(cls):
