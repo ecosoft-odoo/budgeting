@@ -7,43 +7,26 @@ from odoo.tools import SQL
 
 class BudgetMonitorReport(models.Model):
     _name = "budget.monitor.report"
+    _inherit = "budget.common.monitoring"
     _description = "Budget Monitoring Report"
     _auto = False
     _order = "date desc"
     _rec_name = "reference"
 
-    res_id = fields.Reference(
-        selection=lambda self: [("budget.control.line", "Budget Control Lines")]
-        + self._get_budget_docline_model(),
-        string="Resource ID",
-    )
     kpi_id = fields.Many2one(
         comodel_name="budget.kpi",
         string="KPI",
     )
     source_document = fields.Char()
-    reference = fields.Char()
-    analytic_account_id = fields.Many2one(
-        comodel_name="account.analytic.account",
-    )
     analytic_plan = fields.Many2one(
         comodel_name="account.analytic.plan",
     )
     date = fields.Date()
-    amount = fields.Float()
-    amount_type = fields.Selection(
-        selection=lambda self: [("10_budget", "Budget")]
-        + self._get_budget_amount_type(),
-        string="Type",
-    )
     product_id = fields.Many2one(
         comodel_name="product.product",
     )
     account_id = fields.Many2one(
         comodel_name="account.account",
-    )
-    budget_period_id = fields.Many2one(
-        comodel_name="budget.period",
     )
     budget_state = fields.Selection(
         [
@@ -55,7 +38,6 @@ class BudgetMonitorReport(models.Model):
     )
     fwd_commit = fields.Boolean()
     companies = fields.Char()
-    active = fields.Boolean()
 
     @property
     def _table_query(self) -> SQL:
@@ -72,7 +54,8 @@ class BudgetMonitorReport(models.Model):
         return SQL(
             """
             FROM (%(table)s) a
-            LEFT JOIN budget_period p ON a.date between p.bm_date_from AND p.bm_date_to
+            LEFT JOIN budget_period p
+                ON a.date between p.bm_date_from AND p.bm_date_to
             LEFT JOIN date_range d ON a.date between d.date_start AND d.date_end
                 AND d.type_id = p.plan_date_range_type_id
             """,
@@ -107,24 +90,6 @@ class BudgetMonitorReport(models.Model):
             from_actual=self._from_statement("80_actual"),
             where_actual=self._where_actual(),
         )
-
-    def _get_consumed_sources(self):
-        return [
-            {
-                "model": ("account.move.line", "Account Move Line"),
-                "type": ("80_actual", "Actual"),
-                "budget_move": ("account_budget_move", "move_line_id"),
-                "source_doc": ("account_move", "move_id"),
-            }
-        ]
-
-    def _get_budget_docline_model(self):
-        """Return list of all res_id models selection"""
-        return [x["model"] for x in self._get_consumed_sources()]
-
-    def _get_budget_amount_type(self):
-        """Return list of all amount_type selection"""
-        return [x["type"] for x in self._get_consumed_sources()]
 
     def _get_select_amount_types(self):
         sql_select = {}
