@@ -78,6 +78,7 @@ class RequestDocument(models.Model):
 
     def close_budget_move(self):
         rounding = self.currency_id.rounding
+        budget_moves = self.env["request.budget.move"]
         for rec in self:
             totals = rec.budget_move_ids.read(["debit", "credit"])
             debit = sum(x["debit"] for x in totals)
@@ -103,7 +104,9 @@ class RequestDocument(models.Model):
                     if line.id in line_amount_map
                     else {}
                 )
-                line.with_context(**ctx).commit_budget(reverse=True)
+                budget_move = line.with_context(**ctx).commit_budget(reverse=True)
+                budget_moves += budget_move
+        return budget_moves
 
     def uncommit_request_budget(self, request_line):
-        return
+        return False

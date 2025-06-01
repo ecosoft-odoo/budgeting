@@ -46,7 +46,8 @@ class RequestDocument(models.Model):
             and budget_move
             and request_line[request_line._doc_rel].state == "posted"
         ):
-            self.close_budget_move()
+            budget_moves = self.close_budget_move()
+            return budget_moves
         return res
 
     def _create_tester(self):
