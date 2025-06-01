@@ -42,3 +42,22 @@ class BudgetPeriod(models.Model):
                 or (not bp.control_budget and bp.request_document)
             )
         return budget_period
+
+    @api.model
+    def check_budget_precommit(self, doclines, doc_type="account"):
+        """Uncommit request document first before check budget"""
+        budget_moves = False
+        if (
+            hasattr(doclines, "_doc_rel")
+            and hasattr(doclines[doclines._doc_rel], "request_document_id")
+            and doclines[doclines._doc_rel].request_document_id
+        ):
+            budget_moves = (
+                doclines[doclines._doc_rel]
+                .request_document_id.with_context(reverse_precommit=1)
+                .uncommit_request_budget(doclines)
+            )
+        res = super().check_budget_precommit(doclines, doc_type=doc_type)
+        if budget_moves:
+            budget_moves.unlink()
+        return res

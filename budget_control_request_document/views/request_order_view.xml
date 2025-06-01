@@ -11,7 +11,7 @@
                     name="budget_commit"
                     invisible="not budget_move_ids"
                 >
-                    <div class="oe_read_only oe_right" name="buttons">
+                    <div class="d-flex justify-content-end" name="buttons">
                         <button
                             type="object"
                             name="recompute_budget_move"

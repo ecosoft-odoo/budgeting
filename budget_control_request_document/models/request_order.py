@@ -17,7 +17,8 @@ class RequestOrder(models.Model):
         self.mapped("line_ids").recompute_budget_move()
 
     def close_budget_move(self):
-        self.mapped("line_ids").close_budget_move()
+        budget_moves = self.mapped("line_ids").close_budget_move()
+        return budget_moves
 
     def _clear_date_commit(self, doclines):
         clear_date_commit = {"date_commit": False}
