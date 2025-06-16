@@ -15,3 +15,14 @@ class ResCompany(models.Model):
         default="manual",
         help="all budget control will auto/manual cancel before budget plan is revised",
     )
+    budget_control_revision_lock_amount = fields.Selection(
+        selection=[
+            ("none", "No Lock"),
+            ("current", "Lock until current month"),
+            ("last", "Lock until previous month"),
+        ],
+        string="Budget Control Revision - Lock Amount",
+        default="none",
+        help="Determines the lock amount period for budget control revisions. \
+            Options are: No Lock, Lock until current month, Lock until previous month",
+    )

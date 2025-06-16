@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
+    <!-- Budget Control Lines -->
+    <record id="budget_control_line_list_view_readonly" model="ir.ui.view">
+        <field name="name">budget.control.line.tree.view.readonly</field>
+        <field name="model">budget.control.line</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.budget_control_line_list_view_readonly"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="is_readonly" />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Budget Control -->
     <record id="budget_control_view_form_without_header" model="ir.ui.view">
         <field name="name">budget.control.view.form.without.header</field>
         <field name="model">budget.control</field>
@@ -85,6 +101,23 @@
                         </list>
                     </field>
                 </page>
+            </xpath>
+            <!-- Add info -->
+            <xpath expr="//page[@name='items']/div[@name='buttons']" position="before">
+                <div
+                    class="alert alert-info info_icon mt-2 d-flex align-items-center"
+                    role="alert"
+                    invisible="not date_range_readonly or state != 'draft'"
+                >
+                    <span class="fa fa-info fa-2x me-2" />
+                    <span>
+                        Budget control lines with a date range later than
+                        <b>
+                        <field name="date_range_readonly" options="{'no_open': True}" />
+                    </b>
+                        are editable.
+                    </span>
+                </div>
             </xpath>
         </field>
     </record>
