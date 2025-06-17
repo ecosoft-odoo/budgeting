@@ -158,19 +158,27 @@ class BudgetMonitorReport(models.Model):
     @api.model
     def _from_budget(self) -> SQL:
         return SQL(
-            """
+            f"""
             FROM budget_control_line a
             INNER JOIN budget_control b ON a.budget_control_id = b.id
             LEFT JOIN budget_control_company_rel c
                 ON b.id = c.budget_control_id
             LEFT JOIN res_company d ON d.id = c.company_id
-            WHERE b.active = TRUE
+            WHERE {self._get_where_budget()}
             GROUP BY
                 a.id, a.kpi_id, a.analytic_account_id,
                 b.analytic_plan, a.date_to, a.amount,
                 b.name, b.state, a.active
             """,
         )
+
+    @api.model
+    def _get_where_budget(self):
+        """
+        Hook this function for add where clause for budget
+        use for module budget_control_operating_unit
+        """
+        return "b.active = TRUE"
 
     def _select_statement(self, amount_type):
         return self._get_select_amount_types()[amount_type]
