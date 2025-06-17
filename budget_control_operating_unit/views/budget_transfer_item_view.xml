@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_transfer_item_list" model="ir.ui.view">
+        <field name="name">view.budget.transfer.item.list</field>
+        <field name="model">budget.transfer.item</field>
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_item_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='budget_control_from_id']" position="after">
+                <field
+                    name="operating_unit_from_id"
+                    options="{'no_create_edit': True, 'no_open': True}"
+                    optional="show"
+                />
+            </xpath>
+            <xpath expr="//field[@name='budget_control_to_id']" position="after">
+                <field
+                    name="operating_unit_to_id"
+                    options="{'no_create_edit': True, 'no_open': True}"
+                    optional="show"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_budget_transfer_item_form" model="ir.ui.view">
+        <field name="name">view.budget.transfer.item.form</field>
+        <field name="model">budget.transfer.item</field>
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_item_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='budget_transfer_item_left']" position="inside">
+                <field
+                    name="operating_unit_from_id"
+                    options="{'no_create_edit': True, 'no_open': True}"
+                />
+            </xpath>
+            <xpath expr="//group[@name='budget_transfer_item_right']" position="inside">
+                <field
+                    name="operating_unit_to_id"
+                    options="{'no_create_edit': True, 'no_open': True}"
+                />
+            </xpath>
+            <!-- No link to budget control -->
+            <!-- <xpath
+                expr="//group[@name='budget_transfer_item_left']//field[@name='budget_control_from_id']"
+                position="attributes"
+            >
+                <attribute
+                    name="options"
+                >{'no_create_edit': True, 'no_open': True}</attribute>
+            </xpath>
+            <xpath
+                expr="//group[@name='budget_transfer_item_right']//field[@name='budget_control_to_id']"
+                position="attributes"
+            >
+                <attribute
+                    name="options"
+                >{'no_create_edit': True, 'no_open': True}</attribute>
+            </xpath> -->
+        </field>
+    </record>
+</odoo>

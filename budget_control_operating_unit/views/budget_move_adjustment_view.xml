@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_move_adjustment_search" model="ir.ui.view">
+        <field name="name">view.budget.move.adjustment.search</field>
+        <field name="model">budget.move.adjustment</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.view_budget_move_adjustment_search"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field
+                    name="operating_unit_id"
+                    groups="operating_unit.group_multi_operating_unit"
+                />
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter
+                    string="Operating Unit"
+                    name="operating_unit_id"
+                    context="{'group_by':'operating_unit_id'}"
+                    groups="operating_unit.group_multi_operating_unit"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_budget_move_adjustment_list" model="ir.ui.view">
+        <field name="name">view.budget.move.adjustment.list</field>
+        <field name="model">budget.move.adjustment</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.view_budget_move_adjustment_list"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state']" position="before">
+                <field
+                    name="operating_unit_id"
+                    groups="operating_unit.group_multi_operating_unit"
+                    optional="show"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_budget_move_adjustment_form" model="ir.ui.view">
+        <field name="name">view.budget.move.adjustment.form</field>
+        <field name="model">budget.move.adjustment</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.view_budget_move_adjustment_form"
+        />
+        <field name="arch" type="xml">
+            <!-- Header -->
+            <xpath
+                expr="//sheet//group[@name='budget_move_adjustment_right']"
+                position="inside"
+            >
+                <field
+                    name="operating_unit_id"
+                    groups="operating_unit.group_multi_operating_unit"
+                    options="{'no_create': True}"
+                    readonly="state != 'draft'"
+                />
+            </xpath>
+            <!-- Line -->
+            <!-- <xpath
+                expr="//field[@name='adjust_item_ids']/list/field[@name='analytic_distribution']"
+                position="attributes"
+            >
+                <attribute name="domain">
+                    ['|', ('operating_unit_ids', '=', context.get('operating_unit_id', False)), ('operating_unit_ids', '=', False)]
+                </attribute>
+            </xpath> -->
+            <xpath
+                expr="//field[@name='adjust_item_ids']/list/field[@name='name']"
+                position="after"
+            >
+                <field
+                    name="operating_unit_id"
+                    groups="operating_unit.group_multi_operating_unit"
+                    options="{'no_create': True}"
+                    optional="show"
+                />
+            </xpath>
+            <xpath
+                expr="//field[@name='adjust_item_ids']/form/group/group[1]"
+                position="inside"
+            >
+                <field
+                    name="operating_unit_id"
+                    groups="operating_unit.group_multi_operating_unit"
+                />
+            </xpath>
+            <!-- Send Context Default OU -->
+            <xpath expr="//field[@name='adjust_item_ids']" position="attributes">
+                <attribute name="context">
+                    {'default_operating_unit_id': operating_unit_id}
+                </attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

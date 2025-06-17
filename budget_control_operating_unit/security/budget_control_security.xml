@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl) -->
+<odoo noupdate="1">
+    <record id="ir_rule_budget_control_allowed_operating_units" model="ir.rule">
+        <field name="model_id" ref="budget_control.model_budget_control" />
+        <field name="domain_force">
+            ['|', '|', (1, '=', 1) if user.has_group('budget_control.group_budget_control_manager') else (0, '=', 1), ('operating_unit_id', '=', False), ('operating_unit_id', 'in', user.operating_unit_ids.ids)]
+        </field>
+        <field name="name">Budget Control from allowed operating units</field>
+        <field name="global" eval="True" />
+        <field eval="0" name="perm_unlink" />
+        <field eval="0" name="perm_write" />
+        <field eval="1" name="perm_read" />
+        <field eval="0" name="perm_create" />
+    </record>
+
+    <record id="ir_rule_budget_transfer_allowed_operating_units" model="ir.rule">
+        <field name="model_id" ref="budget_control.model_budget_transfer" />
+        <field name="domain_force">
+            ['|', '|', (1, '=', 1) if user.has_group('budget_control.group_budget_control_manager') else (0, '=', 1), ('operating_unit_ids', '=', False), ('operating_unit_ids', 'in', user.operating_unit_ids.ids)]
+        </field>
+        <field name="name">Budget Transfer from allowed operating units</field>
+        <field name="global" eval="True" />
+        <field eval="0" name="perm_unlink" />
+        <field eval="0" name="perm_write" />
+        <field eval="1" name="perm_read" />
+        <field eval="0" name="perm_create" />
+    </record>
+
+    <record id="group_access_all_ou_transfer_from" model="res.groups">
+        <field name="name">Access all operating unit - Transfer From</field>
+        <field name="category_id" ref="base.module_category_hidden" />
+    </record>
+    <record id="group_access_all_ou_transfer_to" model="res.groups">
+        <field name="name">Access all operating unit - Transfer To</field>
+        <field name="category_id" ref="base.module_category_hidden" />
+    </record>
+</odoo>
