@@ -10,15 +10,9 @@ class BudgetMoveAdjustment(models.Model):
 
     operating_unit_id = fields.Many2one(
         comodel_name="operating.unit",
-        default=lambda self: self._default_operating_unit_id(),
+        default=lambda self: self.env.user._get_default_operating_unit(),
         help="This operating unit will be defaulted in the move lines.",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
-
-    @api.model
-    def _default_operating_unit_id(self):
-        return self.env["res.users"].operating_unit_default_get()
 
 
 class BudgetMoveAdjustmentItem(models.Model):

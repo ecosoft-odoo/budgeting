@@ -36,5 +36,4 @@
         <field name="name">Access all operating unit - Transfer To</field>
         <field name="category_id" ref="base.module_category_hidden" />
     </record>
-
 </odoo>

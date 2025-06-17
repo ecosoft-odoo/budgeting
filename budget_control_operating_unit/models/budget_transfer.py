@@ -17,12 +17,12 @@ class BudgetTransfer(models.Model):
     )
     operating_unit_ids = fields.Many2many(
         comodel_name="operating.unit",
-        string="Operating Units",
         relation="budget_transfer_operating_unit_rel",
-        compute="_compute_operating_unit_ids",
-        store=True,
         column1="transfer_id",
         column2="operating_unit_id",
+        string="Operating Units",
+        compute="_compute_operating_unit_ids",
+        store=True,
     )
 
     @api.depends(

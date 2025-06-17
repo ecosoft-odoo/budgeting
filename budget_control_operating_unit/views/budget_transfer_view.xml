@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <record id="view_budget_transfer_tree" model="ir.ui.view">
-        <field name="name">view.budget.transfer.tree</field>
+    <record id="view_budget_transfer_list" model="ir.ui.view">
+        <field name="name">view.budget.transfer.list</field>
         <field name="model">budget.transfer</field>
-        <field name="inherit_id" ref="budget_control.view_budget_transfer_tree" />
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_list" />
         <field name="arch" type="xml">
-            <xpath expr="//tree/field[@name='budget_period_id']" position="after">
+            <xpath expr="//list/field[@name='budget_period_id']" position="after">
                 <field name="operating_unit_from" optional="show" />
                 <field name="operating_unit_to" optional="show" />
             </xpath>
@@ -28,9 +28,5 @@
                 />
             </xpath>
         </field>
-    </record>
-    <!-- Users group access all can see document mixed other ou -->
-    <record id="budget_control.action_budget_transfer" model="ir.actions.act_window">
-        <field name="context">{"budget_transfer_access_sudo": 1}</field>
     </record>
 </odoo>

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <record id="view_budget_transfer_item_tree" model="ir.ui.view">
-        <field name="name">view.budget.transfer.item.tree</field>
+    <record id="view_budget_transfer_item_list" model="ir.ui.view">
+        <field name="name">view.budget.transfer.item.list</field>
         <field name="model">budget.transfer.item</field>
-        <field name="inherit_id" ref="budget_control.view_budget_transfer_item_tree" />
+        <field name="inherit_id" ref="budget_control.view_budget_transfer_item_list" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='budget_control_from_id']" position="after">
                 <field
@@ -18,22 +18,6 @@
                     options="{'no_create_edit': True, 'no_open': True}"
                     optional="show"
                 />
-            </xpath>
-            <xpath
-                expr="//tree/field[@name='budget_control_from_id']"
-                position="attributes"
-            >
-                <attribute
-                    name="context"
-                >{'transfer_budget_from': 1, 'tree_view_ref': 'budget_control_operating_unit.budget_control_view_transfer_tree'}</attribute>
-            </xpath>
-            <xpath
-                expr="//tree/field[@name='budget_control_to_id']"
-                position="attributes"
-            >
-                <attribute
-                    name="context"
-                >{'transfer_budget_to': 1, 'tree_view_ref': 'budget_control_operating_unit.budget_control_view_transfer_tree'}</attribute>
             </xpath>
         </field>
     </record>
@@ -55,7 +39,7 @@
                 />
             </xpath>
             <!-- No link to budget control -->
-            <xpath
+            <!-- <xpath
                 expr="//group[@name='budget_transfer_item_left']//field[@name='budget_control_from_id']"
                 position="attributes"
             >
@@ -70,7 +54,7 @@
                 <attribute
                     name="options"
                 >{'no_create_edit': True, 'no_open': True}</attribute>
-            </xpath>
+            </xpath> -->
         </field>
     </record>
 </odoo>

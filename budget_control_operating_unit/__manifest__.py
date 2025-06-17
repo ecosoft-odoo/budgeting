@@ -3,15 +3,14 @@
 
 {
     "name": "Budget Control - Operating Unit",
-    "version": "15.0.1.0.0",
+    "version": "18.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",
-    "depends": ["budget_control", "analytic_operating_unit"],
+    "depends": ["budget_control", "analytic_operating_unit", "account_operating_unit"],
     "data": [
         "security/budget_control_security.xml",
-        "views/res_config_settings_views.xml",
         "views/budget_control_view.xml",
         "views/budget_transfer_view.xml",
         "views/budget_transfer_item_view.xml",
@@ -21,4 +20,5 @@
     "installable": True,
     "post_init_hook": "post_init_hook",
     "maintainers": ["Saran440"],
+    "development_status": "Alpha",
 }

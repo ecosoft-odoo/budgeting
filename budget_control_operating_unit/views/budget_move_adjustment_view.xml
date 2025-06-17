@@ -24,12 +24,12 @@
             </xpath>
         </field>
     </record>
-    <record id="view_budget_move_adjustment_tree" model="ir.ui.view">
-        <field name="name">view.budget.move.adjustment.tree</field>
+    <record id="view_budget_move_adjustment_list" model="ir.ui.view">
+        <field name="name">view.budget.move.adjustment.list</field>
         <field name="model">budget.move.adjustment</field>
         <field
             name="inherit_id"
-            ref="budget_control.view_budget_move_adjustment_tree"
+            ref="budget_control.view_budget_move_adjustment_list"
         />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='state']" position="before">
@@ -58,22 +58,20 @@
                     name="operating_unit_id"
                     groups="operating_unit.group_multi_operating_unit"
                     options="{'no_create': True}"
+                    readonly="state != 'draft'"
                 />
             </xpath>
-            <xpath expr="//field[@name='analytic_account_id']" position="attributes">
-                <attribute name="domain" />
-            </xpath>
             <!-- Line -->
-            <xpath
-                expr="//field[@name='adjust_item_ids']/tree/field[@name='analytic_account_id']"
+            <!-- <xpath
+                expr="//field[@name='adjust_item_ids']/list/field[@name='analytic_distribution']"
                 position="attributes"
             >
                 <attribute name="domain">
                     ['|', ('operating_unit_ids', '=', context.get('operating_unit_id', False)), ('operating_unit_ids', '=', False)]
                 </attribute>
-            </xpath>
+            </xpath> -->
             <xpath
-                expr="//field[@name='adjust_item_ids']/tree/field[@name='name']"
+                expr="//field[@name='adjust_item_ids']/list/field[@name='name']"
                 position="after"
             >
                 <field
@@ -98,8 +96,6 @@
                     {'default_operating_unit_id': operating_unit_id}
                 </attribute>
             </xpath>
-
         </field>
     </record>
-
 </odoo>
