@@ -7,7 +7,6 @@ from odoo import fields, models
 class PurchaseRequisitionLine(models.Model):
     _name = "purchase.requisition.line"
     _inherit = ["purchase.requisition.line", "budget.docline.mixin.base"]
-    _budget_analytic_field = "account_analytic_id"
 
     date_commit = fields.Date(
         copy=False,
