@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_account_payment_register_form" model="ir.ui.view">
+        <field name="name">account.payment.register.form</field>
+        <field name="model">account.payment.register</field>
+        <field
+            name="inherit_id"
+            ref="account_payment_multi_deduction.view_account_payment_register_form"
+        />
+        <field name="arch" type="xml">
+            <!-- Add analytic_distribution on wizard -->
+            <xpath expr="//group[@name='group1']/div/div" position="inside">
+                <div
+                    class="o_wrap_field d-flex d-sm-contents flex-column mb-3 mb-sm-0"
+                    invisible="payment_difference_handling != 'reconcile'"
+                    groups="account_analytic_tag.group_analytic_tags"
+                >
+                    <field
+                        name="writeoff_fund_all"
+                        widget="many2many_tags"
+                        invisible="1"
+                    />
+                    <div class="o_cell o_wrap_label text-break text-900">
+                        <label for="writeoff_fund_id" class="oe_edit_only" />
+                    </div>
+                    <div class="o_cell o_wrap_input text-break">
+                        <field
+                            name="writeoff_fund_id"
+                            domain="[('id', 'in', writeoff_fund_all)]"
+                        />
+                    </div>
+                </div>
+
+                <div
+                    class="o_wrap_field d-flex d-sm-contents flex-column mb-3 mb-sm-0"
+                    invisible="payment_difference_handling != 'reconcile'"
+                    groups="account_analytic_tag.group_analytic_tags"
+                >
+                    <field
+                        name="writeoff_analytic_tag_all"
+                        widget="many2many_tags"
+                        invisible="1"
+                    />
+                    <field
+                        name="domain_tag_ids"
+                        widget="many2many_tags"
+                        invisible="1"
+                    />
+                    <div class="o_cell o_wrap_label text-break text-900">
+                        <label for="writeoff_analytic_tag_ids" class="oe_edit_only" />
+                    </div>
+                    <div class="o_cell o_wrap_input text-break">
+                        <field
+                            name="writeoff_analytic_tag_ids"
+                            widget="many2many_tags"
+                            domain="[('id', 'in', writeoff_analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                        />
+                    </div>
+                </div>
+            </xpath>
+
+            <!-- Multi Deduction -->
+            <xpath
+                expr="//field[@name='deduction_ids']/list/field[@name='analytic_distribution']"
+                position="after"
+            >
+                <field
+                    name="writeoff_analytic_tag_all"
+                    widget="many2many_tags"
+                    column_invisible="1"
+                />
+                <field name="domain_tag_ids" column_invisible="1" />
+                <field
+                    name="writeoff_fund_all"
+                    widget="many2many_tags"
+                    column_invisible="1"
+                />
+                <!-- Fund and Analytic Tags -->
+                <field
+                    name="writeoff_fund_id"
+                    domain="[('id', 'in', writeoff_fund_all)]"
+                />
+                <field
+                    name="writeoff_analytic_tag_ids"
+                    widget="many2many_tags"
+                    domain="[('id', 'in', writeoff_analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
