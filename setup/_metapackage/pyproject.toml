@@ -1,7 +1,8 @@
 [project]
 name = "odoo-addons-ecosoft-odoo-budgeting"
-version = "18.0.20250617.0"
+version = "18.0.20250618.0"
 dependencies = [
+    "odoo-addon-account_payment_multi_deduction_activity==18.0.*",
     "odoo-addon-base_tier_validation_check_budget==18.0.*",
     "odoo-addon-budget_activity==18.0.*",
     "odoo-addon-budget_activity_advance_clearing==18.0.*",
