@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_account_payment_register_form" model="ir.ui.view">
+        <field name="name">account.payment.register.form</field>
+        <field name="model">account.payment.register</field>
+        <field
+            name="inherit_id"
+            ref="account_payment_multi_deduction.view_account_payment_register_form"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('o_wrap_field')][1]" position="before">
+                <div
+                    class="o_wrap_field d-flex d-sm-contents flex-column mb-3 mb-sm-0"
+                    invisible="payment_difference_handling != 'reconcile'"
+                    groups="analytic.group_analytic_accounting"
+                >
+                    <div class="o_cell o_wrap_label text-break text-900">
+                        <label for="activity_id" class="oe_edit_only" />
+                    </div>
+                    <div class="o_cell o_wrap_input text-break">
+                        <field name="activity_id" />
+                    </div>
+                </div>
+            </xpath>
+
+            <!-- multi deduction -->
+            <xpath
+                expr="//field[@name='deduction_ids']/list/field[@name='account_id']"
+                position="before"
+            >
+                <field name="activity_id" />
+            </xpath>
+        </field>
+    </record>
+</odoo>
