@@ -55,8 +55,12 @@ class TestBudgetPlanDetailAdvance(TestBudgetPlanDetail):
         """Create same analytic, difference fund, difference analytic tags
         line 1: Costcenter1, Fund1, Tag1, 600.0
         line 2: Costcenter1, Fund1, Tag2, 600.0
-        line 3: Costcenter1, Fund2,     , 600.0
-        line 4: CostcenterX, Fund1,     , 600.0
+        line 3: Costcenter1, Fund2, Tag1, 600.0
+        line 4: Costcenter1, Fund2,     , 600.0
+        line 5: CostcenterX, Fund1, Tag1, 600.0
+        line 6: CostcenterX, Fund2, Tag1, 600.0
+        line 7: CostcenterX, Fund2, Tag2, 600.0
+        line 8: CostcenterX, Fund1,     , 600.0
         """
         self._create_budget_plan_line_detail(self.budget_plan)
         self.budget_plan.action_confirm_plan_detail()
@@ -69,7 +73,7 @@ class TestBudgetPlanDetailAdvance(TestBudgetPlanDetail):
 
         # Refresh data and Prepare budget control
         self.budget_plan.invalidate_recordset()
-        # Get 1 budget control, Costcenter1 has 3 plan detail (600, 600, 600)
+        # Get 1 budget control, Costcenter1 has 4 plan detail
         budget_control = self.budget_plan.budget_control_ids[0]
         budget_control.template_line_ids = [
             self.template_line1.id,
@@ -82,11 +86,11 @@ class TestBudgetPlanDetailAdvance(TestBudgetPlanDetail):
         budget_control.prepare_budget_control_matrix()
         assert len(budget_control.line_ids) == 16
         # Costcenter1 has 3 plan detail
-        # Assign budget.control amount: KPI1 = 1500, 200, 100
+        # Assign budget.control amount: KPI1 = 1500, 500, 400
         bc_items = budget_control.line_ids.filtered(lambda x: x.kpi_id == self.kpiAV)
         bc_items[0].write({"amount": 1500})
-        bc_items[1].write({"amount": 200})
-        bc_items[2].write({"amount": 100})
+        bc_items[1].write({"amount": 500})
+        bc_items[2].write({"amount": 400})
 
         self.assertEqual(
             budget_control.mapped("plan_line_detail_ids"),
@@ -145,7 +149,7 @@ class TestBudgetPlanDetailAdvance(TestBudgetPlanDetail):
         self.assertEqual(move.invoice_line_ids.analytic_tag_ids, self.analytic_tag1)
         self.assertAlmostEqual(budget_control.amount_advance, 400.0)
         self.assertAlmostEqual(budget_control.amount_expense, 0.0)
-        self.assertAlmostEqual(budget_control.amount_balance, 1400.0)
+        self.assertAlmostEqual(budget_control.amount_balance, 2000.0)
 
         # Post journal entry
         advance_sheet.action_sheet_move_post()
@@ -153,7 +157,7 @@ class TestBudgetPlanDetailAdvance(TestBudgetPlanDetail):
 
         self.assertAlmostEqual(budget_control.amount_advance, 400.0)
         self.assertAlmostEqual(budget_control.amount_expense, 0.0)
-        self.assertAlmostEqual(budget_control.amount_balance, 1400.0)
+        self.assertAlmostEqual(budget_control.amount_balance, 2000.0)
 
         # Make payment full amount = 400
         advance_sheet.action_register_payment()
@@ -168,7 +172,7 @@ class TestBudgetPlanDetailAdvance(TestBudgetPlanDetail):
         self.assertAlmostEqual(advance_sheet.clearing_residual, 400.0)
         self.assertAlmostEqual(budget_control.amount_advance, 400.0)
         self.assertAlmostEqual(budget_control.amount_expense, 0.0)
-        self.assertAlmostEqual(budget_control.amount_balance, 1400.0)
+        self.assertAlmostEqual(budget_control.amount_balance, 2000.0)
 
         # Clearing Advance
         user = self.env.ref("base.user_admin")
@@ -199,4 +203,4 @@ class TestBudgetPlanDetailAdvance(TestBudgetPlanDetail):
         self.assertAlmostEqual(advance_sheet.clearing_residual, 400.0)
         self.assertAlmostEqual(budget_control.amount_advance, 340.0)
         self.assertAlmostEqual(budget_control.amount_expense, 60.0)
-        self.assertAlmostEqual(budget_control.amount_balance, 1400.0)
+        self.assertAlmostEqual(budget_control.amount_balance, 2000.0)

@@ -23,8 +23,12 @@ class TestBudgetPlanDetailPurchaseRequisition(TestBudgetPlanDetailPurchaseReques
         """Create same analytic, difference fund, difference analytic tags
         line 1: Costcenter1, Fund1, Tag1, 600.0
         line 2: Costcenter1, Fund1, Tag2, 600.0
-        line 3: Costcenter1, Fund2,     , 600.0
-        line 4: CostcenterX, Fund1,     , 600.0
+        line 3: Costcenter1, Fund2, Tag1, 600.0
+        line 4: Costcenter1, Fund2,     , 600.0
+        line 5: CostcenterX, Fund1, Tag1, 600.0
+        line 6: CostcenterX, Fund2, Tag1, 600.0
+        line 7: CostcenterX, Fund2, Tag2, 600.0
+        line 8: CostcenterX, Fund1,     , 600.0
         """
         self._create_budget_plan_line_detail(self.budget_plan)
         self.budget_plan.action_confirm_plan_detail()
@@ -37,7 +41,7 @@ class TestBudgetPlanDetailPurchaseRequisition(TestBudgetPlanDetailPurchaseReques
 
         # Refresh data and Prepare budget control
         self.budget_plan.invalidate_recordset()
-        # Get 1 budget control, Costcenter1 has 3 plan detail (600, 600, 600)
+        # Get 1 budget control, Costcenter1 has 4 plan detail
         budget_control = self.budget_plan.budget_control_ids[0]
         budget_control.template_line_ids = [
             self.template_line1.id,
@@ -49,11 +53,11 @@ class TestBudgetPlanDetailPurchaseRequisition(TestBudgetPlanDetailPurchaseReques
         budget_control.prepare_budget_control_matrix()
         assert len(budget_control.line_ids) == 12
         # Costcenter1 has 3 plan detail
-        # Assign budget.control amount: KPI1 = 1500, 200, 100
+        # Assign budget.control amount: KPI1 = 1500, 500, 400
         bc_items = budget_control.line_ids.filtered(lambda x: x.kpi_id == self.kpi1)
         bc_items[0].write({"amount": 1500})
-        bc_items[1].write({"amount": 200})
-        bc_items[2].write({"amount": 100})
+        bc_items[1].write({"amount": 500})
+        bc_items[2].write({"amount": 400})
 
         self.assertEqual(
             budget_control.mapped("plan_line_detail_ids"),
@@ -67,7 +71,7 @@ class TestBudgetPlanDetailPurchaseRequisition(TestBudgetPlanDetailPurchaseReques
         budget_control.action_done()
         self.budget_period.control_budget = True
 
-        # We allocate budget to Costcenter1 each 600.0 (total is 1800.0)
+        # We allocate budget to Costcenter1 each 600.0 (total is 2400.0)
         analytic_distribution = {self.costcenter1.id: 100}
 
         # Commit purchase without allocation (no fund, no tags)
@@ -90,7 +94,7 @@ class TestBudgetPlanDetailPurchaseRequisition(TestBudgetPlanDetailPurchaseReques
         purchase_request = purchase_request.with_context(
             force_date_commit=purchase_request.date_start
         )
-        self.assertAlmostEqual(budget_control.amount_balance, 1800.0)
+        self.assertAlmostEqual(budget_control.amount_balance, 2400.0)
 
         purchase_request.button_to_approve()
         purchase_request.button_approved()
@@ -101,7 +105,7 @@ class TestBudgetPlanDetailPurchaseRequisition(TestBudgetPlanDetailPurchaseReques
         )
         self.assertAlmostEqual(budget_control.amount_purchase_request, 400.0)
         self.assertAlmostEqual(budget_control.amount_purchase, 0.0)
-        self.assertAlmostEqual(budget_control.amount_balance, 1400.0)
+        self.assertAlmostEqual(budget_control.amount_balance, 2000.0)
 
         # Create Purchase Agreement from PR
         wiz = self.pr_te_wiz.with_context(

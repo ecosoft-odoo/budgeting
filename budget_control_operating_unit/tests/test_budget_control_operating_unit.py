@@ -17,9 +17,6 @@ class TestBudgetControlOperatingUnit(get_budget_common_class(), TestOperatingUni
     @freeze_time("2001-02-01")
     def setUpClass(cls):
         super().setUpClass()
-        cls.BudgetTransfer = cls.env["budget.transfer"]
-        cls.BudgetMoveAdjustment = cls.env["budget.move.adjustment"]
-
         cls.main_ou = cls.env.ref("operating_unit.main_operating_unit")
         cls.b2c_ou = cls.env.ref("operating_unit.b2c_operating_unit")
 
@@ -88,23 +85,6 @@ class TestBudgetControlOperatingUnit(get_budget_common_class(), TestOperatingUni
             {"amount": 300}
         )
 
-    def _create_budget_transfer(self, budget_from, budget_to, amount):
-        line_vals = {
-            "budget_control_from_id": budget_from.id,
-            "budget_control_to_id": budget_to.id,
-            "amount": amount,
-        }
-        if self.check_plan_detail_installed:
-            line_vals.update(
-                {
-                    "fund_from_id": self.fund1_g1.id,
-                    "fund_to_id": self.fund1_g1.id,
-                }
-            )
-        return self.BudgetTransfer.create(
-            {"transfer_item_ids": [Command.create(line_vals)]}
-        )
-
     @freeze_time("2001-02-01")
     def test_01_budget_control_operating_unit(self):
         """
@@ -150,12 +130,12 @@ class TestBudgetControlOperatingUnit(get_budget_common_class(), TestOperatingUni
     @freeze_time("2001-02-01")
     def test_02_budget_transfer_multi_ou(self):
         """Transfer with difference operating unit"""
-        self.costcenter1.operating_unit_ids = [(4, self.main_ou.id)]
+        self.costcenter1.operating_unit_ids = [Command.set(self.main_ou.ids)]
         self.assertEqual(
             self.budget_control.operating_unit_id, self.costcenter1.operating_unit_ids
         )
 
-        self.costcenterX.operating_unit_ids = [(4, self.b2c_ou.id)]
+        self.costcenterX.operating_unit_ids = [Command.set(self.b2c_ou.ids)]
         self.assertEqual(
             self.budget_control2.operating_unit_id, self.costcenterX.operating_unit_ids
         )
@@ -178,12 +158,12 @@ class TestBudgetControlOperatingUnit(get_budget_common_class(), TestOperatingUni
     @freeze_time("2001-02-01")
     def test_03_budget_transfer_same_ou(self):
         """Transfer with same operating unit"""
-        self.costcenter1.operating_unit_ids = [(4, self.main_ou.id)]
+        self.costcenter1.operating_unit_ids = [Command.set(self.main_ou.ids)]
         self.assertEqual(
             self.budget_control.operating_unit_id, self.costcenter1.operating_unit_ids
         )
 
-        self.costcenterX.operating_unit_ids = [(4, self.main_ou.id)]
+        self.costcenterX.operating_unit_ids = [Command.set(self.main_ou.ids)]
         self.assertEqual(
             self.budget_control2.operating_unit_id, self.costcenterX.operating_unit_ids
         )
@@ -214,13 +194,13 @@ class TestBudgetControlOperatingUnit(get_budget_common_class(), TestOperatingUni
         self.assertFalse(self.costcenter1.operating_unit_ids)
         self.assertFalse(self.budget_control.operating_unit_id)
 
-        self.costcenter1.operating_unit_ids = [(4, self.main_ou.id)]
+        self.costcenter1.operating_unit_ids = [Command.set(self.main_ou.ids)]
         self.assertEqual(
             self.budget_control.operating_unit_id, self.costcenter1.operating_unit_ids
         )
 
         # Create budget move adjustment
-        adjust_budget = self.BudgetMoveAdjustment.create({"date_commit": "2001-02-01"})
+        adjust_budget = self.BudgetAdjust.create({"date_commit": "2001-02-01"})
         self.assertEqual(adjust_budget.operating_unit_id, self.main_ou)
         # Create line with difference ou must be error
         with self.assertRaisesRegex(
