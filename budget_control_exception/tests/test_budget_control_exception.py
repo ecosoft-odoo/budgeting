@@ -2,8 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
 from odoo import Command
-from odoo.tests import tagged
-from odoo.tests.common import Form
+from odoo.tests import Form, tagged
 
 from odoo.addons.budget_control.tests.common import get_budget_common_class
 
@@ -50,6 +49,7 @@ class TestBudgetControlExpense(get_budget_common_class()):
         cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi3).write(
             {"amount": 300}
         )
+
         cls.BudgetControlExceptionConfirm = cls.env["budget.control.exception.confirm"]
         cls.demo_user = cls.env.ref("base.user_demo")
         cls.partner_assign = cls.demo_user.partner_id
