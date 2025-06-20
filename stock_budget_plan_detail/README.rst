@@ -1,6 +1,6 @@
-=========================
-Stock - Budget Allocation
-=========================
+==========================
+Stock - Budget Plan Detail
+==========================
 
 .. 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -10,9 +10,9 @@ Stock - Budget Allocation
    !! source digest: sha256:c2d073dde16f7ab2e70a0c298a4cf3cc84c3c5627bcf8e42f7243f722df704e5
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-.. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
+.. |badge1| image:: https://img.shields.io/badge/maturity-Alpha-red.png
     :target: https://odoo-community.org/page/development-status
-    :alt: Beta
+    :alt: Alpha
 .. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
@@ -22,7 +22,14 @@ Stock - Budget Allocation
 
 |badge1| |badge2| |badge3|
 
-This module is add fund in Stock and Scrap.
+Adds ``Fund`` and ``Analytic Tags`` fields to the stock move and stock
+scrap, transferring their values from Stock to Stock Move Line and
+Accounting (Perpetual).
+
+.. IMPORTANT::
+   This is an alpha version, the data model and design can change at any time without warning.
+   Only for development or testing purpose, do not use in production.
+   `More details on development status <https://odoo-community.org/page/development-status>`_
 
 **Table of contents**
 

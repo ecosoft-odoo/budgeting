@@ -5,38 +5,13 @@
         <field name="model">stock.move.line</field>
         <field name="inherit_id" ref="stock_analytic.view_move_line_tree" />
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='analytic_account_id']" position="after">
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
                 <field name="fund_id" optional="show" />
-            </xpath>
-        </field>
-    </record>
-
-    <record id="view_move_line_form" model="ir.ui.view">
-        <field name="name">stock.move.line.form</field>
-        <field name="model">stock.move.line</field>
-        <field name="inherit_id" ref="stock_analytic.view_move_line_form" />
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='analytic_account_id']" position="after">
-                <field name="analytic_tag_all" widget="many2many_tags" invisible="1" />
-                <field name="domain_tag_ids" widget="many2many_tags" invisible="1" />
-                <field name="fund_id" />
-                <field name="fund_all" widget="many2many_tags" invisible="1" />
-            </xpath>
-            <xpath expr="//field[@name='analytic_tag_ids']" position="attributes">
-                <attribute
-                    name="domain"
-                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
-            </xpath>
-        </field>
-    </record>
-
-    <record id="stock_move_line_view_search" model="ir.ui.view">
-        <field name="name">stock.move.line.search</field>
-        <field name="model">stock.move.line</field>
-        <field name="inherit_id" ref="stock_analytic.stock_move_line_view_search" />
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='analytic_account_id']" position="after">
-                <field name="fund_id" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                />
             </xpath>
         </field>
     </record>
@@ -47,16 +22,29 @@
         <field name="model">stock.move.line</field>
         <field name="inherit_id" ref="stock_analytic.view_move_line_detailed_tree" />
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='analytic_account_id']" position="after">
-                <field name="analytic_tag_all" widget="many2many_tags" invisible="1" />
-                <field name="domain_tag_ids" widget="many2many_tags" invisible="1" />
-                <field name="fund_id" />
-                <field name="fund_all" widget="many2many_tags" invisible="1" />
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
+                <field
+                    name="analytic_tag_all"
+                    widget="many2many_tags"
+                    column_invisible="1"
+                />
+                <field
+                    name="domain_tag_ids"
+                    widget="many2many_tags"
+                    column_invisible="1"
+                />
+                <field name="fund_all" widget="many2many_tags" column_invisible="1" />
+                <field name="fund_id" optional="show" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    domain="[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                />
             </xpath>
-            <xpath expr="//field[@name='analytic_tag_ids']" position="attributes">
-                <attribute
-                    name="domain"
-                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
+            <!-- Show analytic_distribution -->
+            <xpath expr="//field[@name='analytic_distribution']" position="attributes">
+                <attribute name="optional">show</attribute>
             </xpath>
         </field>
     </record>
