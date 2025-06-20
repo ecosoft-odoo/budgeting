@@ -7,7 +7,6 @@ from odoo import Command, models
 class PurchaseOrderLine(models.Model):
     _name = "purchase.order.line"
     _inherit = ["analytic.dimension.line", "purchase.order.line"]
-    _analytic_tag_field_name = "analytic_tag_ids"
 
     def _prepare_account_move_line(self, move=False):
         res = super()._prepare_account_move_line(move)
