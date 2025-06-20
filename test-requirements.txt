@@ -3,6 +3,7 @@ odoo-addon-account_payment_multi_deduction @ git+https://github.com/OCA/account-
 odoo-addon-analytic_tag_dimension @ git+https://github.com/OCA/account-analytic.git@refs/pull/761/head#subdirectory=analytic_tag_dimension
 odoo-addon-analytic_tag_dimension_enhanced @ git+https://github.com/OCA/account-analytic.git@refs/pull/762/head#subdirectory=analytic_tag_dimension_enhanced
 odoo-addon-purchase_request_analytic_tag @ git+https://github.com/OCA/account-analytic.git@refs/pull/775/head#subdirectory=purchase_request_analytic_tag
+odoo-addon-purchase_request_to_requisition @ git+https://github.com/OCA/purchase-workflow.git@refs/pull/2698/head#subdirectory=purchase_request_to_requisition
 odoo-addon-hr_expense_analytic_tag @ git+https://github.com/OCA/account-analytic.git@refs/pull/760/head#subdirectory=hr_expense_analytic_tag
 odoo-addon-request_document @ git+https://github.com/ecosoft-odoo/ecosoft-addons.git#subdirectory=request_document
 odoo-addon-request_document_expense @ git+https://github.com/ecosoft-odoo/ecosoft-addons.git#subdirectory=request_document_expense
