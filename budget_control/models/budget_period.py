@@ -136,31 +136,30 @@ class BudgetPeriod(models.Model):
         self = self.sudo()
         budget_constraints = self._get_budget_constraint()
         all_analytics = doclines.mapped(doclines._budget_analytic_field)
+
         # Get All Analytic Account
-        if doclines._budget_analytic_field == "analytic_distribution":
-            all_analytic_ids = set()
-            for data_dict in all_analytics:
-                # Check percent analytic account must be 100% only
-                total_sum = sum(data_dict.values())
-                if (
-                    float_compare(
-                        total_sum,
-                        100.0,
-                        precision_rounding=2,
-                    )
-                    != 0
-                ):
-                    raise UserError(
-                        self.env._(
-                            "The total sum percent of Analytic Account must 100%. "
-                            "Please check again."
-                        )
-                    )
-                all_analytic_ids.update(
-                    int(aa) for key in data_dict.keys() for aa in key.split(",")
+        all_analytic_ids = set()
+        for data_dict in all_analytics:
+            # Check percent analytic account must be 100% only
+            total_sum = sum(data_dict.values())
+            if (
+                float_compare(
+                    total_sum,
+                    100.0,
+                    precision_rounding=2,
                 )
-        else:
-            all_analytic_ids = all_analytics
+                != 0
+            ):
+                raise UserError(
+                    self.env._(
+                        "The total sum percent of Analytic Account must 100%. "
+                        "Please check again."
+                    )
+                )
+            all_analytic_ids.update(
+                int(aa) for key in data_dict.keys() for aa in key.split(",")
+            )
+
         # Check budget by group analytic. For case many budget periods in one document.
         for aa in all_analytic_ids:
             if isinstance(aa, int):

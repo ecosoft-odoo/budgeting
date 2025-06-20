@@ -125,6 +125,20 @@ class BudgetDoclineMixinBase(models.AbstractModel):
         "rejected",
     ]  # Never set date commit states
 
+    def _convert_analytics(self, analytic_distribution=False):
+        Analytic = self.env["account.analytic.account"]
+        analytics = analytic_distribution or self[self._budget_analytic_field]
+        if not analytics:
+            return Analytic
+        # Check analytic from distribution it send data with JSON type 'dict'
+        # and we need convert it to analytic object
+        if self._budget_analytic_field == "analytic_distribution":
+            account_analytic_ids = [
+                int(v) for k in analytics.keys() for v in k.split(",")
+            ]
+            analytics = Analytic.browse(account_analytic_ids)
+        return analytics
+
 
 class BudgetDoclineMixin(models.AbstractModel):
     _name = "budget.docline.mixin"
@@ -174,20 +188,6 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     def _valid_commit_state(self):
         raise ValidationError(self.env._("No implementation error!"))
-
-    def _convert_analytics(self, analytic_distribution=False):
-        Analytic = self.env["account.analytic.account"]
-        analytics = analytic_distribution or self[self._budget_analytic_field]
-        if not analytics:
-            return Analytic
-        # Check analytic from distribution it send data with JSON type 'dict'
-        # and we need convert it to analytic object
-        if self._budget_analytic_field == "analytic_distribution":
-            account_analytic_ids = [
-                int(v) for k in analytics.keys() for v in k.split(",")
-            ]
-            analytics = Analytic.browse(account_analytic_ids)
-        return analytics
 
     @api.depends(lambda self: [self._budget_analytic_field])
     def _compute_auto_adjust_date_commit(self):
