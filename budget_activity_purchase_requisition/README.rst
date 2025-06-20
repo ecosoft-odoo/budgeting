@@ -22,8 +22,9 @@ Budget Activity - Purchase Requisition
 
 |badge1| |badge2| |badge3|
 
-This module pass "Activity" element from Purchase Agreement to Purchase
-Order
+Adds ``Activity`` fields to the purchase agreement, transferring their
+values from Purchase Request to Purchase Agreement and then to Purchase
+Order (RFQ).
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
@@ -68,10 +69,13 @@ Maintainers
 .. |maintainer-kittiu| image:: https://github.com/kittiu.png?size=40px
     :target: https://github.com/kittiu
     :alt: kittiu
+.. |maintainer-Saran440| image:: https://github.com/Saran440.png?size=40px
+    :target: https://github.com/Saran440
+    :alt: Saran440
 
-Current maintainer:
+Current maintainers:
 
-|maintainer-kittiu| 
+|maintainer-kittiu| |maintainer-Saran440| 
 
 This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_activity_purchase_requisition>`_ project on GitHub.
 

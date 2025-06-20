@@ -1,39 +1,22 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from datetime import datetime
-
 from freezegun import freeze_time
 
-from odoo.tests import tagged
-from odoo.tests.common import Form
+from odoo.tests import Form, tagged
 
-from odoo.addons.budget_activity.tests.test_budget_activity import TestBudgetActivity
+from odoo.addons.budget_activity_purchase_request.tests.test_budget_activity_purchase_request import (  # noqa: E501
+    TestBudgetActivityPurchaseRequest,
+)
 
 
 @tagged("post_install", "-at_install")
-class TestBudgetActivityPurchaseRequisition(TestBudgetActivity):
+class TestBudgetActivityPurchaseRequisition(TestBudgetActivityPurchaseRequest):
     @classmethod
     @freeze_time("2001-02-01")
     def setUpClass(cls):
         super().setUpClass()
         cls.pr_te_wiz = cls.env["purchase.request.line.make.purchase.requisition"]
-
-    @freeze_time("2001-02-01")
-    def _create_purchase_request(self, pr_lines):
-        PurchaseRequest = self.env["purchase.request"]
-        view_id = "purchase_request.view_purchase_request_form"
-        with Form(PurchaseRequest, view=view_id) as pr:
-            pr.date_start = datetime.today()
-            for pr_line in pr_lines:
-                with pr.line_ids.new() as line:
-                    line.product_id = pr_line["product_id"]
-                    line.product_qty = pr_line["product_qty"]
-                    line.estimated_cost = pr_line["estimated_cost"]
-                    line.analytic_account_id = pr_line["analytic_id"]
-                    line.activity_id = pr_line["activity_id"]
-        purchase_request = pr.save()
-        return purchase_request
 
     @freeze_time("2001-02-01")
     def test_01_budget_activity_purchase_requisition(self):
@@ -46,13 +29,14 @@ class TestBudgetActivityPurchaseRequisition(TestBudgetActivity):
         self.budget_period.control_budget = True
         self.budget_control.action_done()
 
+        analytic_distribution = {self.costcenter1.id: 100}
         purchase_request = self._create_purchase_request(
             [
                 {
                     "product_id": self.product1,  # KPI1 = 30
                     "product_qty": 3,
                     "estimated_cost": 30,
-                    "analytic_id": self.costcenter1,
+                    "analytic_distribution": analytic_distribution,
                     "activity_id": self.activity3,
                 },
             ]
@@ -82,6 +66,10 @@ class TestBudgetActivityPurchaseRequisition(TestBudgetActivity):
             purchase_request.line_ids.activity_id,
             requisition.line_ids.activity_id,
         )
+
+        # Test change activity in Purchase Agreement and send it to PO
+        requisition.line_ids.write({"activity_id": self.activity1.id})
+
         # Create Purchase from Agreement, activtiy must be equal Agreement
         purchase = self.env["purchase.order"].create(
             {
@@ -89,8 +77,16 @@ class TestBudgetActivityPurchaseRequisition(TestBudgetActivity):
                 "requisition_id": requisition.id,
             }
         )
-        purchase._onchange_requisition_id()
+        with Form(purchase) as p:
+            p.requisition_id = requisition
+        p.save()
+
         # activity (TE Line) = activity (PO Line)
         self.assertEqual(
             purchase.order_line.activity_id, requisition.line_ids.activity_id
+        )
+
+        # activity PO != activity PR
+        self.assertNotEqual(
+            purchase.order_line.activity_id, purchase_request.line_ids.activity_id
         )

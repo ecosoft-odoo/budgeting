@@ -1,2 +1,2 @@
-This module pass "Activity" element from Purchase Agreement to Purchase
-Order
+Adds `Activity` fields to the purchase agreement,
+transferring their values from Purchase Request to Purchase Agreement and then to Purchase Order (RFQ).
