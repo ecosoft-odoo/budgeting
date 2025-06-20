@@ -43,6 +43,7 @@ addon | version | maintainers | summary
 [budget_plan_detail_expense](budget_plan_detail_expense/) | 18.0.1.1.1 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Plan Details - Expense
 [budget_plan_detail_purchase](budget_plan_detail_purchase/) | 18.0.1.1.1 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Plan Details - Purchase
 [budget_plan_detail_purchase_request](budget_plan_detail_purchase_request/) | 18.0.1.1.1 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Plan Details - Purchase Request
+[budget_plan_detail_purchase_requisition](budget_plan_detail_purchase_requisition/) | 18.0.1.0.0 | [![newtratip](https://github.com/newtratip.png?size=30px)](https://github.com/newtratip) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Plan Detail - Purchase Requisition
 
 [//]: # (end addons)
 
