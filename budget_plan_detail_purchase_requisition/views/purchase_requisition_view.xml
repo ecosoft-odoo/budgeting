@@ -9,28 +9,26 @@
         />
         <field name="arch" type="xml">
             <xpath
-                expr="//field[@name='line_ids']/tree//field[@name='account_analytic_id']"
+                expr="//field[@name='line_ids']/list//field[@name='analytic_distribution']"
                 position="after"
             >
-                <field name="fund_all" invisible="1" />
+                <field name="fund_all" column_invisible="1" />
+                <field name="domain_tag_ids" column_invisible="1" />
+                <field name="analytic_tag_all" column_invisible="1" />
                 <field name="fund_id" optional="show" />
-                <field name="domain_tag_ids" invisible="1" />
-                <field name="analytic_tag_all" invisible="1" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    domain="[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                />
             </xpath>
             <xpath
-                expr="//field[@name='line_ids']/form//field[@name='account_analytic_id']"
+                expr="//field[@name='line_ids']/form//field[@name='analytic_distribution']"
                 position="after"
             >
                 <field name="fund_all" invisible="1" />
                 <field name="fund_id" />
-            </xpath>
-            <xpath
-                expr="//field[@name='line_ids']/tree//field[@name='analytic_tag_ids']"
-                position="attributes"
-            >
-                <attribute
-                    name="domain"
-                >[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]</attribute>
             </xpath>
         </field>
     </record>

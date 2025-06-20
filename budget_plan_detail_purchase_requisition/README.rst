@@ -1,6 +1,6 @@
-========================================
-Budget Allocation - Purchase Requisition
-========================================
+=========================================
+Budget Plan Detail - Purchase Requisition
+=========================================
 
 .. 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -22,8 +22,9 @@ Budget Allocation - Purchase Requisition
 
 |badge1| |badge2| |badge3|
 
-This module pass "Fund" element from Purchase Request > Purchase
-Agreement > Purchase Order
+Adds ``Fund`` and ``Analytic Tags`` fields to the purchase agreement,
+transferring their values from Purchase Request to Purchase Agreement
+and then to Purchase Order (RFQ).
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
@@ -67,10 +68,13 @@ Maintainers
 .. |maintainer-newtratip| image:: https://github.com/newtratip.png?size=40px
     :target: https://github.com/newtratip
     :alt: newtratip
+.. |maintainer-Saran440| image:: https://github.com/Saran440.png?size=40px
+    :target: https://github.com/Saran440
+    :alt: Saran440
 
-Current maintainer:
+Current maintainers:
 
-|maintainer-newtratip| 
+|maintainer-newtratip| |maintainer-Saran440| 
 
 This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_plan_detail_purchase_requisition>`_ project on GitHub.
 
