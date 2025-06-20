@@ -32,6 +32,7 @@ class BudgetControlCommon(TransactionCase):
         cls.Account = cls.env["account.account"]
         cls.BudgetPlan = cls.env["budget.plan"]
         cls.BudgetControl = cls.env["budget.control"]
+        cls.BudgetTransfer = cls.env["budget.transfer"]
         cls.BudgetTemplate = cls.env["budget.template"]
         cls.BudgetKPI = cls.env["budget.kpi"]
         cls.Product = cls.env["product.product"]
@@ -188,3 +189,14 @@ class BudgetControlCommon(TransactionCase):
             }
         )
         return invoice
+
+    def _create_budget_transfer(self, budget_from, budget_to, amount):
+        line_vals = {
+            "budget_control_from_id": budget_from.id,
+            "budget_control_to_id": budget_to.id,
+            "amount": amount,
+        }
+        budget_transfer = self.BudgetTransfer.create(
+            {"transfer_item_ids": [Command.create(line_vals)]}
+        )
+        return budget_transfer
