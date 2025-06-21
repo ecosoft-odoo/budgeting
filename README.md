@@ -46,6 +46,7 @@ addon | version | maintainers | summary
 [budget_plan_detail_purchase](budget_plan_detail_purchase/) | 18.0.1.1.2 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Plan Details - Purchase
 [budget_plan_detail_purchase_request](budget_plan_detail_purchase_request/) | 18.0.1.1.2 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Plan Details - Purchase Request
 [budget_plan_detail_purchase_requisition](budget_plan_detail_purchase_requisition/) | 18.0.1.0.1 | [![newtratip](https://github.com/newtratip.png?size=30px)](https://github.com/newtratip) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Plan Detail - Purchase Requisition
+[stock_budget_plan_detail](stock_budget_plan_detail/) | 18.0.1.0.0 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Add fund, analytic tags dimension in stock move
 
 [//]: # (end addons)
 
