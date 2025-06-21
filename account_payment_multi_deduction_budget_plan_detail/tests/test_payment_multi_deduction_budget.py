@@ -8,6 +8,8 @@ from odoo.addons.budget_plan_detail.tests.test_budget_plan_detail import (
     TestBudgetPlanDetail,
 )
 
+from ..hooks import uninstall_hook
+
 
 @tagged("post_install", "-at_install")
 class TestPaymentMultiDeductionBudget(TestBudgetPlanDetail):
@@ -170,3 +172,9 @@ class TestPaymentMultiDeductionBudget(TestBudgetPlanDetail):
             writeoff[0].analytic_tag_ids,
             wizard.deduction_ids[0].writeoff_analytic_tag_all[0],
         )
+
+    def test_03_remove_dimension(self):
+        self.assertIn(
+            "x_dimension_test_dimension1", self.env["account.payment.register"]._fields
+        )
+        uninstall_hook(self.env)

@@ -11,6 +11,8 @@ from odoo.tests import tagged
 
 from odoo.addons.budget_control.tests.common import get_budget_common_class
 
+from ..hooks import uninstall_hook
+
 
 @tagged("post_install", "-at_install")
 class TestBudgetControlRequest(get_budget_common_class()):
@@ -237,3 +239,6 @@ class TestBudgetControlRequest(get_budget_common_class()):
         self.assertAlmostEqual(self.budget_control.amount_balance, 1900.0)  # 2400 - 500
         self.assertAlmostEqual(self.budget_control.amount_request, 0.0)
         self.assertAlmostEqual(self.budget_control.amount_actual, 500.0)
+
+    def test_04_remove_dimension(self):
+        uninstall_hook(self.env)

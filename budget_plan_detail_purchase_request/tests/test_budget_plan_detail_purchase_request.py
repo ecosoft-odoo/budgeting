@@ -12,6 +12,8 @@ from odoo.addons.budget_plan_detail.tests.test_budget_plan_detail import (
     TestBudgetPlanDetail,
 )
 
+from ..hooks import uninstall_hook
+
 
 @tagged("post_install", "-at_install")
 class TestBudgetPlanDetailPurchaseRequest(TestBudgetPlanDetail):
@@ -177,3 +179,9 @@ class TestBudgetPlanDetailPurchaseRequest(TestBudgetPlanDetail):
         self.assertAlmostEqual(budget_control.amount_purchase_request, 0.0)
         self.assertAlmostEqual(budget_control.amount_purchase, 600.0)
         self.assertAlmostEqual(budget_control.amount_balance, 1800.0)
+
+    def test_02_remove_dimension(self):
+        self.assertIn(
+            "x_dimension_test_dimension1", self.env["purchase.request.line"]._fields
+        )
+        uninstall_hook(self.env)
