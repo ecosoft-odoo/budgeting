@@ -11,6 +11,6 @@ def update_data_hooks(env):
 
 def uninstall_hook(env):
     """Delete all data related to budget control"""
-    env["budget.template"].search([]).unlink()
-    env["budget.period"].search([]).unlink()
     env["budget.control"].search([]).unlink()
+    env["budget.period"].search([]).unlink()
+    env["budget.template"].search([]).unlink()
