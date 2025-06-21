@@ -61,6 +61,5 @@
     "installable": True,
     "maintainers": ["kittiu", "ru3ix-bbb", "Saran440"],
     "post_init_hook": "update_data_hooks",
-    "uninstall_hook": "uninstall_hook",
     "development_status": "Alpha",
 }

@@ -387,11 +387,11 @@ Commitments)</li>
 </ul>
 <p>Actual amount are from account.move.line from posted invoice.
 Commitments can be sales/purchase, expense, purchase request, etc.
-Document required to be budget commitment can extend base.budget.move.
-For example, the module budget_control_expense will create budget
-commitment expense.budget.move for approved expense. Note that, in
-this budget_control module, there is no extension for budget
-commitment yet.</p>
+Document required to be budget commitment can extend
+base.budget.move. For example, the module budget_control_expense will
+create budget commitment expense.budget.move for approved expense.
+Note that, in this budget_control module, there is no extension for
+budget commitment yet.</p>
 </li>
 <li><p class="first"><strong>Budget Template (budget.template)</strong></p>
 <p>A Budget Template in the budget control system serves as a framework
@@ -412,8 +412,9 @@ range, i.e.,</p>
 <li>Control Level</li>
 </ul>
 <p>Although not mandatory, an organization will most likely use fiscal
-year as budget period. In such case, there will be 1 budget period per
-fiscal year, and multiple budget control sheet (one per analytic).</p>
+year as budget period. In such case, there will be 1 budget period
+per fiscal year, and multiple budget control sheet (one per
+analytic).</p>
 </li>
 <li><p class="first"><strong>Budget Control Sheet (budget.control)</strong></p>
 <p>Each analytic account can have one budget control sheet per budget
@@ -431,9 +432,9 @@ more documents, do install budget_control_xxx relevant to that
 document.</p>
 </li>
 <li><p class="first"><strong>Budget Constraint</strong></p>
-<p>To make the function – check_budget() more flexible, additional rules
-or limitations can be added to the budget checking process. The system
-will perform the regular budget check and will also check the
+<p>To make the function – check_budget() more flexible, additional
+rules or limitations can be added to the budget checking process. The
+system will perform the regular budget check and will also check the
 additional conditions specified in the added rules. An example of
 using budget constraints can be seen from the budget_allocation
 module.</p>
@@ -578,8 +579,8 @@ Plan” anytime.</p>
 view report anytime.</p>
 <blockquote>
 <ul class="simple">
-<li>On Budget Control sheet, click on Monitoring for see this budget
-report</li>
+<li>On Budget Control sheet, click on Monitoring for see this
+budget report</li>
 <li>Menu Budgeting &gt; Budget Monitoring, to show budget report in
 standard Odoo BI view.</li>
 </ul>

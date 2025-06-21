@@ -7,10 +7,3 @@ def update_data_hooks(env):
     env.ref("base.group_user").write(
         {"implied_ids": [(4, env.ref("analytic.group_analytic_accounting").id)]}
     )
-
-
-def uninstall_hook(env):
-    """Delete all data related to budget control"""
-    env["budget.control"].search([]).unlink()
-    env["budget.period"].search([]).unlink()
-    env["budget.template"].search([]).unlink()
