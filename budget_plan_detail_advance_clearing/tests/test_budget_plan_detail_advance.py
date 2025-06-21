@@ -11,6 +11,8 @@ from odoo.addons.budget_plan_detail.tests.test_budget_plan_detail import (
     TestBudgetPlanDetail,
 )
 
+from ..hooks import uninstall_hook
+
 
 @tagged("post_install", "-at_install")
 class TestBudgetPlanDetailAdvance(TestBudgetPlanDetail):
@@ -204,3 +206,9 @@ class TestBudgetPlanDetailAdvance(TestBudgetPlanDetail):
         self.assertAlmostEqual(budget_control.amount_advance, 340.0)
         self.assertAlmostEqual(budget_control.amount_expense, 60.0)
         self.assertAlmostEqual(budget_control.amount_balance, 2000.0)
+
+    def test_02_remove_dimension(self):
+        self.assertIn(
+            "x_dimension_test_dimension1", self.env["advance.budget.move"]._fields
+        )
+        uninstall_hook(self.env)

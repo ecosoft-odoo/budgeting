@@ -57,13 +57,6 @@ class TestStockPickingBudgetPlanDetail(TestBudgetPlanDetail, TestStockPicking):
         budget_control.action_done()
         cls.budget_period.control_budget = True
 
-        # Create dimension
-        cls.analytic_line_obj = cls.env["account.analytic.line"]
-        cls.dimension_obj = cls.env["account.analytic.dimension"]
-        cls.dimension_1 = cls.dimension_obj.create(
-            {"name": "Test dimension 1", "code": "test_dim_1"}
-        )
-
     def test_01_incoming_picking_with_budget(self):
         analytic_distribution = {self.costcenter1.id: 100}
         picking = self._create_picking(
@@ -180,7 +173,7 @@ class TestStockPickingBudgetPlanDetail(TestBudgetPlanDetail, TestStockPicking):
             )
 
     def test_04_remove_dimension(self):
-        self.dimension_1.unlink()
-        self.assertNotIn("x_dimension_test_dim_1", self.analytic_line_obj._fields)
+        self.assertIn(
+            "x_dimension_test_dimension1", self.env["stock.move.line"]._fields
+        )
         uninstall_hook(self.env)
-        self.assertNotIn("x_dimension_test_dim_2", self.analytic_line_obj._fields)

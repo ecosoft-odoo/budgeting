@@ -19,6 +19,7 @@ class BudgetPlanDetailCommon(BudgetControlCommon):
             cls.PlanLineDetail = cls.env["budget.plan.line.detail"]
             cls.BudgetFundGroup = cls.env["budget.source.fund.group"]
             cls.AnalyticDimension = cls.env["account.analytic.dimension"]
+            cls.AnalyticLine = cls.env["account.analytic.line"]
             cls.AnalyticTag = cls.env["account.analytic.tag"]
             cls.BudgetFund = cls.env["budget.source.fund"]
 
@@ -45,6 +46,8 @@ class BudgetPlanDetailCommon(BudgetControlCommon):
             cls.analytic_tag2 = cls.AnalyticTag.create(
                 {"name": "Test Tags 2", "analytic_dimension_id": cls.tag_dimension1.id}
             )
+
+            # Create dimension
 
     def create_budget_plan(
         self, name, budget_period, lines=False, skip_line_detail=False

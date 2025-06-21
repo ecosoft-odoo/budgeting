@@ -4,9 +4,11 @@
 
 from freezegun import freeze_time
 
+from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 
+from ..hooks import uninstall_hook
 from .common import BudgetPlanDetailCommon
 
 
@@ -112,7 +114,7 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
                 "plan_id": self.budget_plan.id,
                 "analytic_account_id": self.costcenter1.id,
                 "fund_id": self.fund1_g1.id,
-                "analytic_tag_ids": [(4, self.analytic_tag1.id)],
+                "analytic_tag_ids": [Command.set(self.analytic_tag1.ids)],
                 "allocated_amount": 100.0,
             }
         ]
@@ -208,7 +210,7 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
 
         # Add Fund1, Tag1 allocated 600.0
         bill1.invoice_line_ids.fund_id = self.fund1_g1.id
-        bill1.invoice_line_ids.analytic_tag_ids = [(4, self.analytic_tag1.id)]
+        bill1.invoice_line_ids.analytic_tag_ids = [Command.set(self.analytic_tag1.ids)]
         # Actual amount 601 > allocated amount 600.0, it should error
         with self.assertRaisesRegex(
             UserError, "spend amount over budget plan detail limit"
@@ -233,7 +235,7 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
             default_fund=False,
         )
         bill2.invoice_line_ids.fund_id = self.fund1_g1.id
-        bill2.invoice_line_ids.analytic_tag_ids = [(4, self.analytic_tag1.id)]
+        bill2.invoice_line_ids.analytic_tag_ids = [Command.set(self.analytic_tag1.ids)]
 
         with self.assertRaisesRegex(
             UserError, "spend amount over budget plan detail limit"
@@ -314,7 +316,7 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
             transfer.action_submit()
 
         # Add Tag1 to line1
-        transfer_line.analytic_tag_to_ids = [(4, self.analytic_tag1.id)]
+        transfer_line.analytic_tag_to_ids = [Command.set(self.analytic_tag1.ids)]
 
         self.assertEqual(len(transfer_line.detail_line_to_ids), 1)
         self.assertAlmostEqual(transfer_line.amount_to_available, 600.0)
@@ -327,3 +329,7 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
         transfer.action_reverse()
         self.assertEqual(budget_control_ids[0].diff_amount, 0.0)
         self.assertEqual(budget_control_ids[1].diff_amount, 0.0)
+
+    def test_06_remove_dimension(self):
+        self.assertIn("x_dimension_test_dimension1", self.PlanLineDetail._fields)
+        uninstall_hook(self.env)

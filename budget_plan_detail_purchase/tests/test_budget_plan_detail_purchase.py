@@ -12,6 +12,8 @@ from odoo.addons.budget_plan_detail.tests.test_budget_plan_detail import (
     TestBudgetPlanDetail,
 )
 
+from ..hooks import uninstall_hook
+
 
 @tagged("post_install", "-at_install")
 class TestBudgetPlanDetailPurchase(TestBudgetPlanDetail):
@@ -146,3 +148,9 @@ class TestBudgetPlanDetailPurchase(TestBudgetPlanDetail):
         invoice.action_post()
         self.assertEqual(invoice.budget_move_ids.fund_id, self.fund1_g1)
         self.assertEqual(invoice.budget_move_ids.analytic_tag_ids, self.analytic_tag1)
+
+    def test_02_remove_dimension(self):
+        self.assertIn(
+            "x_dimension_test_dimension1", self.env["purchase.order.line"]._fields
+        )
+        uninstall_hook(self.env)

@@ -10,6 +10,8 @@ from odoo.addons.budget_plan_detail_purchase_request.tests.test_budget_plan_deta
     TestBudgetPlanDetailPurchaseRequest,
 )
 
+from ..hooks import uninstall_hook
+
 
 @tagged("post_install", "-at_install")
 class TestBudgetPlanDetailPurchaseRequisition(TestBudgetPlanDetailPurchaseRequest):
@@ -154,3 +156,9 @@ class TestBudgetPlanDetailPurchaseRequisition(TestBudgetPlanDetailPurchaseReques
             purchase.order_line.analytic_tag_ids,
             purchase_request.line_ids.analytic_tag_ids,
         )
+
+    def test_02_remove_dimension(self):
+        self.assertIn(
+            "x_dimension_test_dimension1", self.env["purchase.requisition.line"]._fields
+        )
+        uninstall_hook(self.env)
