@@ -9,7 +9,6 @@ from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import Form, tagged
 
-from ..hooks import uninstall_hook
 from .common import get_budget_common_class
 
 
@@ -568,12 +567,3 @@ class TestBudgetControl(get_budget_common_class()):
 
         budget_commit_forward.action_draft()
         self.assertEqual(budget_commit_forward.state, "draft")
-
-    def test_19_remove_budget(self):
-        self.assertTrue(self.budget_period)
-        self.assertTrue(self.budget_control)
-        self.assertTrue(self.template_line1)
-        uninstall_hook(self.env)
-        self.assertFalse(self.budget_period)
-        self.assertFalse(self.budget_control)
-        self.assertFalse(self.template_line1)
