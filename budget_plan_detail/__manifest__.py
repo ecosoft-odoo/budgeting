@@ -4,7 +4,7 @@
 {
     "name": "Budget Plan - Details",
     "summary": "Allocated budget details",
-    "version": "18.0.1.1.2",
+    "version": "18.0.1.1.3",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",

@@ -4,7 +4,7 @@
 {
     "name": "Stock - Budget Plan Detail",
     "summary": "Add fund, analytic tags dimension in stock move",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",
