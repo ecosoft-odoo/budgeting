@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_picking_move_tree" model="ir.ui.view">
+        <field name="name">stock.move.picking.tree</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock_analytic.view_picking_move_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
+                <field name="fund_id" optional="show" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                />
+            </xpath>
+        </field>
+    </record>
+    <!-- Menu: Operations in Overview -->
+    <record id="view_move_tree" model="ir.ui.view">
+        <field name="name">stock.move.tree</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock_analytic.view_move_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
+                <field name="fund_id" optional="show" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                />
+            </xpath>
+            <!-- Show analytic_distribution -->
+            <xpath expr="//field[@name='analytic_distribution']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_move_form" model="ir.ui.view">
+        <field name="name">stock.move.form</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock_analytic.view_move_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
+                <field name="fund_id" />
+                <field name="analytic_tag_ids" widget="many2many_tags" />
+            </xpath>
+        </field>
+    </record>
+
+    <record
+        id="view_move_tree_receipt_picking_inherit_analytic_account"
+        model="ir.ui.view"
+    >
+        <field name="name">stock.move.tree2</field>
+        <field name="model">stock.move</field>
+        <field
+            name="inherit_id"
+            ref="stock_analytic.view_move_tree_receipt_picking_inherit_analytic_account"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
+                <field name="fund_id" optional="show" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

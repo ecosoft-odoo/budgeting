@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_scrap_analytic_form" model="ir.ui.view">
+        <field name="name">stock.scrap.analytic.form</field>
+        <field name="model">stock.scrap</field>
+        <field name="inherit_id" ref="stock_analytic.view_scrap_analytic_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
+                <field name="analytic_tag_all" widget="many2many_tags" invisible="1" />
+                <field name="domain_tag_ids" widget="many2many_tags" invisible="1" />
+                <field name="fund_all" widget="many2many_tags" invisible="1" />
+                <field name="fund_id" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    domain="[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                />
+            </xpath>
+            <!-- Show analytic_distribution -->
+            <xpath expr="//field[@name='analytic_distribution']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

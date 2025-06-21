@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_move_line_tree" model="ir.ui.view">
+        <field name="name">stock.move.line.tree</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock_analytic.view_move_line_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
+                <field name="fund_id" optional="show" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- In picking lines -->
+    <record id="view_move_line_detailed_tree" model="ir.ui.view">
+        <field name="name">stock.move.line.detailed.tree</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock_analytic.view_move_line_detailed_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
+                <field
+                    name="analytic_tag_all"
+                    widget="many2many_tags"
+                    column_invisible="1"
+                />
+                <field
+                    name="domain_tag_ids"
+                    widget="many2many_tags"
+                    column_invisible="1"
+                />
+                <field name="fund_all" widget="many2many_tags" column_invisible="1" />
+                <field name="fund_id" optional="show" />
+                <field
+                    name="analytic_tag_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    domain="[('id', 'in', analytic_tag_all or []), '|', ('id', 'in', domain_tag_ids or []), ('analytic_dimension_id.by_sequence', '=', False)]"
+                />
+            </xpath>
+            <!-- Show analytic_distribution -->
+            <xpath expr="//field[@name='analytic_distribution']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
