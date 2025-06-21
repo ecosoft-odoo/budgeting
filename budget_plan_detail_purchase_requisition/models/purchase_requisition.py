@@ -11,7 +11,6 @@ class PurchaseRequisitionLine(models.Model):
         "budget.docline.mixin.base",
         "purchase.requisition.line",
     ]
-    _analytic_tag_field_name = "analytic_tag_ids"
 
     analytic_tag_ids = fields.Many2many(
         comodel_name="account.analytic.tag",
@@ -30,17 +29,3 @@ class PurchaseRequisitionLine(models.Model):
         res["fund_id"] = self.fund_id.id
         res["analytic_tag_ids"] = [Command.set(self.analytic_tag_ids.ids)]
         return res
-
-    def _convert_analytics(self, analytic_distribution=False):
-        Analytic = self.env["account.analytic.account"]
-        analytics = analytic_distribution or self[self._budget_analytic_field]
-        if not analytics:
-            return Analytic
-        # Check analytic from distribution it send data with JSON type 'dict'
-        # and we need convert it to analytic object
-        if self._budget_analytic_field == "analytic_distribution":
-            account_analytic_ids = [
-                int(v) for k in analytics.keys() for v in k.split(",")
-            ]
-            analytics = Analytic.browse(account_analytic_ids)
-        return analytics

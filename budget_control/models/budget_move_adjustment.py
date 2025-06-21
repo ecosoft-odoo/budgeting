@@ -117,7 +117,6 @@ class BudgetMoveAdjustmentItem(models.Model):
     _check_company_auto = True
     _budget_date_commit_fields = ["adjust_id.date_commit"]
     _budget_move_model = "account.budget.move"
-    _budget_analytic_field = "analytic_distribution"
     _doc_rel = "adjust_id"
 
     adjust_id = fields.Many2one(

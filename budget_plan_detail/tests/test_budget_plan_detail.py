@@ -4,7 +4,6 @@
 
 from freezegun import freeze_time
 
-from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 
@@ -54,10 +53,10 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
         self.assertFalse(self.budget_plan.line_detail_ids)
         self.assertFalse(self.budget_plan.line_ids)
 
-        self._create_budget_plan_line_detail(self.budget_plan)
+        self._create_budget_plan_line_detail(self.budget_plan, auto_confirm=False)
 
-        self.assertAlmostEqual(self.budget_plan.total_amount, 2400.0)
-        self.assertEqual(len(self.budget_plan.line_detail_ids), 4)
+        self.assertAlmostEqual(self.budget_plan.total_amount, 4800.0)
+        self.assertEqual(len(self.budget_plan.line_detail_ids), 8)
         self.assertFalse(self.budget_plan.is_confirm_plan)
         # Budget Plan line still not created (first time)
         self.assertFalse(self.budget_plan.line_ids)
@@ -80,7 +79,7 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
 
         # After confirm detail, plan line should be created
         self.assertTrue(self.budget_plan.is_confirm_plan)
-        self.assertEqual(len(self.budget_plan.line_detail_ids), 4)
+        self.assertEqual(len(self.budget_plan.line_detail_ids), 8)
         self.assertEqual(len(self.budget_plan.line_ids), 2)
 
         # Check Link button budget plan to budget plan detail
@@ -158,7 +157,11 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
 
         # Refresh data and Prepare budget control
         self.budget_plan.invalidate_recordset()
-        # Get 1 budget control, Costcenter1 has 3 plan detail (600, 600, 600)
+        # Get 1 budget control, Costcenter1 has 4 plan detail by default
+        # line 1: Costcenter1, Fund1, Tag1, 600.0
+        # line 2: Costcenter1, Fund1, Tag2, 600.0
+        # line 3: Costcenter1, Fund2, Tag1, 600.0
+        # line 4: Costcenter1, Fund2,     , 600.0
         budget_control = self.budget_plan.budget_control_ids[0]
         budget_control.template_line_ids = [
             self.template_line1.id,
@@ -170,11 +173,11 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
         budget_control.prepare_budget_control_matrix()
         assert len(budget_control.line_ids) == 12
         # Costcenter1 has 3 plan detail
-        # Assign budget.control amount: KPI1 = 1500, 200, 100
+        # Assign budget.control amount: KPI1 = 1500, 500, 400
         bc_items = budget_control.line_ids.filtered(lambda x: x.kpi_id == self.kpi1)
         bc_items[0].write({"amount": 1500})
-        bc_items[1].write({"amount": 200})
-        bc_items[2].write({"amount": 100})
+        bc_items[1].write({"amount": 500})
+        bc_items[2].write({"amount": 400})
 
         self.assertEqual(
             budget_control.mapped("plan_line_detail_ids"),
@@ -240,18 +243,20 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
     @freeze_time("2001-02-01")
     def test_05_transfer_budget_control(self):
         # budget control is depends on budget allocation
-        self._create_budget_plan_line_detail(self.budget_plan)
+        self._create_budget_plan_line_detail(self.budget_plan, auto_confirm=False)
         self.budget_plan.action_confirm_plan_detail()
         self.budget_plan.action_confirm()
         self.assertEqual(self.budget_plan.state, "confirm")
         self.budget_plan.action_create_update_budget_control()
         self.budget_plan.action_done()
 
+        self.assertEqual(len(self.budget_plan.line_ids), 2)
         self.assertEqual(self.budget_plan.state, "done")
 
         # Refresh data and Prepare budget control
         self.budget_plan.invalidate_recordset()
         budget_control_ids = self.budget_plan.budget_control_ids
+        self.assertEqual(len(budget_control_ids), 2)
         for bc in budget_control_ids:
             bc.template_line_ids = [
                 self.template_line1.id,
@@ -263,18 +268,10 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
             bc.prepare_budget_control_matrix()
             assert len(bc.line_ids) == 12
             bc_items = bc.line_ids.filtered(lambda x: x.kpi_id == self.kpi1)
-            if bc.allocated_amount == 1800.0:
-                # Costcenter1 has 3 plan detail
-                # Assign budget.control amount: KPI1 = 1500, 200, 100
-                bc_items[0].write({"amount": 1500})
-                bc_items[1].write({"amount": 200})
-                bc_items[2].write({"amount": 100})
-            else:
-                # CostcenterX has 1 plan detail
-                # Assign budget.control amount: KPI1 = 300, 200, 100
-                bc_items[0].write({"amount": 300})
-                bc_items[1].write({"amount": 200})
-                bc_items[2].write({"amount": 100})
+            # Assign budget.control amount: KPI1 = 1500, 500, 400
+            bc_items[0].write({"amount": 1500})
+            bc_items[1].write({"amount": 500})
+            bc_items[2].write({"amount": 400})
 
         self.assertEqual(budget_control_ids[0].diff_amount, 0.0)
         self.assertEqual(budget_control_ids[1].diff_amount, 0.0)
@@ -282,32 +279,22 @@ class TestBudgetPlanDetail(BudgetPlanDetailCommon):
         # Config dimension by sequence
         self.tag_dimension1.write({"by_sequence": True, "sequence": 1})
 
-        # Transfer budget amount from line4 to line1
+        # Transfer budget amount from line5 to line1
+        # But test line 1 is selected analytic tags wrong
         # line 1: Costcenter1, Fund1, Tag1, 600.0
-        # line 4: CostcenterX, Fund1,     , 600.0
-        transfer = self.BudgetTransfer.create(
-            {
-                "transfer_item_ids": [
-                    Command.create(
-                        {
-                            # Budget From
-                            "budget_control_from_id": budget_control_ids[1].id,
-                            "fund_from_id": self.fund1_g1.id,
-                            # Budget To (Test without analytic tag)
-                            "budget_control_to_id": budget_control_ids[0].id,
-                            "fund_to_id": self.fund1_g1.id,
-                            "amount": 500.0,
-                        }
-                    )
-                ]
-            }
+        # line 5: CostcenterX, Fund1, Tag1, 600.0
+        transfer = self._create_budget_transfer(
+            budget_control_ids[1], budget_control_ids[0], 500.0, analytic_tag_to=[]
         )
+
         transfer_line = transfer.transfer_item_ids
-        # line 4 is correct
+        # line 5 is correct
         self.assertEqual(len(transfer_line.detail_line_from_ids), 1)
         self.assertIn(transfer_line.fund_from_id, transfer_line.fund_from_all)
-        self.assertFalse(transfer_line.analytic_tag_from_ids)
-        self.assertFalse(transfer_line.analytic_tag_from_all)
+        self.assertEqual(transfer_line.analytic_tag_from_ids, self.analytic_tag1)
+        self.assertEqual(
+            transfer_line.analytic_tag_from_all, self.analytic_tag1 + self.analytic_tag2
+        )
         self.assertTrue(transfer_line.domain_tag_from_ids)
         self.assertAlmostEqual(transfer_line.amount_from_available, 600.0)
         # line 1 must not found detail lines, amount will 0.0 too

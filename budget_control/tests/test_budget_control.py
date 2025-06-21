@@ -19,11 +19,14 @@ class TestBudgetControl(get_budget_common_class()):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Create budget plan with 1 analytic
+        # Create budget plan with 2 analytic
         lines = [
             Command.create(
                 {"analytic_account_id": cls.costcenter1.id, "amount": 2400.0}
-            )
+            ),
+            Command.create(
+                {"analytic_account_id": cls.costcenterX.id, "amount": 2400.0}
+            ),
         ]
         cls.budget_plan = cls.create_budget_plan(
             cls,
@@ -38,7 +41,8 @@ class TestBudgetControl(get_budget_common_class()):
         # Refresh data
         cls.budget_plan.invalidate_recordset()
 
-        cls.budget_control = cls.budget_plan.budget_control_ids
+        # Budget Control 1
+        cls.budget_control = cls.budget_plan.budget_control_ids[0]
         cls.budget_control.template_line_ids = [
             cls.template_line1.id,
             cls.template_line2.id,
@@ -56,6 +60,28 @@ class TestBudgetControl(get_budget_common_class()):
             {"amount": 200}
         )
         cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi3).write(
+            {"amount": 300}
+        )
+
+        # Budget Control 2
+        cls.budget_control2 = cls.budget_plan.budget_control_ids[1]
+        cls.budget_control2.template_line_ids = [
+            cls.template_line1.id,
+            cls.template_line2.id,
+            cls.template_line3.id,
+        ]
+
+        # Test item created for 3 kpi x 4 quarters = 12 budget items
+        cls.budget_control2.prepare_budget_control_matrix()
+        assert len(cls.budget_control2.line_ids) == 12
+        # Assign budget.control amount: KPI1 = 100x4=400, KPI2=800, KPI3=1,200
+        cls.budget_control2.line_ids.filtered(lambda x: x.kpi_id == cls.kpi1).write(
+            {"amount": 100}
+        )
+        cls.budget_control2.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2).write(
+            {"amount": 200}
+        )
+        cls.budget_control2.line_ids.filtered(lambda x: x.kpi_id == cls.kpi3).write(
             {"amount": 300}
         )
 
@@ -84,8 +110,8 @@ class TestBudgetControl(get_budget_common_class()):
 
     @freeze_time("2001-02-01")
     def test_01_budget_plan_create_line_from_wizard(self):
-        self.assertEqual(len(self.budget_plan.line_ids), 1)
-        self.assertAlmostEqual(self.budget_plan.total_amount, 2400)
+        self.assertEqual(len(self.budget_plan.line_ids), 2)
+        self.assertAlmostEqual(self.budget_plan.total_amount, 4800)  # 2 budget 2400*2
         self.assertEqual(self.budget_plan.state, "done")
 
         # Reset plan to draft for add new analytic
@@ -101,7 +127,7 @@ class TestBudgetControl(get_budget_common_class()):
         # Create with no active_id, it should nothing to do
         wizard = self.PlanAnalyticSelect.create({"analytic_account_ids": []})
         action = wizard.action_add()
-        self.assertEqual(len(self.budget_plan.line_ids), 1)
+        self.assertEqual(len(self.budget_plan.line_ids), 2)
 
         # Create with empty analytic, it should remove all plan lines
         wizard = self.PlanAnalyticSelect.with_context(
@@ -129,7 +155,7 @@ class TestBudgetControl(get_budget_common_class()):
 
     @freeze_time("2001-02-01")
     def test_03_budget_plan_check_control(self):
-        self.assertEqual(len(self.budget_plan.budget_control_ids), 1)
+        self.assertEqual(len(self.budget_plan.budget_control_ids), 2)
         action = self.budget_plan.button_open_budget_control()
         self.assertEqual(
             action["domain"][0][2], self.budget_plan.budget_control_ids.ids
@@ -420,7 +446,87 @@ class TestBudgetControl(get_budget_common_class()):
         )
 
     @freeze_time("2001-02-01")
-    def test_15_budget_adjustment(self):
+    def test_15_budget_control_analytic_exceed_percent(self):
+        """Check control analytic account exceed 100%"""
+        analytic_distribution = {self.costcenter1.id: 130}
+        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 100)
+        with self.assertRaisesRegex(
+            UserError,
+            "The total sum percent of Analytic Account must 100%. Please check again.",
+        ):
+            bill1.action_post()
+
+    @freeze_time("2001-02-01")
+    def test_16_budget_transfer(self):
+        """Budget Transfer Process"""
+        # Transfer from budget_control to budget_control2
+        transfer = self._create_budget_transfer(
+            budget_from=self.budget_control, budget_to=self.budget_control2, amount=0.0
+        )
+        self.assertEqual(len(transfer.transfer_item_ids), 1)
+        self.assertAlmostEqual(self.budget_control.released_amount, 2400.0)
+        self.assertAlmostEqual(self.budget_control2.released_amount, 2400.0)
+        self.assertNotEqual(transfer.name, "/")
+        # Amount transfer available is not 0.0
+        self.assertNotEqual(transfer.transfer_item_ids.amount_from_available, 0.0)
+        self.assertNotEqual(transfer.transfer_item_ids.amount_to_available, 0.0)
+
+        # It should error
+        with self.assertRaisesRegex(UserError, "Transfer amount must be positive!"):
+            transfer.action_submit()
+
+        # Transfer with 2500.0 (exceed budget)
+        transfer.transfer_item_ids.write({"amount": 2500.0})
+        with self.assertRaisesRegex(UserError, "Transfer amount can not be exceeded"):
+            transfer.action_submit()
+
+        transfer.transfer_item_ids.write({"amount": 40.0})
+        transfer.action_submit()
+        self.assertEqual(transfer.state, "submit")
+
+        transfer.action_transfer()
+        self.assertEqual(transfer.state, "transfer")
+        self.assertEqual(len(self.budget_control.transfer_item_ids), 1)
+        self.assertAlmostEqual(self.budget_control.released_amount, 2360.0)
+        self.assertAlmostEqual(self.budget_control.transferred_amount, -40.0)
+        self.assertEqual(len(self.budget_control2.transfer_item_ids), 1)
+        self.assertAlmostEqual(self.budget_control2.released_amount, 2440.0)
+        self.assertAlmostEqual(self.budget_control2.transferred_amount, 40.0)
+
+        # Check snart button budget_control to transfer_items
+        action_transfer_from = self.budget_control.action_open_budget_transfer_item()
+        self.assertEqual(action_transfer_from["res_model"], "budget.transfer.item")
+        self.assertEqual(
+            action_transfer_from["domain"][0][2],
+            self.budget_control.transfer_item_ids.ids,
+        )
+
+        action_transfer_to = self.budget_control.action_open_budget_transfer_item()
+        self.assertEqual(action_transfer_to["res_model"], "budget.transfer.item")
+        self.assertEqual(
+            action_transfer_to["domain"][0][2],
+            self.budget_control2.transfer_item_ids.ids,
+        )
+
+        # Don't allow delete transfer document if not draft state
+        with self.assertRaisesRegex(
+            UserError, "You are trying to delete a record that is still referenced!"
+        ):
+            transfer.unlink()
+
+        transfer.action_reverse()
+        self.budget_control._compute_transferred_amount()
+        self.assertEqual(transfer.state, "reverse")
+        self.assertEqual(len(self.budget_control.transfer_item_ids), 1)
+        self.assertAlmostEqual(self.budget_control.released_amount, 2400.0)
+        self.assertAlmostEqual(self.budget_control.transferred_amount, 0.0)
+        self.budget_control2._compute_transferred_amount()
+        self.assertEqual(len(self.budget_control2.transfer_item_ids), 1)
+        self.assertAlmostEqual(self.budget_control2.released_amount, 2400.0)
+        self.assertAlmostEqual(self.budget_control2.transferred_amount, 0.0)
+
+    @freeze_time("2001-02-01")
+    def test_17_budget_adjustment(self):
         self.assertEqual(self.budget_control.amount_balance, 2400.0)
         budget_adjust = self.BudgetAdjust.create(
             {
@@ -439,7 +545,7 @@ class TestBudgetControl(get_budget_common_class()):
         budget_adjust.action_adjust()
         self.assertEqual(self.budget_control.amount_balance, 2300.0)
 
-    def test_16_budget_carry_forward(self):
+    def test_18_budget_carry_forward(self):
         """NOTE: This test is not yet implemented for budget_control"""
         budget_commit_forward = self.CommitForward.create(
             {

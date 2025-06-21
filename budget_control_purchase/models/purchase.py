@@ -53,7 +53,6 @@ class PurchaseOrder(models.Model):
 class PurchaseOrderLine(models.Model):
     _name = "purchase.order.line"
     _inherit = ["purchase.order.line", "budget.docline.mixin"]
-    _budget_analytic_field = "analytic_distribution"
     _budget_date_commit_fields = ["order_id.write_date"]
     _budget_move_model = "purchase.budget.move"
     _doc_rel = "order_id"
