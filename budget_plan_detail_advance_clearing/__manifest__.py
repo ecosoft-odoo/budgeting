@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Allocation - Advance Clearing",
-    "version": "18.0.1.1.1",
+    "version": "18.0.1.1.2",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
