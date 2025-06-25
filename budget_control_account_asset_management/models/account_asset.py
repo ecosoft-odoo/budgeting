@@ -7,4 +7,6 @@ from odoo import fields, models
 class AccountAsset(models.Model):
     _inherit = "account.asset"
 
-    not_affect_budget = fields.Boolean(default=True)
+    not_affect_budget = fields.Boolean(
+        default=lambda self: self.env.company.asset_not_affect_budget
+    )

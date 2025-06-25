@@ -8,7 +8,7 @@
             ref="account_asset_management.account_asset_view_form"
         />
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='account_analytic_id']" position="before">
+            <xpath expr="//field[@name='analytic_distribution']" position="before">
                 <field name="not_affect_budget" />
             </xpath>
         </field>

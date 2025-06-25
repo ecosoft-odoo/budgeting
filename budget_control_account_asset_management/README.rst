@@ -1,5 +1,5 @@
 =================================
-Budget Control - asset management
+Budget Control - Asset Management
 =================================
 
 .. 
@@ -10,9 +10,9 @@ Budget Control - asset management
    !! source digest: sha256:2ce9e60e30b13df53fb46cad478ce2661efabb465c0ba5ca666c98d9a8afa7c5
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-.. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
+.. |badge1| image:: https://img.shields.io/badge/maturity-Alpha-red.png
     :target: https://odoo-community.org/page/development-status
-    :alt: Beta
+    :alt: Alpha
 .. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
@@ -22,8 +22,13 @@ Budget Control - asset management
 
 |badge1| |badge2| |badge3|
 
-This module will allow assets to be configured to create move either
-"not affect budget" or not.
+This module allow assets to be configured to create move either "not
+affect budget" or not.
+
+.. IMPORTANT::
+   This is an alpha version, the data model and design can change at any time without warning.
+   Only for development or testing purpose, do not use in production.
+   `More details on development status <https://odoo-community.org/page/development-status>`_
 
 **Table of contents**
 
@@ -33,9 +38,17 @@ This module will allow assets to be configured to create move either
 Usage
 =====
 
-To use this module, you can go to Invoicing > Assets Then, you will see
-the "not affect budget" field. If you check "not affect budget", the
-system will create a move without affecting the budget.
+To use this module, you can config not affect budget in asset following:
+
+1. Go to menu Budgeting > Configurations > Settings > Budget Control
+   Options
+2. Enable the option "Asset - Not Affect Budget"
+
+   -  When this option is checked, depreciation moves created from
+      assets will *not* affect the budget.
+
+3. This setting will be used as default in the Asset menu. you can
+   change it to affect budget some document if you need.
 
 Bug Tracker
 ===========
