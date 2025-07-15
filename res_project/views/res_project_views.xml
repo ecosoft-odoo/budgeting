@@ -78,12 +78,12 @@
                     <group name="main_project">
                         <field name="active" invisible="1" />
                         <group name="main_left_project">
-                            <field name="code" readonly="state != 'draft'" />
+                            <field name="code" readonly="1" />
                             <field
                                 name="parent_project_id"
                                 string="Parent Project"
+                                readonly="1"
                                 invisible="state != 'draft'"
-                                readonly="state != 'draft'"
                             />
                             <field
                                 name="parent_project_name"

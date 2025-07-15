@@ -25,6 +25,21 @@ Project Management
 This module is one of the master data used in all Project sections as
 information
 
+This module adds the possibility of defining a sequence for the
+project's reference. The reference is then set as the default when
+creating a new project, using the defined sequence.
+
+NOTE: Before installing this module, you should check the following
+information
+
+- For projects that have a parent project, the code will be overwritten
+  with the code of the parent project and followed by a sub-code, such
+  as PJ00001-1
+
+- For main projects, if the code already exists, it will not be changed.
+  However, if the code does not exist, a new code will be automatically
+  assigned
+
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
    Only for development or testing purpose, do not use in production.
@@ -49,12 +64,20 @@ To configure this module, following access right must be set.
   - Project User
   - Project Manager
 
+To configure sequence, following access right must be set.
+
+- You can change the default sequence (PJ00001) by the one of your
+  choice going to *Settings > Technical > Sequences & Identifiers >
+  Sequences*, and editing the record name ``Res Project Sequence``.
+
 **Note:**
 
 - Project User: Users will be able to see all project documents but
   cannot create documents.
 - Project Manager: Users will be able to see all project documents,
   create documents and configuration.
+- You will only have access to that section if your section has
+  ``Technical features`` permission check marked.
 
 Bug Tracker
 ===========
@@ -77,7 +100,10 @@ Authors
 Contributors
 ------------
 
-- Saran Lim. <saranl@ecosoft.co.th>
+- ``Ecosoft <http://ecosoft.co.th>``\ \_\_:
+
+  - Pimolnat Suntian pimolnats@ecosoft.co.th
+  - Saran Lim. saranl@ecosoft.co.th
 
 Maintainers
 -----------

@@ -20,7 +20,7 @@ class ResProjectCommon(TransactionCase):
         department_id,
         date_from,
         date_to,
-        code=False,
+        code="/",
         parent_project_id=False,
     ):
         return self.ResProject.create(

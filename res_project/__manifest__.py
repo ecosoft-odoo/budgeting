@@ -14,6 +14,7 @@
         "security/res_project_security_groups.xml",
         "security/ir.model.access.csv",
         "data/res_project_cron.xml",
+        "data/res_project_data.xml",
         "views/res_project_menuitem.xml",
         "views/res_project_views.xml",
         "views/res_project_split.xml",

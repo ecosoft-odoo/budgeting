@@ -31,7 +31,7 @@ class ResProject(ResProjectCommon):
         """Test normally process project"""
         self.assertEqual(self.project1.name, "Test Project1")
         self.assertEqual(self.project1.parent_project_name, "Test Project1")
-        self.assertFalse(self.project1.code)
+        self.assertTrue(self.project1.code)
         # Change name project, parent project should change it too
         self.project1.name = "Test new project"
         self.assertEqual(self.project1.name, "Test new project")
@@ -71,7 +71,7 @@ class ResProject(ResProjectCommon):
         self.project1.action_auto_expired()
         self.assertEqual(self.project1.state, "close")
         # Check name search with code
-        res = self.project1.name_search("0001")
+        res = self.project1.name_search("NON_EXIST_CODE")
         self.assertFalse(res)
         self.project1.code = "C_TEST000001"
         res = self.project1.name_search("0001")
@@ -102,3 +102,21 @@ class ResProject(ResProjectCommon):
         self.assertEqual(new_project.name, "new split1")
         self.assertEqual(new_project.parent_project_id, self.project1)
         self.assertEqual(new_project.parent_project_name, self.project1.name)
+
+    @freeze_time("2001-02-01")
+    def test_03_project_sequence(self):
+        # Check code in project
+        today = datetime.today()
+        project = self._create_res_project(
+            "Test Project Sequence",
+            self.dep_admin.id,
+            today,
+            today,
+            code="/",
+        )
+        self.assertNotEqual(project.code, "/")
+        # Check code in split project
+        project_wizard = self._create_project_wizard(project, "new split1")
+        new_project_list = project_wizard.split_project()
+        new_project = self.ResProject.browse(new_project_list["domain"][0][2])
+        self.assertEqual(new_project.code, f"{project.code}-1")
