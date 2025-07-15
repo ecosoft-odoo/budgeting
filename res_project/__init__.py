@@ -2,3 +2,4 @@
 
 from . import models
 from . import wizard
+from .hooks import assign_new_sequences

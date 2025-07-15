@@ -1,7 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo.tests.common import TransactionCase
+from odoo.tests import TransactionCase
 
 
 class ResProjectCommon(TransactionCase):
@@ -20,7 +20,7 @@ class ResProjectCommon(TransactionCase):
         department_id,
         date_from,
         date_to,
-        code=False,
+        code="/",
         parent_project_id=False,
     ):
         return self.ResProject.create(

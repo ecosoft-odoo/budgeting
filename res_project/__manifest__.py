@@ -4,7 +4,7 @@
 {
     "name": "Project Management",
     "summary": "New menu Projects management",
-    "version": "15.0.1.0.0",
+    "version": "18.0.1.0.0",
     "license": "AGPL-3",
     "category": "Project",
     "website": "https://github.com/ecosoft-odoo/budgeting",
@@ -14,6 +14,7 @@
         "security/res_project_security_groups.xml",
         "security/ir.model.access.csv",
         "data/res_project_cron.xml",
+        "data/res_project_data.xml",
         "views/res_project_menuitem.xml",
         "views/res_project_views.xml",
         "views/res_project_split.xml",

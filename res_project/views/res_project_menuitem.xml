@@ -5,6 +5,7 @@
         id="menu_main_res_project"
         name="Projects"
         groups="group_res_project_user,group_res_project_user"
+        web_icon="res_project,static/description/icon.png"
         sequence="30"
     />
     <menuitem

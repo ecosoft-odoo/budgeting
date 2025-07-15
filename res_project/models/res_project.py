@@ -6,26 +6,22 @@ from odoo.exceptions import UserError
 
 class ResProject(models.Model):
     _name = "res.project"
-    _description = "Project Management"
     _inherit = "mail.thread"
+    _description = "Project Management"
     _check_company_auto = True
+    _rec_name = "code"
+    _rec_names_search = ["code", "name"]
 
     name = fields.Char(
         required=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     code = fields.Char(
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     parent_project_id = fields.Many2one(
         comodel_name="res.project",
         string="Parent",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     parent_project_name = fields.Char(
@@ -47,9 +43,7 @@ class ResProject(models.Model):
         help="If the active field is set to False, "
         "it will allow you to hide the project without removing it.",
     )
-    description = fields.Html(
-        readonly=True, copy=False, states={"draft": [("readonly", False)]}
-    )
+    description = fields.Html(copy=False)
     company_id = fields.Many2one(
         comodel_name="res.company",
         string="Company",
@@ -62,34 +56,25 @@ class ResProject(models.Model):
         string="Currency",
         required=True,
         related="company_id.currency_id",
-        states={"done": [("readonly", True)]},
     )
     project_manager_id = fields.Many2one(
         comodel_name="hr.employee",
         string="Project Manager",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     date_from = fields.Date(
         required=True,
         string="Project Start",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     date_to = fields.Date(
         required=True,
         string="Project End",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     department_id = fields.Many2one(
         comodel_name="hr.department",
-        readonly=True,
         required=True,
-        states={"draft": [("readonly", False)]},
     )
     member_ids = fields.Many2many(
         comodel_name="hr.employee.public",
@@ -97,8 +82,6 @@ class ResProject(models.Model):
         column1="project_id",
         column2="employee_id",
         string="Member",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     plan_amount = fields.Monetary(
         compute="_compute_plan_amount",
@@ -124,6 +107,9 @@ class ResProject(models.Model):
         tracking=True,
         default="draft",
     )
+    amount = fields.Monetary()
+    code = fields.Char(required=True, default="/", readonly=True, copy=False)
+    next_split = fields.Integer(string="Next split code", default=1)
 
     _sql_constraints = [("unique_name", "UNIQUE(name)", "name must be unique")]
 
@@ -139,29 +125,46 @@ class ResProject(models.Model):
         for rec in self:
             rec.plan_amount = sum(rec.project_plan_ids.mapped("amount"))
 
-    @api.model
-    def create(self, vals):
-        if not vals.get("parent_project_id", False):
-            vals["parent_project_name"] = vals["name"]
+    @api.model_create_multi
+    def create(self, vals_list):
+        """
+        Sequence will run 2 method
+        - Split project: use the same code parent project and add subcode
+            Example: Project A has code A00001.
+            when split project A, it will A00001-1, next split is A00001-2
+        - Create new project: use new sequence
+        - Has code already: skip it
+        """
+        for vals in vals_list:
+            if not vals.get("parent_project_id", False):
+                vals["parent_project_name"] = vals["name"]
+
+            if vals.get("code", "/") == "/":
+                split_project = self._context.get("split_project", False)
+                parent_project_id = vals.get(
+                    "parent_project_id", False
+                ) or self._context.get("parent_project_id", False)
+                import_file = self._context.get("import_file", False)
+                # Split project or import with parent
+                if split_project or (import_file and parent_project_id):
+                    parent_project = self.env["res.project"].browse(parent_project_id)
+                    if parent_project:
+                        next_split = parent_project.next_split
+                        code = f"{parent_project.code}-{next_split}"
+                        parent_project.write({"next_split": next_split + 1})
+                else:
+                    code = self.env["ir.sequence"].next_by_code("res.project")
+                vals["code"] = code
+
         return super().create(vals)
 
-    @api.model
-    def name_search(self, name, args=None, operator="ilike", limit=100):
-        args = args or []
-        domain = []
-        if name:
-            domain = ["|", ("code", operator, name), ("name", operator, name)]
-        projects = self.search(domain + args, limit=limit)
-        return projects.name_get()
-
-    def name_get(self):
-        res = []
+    @api.depends("code", "name")
+    def _compute_display_name(self):
         for project in self:
             name = project.name
             if project.code:
                 name = f"[{project.code}] {name}"
-            res.append((project.id, name))
-        return res
+            project.display_name = name
 
     def copy(self, default=None):
         self.ensure_one()

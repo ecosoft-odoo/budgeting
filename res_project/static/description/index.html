@@ -372,6 +372,19 @@ ul.auto-toc {
 <p><a class="reference external image-reference" href="https://odoo-community.org/page/development-status"><img alt="Alpha" src="https://img.shields.io/badge/maturity-Alpha-red.png" /></a> <a class="reference external image-reference" href="http://www.gnu.org/licenses/agpl-3.0-standalone.html"><img alt="License: AGPL-3" src="https://img.shields.io/badge/licence-AGPL--3-blue.png" /></a> <a class="reference external image-reference" href="https://github.com/ecosoft-odoo/budgeting/tree/18.0/res_project"><img alt="ecosoft-odoo/budgeting" src="https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github" /></a></p>
 <p>This module is one of the master data used in all Project sections as
 information</p>
+<p>This module adds the possibility of defining a sequence for the
+project’s reference. The reference is then set as the default when
+creating a new project, using the defined sequence.</p>
+<p>NOTE: Before installing this module, you should check the following
+information</p>
+<ul class="simple">
+<li>For projects that have a parent project, the code will be overwritten
+with the code of the parent project and followed by a sub-code, such
+as PJ00001-1</li>
+<li>For main projects, if the code already exists, it will not be changed.
+However, if the code does not exist, a new code will be automatically
+assigned</li>
+</ul>
 <div class="admonition important">
 <p class="first admonition-title">Important</p>
 <p class="last">This is an alpha version, the data model and design can change at any time without warning.
@@ -403,12 +416,20 @@ Only for development or testing purpose, do not use in production.
 </ul>
 </li>
 </ul>
+<p>To configure sequence, following access right must be set.</p>
+<ul class="simple">
+<li>You can change the default sequence (PJ00001) by the one of your
+choice going to <em>Settings &gt; Technical &gt; Sequences &amp; Identifiers &gt;
+Sequences</em>, and editing the record name <tt class="docutils literal">Res Project Sequence</tt>.</li>
+</ul>
 <p><strong>Note:</strong></p>
 <ul class="simple">
 <li>Project User: Users will be able to see all project documents but
 cannot create documents.</li>
 <li>Project Manager: Users will be able to see all project documents,
 create documents and configuration.</li>
+<li>You will only have access to that section if your section has
+<tt class="docutils literal">Technical features</tt> permission check marked.</li>
 </ul>
 </div>
 <div class="section" id="bug-tracker">
@@ -430,7 +451,11 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <div class="section" id="contributors">
 <h2><a class="toc-backref" href="#toc-entry-5">Contributors</a></h2>
 <ul class="simple">
-<li>Saran Lim. &lt;<a class="reference external" href="mailto:saranl&#64;ecosoft.co.th">saranl&#64;ecosoft.co.th</a>&gt;</li>
+<li><tt class="docutils literal">Ecosoft <span class="pre">&lt;http://ecosoft.co.th&gt;</span></tt>__:<ul>
+<li>Pimolnat Suntian <a class="reference external" href="mailto:pimolnats&#64;ecosoft.co.th">pimolnats&#64;ecosoft.co.th</a></li>
+<li>Saran Lim. <a class="reference external" href="mailto:saranl&#64;ecosoft.co.th">saranl&#64;ecosoft.co.th</a></li>
+</ul>
+</li>
 </ul>
 </div>
 <div class="section" id="maintainers">
