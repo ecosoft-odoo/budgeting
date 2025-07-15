@@ -47,9 +47,9 @@ class SplitProjectWizard(models.TransientModel):
         readonly=True,
     )
     line_ids = fields.One2many(
-        string="Lines",
         comodel_name="split.project.wizard.line",
         inverse_name="wizard_id",
+        string="Lines",
     )
 
     def split_project(self):
@@ -69,7 +69,7 @@ class SplitProjectWizard(models.TransientModel):
             "name": _("Project"),
             "type": "ir.actions.act_window",
             "res_model": "res.project",
-            "view_mode": "tree,form",
+            "view_mode": "list,form",
             "context": self.env.context,
             "domain": [("id", "in", new_projects.ids)],
         }

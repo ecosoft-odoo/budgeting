@@ -6,8 +6,7 @@ from datetime import datetime, timedelta
 from freezegun import freeze_time
 
 from odoo.exceptions import UserError
-from odoo.tests import tagged
-from odoo.tests.common import Form
+from odoo.tests import Form, tagged
 
 from .common import ResProjectCommon
 

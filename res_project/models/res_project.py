@@ -12,20 +12,14 @@ class ResProject(models.Model):
 
     name = fields.Char(
         required=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     code = fields.Char(
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     parent_project_id = fields.Many2one(
         comodel_name="res.project",
         string="Parent",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     parent_project_name = fields.Char(
@@ -47,9 +41,7 @@ class ResProject(models.Model):
         help="If the active field is set to False, "
         "it will allow you to hide the project without removing it.",
     )
-    description = fields.Html(
-        readonly=True, copy=False, states={"draft": [("readonly", False)]}
-    )
+    description = fields.Html(copy=False)
     company_id = fields.Many2one(
         comodel_name="res.company",
         string="Company",
@@ -62,34 +54,25 @@ class ResProject(models.Model):
         string="Currency",
         required=True,
         related="company_id.currency_id",
-        states={"done": [("readonly", True)]},
     )
     project_manager_id = fields.Many2one(
         comodel_name="hr.employee",
         string="Project Manager",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     date_from = fields.Date(
         required=True,
         string="Project Start",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     date_to = fields.Date(
         required=True,
         string="Project End",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         tracking=True,
     )
     department_id = fields.Many2one(
         comodel_name="hr.department",
-        readonly=True,
         required=True,
-        states={"draft": [("readonly", False)]},
     )
     member_ids = fields.Many2many(
         comodel_name="hr.employee.public",
@@ -97,8 +80,6 @@ class ResProject(models.Model):
         column1="project_id",
         column2="employee_id",
         string="Member",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     plan_amount = fields.Monetary(
         compute="_compute_plan_amount",
@@ -124,6 +105,7 @@ class ResProject(models.Model):
         tracking=True,
         default="draft",
     )
+    amount = fields.Monetary()
 
     _sql_constraints = [("unique_name", "UNIQUE(name)", "name must be unique")]
 
