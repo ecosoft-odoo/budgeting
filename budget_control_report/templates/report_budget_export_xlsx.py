@@ -275,7 +275,7 @@ class BudgetReportExportXslx(models.AbstractModel):
             total_estimated_amount,
         )
 
-    def _get_render_space(self, result, obj):
+    def _get_render_space(self, result, budget_moves):
         # Find analytic tag dimension
         AnalyticTag = self.env["account.analytic.tag"]
         budget_type = AnalyticTag.browse(result["x_dimension_budget_type"])
@@ -284,38 +284,43 @@ class BudgetReportExportXslx(models.AbstractModel):
         analytic_budget_period = BudgetPeriod.browse(
             result["analytic_budget_period_id"]
         )
-        dom_budget_move = self._get_domain_budget_move(obj)
-        pr_budget_move = self.env["purchase.request.budget.move"].search(
-            dom_budget_move
-        )
+        # pr_budget_move = self.env["purchase.request.budget.move"].search(
+        #     dom_budget_move
+        # )
+        pr_budget_move = budget_moves["pr_budget_move"]
         pr_budget_move = self._filter_commitment(pr_budget_move, result)
         pr_commit = sum(pr_budget_move.mapped("debit")) - sum(
             pr_budget_move.mapped("credit")
         )
 
-        po_budget_move = self.env["purchase.budget.move"].search(dom_budget_move)
+        # po_budget_move = self.env["purchase.budget.move"].search(dom_budget_move)
+        po_budget_move = budget_moves["po_budget_move"]
         po_budget_move = self._filter_commitment(po_budget_move, result)
         po_commit = sum(po_budget_move.mapped("debit")) - sum(
             po_budget_move.mapped("credit")
         )
-        ct_budget_move = self.env["contract.budget.move"].search(dom_budget_move)
+        # ct_budget_move = self.env["contract.budget.move"].search(dom_budget_move)
+        ct_budget_move = budget_moves["ct_budget_move"]
         ct_budget_move = self._filter_commitment(ct_budget_move, result)
         ct_commit = sum(ct_budget_move.mapped("debit")) - sum(
             ct_budget_move.mapped("credit")
         )
-        av_budget_move = self.env["advance.budget.move"].search(dom_budget_move)
+        # av_budget_move = self.env["advance.budget.move"].search(dom_budget_move)
+        av_budget_move = budget_moves["av_budget_move"]
         av_budget_move = self._filter_commitment(av_budget_move, result)
         av_commit = sum(av_budget_move.mapped("debit")) - sum(
             av_budget_move.mapped("credit")
         )
 
-        ex_budget_move = self.env["expense.budget.move"].search(dom_budget_move)
+        # ex_budget_move = self.env["expense.budget.move"].search(dom_budget_move)
+        ex_budget_move = budget_moves["ex_budget_move"]
         ex_budget_move = self._filter_commitment(ex_budget_move, result)
         ex_commit = sum(ex_budget_move.mapped("debit")) - sum(
             ex_budget_move.mapped("credit")
         )
 
-        actual_budget_move = self.env["account.budget.move"].search(dom_budget_move)
+        # actual_budget_move = self.env["account.budget.move"].search(dom_budget_move)
+        actual_budget_move = budget_moves["actual_budget_move"]
         actual_budget_move = self._filter_commitment(actual_budget_move, result)
         actual_commit = sum(actual_budget_move.mapped("debit")) - sum(
             actual_budget_move.mapped("credit")
@@ -326,6 +331,7 @@ class BudgetReportExportXslx(models.AbstractModel):
         )
         total_available = result["released_amount"] - total_amount
 
+        # NOTE: Move it out of loop for performance
         analytic_account_id = self.env["account.analytic.account"].browse(
             result["analytic_id"]
         )
@@ -390,13 +396,32 @@ class BudgetReportExportXslx(models.AbstractModel):
             default_format=FORMATS["format_theader_blue_center"],
         )
         ws.freeze_panes(row_pos, 0)
+        dom_budget_move = self._get_domain_budget_move(obj)
+        pr_budget_move = self.env["purchase.request.budget.move"].search(
+            dom_budget_move
+        )
+        po_budget_move = self.env["purchase.budget.move"].search(dom_budget_move)
+        ct_budget_move = self.env["contract.budget.move"].search(dom_budget_move)
+        av_budget_move = self.env["advance.budget.move"].search(dom_budget_move)
+        ex_budget_move = self.env["expense.budget.move"].search(dom_budget_move)
+        actual_budget_move = self.env["account.budget.move"].search(dom_budget_move)
+
+        budget_moves = {
+            "pr_budget_move": pr_budget_move,
+            "po_budget_move": po_budget_move,
+            "ct_budget_move": ct_budget_move,
+            "av_budget_move": av_budget_move,
+            "ex_budget_move": ex_budget_move,
+            "actual_budget_move": actual_budget_move,
+        }
+
         for result in results:
             row_pos = self._write_line(
                 ws,
                 row_pos,
                 ws_params,
                 col_specs_section="data",
-                render_space=self._get_render_space(result, obj),
+                render_space=self._get_render_space(result, budget_moves),
                 default_format=FORMATS["format_tcell_left"],
             )
         return row_pos
