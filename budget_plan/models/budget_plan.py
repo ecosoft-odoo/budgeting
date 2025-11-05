@@ -259,6 +259,11 @@ class BudgetPlanLine(models.Model):
     active_status = fields.Boolean(
         default=True, help="Activate/Deactivate when create/Update Budget Control"
     )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        related="plan_id.company_id",
+        store=True,
+    )
 
     def _domain_budget_control(self):
         self.ensure_one()

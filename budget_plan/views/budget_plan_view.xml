@@ -10,7 +10,19 @@
                 <field name="date_to" invisible="True" />
                 <field
                     name="analytic_account_id"
-                    domain="['&amp;', '|', ('bm_date_to', '=', False), ('bm_date_to', '&gt;=', date_from), '|', ('bm_date_from', '=', False), ('bm_date_from', '&lt;=', date_to)]"
+                    domain="[
+                        '&amp;',
+                        '|',
+                        ('budget_company_ids', 'in', [company_id]),
+                        ('budget_company_ids', '=', False),
+                        '&amp;',
+                        '|',
+                        ('bm_date_to', '=', False),
+                        ('bm_date_to', '&gt;=', date_from),
+                        '|',
+                        ('bm_date_from', '=', False),
+                        ('bm_date_from', '&lt;=', date_to)
+                    ]"
                     options="{'no_create': True, 'no_open': True}"
                 />
                 <field
@@ -23,6 +35,7 @@
                 <field name="amount" sum="Total Amount" />
                 <field name="amount_consumed" sum="Total Consumed" />
                 <field name="active_status" optional="show" widget="boolean_toggle" />
+                <field name="company_id" invisible="1" />
             </tree>
         </field>
     </record>
