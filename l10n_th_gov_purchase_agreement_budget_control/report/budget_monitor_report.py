@@ -11,7 +11,7 @@ class BudgetMonitorReport(models.Model):
         return super()._get_consumed_sources() + [
             {
                 "model": ("purchase.order.line", "Purchase Line"),
-                "type": ("7_agreement_commit", "Agreement Commit"),
+                "type": ("70_agreement_commit", "Agreement Commit"),
                 "budget_move": ("purchase_budget_move", "purchase_line_id"),
                 "source_doc": ("purchase_order", "purchase_id"),
             }
@@ -25,7 +25,7 @@ class BudgetMonitorReport(models.Model):
         return where_purchase
 
     def _get_sql(self):
-        type_commit = "7_agreement_commit"
+        type_commit = "70_agreement_commit"
         select_po_query = self._select_statement(type_commit)
         key_select_list = sorted(select_po_query.keys())
         select_po = ", ".join(select_po_query[x] for x in key_select_list)
