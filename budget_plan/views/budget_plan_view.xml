@@ -13,7 +13,7 @@
                     domain="[
                         '&amp;',
                         '|',
-                        ('budget_company_ids', 'in', [company_id]),
+                        ('budget_company_ids', 'in', company_ids),
                         ('budget_company_ids', '=', False),
                         '&amp;',
                         '|',
@@ -35,7 +35,13 @@
                 <field name="amount" sum="Total Amount" />
                 <field name="amount_consumed" sum="Total Consumed" />
                 <field name="active_status" optional="show" widget="boolean_toggle" />
-                <field name="company_id" invisible="1" />
+                <!-- <field name="company_id" invisible="1" /> -->
+                <field
+                    name="company_ids"
+                    widget="many2many_tags"
+                    groups="base.group_multi_company"
+                    readonly="1"
+                />
             </tree>
         </field>
     </record>
@@ -116,6 +122,12 @@
                 <field name="name" />
                 <field name="budget_period_id" />
                 <field name="total_amount" />
+                <field
+                    name="company_ids"
+                    groups="base.group_multi_company"
+                    optional="show"
+                    widget="many2many_tags"
+                />
                 <field name="currency_id" optional="hide" />
                 <field
                     name="state"
@@ -209,8 +221,11 @@
                         </group>
                         <group name="budget_plan_right">
                             <field name="active" invisible="1" />
+
                             <field
-                                name="company_id"
+                                name="company_ids"
+                                widget="many2many_tags"
+                                attrs="{'readonly': [('state', '!=', 'draft')]}"
                                 groups="base.group_multi_company"
                             />
                             <field
