@@ -131,6 +131,9 @@ class BudgetPlan(models.Model):
                     ("bm_date_from", "<=", rec.date_to),
                     ("bm_date_to", ">=", rec.date_from),
                     ("id", "not in", plan_analytic.ids),
+                    "|",
+                    ("budget_company_ids", "=", False),
+                    ("budget_company_ids", "in", rec.company_ids.ids),
                 ]
             )
             lines = []
