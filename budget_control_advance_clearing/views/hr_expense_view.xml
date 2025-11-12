@@ -53,6 +53,7 @@
                     <field name="advance_budget_move_ids" readonly="1">
                         <tree>
                             <field name="expense_id" optional="show" />
+                            <field name="clearing_id" optional="show" />
                             <field name="move_id" />
                             <field name="date" />
                             <field name="analytic_group" optional="show" />
