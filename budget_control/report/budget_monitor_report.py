@@ -170,7 +170,17 @@ class BudgetMonitorReport(models.Model):
         """
 
     def _where_budget(self):
-        return "where b.active = true"
+        visible_company = self.env.context.get("allowed_company_ids")
+        if not visible_company:
+            return "where b.active = true"
+
+        if len(visible_company) > 1:
+            companies = tuple(visible_company)
+        else:
+            companies = "({})".format(tuple(visible_company)[0])
+        return "where b.active = true and (c.company_id in {} or c.company_id is null)".format(
+            companies
+        )
 
     def _groupby_budget(self):
         return """
@@ -193,7 +203,15 @@ class BudgetMonitorReport(models.Model):
         return self._get_from_amount_types()[amount_type]
 
     def _where_actual(self):
-        return ""
+        visible_company = self.env.context.get("allowed_company_ids")
+        if not visible_company:
+            return ""
+
+        if len(visible_company) > 1:
+            companies = tuple(visible_company)
+        else:
+            companies = "({})".format(tuple(visible_company)[0])
+        return "where a.company_id in {}".format(companies)
 
     def _get_sql(self):
         select_budget_query = self._select_budget()
