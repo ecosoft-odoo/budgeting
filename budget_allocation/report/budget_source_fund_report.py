@@ -169,7 +169,10 @@ class SourceFundMonitorReport(models.Model):
         """
 
     def _where_budget(self):
-        return "where sf.active is true and ba.active is true and bc.active is true"
+        return (
+            "where sf.active is true and ba.active is true and bc.active is true "
+            "and ba.budget_period_id = bp.id"
+        )
 
     def _select_statement(self, amount_type):
         return self._get_select_amount_types()[amount_type]
