@@ -98,7 +98,7 @@ class TestPaymentMultiDeductionBudget(TestBudgetPlanDetail):
             }
         )
         payment = wizard._create_payments()
-        self.assertEqual(payment.state, "paid")
+        self.assertEqual(payment.state, "in_process")
 
         writeoff = payment.move_id.line_ids.filtered(lambda line: line.is_writeoff)
         self.assertEqual(len(writeoff), 1)
@@ -161,7 +161,7 @@ class TestPaymentMultiDeductionBudget(TestBudgetPlanDetail):
             )
 
         payment = wizard._create_payments()
-        self.assertEqual(payment.state, "paid")
+        self.assertEqual(payment.state, "in_process")
 
         writeoff = payment.move_id.line_ids.filtered(lambda line: line.is_writeoff)
         self.assertEqual(len(writeoff), 2)
