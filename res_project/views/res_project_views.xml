@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_res_project_list" model="ir.ui.view">
+        <field name="name">res.project.list</field>
+        <field name="model">res.project</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code" optional="show" />
+                <field name="name" />
+                <field name="department_id" />
+                <field name="parent_project_name" optional="show" />
+                <field name="project_manager_id" optional="show" />
+                <field name="date_from" />
+                <field name="date_to" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'confirm'"
+                    decoration-danger="state == 'close'"
+                />
+            </list>
+        </field>
+    </record>
+    <record id="view_res_project_form" model="ir.ui.view">
+        <field name="name">res.project.form</field>
+        <field name="model">res.project</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="Confirm"
+                        class="oe_highlight"
+                        invisible="state != 'draft'"
+                        groups="res_project.group_res_project_manager"
+                    />
+                    <button
+                        name="action_close_project"
+                        type="object"
+                        string="Close"
+                        class="oe_highlight"
+                        invisible="state != 'confirm'"
+                        confirm="This action will close Project. Are you sure to continue?"
+                        groups="res_project.group_res_project_manager"
+                    />
+                    <button
+                        name="action_draft"
+                        type="object"
+                        string="Reset to Draft"
+                        invisible="state not in ('confirm', 'cancel')"
+                        groups="res_project.group_res_project_manager"
+                    />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="Cancel"
+                        invisible="state not in ('draft', 'confirm')"
+                        confirm="This action will cancel Project. Are you sure to continue?"
+                        groups="res_project.group_res_project_manager"
+                    />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="bg-danger"
+                        invisible="active"
+                    />
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" />
+                        <h1>
+                            <field name="name" readonly="state != 'draft'" />
+                        </h1>
+                    </div>
+                    <group name="main_project">
+                        <field name="active" invisible="1" />
+                        <group name="main_left_project">
+                            <field name="code" readonly="1" />
+                            <field
+                                name="parent_project_id"
+                                string="Parent Project"
+                                readonly="1"
+                                invisible="state != 'draft'"
+                            />
+                            <field
+                                name="parent_project_name"
+                                readonly="1"
+                                invisible="state == 'draft'"
+                            />
+                            <field
+                                name="project_manager_id"
+                                readonly="state != 'draft'"
+                            />
+                            <field name="department_id" readonly="state != 'draft'" />
+                        </group>
+                        <group name="main_right_project">
+                            <field name="date_from" readonly="state != 'draft'" />
+                            <field name="date_to" readonly="state != 'draft'" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                            <field
+                                name="currency_id"
+                                groups="base.group_multi_currency"
+                                readonly="state == 'done'"
+                            />
+                            <field name="plan_amount" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="members" string="Members">
+                            <field
+                                name="member_ids"
+                                nolabel="1"
+                                readonly="state != 'draft'"
+                            />
+                        </page>
+                        <page name="project_plan" string="Plan">
+                            <field name="project_plan_ids">
+                                <list editable="bottom">
+                                    <field name="date_from" />
+                                    <field name="date_to" />
+                                    <field name="amount" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                    <group name="description" string="Description">
+                        <field
+                            name="description"
+                            nolabel="1"
+                            readonly="state != 'draft'"
+                        />
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+    <record id="view_res_project_filter" model="ir.ui.view">
+        <field name="name">res.project.select</field>
+        <field name="model">res.project</field>
+        <field name="arch" type="xml">
+            <search string="Search Project">
+                <field
+                    name="name"
+                    string="Project"
+                    filter_domain="['|', ('name', 'ilike', self), ('code', 'ilike', self)]"
+                />
+                <field name="parent_project_name" string="Parent Project" />
+                <field name="project_manager_id" string="Project Manager" />
+                <separator name="filter_state" />
+                <filter
+                    name="state_draft"
+                    string="Draft"
+                    domain="[('state', '=', 'draft')]"
+                />
+                <filter
+                    name="state_confirm"
+                    string="Confirmed"
+                    domain="[('state', '=', 'confirm')]"
+                />
+                <filter
+                    name="state_close"
+                    string="Closed"
+                    domain="[('state', '=', 'close')]"
+                />
+                <filter
+                    name="state_cancel"
+                    string="Cancelled"
+                    domain="[('state', '=', 'cancel')]"
+                />
+                <separator name="filter_date" />
+                <filter name="date_from" date="date_from" />
+                <filter name="date_to" date="date_to" />
+                <separator name="filter_parent" />
+                <filter
+                    name="parent_project"
+                    string="Parent Project"
+                    domain="['&amp;', ('parent_project_id', '=', False), '|', ('active', '=', False), ('active', '!=', False)]"
+                />
+                <separator name="filter_other" />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+                <group expand="0" string="Group By">
+                    <filter
+                        name="project_manager"
+                        string="Project Manager"
+                        context="{'group_by': 'project_manager_id'}"
+                    />
+                    <filter
+                        name="parent_project_name"
+                        string="Parent Project"
+                        context="{'group_by': 'parent_project_name'}"
+                    />
+                    <filter
+                        name="department"
+                        string="Department"
+                        context="{'group_by': 'department_id'}"
+                    />
+                    <filter
+                        name="state"
+                        string="Status"
+                        context="{'group_by': 'state'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="open_view_res_project_all" model="ir.actions.act_window">
+        <field name="name">Projects</field>
+        <field name="res_model">res.project</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_res_project_filter" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No projects found. Let's create one!
+            </p>
+        </field>
+    </record>
+    <record id="action_confirm_project" model="ir.actions.server">
+        <field name="name">Confirm Project</field>
+        <field name="model_id" ref="res_project.model_res_project" />
+        <field name="binding_model_id" ref="res_project.model_res_project" />
+        <field name="state">code</field>
+        <field name="binding_view_types">list</field>
+        <field
+            name="groups_id"
+            eval="[(4, ref('res_project.group_res_project_manager'))]"
+        />
+        <field name="code">records.action_confirm()</field>
+    </record>
+    <menuitem
+        action="open_view_res_project_all"
+        id="menu_res_project"
+        name="Projects"
+        parent="menu_main_res_project"
+        sequence="1"
+    />
+</odoo>
