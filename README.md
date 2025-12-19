@@ -22,7 +22,7 @@ Available addons
 addon | version | maintainers | summary
 --- | --- | --- | ---
 [account_payment_multi_deduction_activity](account_payment_multi_deduction_activity/) | 18.0.1.0.0 | [![ps-tubtim](https://github.com/ps-tubtim.png?size=30px)](https://github.com/ps-tubtim) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Payment Register Diff - Activity
-[account_payment_multi_deduction_budget_plan_detail](account_payment_multi_deduction_budget_plan_detail/) | 18.0.1.0.2 | [![ps-tubtim](https://github.com/ps-tubtim.png?size=30px)](https://github.com/ps-tubtim) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Payment Register Diff - Budget Plan Detail
+[account_payment_multi_deduction_budget_plan_detail](account_payment_multi_deduction_budget_plan_detail/) | 18.0.1.0.3 | [![ps-tubtim](https://github.com/ps-tubtim.png?size=30px)](https://github.com/ps-tubtim) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Payment Register Diff - Budget Plan Detail
 [base_tier_validation_check_budget](base_tier_validation_check_budget/) | 18.0.1.0.0 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Add option to check budget when a tier is validated
 [budget_activity](budget_activity/) | 18.0.1.0.1 | [![kittiu](https://github.com/kittiu.png?size=30px)](https://github.com/kittiu) [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Activity
 [budget_activity_advance_clearing](budget_activity_advance_clearing/) | 18.0.1.0.1 | [![Saran440](https://github.com/Saran440.png?size=30px)](https://github.com/Saran440) | Budget Activity - Advance/Clearing
