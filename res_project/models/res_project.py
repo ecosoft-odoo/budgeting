@@ -159,7 +159,7 @@ class ResProject(models.Model):
         for project in self:
             name = project.name
             if project.code:
-                name = "[{}] {}".format(project.code, name)
+                name = f"[{project.code}] {name}"
             res.append((project.id, name))
         return res
 
