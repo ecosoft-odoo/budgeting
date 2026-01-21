@@ -395,7 +395,7 @@ class BudgetControl(models.Model):
         return self.write({"state": "cancel"})
 
     def _domain_template_line(self):
-        return [("id", "in", self.template_line_ids.ids)]
+        return [("id", "in", self.template_id.line_ids.ids)]
 
     def _get_dict_budget_lines(self, date_range, template_line):
         return {
@@ -440,13 +440,12 @@ class BudgetControl(models.Model):
                 for date_range in date_ranges  # Loop1
                 for template_line in template_lines  # Loop2
             ]
+            # Delete the existing budget lines
+            bc.mapped("line_ids").unlink()
 
-        # Delete the existing budget lines
-        self.mapped("line_ids").unlink()
-
-        # Create the new budget lines and Reset the carry over budget
-        self.write({"init_budget_commit": False})
-        self.env["budget.control.line"].create(items)
+            # Create the new budget lines and Reset the carry over budget
+            self.write({"init_budget_commit": False})
+            self.env["budget.control.line"].create(items)
 
     def _get_domain_budget_monitoring(self):
         return [("analytic_account_id", "=", self.analytic_account_id.id)]
