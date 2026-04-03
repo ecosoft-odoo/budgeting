@@ -123,6 +123,7 @@ class BudgetDoclineMixinBase(models.AbstractModel):
         "cancel",
         "rejected",
     ]  # Never set date commit states
+    _budget_currency_date_field = False  # data_commit
 
 
 class BudgetDoclineMixin(models.AbstractModel):
@@ -297,6 +298,45 @@ class BudgetDoclineMixin(models.AbstractModel):
             amount_currency, company.currency_id, company, date_commit
         )
 
+    def _get_budget_currency_date_value(self, field_name):
+        values = self.mapped(field_name)
+        if not values:
+            return False
+        date_commit = values[0]
+        if isinstance(date_commit, datetime):
+            return fields.Datetime.context_timestamp(self, date_commit)
+        return date_commit
+
+    def _get_budget_currency_date(self):
+        """Return the date used for currency conversion.
+
+        If _budget_currency_date_field is configured, use that field.
+        Otherwise fall back to date_commit.
+        """
+        if self._budget_currency_date_field:
+            currency_date = self._get_budget_currency_date_value(
+                self._budget_currency_date_field
+            )
+            if currency_date:
+                return currency_date
+        return getattr(self, "date_commit", False)
+
+    def _get_origin_record(self, field, budget_vals):
+        comodel = field.comodel_name
+        inverse_name = field.inverse_name
+
+        if not (comodel and inverse_name):
+            return False
+
+        inverse_field = self.env[comodel]._fields.get(inverse_name)
+        if not inverse_field:
+            return False
+
+        target_model = inverse_field.comodel_name
+        origin_id = budget_vals.get(inverse_name)
+
+        return self.env[target_model].browse(origin_id).exists() if origin_id else False
+
     def _update_budget_commitment(self, budget_vals, reverse=False):
         self.ensure_one()
         company = self.env.user.company_id
@@ -306,6 +346,25 @@ class BudgetDoclineMixin(models.AbstractModel):
         if not analytic_account:
             analytic_account = self[self._budget_analytic_field]
         budget_moves = self[self._budget_field()]
+        field_name = self._budget_field()
+        field = self._fields.get(field_name)
+        currency_date = self._get_budget_currency_date()
+
+        if field and field.type == "one2many":
+            origin = self._get_origin_record(field, budget_vals)
+
+            if origin:
+                if self._budget_currency_date_field:
+                    origin_currency_date = origin.mapped(
+                        self._budget_currency_date_field
+                    )
+                    if origin_currency_date:
+                        currency_date = origin_currency_date[0]
+                    elif "date_commit" in origin._fields:
+                        currency_date = origin.date_commit
+                elif "date_commit" in origin._fields:
+                    currency_date = origin.date_commit
+
         date_commit = budget_vals.get(
             "date",
             max(budget_moves.mapped("date")) if budget_moves else self.date_commit,
@@ -319,7 +378,10 @@ class BudgetDoclineMixin(models.AbstractModel):
             and currency != company.currency_id
         ):
             amount = self._get_amount_convert_currency(
-                budget_vals["amount_currency"], currency, company, date_commit or today
+                budget_vals["amount_currency"],
+                currency,
+                company,
+                currency_date or today,
             )
 
         # NOTE: This is to handle the case of budget revenue.
