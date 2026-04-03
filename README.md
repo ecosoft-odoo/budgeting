@@ -1,4 +1,5 @@
 
+<<<<<<< before updating
 [![Runboat](https://img.shields.io/badge/runboat-Try%20me-875A7B.png)](https://runboat.odoo-community.org/builds?repo=OCA/account-analytic&target_branch=15.0)
 [![Pre-commit Status](https://github.com/OCA/account-analytic/actions/workflows/pre-commit.yml/badge.svg?branch=15.0)](https://github.com/OCA/account-analytic/actions/workflows/pre-commit.yml?query=branch%3A15.0)
 [![Build Status](https://github.com/OCA/account-analytic/actions/workflows/test.yml/badge.svg?branch=15.0)](https://github.com/OCA/account-analytic/actions/workflows/test.yml?query=branch%3A15.0)
@@ -10,6 +11,20 @@
 # Budgeting
 
 This repository will be a module for extending the main budgeting.
+=======
+[![Support the OCA](https://odoo-community.org/readme-banner-image)](https://odoo-community.org/get-involved?utm_source=repo-readme)
+
+# budgeting
+[![Runboat](https://img.shields.io/badge/runboat-Try%20me-875A7B.png)](https://runboat.odoo-community.org/builds?repo=OCA/budgeting&target_branch=15.0)
+[![Pre-commit Status](https://github.com/OCA/budgeting/actions/workflows/pre-commit.yml/badge.svg?branch=15.0)](https://github.com/OCA/budgeting/actions/workflows/pre-commit.yml?query=branch%3A15.0)
+[![Build Status](https://github.com/OCA/budgeting/actions/workflows/test.yml/badge.svg?branch=15.0)](https://github.com/OCA/budgeting/actions/workflows/test.yml?query=branch%3A15.0)
+[![codecov](https://codecov.io/gh/OCA/budgeting/branch/15.0/graph/badge.svg)](https://codecov.io/gh/OCA/budgeting)
+[![Translation Status](https://translation.odoo-community.org/widgets/budgeting-15-0/-/svg-badge.svg)](https://translation.odoo-community.org/engage/budgeting-15-0/?utm_source=widget)
+
+<!-- /!\ do not modify above this line -->
+
+TODO: add repo description.
+>>>>>>> after updating
 
 <!-- /!\ do not modify below this line -->
 
