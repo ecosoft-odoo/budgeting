@@ -20,6 +20,7 @@ class RequestDocument(models.Model):
             request_line._name == "hr.expense"
             and budget_move
             and request_line[request_line._doc_rel].state in ["approve", "post", "done"]
+            or self.env.context.get("check_budget_precommit", False)
         ):
             self.close_budget_move()
         return res

@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control on Expense extension on Advance/Clearing",
-    "version": "15.0.1.0.1",
+    "version": "15.0.1.0.2",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",

@@ -137,8 +137,10 @@ class HRExpense(models.Model):
                 advance = reconcile.debit_move_id.expense_id
                 amount_return = reconcile.debit_amount_currency
                 # Credit side (Return Advance)
-                return_ml = reconcile.credit_move_id
-                if advance:
+                return_ml = reconcile.credit_move_id.filtered(
+                    lambda line: line.payment_id
+                )
+                if advance and return_ml:
                     advance.commit_budget(
                         reverse=True,
                         amount_currency=amount_return,
