@@ -27,7 +27,7 @@ class PurchaseRequestLineMakePurchaseOrder(models.TransientModel):
         fy_dates = item.line_id.company_id.compute_fiscalyear_dates(
             fields.Date.context_today(self)
         )
-        if item.line_id.date_commit > fy_dates["date_to"]:
+        if item.line_id.date_commit and item.line_id.date_commit > fy_dates["date_to"]:
             vals["date_commit"] = item.line_id.date_commit
         return vals
 
