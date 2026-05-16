@@ -78,10 +78,10 @@ class AccountPaymentRegister(models.TransientModel):
             )
         return payment_vals
 
-    def _update_vals_deduction(self, move_lines):
+    def _update_vals_deduction(self, moves):
         """For case `Mark as fully paid`, Default analytic_tags and fund"""
-        res = super()._update_vals_deduction(move_lines)
-
+        res = super()._update_vals_deduction(moves)
+        move_lines = moves.mapped("line_ids")
         self.writeoff_fund_all = move_lines.mapped("fund_all")
         self.writeoff_analytic_tag_all = move_lines.mapped("analytic_tag_all")
         return res

@@ -60,23 +60,23 @@ class TestBudgetControlRequest(get_budget_common_class()):
             {"amount": 300}
         )
 
-        # Import tester module for request document
-        cls.loader = FakeModelLoader(cls.env, cls.__module__)
-        cls.loader.backup_registry()
-
-        from odoo.addons.request_document.tests.request_document_tester import (
-            RequestDocument,
-        )
-
-        cls.loader.update_registry((RequestDocument,))
-
         cls.request_obj = cls.env["request.order"]
         cls.move_model = cls.env["account.move"]
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.loader.restore_registry()
-        super().tearDownClass()
+    def setUp(self):
+        super().setUp()
+        self.loader = FakeModelLoader(self.env, self.__module__)
+        self.loader.backup_registry()
+
+        from odoo.addons.request_document.tests.request_document_tester import (
+            RequestDocument as BaseRequestDocument,
+        )
+
+        self.loader.update_registry((BaseRequestDocument,))
+
+    def tearDown(self):
+        self.loader.restore_registry()
+        super().tearDown()
 
     def test_01_budget_request_type_not_implemented(self):
         """
@@ -109,7 +109,6 @@ class TestBudgetControlRequest(get_budget_common_class()):
         self.assertTrue(self.budget_period.request_document)
         self.assertAlmostEqual(self.budget_control.amount_budget, 2400.0)
 
-        # Import tester module for request document
         from .request_document_tester import (
             AccountMove,
             BudgetDoclineMixin,
@@ -177,7 +176,6 @@ class TestBudgetControlRequest(get_budget_common_class()):
         self.assertTrue(self.budget_period.request_document)
         self.assertAlmostEqual(self.budget_control.amount_budget, 2400.0)
 
-        # Import tester module for request document
         from .request_document_tester import (
             AccountMove,
             BudgetDoclineMixin,
