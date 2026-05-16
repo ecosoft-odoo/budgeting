@@ -23,6 +23,7 @@ from . import budget_commit_forward
 from . import budget_balance_forward
 
 # Account Module
+from . import account_account
 from . import account_journal
 from . import account_budget_move
 from . import account_move
