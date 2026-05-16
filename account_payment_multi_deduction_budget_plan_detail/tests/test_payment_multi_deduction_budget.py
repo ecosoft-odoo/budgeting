@@ -79,7 +79,7 @@ class TestPaymentMultiDeductionBudget(TestBudgetPlanDetail):
 
         self.assertFalse(wizard.writeoff_analytic_tag_all)
         self.assertFalse(wizard.writeoff_fund_all)
-        wizard._update_vals_deduction(bill1.line_ids)
+        wizard._update_vals_deduction(bill1)
         self.assertEqual(len(wizard.writeoff_analytic_tag_all), 2)
         self.assertEqual(len(wizard.writeoff_fund_all), 2)
 
@@ -98,7 +98,7 @@ class TestPaymentMultiDeductionBudget(TestBudgetPlanDetail):
             }
         )
         payment = wizard._create_payments()
-        self.assertEqual(payment.state, "in_process")
+        self.assertEqual(payment.state, "paid")
 
         writeoff = payment.move_id.line_ids.filtered(lambda line: line.is_writeoff)
         self.assertEqual(len(writeoff), 1)
@@ -161,7 +161,7 @@ class TestPaymentMultiDeductionBudget(TestBudgetPlanDetail):
             )
 
         payment = wizard._create_payments()
-        self.assertEqual(payment.state, "in_process")
+        self.assertEqual(payment.state, "paid")
 
         writeoff = payment.move_id.line_ids.filtered(lambda line: line.is_writeoff)
         self.assertEqual(len(writeoff), 2)
