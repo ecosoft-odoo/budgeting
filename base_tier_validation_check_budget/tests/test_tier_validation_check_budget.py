@@ -8,12 +8,11 @@ from odoo.addons.base_tier_validation.tests.common import CommonTierValidation
 
 @tagged("post_install", "-at_install")
 class TierTierValidationCheckBudget(CommonTierValidation):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUp(self):
+        super().setUp()
         from .tier_validation_tester import TierValidationTester
 
-        cls.loader.update_registry((TierValidationTester,))
+        self.loader.update_registry((TierValidationTester,))
 
     def test_01_request_validation_check_budget_no_budget(self):
         self.tier_definition.check_budget = True
