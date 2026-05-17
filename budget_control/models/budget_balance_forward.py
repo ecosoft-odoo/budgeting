@@ -53,6 +53,14 @@ class BudgetBalanceForward(models.Model):
         compute="_compute_missing_analytic",
         help="Not all forward lines has been assigned with carry forward analytic",
     )
+    company_ids = fields.Many2many(
+        comodel_name="res.company",
+        relation="budget_balance_forward_company_rel",
+        column1="forward_id",
+        column2="company_id",
+        string="Companies",
+        help="Restrict to specific companies. Empty = all companies.",
+    )
     _sql_constraints = [
         ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
     ]
@@ -87,8 +95,18 @@ class BudgetBalanceForward(models.Model):
             WHERE fw.state in ('review', 'done')
                 AND fw.id != %s
                 AND fw.from_budget_period_id = %s
+                AND (
+                    NOT EXISTS (
+                        SELECT 1 FROM budget_balance_forward_company_rel r
+                        WHERE r.forward_id = fw.id
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM budget_balance_forward_company_rel r
+                        WHERE r.forward_id = fw.id AND r.company_id = %s
+                    )
+                )
         """
-        params = (self.id, self.from_budget_period_id.id)
+        params = (self.id, self.from_budget_period_id.id, self.env.company.id)
         self.env.cr.execute(query, params)
         return self.env.cr.dictfetchall()
 
@@ -102,9 +120,10 @@ class BudgetBalanceForward(models.Model):
         )
         # Analyic Account from budget control sheet of the previous year
         BudgetControl = self.env["budget.control"]
-        budget_controls = BudgetControl.search(
-            [("budget_period_id", "=", self.from_budget_period_id.id)]
-        )
+        bc_domain = [("budget_period_id", "=", self.from_budget_period_id.id)]
+        if self.company_ids:
+            bc_domain += [("company_ids", "in", self.company_ids.ids)]
+        budget_controls = BudgetControl.search(bc_domain)
         analytics = budget_controls.mapped("analytic_account_id")
         # Find document forward balance is used. it should skip it.
         query_analytic = self._get_other_forward()

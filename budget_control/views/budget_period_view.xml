@@ -36,6 +36,9 @@
                             <field name="plan_date_range_type_id" />
                         </group>
                     </group>
+                    <group>
+                        <field name="company_ids" widget="many2many_tags" />
+                    </group>
                     <group string="Budget Control">
                         <group name="budget_period_control">
                             <field name="control_budget" widget="boolean_toggle" />

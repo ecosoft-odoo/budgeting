@@ -120,6 +120,13 @@
                             />
                         </group>
                     </group>
+                    <group>
+                        <field
+                            name="company_ids"
+                            widget="many2many_tags"
+                            readonly="state != 'draft'"
+                        />
+                    </group>
                     <notebook>
                         <page name="analytic" string="Analytic Accounts">
                             <field

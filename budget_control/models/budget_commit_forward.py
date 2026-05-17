@@ -52,6 +52,14 @@ class BudgetCommitForward(models.Model):
         compute="_compute_missing_analytic",
         help="Not all forward lines has been assigned with carry forward analytic",
     )
+    company_ids = fields.Many2many(
+        comodel_name="res.company",
+        relation="budget_commit_forward_company_rel",
+        column1="forward_id",
+        column2="company_id",
+        string="Companies",
+        help="Restrict to specific companies. Empty = all companies.",
+    )
     _sql_constraints = [
         ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
     ]
@@ -279,15 +287,15 @@ class BudgetCommitForward(models.Model):
             return
 
         # Check if there are existing "done" forward commits in the same period
+        exist_domain = [
+            ("to_budget_period_id", "=", self.to_budget_period_id.id),
+            ("state", "=", "done"),
+            ("id", "!=", self.id),
+        ]
+        if self.company_ids:
+            exist_domain += [("company_ids", "in", self.company_ids.ids)]
         forward_exists = (
-            self.env["budget.commit.forward"].search_count(
-                [
-                    ("to_budget_period_id", "=", self.to_budget_period_id.id),
-                    ("state", "=", "done"),
-                    ("id", "!=", self.id),
-                ]
-            )
-            > 0
+            self.env["budget.commit.forward"].search_count(exist_domain) > 0
         )
 
         domain.append(("forward_id.state", "in", ["review", "done"]))
@@ -317,7 +325,11 @@ class BudgetCommitForward(models.Model):
 
     def action_cancel(self):
         """Do not allow cancel document is past period."""
-        forwards = self.env["budget.commit.forward"].search([("state", "=", "done")])
+        cancel_domain = [("state", "=", "done")]
+        company_ids = self.mapped("company_ids").ids
+        if company_ids:
+            cancel_domain += [("company_ids", "in", company_ids)]
+        forwards = self.env["budget.commit.forward"].search(cancel_domain)
         if forwards:
             max_date_commit = max(forwards.mapped("to_date_commit"))
             # Not allow cancel document is past period.
