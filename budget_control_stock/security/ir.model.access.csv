@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_stock_budget_move_user,stock.budget.move user,model_stock_budget_move,budget_control.group_budget_control_user,1,0,0,0
+access_stock_budget_move_manager,stock.budget.move manager,model_stock_budget_move,budget_control.group_budget_control_manager,1,1,1,1
+access_stock_budget_move_account_user,stock.budget.move account user,model_stock_budget_move,account.group_account_user,1,1,1,1
