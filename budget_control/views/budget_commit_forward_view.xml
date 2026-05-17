@@ -122,6 +122,11 @@
                                 name="to_budget_period_id"
                                 readonly="state != 'draft'"
                             />
+                            <field
+                                name="company_ids"
+                                widget="many2many_tags"
+                                readonly="state != 'draft'"
+                            />
                             <label for="name" string="Forward Budget Commitment" />
                             <div name="docs" />
                         </group>

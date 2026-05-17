@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control",
-    "version": "18.0.1.5.4",
+    "version": "18.0.1.6.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
@@ -16,6 +16,8 @@
     "data": [
         "security/analytic_security.xml",
         "security/budget_adjustment_rules.xml",
+        "security/budget_period_rules.xml",
+        "security/budget_forward_rules.xml",
         "security/budget_control_security_groups.xml",
         "security/budget_control_rules.xml",
         "security/budget_plan_rules.xml",

@@ -85,6 +85,13 @@ class TestBudgetControl(get_budget_common_class()):
             {"amount": 300}
         )
 
+        # Multi-Currency
+        cls.other_currency = cls.env.ref("base.EUR")
+        cls.other_currency.active = True
+        cls.company_c = cls.env["res.company"].create(
+            {"name": "Test Company C", "currency_id": cls.other_currency.id}
+        )
+
     def _create_invoice(
         self, inv_type, vendor, invoice_date, analytic_distribution, invoice_lines
     ):
@@ -608,3 +615,460 @@ class TestBudgetControl(get_budget_common_class()):
         bill_skip.action_post()
         self.assertEqual(bill_skip.state, "posted")
         self.assertTrue(bill_skip.budget_move_ids)
+
+    @freeze_time("2001-02-01")
+    def test_20_multicompany_shared_budget_period(self):
+        """
+        1 shared BC (2400) via shared analytic (no company) used by 2 companies.
+        - Company A posts 2000 -> ok, remaining 400
+        - Company A posts 500 -> error (shared budget exhausted)
+        - Company B posts 500 -> error (same shared pool, only 400 left)
+        - Company B posts 300 -> ok, remaining 100 (2400 - 2000 A - 300 B)
+        """
+        company_b = self.company_b
+
+        # Shared analytic (no company_id) ->
+        # budget_company_ids stays empty -> all companies
+        shared_aa = self.Analytic.create(
+            {"name": "CC_Shared_test20", "plan_id": self.aa_plan1.id}
+        )
+
+        # Reuse existing budget_period;
+        # company_ids empty = visible to all companies
+        # Enable control_budget so check_budget() runs on post
+        self.budget_period.write({"control_budget": True})
+
+        # Standard BC creation flow via budget.plan
+        budget_plan = self.create_budget_plan(
+            name="Plan Shared 2001 (test_20)",
+            budget_period=self.budget_period,
+            lines=[
+                Command.create({"analytic_account_id": shared_aa.id, "amount": 2400.0})
+            ],
+        )
+        budget_plan.action_confirm()
+        budget_plan.action_create_update_budget_control()
+        budget_plan.invalidate_recordset()
+        bc_shared = budget_plan.budget_control_ids
+        self.assertEqual(len(bc_shared), 1)
+        bc_shared.template_line_ids = [self.template_line1.id]
+        bc_shared.prepare_budget_control_matrix()
+        # 4 quarters x 1 KPI = 4 lines; set 600 each -> total 2400
+        bc_shared.line_ids.write({"amount": 600})
+        bc_shared.action_submit()
+        bc_shared.action_done()
+
+        # Expense account for company_b (each company needs its own code in Odoo 18)
+        account_kpi1_b = self.Account.create(
+            {
+                "name": "KPI1 Company B (test_20)",
+                "code": "KPI1.B20",
+                "account_type": "expense",
+                "company_ids": [Command.set([company_b.id])],
+            }
+        )
+        self.template_line1.account_ids = [Command.link(account_kpi1_b.id)]
+        # company_b payable + journal reuse from common.py setup
+        journal_b = self.journal_purchase_b
+
+        analytic_dist = {str(shared_aa.id): 100}
+
+        # Step 1: Company A posts 2000 -> ok, remaining = 400
+        bill_a1 = self.Move.create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.vendor.id,
+                "invoice_date": "2001-02-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": self.account_kpi1.id,
+                            "price_unit": 2000,
+                            "analytic_distribution": analytic_dist,
+                        }
+                    )
+                ],
+            }
+        )
+        bill_a1.action_post()
+        self.assertEqual(bill_a1.state, "posted")
+        bc_shared.invalidate_recordset()
+        self.assertAlmostEqual(bc_shared.amount_balance, 400.0)
+
+        # Step 2: Company A posts 500 -> error (only 400 left in shared pool)
+        bill_a2 = self.Move.create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.vendor.id,
+                "invoice_date": "2001-02-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": self.account_kpi1.id,
+                            "price_unit": 500,
+                            "analytic_distribution": analytic_dist,
+                        }
+                    )
+                ],
+            }
+        )
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
+            bill_a2.action_post()
+        bill_a2.button_draft()  # clean up budget moves from failed post
+
+        # Step 3: Company B posts 500 -> error (same shared pool, 400 remaining)
+        bill_b1 = self.Move.with_company(company_b).create(
+            {
+                "move_type": "in_invoice",
+                "journal_id": journal_b.id,
+                "partner_id": self.vendor.id,
+                "invoice_date": "2001-02-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": account_kpi1_b.id,
+                            "price_unit": 500,
+                            "analytic_distribution": analytic_dist,
+                        }
+                    )
+                ],
+            }
+        )
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
+            bill_b1.action_post()
+        bill_b1.button_draft()  # clean up budget moves from failed post
+
+        # Step 4: Company B posts 300 -> ok (300 < 400 remaining), remaining = 100
+        bill_b2 = self.Move.with_company(company_b).create(
+            {
+                "move_type": "in_invoice",
+                "journal_id": journal_b.id,
+                "partner_id": self.vendor.id,
+                "invoice_date": "2001-02-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": account_kpi1_b.id,
+                            "price_unit": 300,
+                            "analytic_distribution": analytic_dist,
+                        }
+                    )
+                ],
+            }
+        )
+        bill_b2.action_post()
+        self.assertEqual(bill_b2.state, "posted")
+        bc_shared.invalidate_recordset()
+        # 2400 - 2000 (Company A) - 300 (Company B) = 100
+        self.assertAlmostEqual(bc_shared.amount_balance, 100.0)
+
+    @freeze_time("2001-02-01")
+    def test_21_multicompany_separate_budget(self):
+        """
+        1 BC per company (analytic_a: 2400, analytic_b: 2400), separate periods.
+        - Company A posts 2000 -> ok, A remaining = 400
+        - Company A posts 500 -> error (A budget exhausted)
+        - Company B posts 500 -> ok, B remaining = 1900 (separate independent budget)
+        """
+        BudgetPeriod = self.env["budget.period"]
+        company_a = self.env.company
+        company_b = self.company_b
+
+        # Separate analytics per company
+        analytic_a = self.Analytic.create(
+            {
+                "name": "CC_A_test21",
+                "plan_id": self.aa_plan1.id,
+                "company_id": company_a.id,
+            }
+        )
+        analytic_b = self.Analytic.create(
+            {
+                "name": "CC_B_test21",
+                "plan_id": self.aa_plan1.id,
+                "company_id": company_b.id,
+            }
+        )
+
+        # Restrict existing budget_period to company_a;
+        # create separate period_b for company_b
+        self.budget_period.write(
+            {
+                "control_budget": True,
+                "company_ids": [Command.set([company_a.id])],
+            }
+        )
+        period_a = self.budget_period
+        period_b = BudgetPeriod.create(
+            {
+                "name": "FY 2001 Company B (test_21)",
+                "template_id": self.template.id,
+                "bm_date_from": "2001-01-01",
+                "bm_date_to": "2001-12-31",
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+                "control_budget": True,
+                "company_ids": [Command.set([company_b.id])],
+            }
+        )
+
+        # BC for company_a: analytic_a, 2400
+        bc_a = self.BudgetControl.with_company(company_a).create(
+            {
+                "name": "BC_A test21",
+                "budget_period_id": period_a.id,
+                "analytic_account_id": analytic_a.id,
+                "plan_date_range_type_id": self.date_range_type.id,
+                "currency_id": company_a.currency_id.id,
+                "allocated_amount": 2400.0,
+                "template_line_ids": [Command.set([self.template_line1.id])],
+                "line_ids": [
+                    Command.create(
+                        {
+                            "date_from": "2001-01-01",
+                            "date_to": "2001-12-31",
+                            "template_line_id": self.template_line1.id,
+                            "analytic_account_id": analytic_a.id,
+                            "amount": 2400,
+                        }
+                    )
+                ],
+            }
+        )
+        bc_a.action_submit()
+        bc_a.action_done()
+
+        # BC for company_b: analytic_b, 2400
+        account_kpi1_b = self.Account.create(
+            {
+                "name": "KPI1 Company B (test_21)",
+                "code": "KPI1.B21",
+                "account_type": "expense",
+                "company_ids": [Command.set([company_b.id])],
+            }
+        )
+        self.template_line1.account_ids = [Command.link(account_kpi1_b.id)]
+        bc_b = self.BudgetControl.with_company(company_b).create(
+            {
+                "name": "BC_B test21",
+                "budget_period_id": period_b.id,
+                "analytic_account_id": analytic_b.id,
+                "plan_date_range_type_id": self.date_range_type.id,
+                "currency_id": company_b.currency_id.id,
+                "allocated_amount": 2400.0,
+                "template_line_ids": [Command.set([self.template_line1.id])],
+                "line_ids": [
+                    Command.create(
+                        {
+                            "date_from": "2001-01-01",
+                            "date_to": "2001-12-31",
+                            "template_line_id": self.template_line1.id,
+                            "analytic_account_id": analytic_b.id,
+                            "amount": 2400,
+                        }
+                    )
+                ],
+            }
+        )
+        bc_b.action_submit()
+        bc_b.action_done()
+
+        # company_b payable + journal reuse from common.py setup
+        journal_b = self.journal_purchase_b
+
+        # Step 1: Company A posts 2000 to analytic_a -> ok, A remaining = 400
+        bill_a1 = self.Move.create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.vendor.id,
+                "invoice_date": "2001-02-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": self.account_kpi1.id,
+                            "price_unit": 2000,
+                            "analytic_distribution": {str(analytic_a.id): 100},
+                        }
+                    )
+                ],
+            }
+        )
+        bill_a1.action_post()
+        self.assertEqual(bill_a1.state, "posted")
+        bc_a.invalidate_recordset()
+        self.assertAlmostEqual(bc_a.amount_balance, 400.0)
+
+        # Step 2: Company A posts 500 to analytic_a -> error (only 400 left)
+        bill_a2 = self.Move.create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.vendor.id,
+                "invoice_date": "2001-02-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": self.account_kpi1.id,
+                            "price_unit": 500,
+                            "analytic_distribution": {str(analytic_a.id): 100},
+                        }
+                    )
+                ],
+            }
+        )
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
+            bill_a2.action_post()
+        bill_a2.button_draft()  # clean up budget moves from failed post
+
+        # Step 3: Company B posts 500 to analytic_b -> ok, B remaining = 1900
+        bill_b = self.Move.with_company(company_b).create(
+            {
+                "move_type": "in_invoice",
+                "journal_id": journal_b.id,
+                "partner_id": self.vendor.id,
+                "invoice_date": "2001-02-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": account_kpi1_b.id,
+                            "price_unit": 500,
+                            "analytic_distribution": {str(analytic_b.id): 100},
+                        }
+                    )
+                ],
+            }
+        )
+        bill_b.action_post()
+        self.assertEqual(bill_b.state, "posted")
+        bc_b.invalidate_recordset()
+        self.assertAlmostEqual(bc_b.amount_balance, 1900.0)
+
+    @freeze_time("2001-02-01")
+    def test_22_budget_control_over_consumed(self):
+        """analytic_kpi: lowering a KPI budget below already-consumed is blocked.
+
+        _check_budget_control_over_consumed raises when editing line_ids would
+        push a KPI's amount_balance negative.
+        """
+        self.budget_period.control_budget = True
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        # Consume 300 on KPI1 (budgeted 400) -> balance 100
+        analytic_distribution = {self.costcenter1.id: 100}
+        bill = self._create_simple_bill(analytic_distribution, self.account_kpi1, 300)
+        bill.action_post()
+        self.assertEqual(bill.state, "posted")
+        self.budget_control.invalidate_recordset()
+        # Lower KPI1 (4 quarters) to 50 each = 200 total < 300 consumed -> error.
+        # Write through the parent so @api.constrains("line_ids") re-fires.
+        kpi1_lines = self.budget_control.line_ids.filtered(
+            lambda x: x.kpi_id == self.kpi1
+        )
+        with self.assertRaisesRegex(UserError, "Total amount in KPI"):
+            self.budget_control.write(
+                {
+                    "line_ids": [
+                        Command.update(line.id, {"amount": 50}) for line in kpi1_lines
+                    ]
+                }
+            )
+
+    def test_23_check_budget_company_allowed(self):
+        """Analytic's own company must stay in Allowed Budget Companies."""
+        company_a = self.env.company
+        company_b = self.company_b
+        analytic = self.Analytic.create(
+            {
+                "name": "CC_test23",
+                "plan_id": self.aa_plan1.id,
+                "company_id": company_a.id,
+            }
+        )
+        # Own company auto-included in the allowed list
+        self.assertIn(company_a, analytic.budget_company_ids)
+        # Dropping the analytic's own company from the allowed list -> error
+        with self.assertRaisesRegex(UserError, "must be in Allowed Budget Companies"):
+            analytic.write({"budget_company_ids": [Command.set([company_b.id])]})
+
+        # Allowed companies with mismatched currencies -> error
+        with self.assertRaisesRegex(UserError, "use different currencies"):
+            analytic.write(
+                {"budget_company_ids": [Command.set([company_a.id, self.company_c.id])]}
+            )
+
+        # Test use multi currency on budget.control -> error
+        with self.assertRaisesRegex(
+            UserError, "sharing a budget must use the same currency"
+        ):
+            self.budget_control.write(
+                {"company_ids": [Command.set([company_a.id, self.company_c.id])]}
+            )
+
+    @freeze_time("2001-02-01")
+    def test_24_commit_cross_currency_blocked(self):
+        """Test blocks commit when doc company currency != budget currency."""
+        self.budget_period.control_budget = True
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+
+        # BC is in main company currency; other_currency (EUR) must differ from it.
+        self.assertNotEqual(self.budget_control.currency_id, self.other_currency)
+
+        account_payable_c = self.Account.create(
+            {
+                "name": "Accounts Payable C (test_24)",
+                "code": "AP.C24",
+                "account_type": "liability_payable",
+                "reconcile": True,
+                "company_ids": [Command.set([self.company_c.id])],
+            }
+        )
+        self.vendor.with_company(self.company_c).write(
+            {"property_account_payable_id": account_payable_c.id}
+        )
+        journal_c = self.env["account.journal"].create(
+            {
+                "name": "Vendor Bills C (test_24)",
+                "type": "purchase",
+                "code": "VBC24",
+                "company_id": self.company_c.id,
+            }
+        )
+        account_kpi1_c = self.Account.create(
+            {
+                "name": "KPI1 Company C (test_24)",
+                "code": "KPI1.C24",
+                "account_type": "expense",
+                "company_ids": [Command.set([self.company_c.id])],
+            }
+        )
+        self.template_line1.account_ids = [Command.link(account_kpi1_c.id)]
+
+        bill_c = self.Move.with_company(self.company_c).create(
+            {
+                "move_type": "in_invoice",
+                "journal_id": journal_c.id,
+                "partner_id": self.vendor.id,
+                "invoice_date": "2001-02-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "quantity": 1,
+                            "account_id": account_kpi1_c.id,
+                            "price_unit": 100,
+                            "analytic_distribution": {str(self.costcenter1.id): 100},
+                        }
+                    )
+                ],
+            }
+        )
+        with self.assertRaisesRegex(
+            UserError, "All companies sharing a budget must use the same currency."
+        ):
+            bill_c.action_post()

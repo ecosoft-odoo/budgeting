@@ -85,6 +85,14 @@ class BudgetPeriod(models.Model):
         "- Block: raise an error (strict mode)\n"
         "- Allow: skip budget check and let the transaction pass through",
     )
+    company_ids = fields.Many2many(
+        comodel_name="res.company",
+        relation="budget_period_company_rel",
+        column1="budget_period_id",
+        column2="company_id",
+        string="Companies",
+        help="Restrict this period to specific companies. Empty = all companies.",
+    )
 
     @api.model
     def default_get(self, default_fields):
@@ -286,8 +294,15 @@ class BudgetPeriod(models.Model):
         if not date:
             date = fields.Date.context_today(self)
         BudgetPeriod = self.env["budget.period"]
+        company_id = self.env.company.id
         budget_period = BudgetPeriod.search(
-            [("bm_date_from", "<=", date), ("bm_date_to", ">=", date)]
+            [
+                ("bm_date_from", "<=", date),
+                ("bm_date_to", ">=", date),
+                "|",
+                ("company_ids", "=", False),
+                ("company_ids", "in", company_id),
+            ]
         )
         if budget_period and len(budget_period) > 1:
             raise ValidationError(
