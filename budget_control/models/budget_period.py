@@ -69,6 +69,18 @@ class BudgetPeriod(models.Model):
         comodel_name="account.analytic.account",
         inverse_name="budget_period_id",
     )
+    unmatched_account_policy = fields.Selection(
+        selection=[
+            ("error", "Block (must be in template)"),
+            ("skip", "Allow (pass through)"),
+        ],
+        default="error",
+        required=True,
+        tracking=True,
+        help="Policy when a transaction account is not found in the budget template.\n"
+        "- Block: raise an error (strict mode)\n"
+        "- Allow: skip budget check and let the transaction pass through",
+    )
 
     @api.model
     def default_get(self, field_list):
@@ -302,6 +314,8 @@ class BudgetPeriod(models.Model):
         )
         need_control = self.env.context.get("need_control")
         for budget_move in budget_moves_period:
+            if budget_move.account_id.budget_bypass:
+                continue
             if budget_period.control_all_analytic_accounts:
                 if (
                     budget_move.analytic_account_id
@@ -338,7 +352,7 @@ class BudgetPeriod(models.Model):
         return template_lines
 
     @api.model
-    def _get_kpi_by_control_key(self, template_lines, control):
+    def _get_kpi_by_control_key(self, template_lines, control, budget_period=None):
         """
         By default, control key is account_id as it can be used to get KPI
         In future, this can be other key, i.e., activity_id based on installed module
@@ -350,6 +364,8 @@ class BudgetPeriod(models.Model):
         # Invalid Template Lines
         account = self.env["account.account"].browse(account_id)
         if not template_line:
+            if budget_period and budget_period.unmatched_account_policy == "skip":
+                return self.env["budget.template.line"]
             raise UserError(
                 _("Chosen account code %s is not valid in template")
                 % account.display_name
@@ -417,6 +433,8 @@ class BudgetPeriod(models.Model):
                 template_lines = self._get_filter_template_line(
                     all_template_lines, control
                 )
+            if not template_lines and budget_period.unmatched_account_policy == "skip":
+                continue
             # Get the available budget for the specified analytic account and KPI(s)
             query_data = self.with_context(
                 control_level=budget_period.control_level

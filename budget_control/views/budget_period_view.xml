@@ -64,6 +64,7 @@
                                 attrs="{'invisible': [('control_all_analytic_accounts', '=', True)]}"
                             />
                             <field name="control_level" />
+                            <field name="unmatched_account_policy" />
                         </group>
                     </group>
                     <notebook>

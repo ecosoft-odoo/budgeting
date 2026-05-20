@@ -18,3 +18,4 @@ from . import account_journal
 from . import budget_transfer
 from . import budget_transfer_item
 from . import budget_move_adjustment
+from . import account_account
