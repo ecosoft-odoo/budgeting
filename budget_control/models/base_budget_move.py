@@ -361,8 +361,10 @@ class BudgetDoclineMixin(models.AbstractModel):
         # Get KPI, when possible.
         if controls and template_lines:
             template_line = BudgetPeriod._get_kpi_by_control_key(
-                template_lines, controls[0]
+                template_lines, controls[0], budget_period=budget_period
             )
+            if not template_line:
+                return budget_move
             budget_move.template_line_id = template_line.id
         return budget_move
 
