@@ -57,6 +57,7 @@
                                 invisible="control_all_analytic_accounts"
                             />
                             <field name="control_level" />
+                            <field name="unmatched_account_policy" />
                         </group>
                     </group>
                     <!-- <notebook>

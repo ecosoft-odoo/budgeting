@@ -567,3 +567,44 @@ class TestBudgetControl(get_budget_common_class()):
 
         budget_commit_forward.action_draft()
         self.assertEqual(budget_commit_forward.state, "draft")
+
+    @freeze_time("2001-02-01")
+    def test_19_unmatched_account_bypass_and_policy(self):
+        """
+        account_kpiX is not in template. Test two bypass mechanisms:
+        1. budget_bypass flag on account.account > always skip check
+        2. unmatched_account_policy = 'skip' on budget.period > pass through
+        Default policy 'error' still blocks.
+        """
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic_kpi"
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+
+        analytic_distribution = {self.costcenter1.id: 100}
+
+        # Baseline: default policy 'error' + no bypass > must raise
+        self.assertEqual(self.budget_period.unmatched_account_policy, "error")
+        bill = self._create_simple_bill(analytic_distribution, self.account_kpiX, 100)
+        with self.assertRaisesRegex(UserError, "is not valid in template"):
+            bill.action_post()
+
+        # account.budget_bypass = True > skip regardless of policy
+        self.account_kpiX.budget_bypass = True
+        bill_bypass = self._create_simple_bill(
+            analytic_distribution, self.account_kpiX, 100
+        )
+        bill_bypass.action_post()
+        self.assertEqual(bill_bypass.state, "posted")
+        self.assertTrue(bill_bypass.budget_move_ids)
+        self.assertFalse(bill_bypass.budget_move_ids.mapped("template_line_id"))
+
+        # Reset bypass, switch period policy to 'skip' > also passes through
+        self.account_kpiX.budget_bypass = False
+        self.budget_period.unmatched_account_policy = "skip"
+        bill_skip = self._create_simple_bill(
+            analytic_distribution, self.account_kpiX, 100
+        )
+        bill_skip.action_post()
+        self.assertEqual(bill_skip.state, "posted")
+        self.assertTrue(bill_skip.budget_move_ids)
