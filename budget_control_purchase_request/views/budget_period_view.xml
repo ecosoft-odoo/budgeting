@@ -2,11 +2,12 @@
 <odoo>
     <record id="budget_period_view_form" model="ir.ui.view">
         <field name="name">budget.period.view.form</field>
+        <field name="priority">20</field>
         <field name="model">budget.period</field>
         <field name="inherit_id" ref="budget_control.budget_period_view_form" />
         <field name="arch" type="xml">
-            <!-- Add purchase request before purchase -->
-            <xpath expr="//label[@for='purchase']" position="before">
+            <!-- Add purchase request before purchase (priority 20 < 30 ensures correct order) -->
+            <xpath expr="//label[@for='account']" position="before">
                 <label
                     for="purchase_request"
                     class="d-none"
