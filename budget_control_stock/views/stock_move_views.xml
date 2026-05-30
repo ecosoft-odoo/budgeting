@@ -1,0 +1,12 @@
+<odoo>
+    <record id="view_move_tree" model="ir.ui.view">
+        <field name="name">stock.move.tree</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock_analytic.view_move_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

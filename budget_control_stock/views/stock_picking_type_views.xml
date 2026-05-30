@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_picking_type_form" model="ir.ui.view">
+        <field name="name">stock.picking.type.form.budget</field>
+        <field name="model">stock.picking.type</field>
+        <field name="inherit_id" ref="stock.view_picking_type_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='first']/group[1]" position="inside">
+                <field
+                    name="budget_commit"
+                    groups="budget_control.group_budget_control_manager"
+                />
+                <field
+                    name="budget_price_source"
+                    groups="budget_control.group_budget_control_manager"
+                    invisible="not budget_commit"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

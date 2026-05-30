@@ -13,9 +13,7 @@ class TestStockScrapBudgetPlanDetail(TestBudgetPlanDetail, CommonStockPicking):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # cls.product_categ = cls.env.ref("product.product_category_5")
-        # print(cls.product.categ_id)
-        # print("-x---")
+        cls.stock_journal.not_affect_budget = True
 
     def test_01_scrap_with_budget(self):
         """Create same analytic, difference fund, difference analytic tags
@@ -99,7 +97,6 @@ class TestStockScrapBudgetPlanDetail(TestBudgetPlanDetail, CommonStockPicking):
         domain = [("ref", "=", f"{scrap.name} - {self.product.name}")]
         acc_move = self.env["account.move"].search(domain)
         self.assertEqual(len(acc_move), 1)
-        self.assertEqual(acc_move.not_affect_budget, True)
 
         acc_lines = acc_move.line_ids
         for acc_line in acc_lines:

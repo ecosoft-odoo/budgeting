@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_move_line_tree" model="ir.ui.view">
+        <field name="name">stock.move.line.tree (in budget_control_stock)</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock_analytic.view_move_line_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- In picking lines -->
+    <record id="view_move_line_detailed_tree" model="ir.ui.view">
+        <field name="name">stock.move.line.detailed.tree (in stock_analytic)</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock_analytic.view_move_line_detailed_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
