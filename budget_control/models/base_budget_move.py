@@ -348,6 +348,27 @@ class BudgetDoclineMixin(models.AbstractModel):
             amount_currency, company.currency_id, company, date_commit
         )
 
+    def _get_analytic_budget_currency(self, analytic, date_commit):
+        """Return the currency_id of the active budget control
+        for analytic at date_commit."""
+        BudgetPeriod = self.env["budget.period"]
+        period = BudgetPeriod._get_eligible_budget_period(date=date_commit)
+        if not period:
+            return self.env["res.currency"]
+        bc = (
+            self.env["budget.control"]
+            .sudo()
+            .search(
+                [
+                    ("analytic_account_id", "=", analytic.id),
+                    ("budget_period_id", "=", period.id),
+                    ("state", "=", "done"),
+                ],
+                limit=1,
+            )
+        )
+        return bc.currency_id
+
     def _update_budget_commitment(self, budget_vals, analytic, reverse=False):
         self.ensure_one()
         # Document company
@@ -361,6 +382,18 @@ class BudgetDoclineMixin(models.AbstractModel):
         currency = hasattr(self, "currency_id") and self.currency_id or False
         amount = budget_vals["amount_currency"]  # init
         today = fields.Date.context_today(self)
+        # Block cross-currency commits: document company currency must match
+        # the budget control currency to prevent incorrect budget consumption.
+        bc_currency = self._get_analytic_budget_currency(analytic, date_commit or today)
+        if bc_currency and bc_currency != document_company.currency_id:
+            raise UserError(
+                self.env._(
+                    f"Company {document_company.name} "
+                    f"({document_company.currency_id.name}) cannot commit to a "
+                    f"{bc_currency.name} budget. "
+                    "All companies sharing a budget must use the same currency.",
+                )
+            )
         if (
             not self.env.context.get("use_amount_commit")
             and currency

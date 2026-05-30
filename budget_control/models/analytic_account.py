@@ -50,7 +50,9 @@ class AccountAnalyticAccount(models.Model):
         store=True,
         readonly=False,
         string="Allowed Budget Companies",
-        help="Companies that this analytic account is allowed to use",
+        help="Companies allowed to consume budget under this analytic. "
+        "Must always include the analytic's own company. "
+        "Leave empty to allow all companies (global analytic).",
     )
     amount_budget = fields.Monetary(
         string="Budgeted",
@@ -101,7 +103,8 @@ class AccountAnalyticAccount(models.Model):
     @api.depends("company_id")
     def _compute_budget_company(self):
         for rec in self:
-            rec.budget_company_ids = rec.company_id
+            if not rec.budget_company_ids:
+                rec.budget_company_ids = rec.company_id
 
     @api.constrains("company_id", "budget_company_ids")
     def _check_budget_company(self):
@@ -113,10 +116,30 @@ class AccountAnalyticAccount(models.Model):
             if not rec.company_id:
                 continue
 
-            if rec.company_id and rec.company_id != rec.budget_company_ids:
+            if rec.company_id and rec.company_id not in rec.budget_company_ids:
                 raise UserError(
                     self.env._(
                         "Analytic Account Company must be in Allowed Budget Companies"
+                    )
+                )
+
+    @api.constrains("budget_company_ids")
+    def _check_budget_company_currency(self):
+        """Companies sharing a budget must all use the same currency.
+        Checked here because budget_control.company_ids is a stored related
+        field. its constraints don't re-trigger when this analytic changes.
+        """
+        for rec in self:
+            if not rec.budget_company_ids:
+                continue
+            currencies = rec.budget_company_ids.mapped("currency_id")
+            if len(set(currencies.ids)) > 1:
+                names = ", ".join(rec.budget_company_ids.mapped("name"))
+                raise UserError(
+                    self.env._(
+                        f"Companies {names} assigned to analytic {rec.display_name} "
+                        "use different currencies. All companies sharing a budget "
+                        "must use the same currency.",
                     )
                 )
 

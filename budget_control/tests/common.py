@@ -81,6 +81,29 @@ class BudgetControlCommon(TransactionCase):
             }
         )
 
+        # Setup Company B for multi-company tests
+        cls.company_b = cls.env["res.company"].create({"name": "Test Company B"})
+        cls.account_payable_b = cls.Account.create(
+            {
+                "name": "Accounts Payable (Company B)",
+                "code": "AP.B",
+                "account_type": "liability_payable",
+                "reconcile": True,
+                "company_ids": [Command.set([cls.company_b.id])],
+            }
+        )
+        cls.vendor.with_company(cls.company_b).write(
+            {"property_account_payable_id": cls.account_payable_b.id}
+        )
+        cls.journal_purchase_b = cls.env["account.journal"].create(
+            {
+                "name": "Vendor Bills (Company B)",
+                "type": "purchase",
+                "code": "VBCB",
+                "company_id": cls.company_b.id,
+            }
+        )
+
         # Create analytic account (costcenter)
         cls.aa_plan1 = cls.AnalyticPlan.create({"name": "Plan1"})
         cls.costcenter1 = cls.Analytic.create(

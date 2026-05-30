@@ -4,7 +4,7 @@
 from collections import defaultdict
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tools import float_compare
 
 
@@ -201,6 +201,25 @@ class BudgetControl(models.Model):
             )
         )
 
+    @api.constrains("currency_id", "company_ids")
+    def _check_currency_vs_companies(self):
+        """All companies sharing this budget must use the same currency."""
+        for rec in self:
+            if not rec.currency_id or not rec.company_ids:
+                continue
+            bad = rec.company_ids.filtered(
+                lambda c, rec=rec: c.currency_id != rec.currency_id
+            )
+            if bad:
+                names = ", ".join(bad.mapped("name"))
+                raise ValidationError(
+                    self.env._(
+                        f"Companies {names} use a different currency than "
+                        f"this budget control ({rec.currency_id.name}). All companies "
+                        "sharing a budget must use the same currency.",
+                    )
+                )
+
     @api.depends("analytic_account_id")
     def _compute_initial_balance(self):
         for rec in self:
@@ -230,7 +249,7 @@ class BudgetControl(models.Model):
                 if budget_info["amount_balance"] < 0:
                     raise UserError(
                         self.env._(
-                            f"Total amount in KPI {line.name} will result in "
+                            f"Total amount in KPI {line.kpi_id.name} will result in "
                             f"{budget_info['amount_balance']:,.2f}"
                         )
                     )
