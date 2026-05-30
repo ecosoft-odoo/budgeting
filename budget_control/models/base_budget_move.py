@@ -535,11 +535,20 @@ class BudgetDoclineMixin(models.AbstractModel):
         Required all document except
             - move that check 'Not Affect Budget'
             - move that have 'Tax'
-            - display_type is not false
+            - section/note line (display_type set), i.e. not a real product line
         """
         required_analytic = self.env.user.has_group(
             "budget_control.group_required_analytic"
         )
+        # A real budget line requires an analytic account; section/note lines don't.
+        # - account.move.line flags real lines with display_type == "product"
+        # - other doclines (purchase, sale, ...) use a falsy display_type for real
+        #   lines, and some (hr.expense, purchase.request.line) have no display_type
+        #   field at all -> the line is always a real product line.
+        if self._name == "account.move.line":
+            is_product_line = self.display_type == "product"
+        else:
+            is_product_line = not getattr(self, "display_type", False)
         return (
             required_analytic
             and not self[self._budget_analytic_field]
@@ -547,14 +556,7 @@ class BudgetDoclineMixin(models.AbstractModel):
                 self._name == "account.move.line"
                 and (self.move_id.not_affect_budget or self.tax_line_id)
             )
-            # Account move line with display_type is not False
-            # but purchase, sale or other module don't have display_type if selected
-            # product in line
-            and (
-                self._name == "account.move.line"
-                and self.display_type == "product"
-                or (hasattr(self, "display_type") and not self.display_type)
-            )
+            and is_product_line
         )
 
     def commit_budget(self, reverse=False, **vals):

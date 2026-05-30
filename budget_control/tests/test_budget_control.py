@@ -1072,3 +1072,77 @@ class TestBudgetControl(get_budget_common_class()):
             UserError, "All companies sharing a budget must use the same currency."
         ):
             bill_c.action_post()
+
+    @freeze_time("2001-02-01")
+    def test_25_required_analytic_setting(self):
+        """'Required Analytic Account' setting enforces analytic on doclines.
+
+        * account.move.line: only product lines are enforced; section / note
+          lines are skipped (they are not product lines).
+        * a docline with NO display_type field (budget.move.adjustment.item,
+          same shape as PR / EX / AV) must also be enforced.
+
+        Regression guard: a previous ``hasattr(self, "display_type")`` check made
+        the requirement silently skip every docline whose model lacks the field
+        (PR, EX, AV), letting those documents commit without an analytic account.
+        """
+        # Enable the "Required Analytic Account" setting for the current user.
+        required_group = self.env.ref("budget_control.group_required_analytic")
+        self.env.user.groups_id = [Command.link(required_group.id)]
+        self.assertTrue(
+            self.env.user.has_group("budget_control.group_required_analytic")
+        )
+        analytic_distribution = {self.costcenter1.id: 100}
+
+        # account.move.line product line, no analytic -> blocked (Required)
+        bill_no_aa = self._create_simple_bill(False, self.account_kpi1, 100)
+        with self.assertRaisesRegex(UserError, "Please fill analytic account."):
+            bill_no_aa.action_post()
+
+        # account.move.line product line, with analytic -> posts (Not Required)
+        bill_aa = self._create_simple_bill(
+            analytic_distribution, self.account_kpi1, 100
+        )
+        bill_aa.action_post()
+        self.assertEqual(bill_aa.state, "posted")
+
+        # account.move.line: only product lines are enforced; everything else
+        # on the move is skipped (Not Required).
+        AML = self.env["account.move.line"]
+        # section / note lines are not product lines
+        self.assertFalse(
+            AML.new({"display_type": "line_section"})._check_required_analytic()
+        )
+        self.assertFalse(
+            AML.new({"display_type": "line_note"})._check_required_analytic()
+        )
+        # line on a "Not Affect Budget" move
+        naf_move = self.env["account.move"].new({"not_affect_budget": True})
+        self.assertFalse(
+            AML.new(
+                {"display_type": "product", "move_id": naf_move.id}
+            )._check_required_analytic()
+        )
+        # tax line
+        tax = self.env["account.tax"].new({})
+        self.assertFalse(
+            AML.new(
+                {"display_type": "product", "tax_line_id": tax.id}
+            )._check_required_analytic()
+        )
+
+        # Docline with NO display_type field (PR / EX / AV shape) -> must enforce
+        self.assertNotIn(
+            "display_type",
+            self.env["budget.move.adjustment.item"]._fields,
+            "Fixture model must have no display_type field",
+        )
+        budget_adjust = self.BudgetAdjust.create({"date_commit": "2001-02-01"})
+        with Form(budget_adjust.adjust_item_ids) as line:
+            line.adjust_id = budget_adjust
+            line.adjust_type = "consume"
+            line.product_id = self.product1
+            line.amount = 100.0  # no analytic_distribution on purpose
+        line.save()
+        with self.assertRaisesRegex(UserError, "Please fill analytic account."):
+            budget_adjust.action_adjust()
