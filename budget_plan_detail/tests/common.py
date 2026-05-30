@@ -60,7 +60,10 @@ class BudgetPlanDetailCommon(BudgetControlCommon):
             }
         )
         if self.check_plan_detail_installed and not skip_line_detail:
-            self._create_budget_plan_line_detail(self, budget_plan)
+            # create_budget_plan is called unbound (self=class) from setUpClass,
+            # or bound (self=instance) from a test method; normalize to unbound.
+            cls = self if isinstance(self, type) else type(self)
+            cls._create_budget_plan_line_detail(self, budget_plan)
         return budget_plan
 
     def _create_simple_bill(
