@@ -5,3 +5,4 @@ odoo-addon-purchase_request_analytic_tag @ git+https://github.com/OCA/account-an
 odoo-addon-purchase_request_to_requisition @ git+https://github.com/OCA/purchase-workflow.git@refs/pull/2698/head#subdirectory=purchase_request_to_requisition
 odoo-addon-request_document @ git+https://github.com/ecosoft-odoo/ecosoft-addons.git#subdirectory=request_document
 odoo-addon-request_document_expense @ git+https://github.com/ecosoft-odoo/ecosoft-addons.git#subdirectory=request_document_expense
+odoo-addon-sale_stock_analytic @ git+https://github.com/OCA/account-analytic.git@refs/pull/818/head#subdirectory=sale_stock_analytic
