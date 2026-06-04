@@ -47,6 +47,9 @@
     ],
     "demo": ["demo/budget_template_demo.xml"],
     "assets": {
+        "web.assets_backend": [
+            "budget_control/static/src/scss/pivot_view.scss",
+        ],
         "web.assets_qweb": [
             "budget_control/static/src/xml/budget_popover.xml",
         ],

@@ -1,0 +1,16 @@
+// Override core pivot styles: allow header / value cells to wrap and break long words
+.o_pivot {
+    .o_pivot_cell_value {
+        white-space: pre-wrap;
+    }
+
+    table {
+        .o_pivot_measure_row,
+        .o_pivot_origin_row,
+        .o_pivot_header_cell,
+        .o_pivot_header_cell_closed,
+        .o_pivot_header_cell_opened {
+            white-space: pre-wrap;
+        }
+    }
+}
