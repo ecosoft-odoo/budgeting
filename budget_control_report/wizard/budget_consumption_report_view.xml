@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="budget_consumption_report_wizard_form" model="ir.ui.view">
+        <field name="name">budget.consumption.report.wizard.form</field>
+        <field name="model">budget.consumption.report.wizard</field>
+        <field
+            name="inherit_id"
+            ref="budget_control_report.budget_report_wizard_form"
+        />
+        <field name="priority" eval="35" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//group/field[@name='date_to']" position="after">
+                <field name="amount_type" />
+            </xpath>
+        </field>
+    </record>
+    <record id="action_budget_consumption_report_excel" model="ir.actions.act_window">
+        <field name="name">Budget Consumption Report (.xlsx)</field>
+        <field name="res_model">budget.consumption.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field
+            name="context"
+        >{'default_report_type': 'consumption', 'access_sudo': 1}</field>
+        <field name="target">new</field>
+    </record>
+    <menuitem
+        name="Budget Consumption (.xlsx)"
+        action="action_budget_consumption_report_excel"
+        id="menu_action_budget_consumption_report_excel"
+        parent="budget_control_report.budget_excel_menu"
+        groups="budget_control.group_budget_control_manager,budget_control_report.group_export_excel_budget"
+        sequence="50"
+    />
+</odoo>

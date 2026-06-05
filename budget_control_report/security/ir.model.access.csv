@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_budget_report_wizard,access_budget_report_wizard,model_budget_report_wizard,,1,1,1,1
+access_budget_consumption_report_wizard,access_budget_consumption_report_wizard,model_budget_consumption_report_wizard,,1,1,1,1
