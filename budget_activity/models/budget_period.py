@@ -9,7 +9,7 @@ class BudgetPeriod(models.Model):
     _inherit = "budget.period"
 
     @api.model
-    def _get_kpi_by_control_key(self, template_lines, control):
+    def _get_kpi_by_control_key(self, template_lines, control, budget_period=None):
         activity_id = control["activity_id"]
         template_line = self._get_filter_template_line(template_lines, control)
         if len(template_line) == 1:
@@ -17,6 +17,8 @@ class BudgetPeriod(models.Model):
         # Invalid Template Lines
         activity = self.env["budget.activity"].browse(activity_id)
         if not template_line:
+            if budget_period and budget_period.unmatched_account_policy == "skip":
+                return self.env["budget.template.line"]
             raise UserError(
                 _("Chosen activity %s is not valid in template") % activity.display_name
             )
