@@ -112,7 +112,7 @@ class BudgetCommitForward(models.Model):
     def _action_cancel(self):
         """Use queue job will split function into multiple jobs"""
         if not self.use_queue_job:
-            return super().action_cancel()
+            return super()._action_cancel()
 
         ICP = self.env["ir.config_parameter"]
         chunk_size_carry_forward_cancel = (
