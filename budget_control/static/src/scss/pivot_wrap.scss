@@ -1,0 +1,14 @@
+// Override pivot view header text wrapping
+// Target only pivot views with .o_budget_pivot class to avoid affecting other pivot views.
+
+.o_budget_pivot {
+    .o_pivot table {
+        th.o_pivot_header_cell_closed,
+        th.o_pivot_header_cell_opened,
+        th.o_pivot_measure_row,
+        th.o_pivot_origin_row {
+            white-space: normal !important;
+            word-break: break-word;
+        }
+    }
+}

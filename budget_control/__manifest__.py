@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control",
-    "version": "18.0.1.6.1",
+    "version": "18.0.1.7.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
@@ -59,6 +59,7 @@
     "assets": {
         "web.assets_backend": [
             "budget_control/static/src/xml/budget_popover.xml",
+            "budget_control/static/src/scss/pivot_wrap.scss",
         ],
     },
     "installable": True,

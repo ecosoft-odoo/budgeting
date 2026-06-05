@@ -20,7 +20,7 @@
         <field name="name">budget.monitor.report.pivot</field>
         <field name="model">budget.monitor.report</field>
         <field name="arch" type="xml">
-            <pivot string="Budget Monitoring">
+            <pivot string="Budget Monitoring" class="o_budget_pivot">
                 <field name="analytic_account_id" type="row" />
                 <field name="amount_type" type="col" />
                 <field name="amount" type="measure" />
