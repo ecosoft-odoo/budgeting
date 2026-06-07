@@ -22,7 +22,7 @@
         <field name="name">account_budget_move.pivot</field>
         <field name="model">account.budget.move</field>
         <field name="arch" type="xml">
-            <pivot string="Actual Budget Commitment">
+            <pivot string="Actual Budget Commitment" class="o_budget_pivot">
                 <field name="reference" type="row" />
                 <field name="analytic_account_id" type="col" />
                 <field name="amount_currency" type="measure" />
