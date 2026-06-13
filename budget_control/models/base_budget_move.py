@@ -533,6 +533,7 @@ class BudgetDoclineMixin(models.AbstractModel):
     def _check_required_analytic(self):
         """
         Required all document except
+            - context skip required analytic
             - move that check 'Not Affect Budget'
             - move that have 'Tax'
             - section/note line (display_type set), i.e. not a real product line
@@ -540,6 +541,9 @@ class BudgetDoclineMixin(models.AbstractModel):
         required_analytic = self.env.user.has_group(
             "budget_control.group_required_analytic"
         )
+        if self.env.context.get("skip_required_analytic"):
+            return False
+
         # A real budget line requires an analytic account; section/note lines don't.
         # - account.move.line flags real lines with display_type == "product"
         # - other doclines (purchase, sale, ...) use a falsy display_type for real
