@@ -66,6 +66,7 @@
                     optional="hide"
                     groups="budget_control.group_budget_date_commit"
                 />
+                <field name="not_affect_budget" optional="hide" />
             </xpath>
             <xpath
                 expr="//page[@id='aml_tab']/field[@name='line_ids']/list/field[@name='analytic_distribution']"
@@ -96,6 +97,7 @@
                     optional="hide"
                     groups="budget_control.group_budget_date_commit"
                 />
+                <field name="not_affect_budget" optional="hide" />
             </xpath>
             <xpath expr="/form/sheet/notebook/page[last()]" position="after">
                 <page

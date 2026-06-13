@@ -19,20 +19,32 @@ class AccountMoveLine(models.Model):
     return_amount_commit = fields.Boolean(
         related="move_id.return_amount_commit",
     )
+    not_affect_budget = fields.Boolean(
+        help="If checked, this line will not commit budget.",
+    )
 
-    @api.depends("move_id.not_affect_budget", "analytic_distribution")
+    @api.depends(
+        "move_id.not_affect_budget", "not_affect_budget", "analytic_distribution"
+    )
     def _compute_can_commit(self):
         """
         Compute whether this account move line can commit budget.
-        Checks if the move is marked as not affecting budget - if so,
-        sets can_commit=False on those lines.
+        - Header not_affect_budget is the master switch: all lines skip budget.
+        - Line not_affect_budget is effective when header is False.
         """
         res = super()._compute_can_commit()
+        # Header is master switch
         no_budget_moves = self.mapped("move_id").filtered("not_affect_budget")
         if no_budget_moves:
             lines_to_update = no_budget_moves.mapped("line_ids").filtered("can_commit")
             if lines_to_update:
                 lines_to_update.write({"can_commit": False})
+        # Line-level flag (only effective when header is False)
+        lines_to_update = self.filtered(
+            lambda line: line.not_affect_budget and line.can_commit
+        )
+        if lines_to_update:
+            lines_to_update.write({"can_commit": False})
         return res
 
     def recompute_budget_move(self):
