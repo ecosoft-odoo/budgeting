@@ -1146,3 +1146,81 @@ class TestBudgetControl(get_budget_common_class()):
         line.save()
         with self.assertRaisesRegex(UserError, "Please fill analytic account."):
             budget_adjust.action_adjust()
+
+    @freeze_time("2001-02-01")
+    def test_26_not_affect_budget_line_level(self):
+        """Test line-level not_affect_budget on vendor bills.
+
+        - Both lines with analytic -> both commit budget.
+        - Line 2 marked not_affect_budget -> only line 1 commits budget.
+        - Header not_affect_budget=True is master switch -> no line commits budget,
+          even if a line has not_affect_budget=False.
+        """
+        analytic_distribution = {self.costcenter1.id: 100}
+
+        def _add_invoice_line(bill, account, not_affect_budget=False):
+            bill.write(
+                {
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "quantity": 1,
+                                "account_id": account.id,
+                                "price_unit": 50.0,
+                                "analytic_distribution": analytic_distribution,
+                                "not_affect_budget": not_affect_budget,
+                            }
+                        )
+                    ]
+                }
+            )
+
+        # Case 1: Both lines commit budget.
+        bill1 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 50.0)
+        _add_invoice_line(bill1, self.account_kpi2)
+        bill1.action_post()
+        self.assertEqual(bill1.state, "posted")
+        self.assertTrue(all(line.can_commit for line in bill1.invoice_line_ids))
+        for line in bill1.invoice_line_ids:
+            self.assertEqual(len(line.budget_move_ids), 1)
+
+        # Case 2: Line 2 not_affect_budget -> only line 1 commits budget.
+        bill2 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 50.0)
+        _add_invoice_line(bill2, self.account_kpi2, not_affect_budget=True)
+        line2_kpi1 = bill2.invoice_line_ids.filtered(
+            lambda line: line.account_id == self.account_kpi1
+        )
+        line2_kpi2 = bill2.invoice_line_ids.filtered(
+            lambda line: line.account_id == self.account_kpi2
+        )
+        bill2.action_post()
+        self.assertEqual(bill2.state, "posted")
+        self.assertTrue(line2_kpi1.can_commit)
+        self.assertFalse(line2_kpi2.can_commit)
+        self.assertEqual(len(line2_kpi1.budget_move_ids), 1)
+        self.assertEqual(len(line2_kpi2.budget_move_ids), 0)
+
+        # Case 3: Header not_affect_budget=True is master switch.
+        # Create with header True (auto-propagates to lines), then explicitly set
+        # line 2 to False. Header still wins -> no line commits budget.
+        bill3 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 50.0)
+        _add_invoice_line(bill3, self.account_kpi2)
+        bill3.write({"not_affect_budget": True})
+        line3_kpi1 = bill3.invoice_line_ids.filtered(
+            lambda line: line.account_id == self.account_kpi1
+        )
+        line3_kpi2 = bill3.invoice_line_ids.filtered(
+            lambda line: line.account_id == self.account_kpi2
+        )
+        # Header propagation set all lines to True. Override line 2 back to False.
+        line3_kpi2.write({"not_affect_budget": False})
+        self.assertTrue(bill3.not_affect_budget)
+        self.assertTrue(line3_kpi1.not_affect_budget)
+        self.assertFalse(line3_kpi2.not_affect_budget)
+        # But can_commit is driven by header, so all lines cannot commit.
+        self.assertTrue(all(not line.can_commit for line in bill3.invoice_line_ids))
+        bill3.action_post()
+        self.assertEqual(bill3.state, "posted")
+        self.assertEqual(
+            sum(len(line.budget_move_ids) for line in bill3.invoice_line_ids), 0
+        )

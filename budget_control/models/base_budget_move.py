@@ -535,6 +535,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         Required all document except
             - context skip required analytic
             - move that check 'Not Affect Budget'
+            - line that check 'Not Affect Budget' (account.move.line only)
             - move that have 'Tax'
             - section/note line (display_type set), i.e. not a real product line
         """
@@ -558,7 +559,11 @@ class BudgetDoclineMixin(models.AbstractModel):
             and not self[self._budget_analytic_field]
             and not (
                 self._name == "account.move.line"
-                and (self.move_id.not_affect_budget or self.tax_line_id)
+                and (
+                    self.move_id.not_affect_budget
+                    or self.not_affect_budget
+                    or self.tax_line_id
+                )
             )
             and is_product_line
         )

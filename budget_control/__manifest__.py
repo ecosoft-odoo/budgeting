@@ -55,7 +55,11 @@
         "report/budget_monitor_report_view.xml",
         "report/budget_move_views.xml",
     ],
-    "demo": ["demo/budget_template_demo.xml"],
+    "demo": [
+        "demo/date_range_demo.xml",
+        "demo/budget_template_demo.xml",
+        "demo/budget_period_demo.xml",
+    ],
     "assets": {
         "web.assets_backend": [
             "budget_control/static/src/xml/budget_popover.xml",

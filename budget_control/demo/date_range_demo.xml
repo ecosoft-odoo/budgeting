@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+    <!-- Date Range Types -->
+    <record id="date_range_type_year_demo" model="date.range.type">
+        <field name="name">Year (demo)</field>
+        <field name="allow_overlap" eval="False" />
+        <field name="duration_count" eval="1" />
+        <field name="unit_of_time">0</field>
+    </record>
+    <record id="date_range_type_month_demo" model="date.range.type">
+        <field name="name">Month (demo)</field>
+        <field name="allow_overlap" eval="False" />
+        <field name="duration_count" eval="1" />
+        <field name="unit_of_time">1</field>
+    </record>
+
+    <!-- Monthly Date Ranges (Jan - Dec) for current year -->
+    <record id="date_range_month_01_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/01')" />
+        <field name="date_start" eval="time.strftime('%Y-01-01')" />
+        <field name="date_end" eval="time.strftime('%Y-01-31')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_02_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/02')" />
+        <field name="date_start" eval="time.strftime('%Y-02-01')" />
+        <field name="date_end" eval="time.strftime('%Y-02-28')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_03_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/03')" />
+        <field name="date_start" eval="time.strftime('%Y-03-01')" />
+        <field name="date_end" eval="time.strftime('%Y-03-31')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_04_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/04')" />
+        <field name="date_start" eval="time.strftime('%Y-04-01')" />
+        <field name="date_end" eval="time.strftime('%Y-04-30')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_05_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/05')" />
+        <field name="date_start" eval="time.strftime('%Y-05-01')" />
+        <field name="date_end" eval="time.strftime('%Y-05-31')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_06_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/06')" />
+        <field name="date_start" eval="time.strftime('%Y-06-01')" />
+        <field name="date_end" eval="time.strftime('%Y-06-30')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_07_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/07')" />
+        <field name="date_start" eval="time.strftime('%Y-07-01')" />
+        <field name="date_end" eval="time.strftime('%Y-07-31')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_08_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/08')" />
+        <field name="date_start" eval="time.strftime('%Y-08-01')" />
+        <field name="date_end" eval="time.strftime('%Y-08-31')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_09_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/09')" />
+        <field name="date_start" eval="time.strftime('%Y-09-01')" />
+        <field name="date_end" eval="time.strftime('%Y-09-30')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_10_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/10')" />
+        <field name="date_start" eval="time.strftime('%Y-10-01')" />
+        <field name="date_end" eval="time.strftime('%Y-10-31')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_11_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/11')" />
+        <field name="date_start" eval="time.strftime('%Y-11-01')" />
+        <field name="date_end" eval="time.strftime('%Y-11-30')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+    <record id="date_range_month_12_demo" model="date.range">
+        <field name="name" eval="time.strftime('%Y/12')" />
+        <field name="date_start" eval="time.strftime('%Y-12-01')" />
+        <field name="date_end" eval="time.strftime('%Y-12-31')" />
+        <field name="type_id" eval="ref('budget_control.date_range_type_month_demo')" />
+    </record>
+</odoo>

@@ -38,6 +38,13 @@ class AccountMove(models.Model):
     def _onchange_not_affect_budget(self):
         self.not_affect_budget = self.journal_id.not_affect_budget
 
+    @api.onchange("not_affect_budget")
+    def _onchange_not_affect_budget_header(self):
+        if self.not_affect_budget:
+            self.line_ids.not_affect_budget = True
+        else:
+            self.line_ids.not_affect_budget = False
+
     def recompute_budget_move(self):
         self.mapped("invoice_line_ids").recompute_budget_move()
 
@@ -53,23 +60,37 @@ class AccountMove(models.Model):
             if "not_affect_budget" not in vals and "journal_id" in vals:
                 journal = self.env["account.journal"].browse(vals["journal_id"])
                 vals["not_affect_budget"] = journal.not_affect_budget
-        return super().create(vals_list)
+        moves = super().create(vals_list)
+        # Propagate header flag to lines for data consistency
+        for move in moves.filtered("not_affect_budget"):
+            lines_to_update = move.line_ids.filtered(
+                lambda line: not line.not_affect_budget
+            )
+            if lines_to_update:
+                lines_to_update.write({"not_affect_budget": True})
+        return moves
 
     def write(self, vals):
         """
         - Commit budget when state changes to actual
         - Cancel/Draft document should delete all budget commitment
+        - Propagate not_affect_budget header flag to lines
         """
         res = super().write(vals)
-        if vals.get("state") in ("posted", "cancel", "draft"):
+        if "not_affect_budget" in vals:
+            self.line_ids.write({"not_affect_budget": vals["not_affect_budget"]})
+        if vals.get("state") in ("cancel", "draft"):
             doclines = self.mapped("invoice_line_ids")
-            if vals.get("state") in ("cancel", "draft"):
-                # skip_account_move_synchronization = True, as this is account.move.line
-                # skipping to avoid warning error when update date_commit
-                doclines.with_context(skip_account_move_synchronization=True).write(
-                    {"date_commit": False}
-                )
-            doclines.recompute_budget_move()
+            # skip_account_move_synchronization = True, as this is account.move.line
+            # skipping to avoid warning error when update date_commit
+            doclines.with_context(skip_account_move_synchronization=True).write(
+                {"date_commit": False}
+            )
+        # Recompute once when state changes OR not_affect_budget changes
+        if vals.get("state") in ("posted", "cancel", "draft") or vals.get(
+            "not_affect_budget"
+        ):
+            self.mapped("invoice_line_ids").recompute_budget_move()
         return res
 
     def _filtered_move_check_budget(self):
