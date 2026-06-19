@@ -18,8 +18,11 @@ class BudgetControl(models.Model):
         required=True,
         tracking=True,
     )
-    assignee_id = fields.Many2one(
+    assignee_ids = fields.Many2many(
         comodel_name="res.users",
+        relation="budget_control_assignee_rel",
+        column1="budget_control_id",
+        column2="user_id",
         string="Assigned To",
         domain=lambda self: [
             (
