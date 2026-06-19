@@ -62,27 +62,3 @@ class StockMove(models.Model):
         if self.analytic_tag_ids:
             res.update({"analytic_tag_ids": [Command.set(self.analytic_tag_ids.ids)]})
         return res
-
-    def _prepare_account_move_vals(
-        self,
-        credit_account_id,
-        debit_account_id,
-        journal_id,
-        qty,
-        description,
-        svl_id,
-        cost,
-    ):
-        """Not affect budget"""
-        self.ensure_one()
-        move_vals = super()._prepare_account_move_vals(
-            credit_account_id,
-            debit_account_id,
-            journal_id,
-            qty,
-            description,
-            svl_id,
-            cost,
-        )
-        move_vals["not_affect_budget"] = True
-        return move_vals

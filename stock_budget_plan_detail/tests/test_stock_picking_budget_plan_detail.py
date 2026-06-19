@@ -17,6 +17,7 @@ class TestStockPickingBudgetPlanDetail(TestBudgetPlanDetail, TestStockPicking):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.stock_journal.not_affect_budget = True
         # Create same analytic, difference fund, difference analytic tags
         # line 1: Costcenter1, Fund1, Tag1, 600.0
         # line 2: Costcenter1, Fund1, Tag2, 600.0
@@ -90,8 +91,6 @@ class TestStockPickingBudgetPlanDetail(TestBudgetPlanDetail, TestStockPicking):
         acc_moves = self.env["account.move"].search(criteria1)
 
         self.assertEqual(len(acc_moves), 1)
-        # Move must have not affect budget only
-        self.assertEqual(acc_moves.not_affect_budget, True)
         acc_lines = acc_moves.line_ids
         move = picking.move_ids[0]
         for acc_line in acc_lines:

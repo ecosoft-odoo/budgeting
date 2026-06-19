@@ -1,0 +1,88 @@
+<odoo>
+    <!-- Stock Picking -->
+    <record id="view_picking_form" model="ir.ui.view">
+        <field name="name">view.picking.form</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock_analytic.view_picking_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
+                <field
+                    name="json_budget_popover"
+                    optional="show"
+                    nolabel="1"
+                    string="Budget Figure"
+                    width="12px"
+                    widget="popover_widget"
+                    groups="budget_control.group_budget_control_user"
+                />
+            </xpath>
+            <xpath
+                expr="//page[@name='operations']/field[@name='move_ids_without_package']/list/field[last()]"
+                position="after"
+            >
+                <field name="auto_adjust_date_commit" optional="hide" />
+                <field name="amount_commit" optional="hide" readonly="1" />
+                <field
+                    name="date_commit"
+                    optional="hide"
+                    groups="budget_control.group_budget_date_commit"
+                />
+            </xpath>
+            <xpath expr="//notebook/page[last()]" position="after">
+                <page
+                    string="Budget Commitment"
+                    name="budget_commit"
+                    invisible="not budget_move_ids"
+                >
+                    <div class="d-flex justify-content-end" name="buttons">
+                        <button
+                            type="object"
+                            name="recompute_budget_move"
+                            string="Recompute"
+                            icon="fa-refresh"
+                            groups="budget_control.group_budget_control_manager"
+                        />
+                        <button
+                            type="object"
+                            name="close_budget_move"
+                            string="Close Budget"
+                            icon="fa-times-circle"
+                            groups="budget_control.group_budget_control_manager"
+                        />
+                    </div>
+                    <field name="budget_move_ids" readonly="1">
+                        <list>
+                            <field name="move_id" optional="show" />
+                            <field name="account_move_line_id" optional="show" />
+                            <field name="date" />
+                            <field name="analytic_plan" optional="hide" />
+                            <field name="analytic_account_id" optional="show" />
+                            <field name="write_uid" optional="hide" />
+                            <field name="write_date" optional="hide" />
+                            <field name="note" optional="hide" />
+                            <field name="debit" sum="Total Debit" />
+                            <field name="credit" sum="Total Credit" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <!-- Stock Move -->
+    <record id="stock_move_view_form" model="ir.ui.view">
+        <field name="name">stock.move.view.form</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock.view_move_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='date']" position="after">
+                <field
+                    name="date_commit"
+                    groups="budget_control.group_budget_date_commit"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
