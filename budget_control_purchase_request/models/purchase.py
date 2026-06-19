@@ -20,17 +20,21 @@ class PurchaseOrderLine(models.Model):
 
     def uncommit_purchase_request_budget(self):
         """For purchase in valid state, do uncommit for related PR."""
+        budget_moves = self.env["purchase.request.budget.move"]
         for po_line in self:
             po_state = po_line.order_id.state
             if self.env.context.get("force_commit") or po_state in ("purchase", "done"):
                 for pr_line in po_line.purchase_request_lines.filtered("amount_commit"):
-                    pr_line.commit_budget(
+                    move = pr_line.commit_budget(
                         reverse=True,
                         analytic_account_id=pr_line.fwd_analytic_account_id or False,
                         purchase_line_id=po_line.id,
                         date=po_line.date_commit,
                     )
+                    if move:
+                        budget_moves |= move
             else:  # Cancel or draft, not commitment line
                 self.env["purchase.request.budget.move"].search(
                     [("purchase_line_id", "=", po_line.id)]
                 ).unlink()
+        return budget_moves
