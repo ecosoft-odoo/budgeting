@@ -4,7 +4,7 @@
 {
     "name": "Budget Control - Exception",
     "summary": "Custom exceptions on budget control",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Generic Modules/Budget Control",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",

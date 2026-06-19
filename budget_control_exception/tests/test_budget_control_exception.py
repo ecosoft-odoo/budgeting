@@ -68,10 +68,10 @@ class TestBudgetControlExpense(get_budget_common_class()):
     def test_01_budget_control_exception(self):
         self.exception_checkassignee.active = True
         # Normally Case
-        self.budget_control.assignee_id = self.partner_assign.id
+        self.budget_control.assignee_ids = [(6, 0, [self.partner_assign.id])]
         self._check_normal_process()
         # Exception Case
-        self.budget_control.assignee_id = False
+        self.budget_control.assignee_ids = [(5,)]
         self.assertEqual(self.budget_control.state, "draft")
         self.budget_control.action_done()
         self.assertEqual(self.budget_control.state, "draft")

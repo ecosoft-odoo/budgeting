@@ -20,7 +20,7 @@
         <field name="description">Budget Control should be set</field>
         <field name="sequence">50</field>
         <field name="model">budget.control</field>
-        <field name="code">if not self.assignee_id:
+        <field name="code">if not self.assignee_ids:
             failed=True</field>
         <field name="active" eval="False" />
     </record>

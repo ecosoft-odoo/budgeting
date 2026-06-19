@@ -53,7 +53,7 @@
         <field name="model">budget.control</field>
         <field name="inherit_id" ref="budget_control.budget_control_view_list" />
         <field name="arch" type="xml">
-            <field name="assignee_id" position="after">
+            <field name="assignee_ids" position="after">
                 <field name="revision_number" />
             </field>
         </field>

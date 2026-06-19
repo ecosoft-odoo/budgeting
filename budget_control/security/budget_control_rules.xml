@@ -3,7 +3,7 @@
     <record id="rule_budget_control_budget_user" model="ir.rule">
         <field name="name">Budget Control Rule For Budget Users</field>
         <field name="model_id" ref="budget_control.model_budget_control" />
-        <field name="domain_force">[('assignee_id', '=', user.id)]</field>
+        <field name="domain_force">[('assignee_ids', 'in', [user.id])]</field>
         <field
             name="groups"
             eval="[(4, ref('budget_control.group_budget_control_user'))]"
