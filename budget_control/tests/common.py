@@ -131,6 +131,23 @@ class BudgetControlCommon(TransactionCase):
             cls, cls.template.id, cls.date_range_type.id
         )
 
+        # Demo data may include a budget period for the current year, which
+        # conflicts with the test budget period created above and can cause
+        # "Multiple Budget Periods" errors (or match the wrong template when
+        # date_commit falls back to today). Shift it far into the future so
+        # tests remain isolated without breaking other demo records that may
+        # reference it.
+        demo_budget_period = cls.env.ref(
+            "budget_control.budget_period_demo", raise_if_not_found=False
+        )
+        if demo_budget_period:
+            demo_budget_period.write(
+                {
+                    "bm_date_from": f"{cls.year + 100}-01-01",
+                    "bm_date_to": f"{cls.year + 100}-12-31",
+                }
+            )
+
     def _create_date_range_quarter(self):
         Generator = self.env["date.range.generator"]
         generator = Generator.create(
