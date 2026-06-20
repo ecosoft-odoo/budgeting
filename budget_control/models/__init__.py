@@ -8,6 +8,7 @@ from . import budget_kpi
 from . import budget_template
 from . import budget_period
 from . import budget_constraint
+from . import account_analytic_plan
 from . import analytic_account
 
 # Base Model

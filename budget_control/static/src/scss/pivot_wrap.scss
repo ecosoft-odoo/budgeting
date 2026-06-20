@@ -3,12 +3,19 @@
 
 .o_budget_pivot {
     .o_pivot table {
-        th.o_pivot_header_cell_closed,
-        th.o_pivot_header_cell_opened,
+        // force all header cells to nowrap (covers measure row,
+        // origin row, and column dimension headers)
         th.o_pivot_measure_row,
-        th.o_pivot_origin_row {
+        th.o_pivot_origin_row,
+        th.o_pivot_header_cell_closed,
+        th.o_pivot_header_cell_opened {
+            white-space: nowrap !important;
+        }
+        // allow wrap ONLY for row labels (left side,
+        // marked by absence of .border-top)
+        th.o_pivot_header_cell_closed:not(.border-top),
+        th.o_pivot_header_cell_opened:not(.border-top) {
             white-space: normal !important;
-            word-break: break-word;
         }
     }
 }

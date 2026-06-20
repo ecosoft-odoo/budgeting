@@ -40,6 +40,7 @@
         "views/budget_period_view.xml",
         "views/budget_constraint_view.xml",
         "views/analytic_account_views.xml",
+        "views/analytic_plan_views.xml",
         "views/budget_plan_view.xml",
         "views/budget_control_view.xml",
         "views/budget_transfer_view.xml",
