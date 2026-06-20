@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Plan Details - Advance Clearing",
-    "version": "18.0.1.1.3",
+    "version": "18.0.1.1.4",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
