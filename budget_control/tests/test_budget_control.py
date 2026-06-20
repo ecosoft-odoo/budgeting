@@ -348,6 +348,10 @@ class TestBudgetControl(get_budget_common_class()):
         self.budget_control.invalidate_recordset()
         self.assertEqual(self.budget_control.amount_balance, -97500)
 
+        # Check actual_source
+        actual_source = self.costcenter1._get_effective_budget_actual_source()
+        self.assertEqual(actual_source, "bill")
+
     @freeze_time("2001-02-01")
     def test_11_auto_date_commit(self):
         """
