@@ -22,9 +22,16 @@ class AccountMoveLine(models.Model):
 
     @api.depends("activity_id")
     def _compute_account_id(self):
-        """In case of Realtime Inventory Product,
-        activity's account takes priority"""
-        input_lines = self.filtered(
+        """Activity's account takes priority over product's account.
+
+        For Realtime Inventory Product with Anglo-Saxon accounting, the
+        activity's account must be read in the journal's company context
+        (not the line's company) to support multi-company setups correctly.
+        """
+        res = super()._compute_account_id()
+        # Realtime + Anglo-Saxon lines: switch to journal's company so that
+        # activity.account_id is read in the right company context.
+        realtime_lines = self.filtered(
             lambda line: (
                 line._is_realtime_inventory_product()
                 and line.move_id.company_id.anglo_saxon_accounting
@@ -32,16 +39,12 @@ class AccountMoveLine(models.Model):
         ).with_prefetch(
             ["move_id", "move_id.company_id", "move_id.journal_id.company_id"]
         )
-        for line in input_lines:
+        for line in realtime_lines:
             line = line.with_company(line.move_id.journal_id.company_id)
             if line.activity_id:
                 line.account_id = line.activity_id.account_id
-
-        line_no_realtime = self - input_lines
-
-        res = super(AccountMoveLine, line_no_realtime)._compute_account_id()
-
-        for line in line_no_realtime:
+        # All other lines with activity: simple override
+        for line in self - realtime_lines:
             if line.activity_id:
                 line.account_id = line.activity_id.account_id
         return res
