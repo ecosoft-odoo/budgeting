@@ -31,6 +31,7 @@
                 <field name="budget_period_id" optional="show" />
                 <field name="bm_date_from" optional="hide" />
                 <field name="bm_date_to" optional="hide" />
+                <field name="budget_actual_source" optional="show" />
                 <field
                     name="budget_control_ids"
                     widget="many2many_tags"
@@ -63,6 +64,7 @@
                 />
             </xpath>
             <xpath expr="//group[@name='main']/group[2]" position="inside">
+                <field name="budget_actual_source" />
                 <field name="auto_adjust_date_commit" />
                 <label for="initial_available" />
                 <div>
@@ -112,6 +114,7 @@
                     groups="base.group_multi_currency"
                     optional="show"
                 />
+                <field name="budget_actual_source" optional="show" />
                 <field
                     name="initial_available"
                     sum="Total Available Initial"
