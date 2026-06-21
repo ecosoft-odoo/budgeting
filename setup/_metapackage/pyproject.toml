@@ -1,6 +1,6 @@
 [project]
 name = "odoo-addons-ecosoft-odoo-budgeting"
-version = "18.0.20260620.0"
+version = "18.0.20260621.0"
 dependencies = [
     "odoo-addon-account_payment_multi_deduction_activity==18.0.*",
     "odoo-addon-account_payment_multi_deduction_budget_plan_detail==18.0.*",
@@ -23,6 +23,7 @@ dependencies = [
     "odoo-addon-budget_control_request_document==18.0.*",
     "odoo-addon-budget_control_request_document_expense==18.0.*",
     "odoo-addon-budget_control_revision==18.0.*",
+    "odoo-addon-budget_control_sale_stock==18.0.*",
     "odoo-addon-budget_control_stock==18.0.*",
     "odoo-addon-budget_plan_detail==18.0.*",
     "odoo-addon-budget_plan_detail_advance_clearing==18.0.*",
