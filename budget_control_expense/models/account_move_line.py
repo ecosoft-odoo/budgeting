@@ -29,7 +29,8 @@ class AccountMoveLine(models.Model):
         Expense = self.env["hr.expense"]
         AnalyticAccount = self.env["account.analytic.account"]
 
-        for ml in self:
+        lines = self.filtered(lambda line: not line.not_affect_budget)
+        for ml in lines:
             move = ml.move_id
             # Expense created journal entry with vendor bill or not expense
             if self._condition_skip_uncommit_expense(move):

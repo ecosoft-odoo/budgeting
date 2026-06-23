@@ -314,3 +314,21 @@ class HRExpense(models.Model):
                     [("clearing_id", "=", clearing.id)]
                 ).unlink()
         return budget_moves
+
+    def _get_move_line_dst(
+        self,
+        move_line_name,
+        partner_id,
+        total_amount,
+        total_amount_currency,
+        account_advance,
+    ):
+        ml_dst_dict = super()._get_move_line_dst(
+            move_line_name,
+            partner_id,
+            total_amount,
+            total_amount_currency,
+            account_advance,
+        )
+        ml_dst_dict["not_affect_budget"] = True
+        return ml_dst_dict
