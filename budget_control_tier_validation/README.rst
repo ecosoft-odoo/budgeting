@@ -17,12 +17,13 @@ Budget Control - Tier Validation
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github
-    :target: https://github.com/ecosoft-odoo/budgeting/tree/15.0/budget_control_tier_validation
+    :target: https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_control_tier_validation
     :alt: ecosoft-odoo/budgeting
 
 |badge1| |badge2| |badge3|
 
-This module extends the functionality of Budget Control to support a tier validation process.
+This module extends the functionality of Budget Control to support a
+tier validation process.
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
@@ -39,26 +40,27 @@ Configuration
 
 To configure this module, you need to:
 
-#. Go to *Settings > Technical > Tier Validations > Tier Definition*.
-#. Create as many tiers as you want for Budget Control model.
+1. Go to *Settings > Technical > Tier Validations > Tier Definition*.
+2. Create as many tiers as you want for Budget Control model.
 
 Usage
 =====
 
 To use this module, you need to:
 
-#. Create a Budget Control triggering at least one "Tier Definition".
-#. Click on *Request Validation* button at state 'Submit'.
-#. Under the tab *Reviews* have a look to pending reviews and their statuses.
-#. Once all reviews are validated click on *Confirm Order*.
+1. Create a Budget Control triggering at least one "Tier Definition".
+2. Click on *Request Validation* button at state 'Submit'.
+3. Under the tab *Reviews* have a look to pending reviews and their
+   statuses.
+4. Once all reviews are validated click on *Confirm Order*.
 
 Additional features:
 
-* You can filter the Budget Control Sheets requesting your review through
-  the filter *Needs my Review*.
-* User with rights to confirm the Budget Control Sheets (validate all tiers
-  that would be generated) can directly do the operation, this is, there is
-  no need for her/him to request a validation.
+- You can filter the Budget Control Sheets requesting your review
+  through the filter *Needs my Review*.
+- User with rights to confirm the Budget Control Sheets (validate all
+  tiers that would be generated) can directly do the operation, this is,
+  there is no need for her/him to request a validation.
 
 Bug Tracker
 ===========
@@ -66,7 +68,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/ecosoft-odoo/budgeting/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_control_tier_validation%0Aversion:%2015.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_control_tier_validation%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -74,21 +76,21 @@ Credits
 =======
 
 Authors
-~~~~~~~
+-------
 
 * Ecosoft
 
 Contributors
-~~~~~~~~~~~~
+------------
 
-* `Ecosoft <http://ecosoft.co.th>`__:
+- `Ecosoft <http://ecosoft.co.th>`__:
 
-  * Kitti U. <kittiu@ecosoft.co.th>
-  * Pimolnat Suntian <pimolnats@ecosoft.co.th>
-  * Saran Lim. <saranl@ecosoft.co.th>
+  - Kitti U. <kittiu@ecosoft.co.th>
+  - Pimolnat Suntian <pimolnats@ecosoft.co.th>
+  - Saran Lim. <saranl@ecosoft.co.th>
 
 Maintainers
-~~~~~~~~~~~
+-----------
 
 .. |maintainer-kittiu| image:: https://github.com/kittiu.png?size=40px
     :target: https://github.com/kittiu
@@ -98,6 +100,6 @@ Current maintainer:
 
 |maintainer-kittiu| 
 
-This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/15.0/budget_control_tier_validation>`_ project on GitHub.
+This module is part of the `ecosoft-odoo/budgeting <https://github.com/ecosoft-odoo/budgeting/tree/18.0/budget_control_tier_validation>`_ project on GitHub.
 
 You are welcome to contribute.
