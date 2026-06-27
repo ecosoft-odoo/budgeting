@@ -10,5 +10,5 @@ class TierDefinition(models.Model):
     @api.model
     def _get_tier_validation_model_names(self):
         res = super()._get_tier_validation_model_names()
-        res.extend(["budget.control", "budget.transfer"])
+        res.extend(["budget.control", "budget.transfer", "budget.plan"])
         return res
