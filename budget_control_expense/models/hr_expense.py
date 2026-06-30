@@ -125,3 +125,9 @@ class HRExpense(models.Model):
         if self._name == "hr.expense":
             return self.env.company.budget_include_tax_expense
         return super()._get_included_tax()
+
+    def _get_petty_cash_move_line_dest_vals(self, move_line_name, partner):
+        """For case install `hr_expense_petty_cash` only"""
+        vals = super()._get_petty_cash_move_line_dest_vals(move_line_name, partner)
+        vals["not_affect_budget"] = True
+        return vals
