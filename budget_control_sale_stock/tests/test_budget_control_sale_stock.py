@@ -78,13 +78,13 @@ class TestBudgetControlSaleStock(get_budget_common_class()):
         self.assertIn(sale, bc.sale_order_ids)
         self.assertEqual(bc.sale_order_count, 1)
 
-        # sale_price = sum of SO amount_total
-        self.assertAlmostEqual(bc.sale_price, sale.amount_total)
+        # sale_price = sum of SO amount_untaxed
+        self.assertAlmostEqual(bc.sale_price, sale.amount_untaxed)
         # gross_profit = sale_price - allocated_amount
-        expected_profit = sale.amount_total - 180.0
+        expected_profit = sale.amount_untaxed - 180.0
         self.assertAlmostEqual(bc.gross_profit, expected_profit)
-        if sale.amount_total:
-            expected_pct = expected_profit / sale.amount_total * 100
+        if sale.amount_untaxed:
+            expected_pct = expected_profit / sale.amount_untaxed * 100
             self.assertAlmostEqual(bc.gross_profit_percent, expected_pct, places=2)
 
         # action_open_budget_control from SO -> opens BC form

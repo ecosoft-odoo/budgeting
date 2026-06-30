@@ -34,10 +34,10 @@ class BudgetControl(models.Model):
         for rec in self:
             rec.sale_order_count = len(rec.sale_order_ids)
 
-    @api.depends("sale_order_ids.amount_total", "allocated_amount")
+    @api.depends("sale_order_ids.amount_untaxed", "allocated_amount")
     def _compute_sale_fields(self):
         for rec in self:
-            sale_price = sum(rec.sale_order_ids.mapped("amount_total"))
+            sale_price = sum(rec.sale_order_ids.mapped("amount_untaxed"))
             profit = sale_price - rec.allocated_amount
             rec.sale_price = sale_price
             rec.gross_profit = profit
