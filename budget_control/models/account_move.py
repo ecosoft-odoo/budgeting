@@ -61,6 +61,15 @@ class AccountMove(models.Model):
                 journal = self.env["account.journal"].browse(vals["journal_id"])
                 vals["not_affect_budget"] = journal.not_affect_budget
         moves = super().create(vals_list)
+        # Apply journal's default when not_affect_budget wasn't explicitly provided
+        # (journal_id is resolved later by _compute_journal_id for SO/PO-created moves).
+        for move, vals in zip(moves, vals_list, strict=False):
+            if (
+                "not_affect_budget" not in vals
+                and "journal_id" not in vals
+                and move.journal_id.not_affect_budget
+            ):
+                move.not_affect_budget = True
         # Propagate header flag to lines for data consistency
         for move in moves.filtered("not_affect_budget"):
             lines_to_update = move.line_ids.filtered(
