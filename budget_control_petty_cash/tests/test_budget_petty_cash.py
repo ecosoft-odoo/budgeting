@@ -39,8 +39,15 @@ class TestBudgetControlPettyCash(get_budget_common_class()):
             cls.template_line3.id,
         ]
         cls.budget_control.prepare_budget_control_matrix()
+        # KPI1 = 100x4=400, KPI2=800, KPI3=1,200 -> total 2,400 (== released)
         cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi1).write(
             {"amount": 100}
+        )
+        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi2).write(
+            {"amount": 200}
+        )
+        cls.budget_control.line_ids.filtered(lambda x: x.kpi_id == cls.kpi3).write(
+            {"amount": 300}
         )
 
         # Petty cash setup
@@ -127,7 +134,7 @@ class TestBudgetControlPettyCash(get_budget_common_class()):
         )
         self.assertTrue(petty_cash_lines, "Petty cash clearing line not found.")
         self.assertTrue(
-            petty_cash_lines.mapped("not_affect_budget"),
+            all(line.not_affect_budget for line in petty_cash_lines),
             "Petty cash clearing line must be marked not_affect_budget.",
         )
         # The expense (source) line must still affect the budget.
@@ -138,6 +145,6 @@ class TestBudgetControlPettyCash(get_budget_common_class()):
             "Expense source line not found.",
         )
         self.assertFalse(
-            expense_lines.mapped("not_affect_budget"),
+            any(line.not_affect_budget for line in expense_lines),
             "Expense source line must affect the budget.",
         )
