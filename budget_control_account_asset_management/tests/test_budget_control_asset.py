@@ -13,7 +13,7 @@ from odoo.addons.budget_control.tests.common import get_budget_common_class
 
 
 @tagged("post_install", "-at_install")
-class TestAssetNumber(TestAssetManagement, get_budget_common_class()):
+class TestBudgetControlAsset(TestAssetManagement, get_budget_common_class()):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
