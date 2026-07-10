@@ -18,9 +18,7 @@ class AccountMove(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """For bills created with PO lines (e.g., import), apply the
-        not_affect_budget flag based on PO line analytics.
-        """
+        """Apply not_affect_budget to bills created from stock_done PO lines."""
         moves = super().create(vals_list)
         for move in moves:
             if move.move_type in ("in_invoice", "in_refund"):
@@ -28,7 +26,7 @@ class AccountMove(models.Model):
         return moves
 
     def write(self, vals):
-        """If PO lines or invoice lines change, re-evaluate not_affect_budget."""
+        """Re-evaluate not_affect_budget when bill PO lines change."""
         res = super().write(vals)
         if "line_ids" in vals and self.move_type in ("in_invoice", "in_refund"):
             self._compute_not_affect_budget_from_po()
@@ -54,10 +52,7 @@ class AccountMove(models.Model):
                     move.not_affect_budget = True
 
     def _compute_not_affect_budget_from_po(self):
-        """For vendor bills with PO lines: if any PO line analytic is
-        configured as stock_done, set not_affect_budget=True on the
-        matching bill line(s). Manual bills (no PO) are not touched.
-        """
+        """Flag vendor bill lines from stock_done PO lines as not_affect_budget."""
         self.ensure_one()
         if self.move_type not in ("in_invoice", "in_refund"):
             return
