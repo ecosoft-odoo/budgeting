@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control - Asset Management",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "summary": "Config not affect budget in asset",
     "license": "AGPL-3",
     "depends": ["budget_control", "account_asset_management"],
