@@ -643,3 +643,70 @@ class TestBudgetControlStock(get_budget_common_class()):
             [("move_id", "=", False), ("picking_id", "=", False)]
         )
         self.assertFalse(orphan)
+
+    @freeze_time("2001-02-01")
+    def test_10_svl_je_not_affect_budget_by_picking_type(self):
+        """
+        The SVL JE's not_affect_budget flag mirrors the picking type's
+        budget_commit setting.
+
+        (1) Picking type WITHOUT budget_commit: validating creates an SVL JE
+            that is flagged not_affect_budget and records no actual.
+        (2) Picking type WITH budget_commit: validating creates an SVL JE
+            that is NOT flagged and records actual normally.
+        """
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        analytic_dist = {str(self.costcenter1.id): 100}
+
+        # --- (1) Picking type WITHOUT budget_commit -> not_affect_budget ---
+        self.picking_type.budget_commit = False
+        self._set_qty_on_hand(self.product_std, 1)
+        do_no_commit = self._create_picking(
+            [
+                {
+                    "product_id": self.product_std,
+                    "product_qty": 1,
+                    "price_unit": 100,
+                    "analytic_distribution": analytic_dist,
+                }
+            ]
+        )
+        do_no_commit.action_confirm()
+        do_no_commit.action_assign()
+        do_no_commit.with_context(skip_backorder=True).button_validate()
+        self.assertEqual(do_no_commit.state, "done")
+        je_no_commit = do_no_commit.move_ids.stock_valuation_layer_ids.account_move_id
+        self.assertTrue(je_no_commit)
+        self.assertTrue(je_no_commit.not_affect_budget)
+        # No stock commit (no budget_commit on the type) and no actual.
+        self.assertFalse(do_no_commit.budget_move_ids)
+        self.assertFalse(je_no_commit.line_ids.budget_move_ids)
+
+        # --- (2) Picking type WITH budget_commit -> NOT not_affect_budget ---
+        self.picking_type.budget_commit = True
+        self._set_qty_on_hand(self.product_std, 1)
+        do_commit = self._create_picking(
+            [
+                {
+                    "product_id": self.product_std,
+                    "product_qty": 1,
+                    "price_unit": 100,
+                    "analytic_distribution": analytic_dist,
+                }
+            ]
+        )
+        do_commit.action_confirm()
+        self.budget_control.invalidate_recordset()
+        self.assertAlmostEqual(self.budget_control.amount_stock, 100.0)
+        do_commit.action_assign()
+        do_commit.with_context(skip_backorder=True).button_validate()
+        self.assertEqual(do_commit.state, "done")
+        je_commit = do_commit.move_ids.stock_valuation_layer_ids.account_move_id
+        self.assertTrue(je_commit)
+        self.assertFalse(je_commit.not_affect_budget)
+        # After validate: JE posted -> stock commit becomes actual.
+        self.budget_control.invalidate_recordset()
+        self.assertAlmostEqual(self.budget_control.amount_actual, 100.0)
