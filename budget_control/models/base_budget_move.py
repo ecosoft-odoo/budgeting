@@ -537,6 +537,8 @@ class BudgetDoclineMixin(models.AbstractModel):
             - move that check 'Not Affect Budget'
             - line that check 'Not Affect Budget' (account.move.line only)
             - move that have 'Tax'
+            - payment entry (auto-generated from account.payment)
+            - bank statement entry (auto-generated from bank statement)
             - section/note line (display_type set), i.e. not a real product line
         """
         required_analytic = self.env.user.has_group(
@@ -563,6 +565,8 @@ class BudgetDoclineMixin(models.AbstractModel):
                     self.move_id.not_affect_budget
                     or self.not_affect_budget
                     or self.tax_line_id
+                    or self.move_id.origin_payment_id
+                    or self.move_id.statement_line_id
                 )
             )
             and is_product_line
