@@ -1134,6 +1134,24 @@ class TestBudgetControl(get_budget_common_class()):
                 {"display_type": "product", "tax_line_id": tax.id}
             )._check_required_analytic()
         )
+        # payment entry (auto-generated from account.payment)
+        payment_move = self.env["account.move"].new(
+            {"move_type": "entry", "origin_payment_id": 1}
+        )
+        self.assertFalse(
+            AML.new(
+                {"display_type": "product", "move_id": payment_move.id}
+            )._check_required_analytic()
+        )
+        # bank statement entry (auto-generated from bank statement)
+        statement_move = self.env["account.move"].new(
+            {"move_type": "entry", "statement_line_id": 1}
+        )
+        self.assertFalse(
+            AML.new(
+                {"display_type": "product", "move_id": statement_move.id}
+            )._check_required_analytic()
+        )
 
         # Docline with NO display_type field (PR / EX / AV shape) -> must enforce
         self.assertNotIn(
