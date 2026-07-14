@@ -96,10 +96,13 @@ class PurchaseOrderLine(models.Model):
 
     def recompute_budget_move(self):
         self.recompute_budget_move_batch()
-        for purchase_line in self:
+        for purchase_line in self.filtered("fwd_analytic_distribution"):
             # credit will not over debit (auto adjust)
             purchase_line.forward_commit()
         self.mapped("invoice_lines").uncommit_purchase_budget()
+
+    def _can_batch_budget_precommit(self):
+        return True
 
     def _get_po_line_account(self):
         fpos = self.order_id.fiscal_position_id
