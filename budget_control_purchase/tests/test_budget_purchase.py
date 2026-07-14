@@ -207,6 +207,7 @@ class TestBudgetControlPurchase(get_budget_common_class()):
         self.budget_period.control_level = "analytic"
         purchase = purchase.with_context(force_date_commit=purchase.date_order)
         purchase.button_confirm()
+        original_purchase_move_ids = set(purchase.budget_move_ids.ids)
         # PO Commit = 2400, INV Actual = 0, Balance = 0
         self.assertAlmostEqual(self.budget_control.amount_commit, 2400.0)
         self.assertAlmostEqual(self.budget_control.amount_actual, 0.0)
@@ -219,6 +220,11 @@ class TestBudgetControlPurchase(get_budget_common_class()):
         invoice.with_context(check_move_validity=False).invoice_line_ids[0].quantity = 1
         invoice.invoice_date = invoice.date
         invoice.action_post()
+        # Posting a bill only adds its PO reversal; it must not rebuild the
+        # original PO commitments (a costly O(lines) delete/create cycle).
+        self.assertTrue(
+            original_purchase_move_ids.issubset(purchase.budget_move_ids.ids)
+        )
         # PO Commit = 1800, INV Actual = 600, Balance = 0
         self.assertAlmostEqual(self.budget_control.amount_commit, 1800.0)
         self.assertAlmostEqual(self.budget_control.amount_actual, 600.0)
