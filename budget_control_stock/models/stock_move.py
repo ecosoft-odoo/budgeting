@@ -39,26 +39,40 @@ class StockMove(models.Model):
     def recompute_budget_move(self):
         budget_field = self._budget_field()
         force_date_commit = self.env.context.get("force_date_commit", False)
-        for move in self:
+        lot_price_moves = self.filtered(
+            lambda move: move.picking_id.picking_type_id.budget_price_source
+            == "lot_price"
+            and move.move_line_ids.filtered("lot_id")
+        )
+        standard_moves = (self - lot_price_moves).filtered(
+            lambda move: move.product_id.tracking == "none"
+            or move.move_line_ids.filtered("lot_id")
+        )
+
+        # Standard-price moves have identical per-line context and can use the
+        # common batch path.  Lot-price moves intentionally remain per lot,
+        # because every lot can have a different price and quantity.
+        standard_moves.recompute_budget_move_batch()
+        for move in standard_moves:
+            move.forward_commit()
+            move._recommit_via_valuation_lines()
+
+        deferred_moves = self - lot_price_moves - standard_moves
+        deferred_moves.mapped(budget_field).unlink()
+        for move in deferred_moves:
+            move.forward_commit()
+            move._recommit_via_valuation_lines()
+
+        for move in lot_price_moves:
             st_date_commit = force_date_commit or move.date_commit
             move[budget_field].unlink()
             lot_lines = move.move_line_ids.filtered("lot_id")
-            if (
-                move.picking_id.picking_type_id.budget_price_source == "lot_price"
-                and lot_lines
-            ):
-                for lot_line in lot_lines:
-                    move.with_context(
-                        force_date_commit=st_date_commit,
-                        budget_lot_price=lot_line.lot_id.standard_price,
-                        product_qty=lot_line.quantity_product_uom,
-                    ).commit_budget()
-            elif move.product_id.tracking == "none" or lot_lines:
-                # Non-lot product: commit immediately.
-                # Lot-tracked product with lots reserved: commit using product qty.
-                # Lot-tracked product with no lots yet: defer to action_assign so
-                # lot-traced PO uncommit can balance the commit in the same pass.
-                move.with_context(force_date_commit=st_date_commit).commit_budget()
+            for lot_line in lot_lines:
+                move.with_context(
+                    force_date_commit=st_date_commit,
+                    budget_lot_price=lot_line.lot_id.standard_price,
+                    product_qty=lot_line.quantity_product_uom,
+                ).commit_budget()
             move.forward_commit()
             # Re-apply uncommit for posted valuation JEs
             move._recommit_via_valuation_lines()

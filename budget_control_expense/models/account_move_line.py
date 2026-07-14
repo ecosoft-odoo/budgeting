@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models
+from odoo.tools import float_compare
 
 
 class AccountMoveLine(models.Model):
@@ -30,6 +31,8 @@ class AccountMoveLine(models.Model):
         AnalyticAccount = self.env["account.analytic.account"]
 
         lines = self.filtered(lambda line: not line.not_affect_budget)
+        reverse_entries = []
+        draft_line_ids = []
         for ml in lines:
             move = ml.move_id
             # Expense created journal entry with vendor bill or not expense
@@ -51,13 +54,58 @@ class AccountMoveLine(models.Model):
                         for aid in ml.analytic_distribution
                     }
                     for analytic_id, _ in ml.analytic_distribution.items():
-                        expense.commit_budget(
-                            reverse=True,
-                            move_line_id=ml.id,
-                            date=ml.date_commit,
-                            analytic_account_id=analytic_accounts[int(analytic_id)],
+                        # Base expense commitments already exist here, so
+                        # prepare_commit has the same outcome as commit_budget
+                        # without issuing one CREATE per journal line.
+                        expense.prepare_commit()
+                        if not expense.can_commit or not (
+                            self.env.context.get("force_commit")
+                            or expense._valid_commit_state()
+                        ):
+                            continue
+                        commit_kwargs = {
+                            "move_line_id": ml.id,
+                            "date": ml.date_commit,
+                            "analytic_account_id": analytic_accounts[int(analytic_id)],
+                        }
+                        reverse_entries.append(
+                            (
+                                expense,
+                                commit_kwargs,
+                                expense._prepare_commit_vals(
+                                    reverse=True, **commit_kwargs
+                                ),
+                            )
                         )
             else:  # Cancel or draft, not commitment line
-                self.env[Expense._budget_model()].search(
-                    [("move_line_id", "=", ml.id)]
-                ).unlink()
+                draft_line_ids.append(ml.id)
+
+        # A normal posted expense cannot over-return, so all reversals can be
+        # created together.  Preserve the exact legacy adjustment order for an
+        # exceptional document whose projected credit would exceed its debit.
+        batch_vals = []
+        entries_by_sheet = {}
+        for entry in reverse_entries:
+            entries_by_sheet.setdefault(entry[0].sheet_id.id, []).append(entry)
+        for entries in entries_by_sheet.values():
+            sheet = entries[0][0].sheet_id
+            existing_moves = sheet.budget_move_ids
+            projected_debit = sum(existing_moves.mapped("debit")) + sum(
+                vals["debit"] for entry in entries for vals in entry[2]
+            )
+            projected_credit = sum(existing_moves.mapped("credit")) + sum(
+                vals["credit"] for entry in entries for vals in entry[2]
+            )
+            if float_compare(projected_credit, projected_debit, 2) == 1:
+                for expense, commit_kwargs, _vals in entries:
+                    expense.commit_budget(reverse=True, **commit_kwargs)
+            else:
+                batch_vals.extend(vals for entry in entries for vals in entry[2])
+
+        if batch_vals:
+            budget_moves = self.env[Expense._budget_model()].create(batch_vals)
+            Expense._update_template_line_batch(budget_moves)
+        if draft_line_ids:
+            self.env[Expense._budget_model()].search(
+                [("move_line_id", "in", draft_line_ids)]
+            ).unlink()

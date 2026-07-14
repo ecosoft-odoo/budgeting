@@ -84,12 +84,12 @@ class PurchaseRequestLine(models.Model):
             rec.account_id = rec._get_pr_line_account()
 
     def recompute_budget_move(self):
+        self.recompute_budget_move_batch()
+        # Keep these steps after all base commitments exist: forward_commit
+        # can cap credit against debit and PO uncommit consumes PR budget.
         for pr_line in self:
-            pr_line.budget_move_ids.unlink()
-            pr_line.commit_budget()
-            # credit will not over debit (auto adjust)
             pr_line.forward_commit()
-            pr_line.purchase_lines.uncommit_purchase_request_budget()
+        self.mapped("purchase_lines").uncommit_purchase_request_budget()
 
     def _get_pr_line_account(self):
         account = self.product_id.product_tmpl_id.get_product_accounts()["expense"]

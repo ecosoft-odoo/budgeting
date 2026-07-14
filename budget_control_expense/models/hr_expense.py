@@ -85,14 +85,14 @@ class HRExpense(models.Model):
     )
 
     def recompute_budget_move(self):
-        budget_field = self._budget_field()
-        force_date_commit = self.env.context.get("force_date_commit", False)
+        # Recreate the base commitments in one unlink/create operation.  The
+        # batch helper keeps each line's existing date_commit unless an
+        # explicit force_date_commit is supplied, which is the same rule as
+        # the former per-line loop.
+        self.recompute_budget_move_batch()
+        # Forwarding and uncommitting posted entries are order-dependent and
+        # therefore intentionally remain after the base batch is complete.
         for expense in self:
-            # Make sure that date_commit not recompute
-            ex_date_commit = force_date_commit or expense.date_commit
-            expense[budget_field].unlink()
-            expense.with_context(force_date_commit=ex_date_commit).commit_budget()
-            # credit will not over debit (auto adjust)
             expense.forward_commit()
         self.mapped(
             "sheet_id.account_move_ids.invoice_line_ids"

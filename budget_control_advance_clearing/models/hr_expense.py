@@ -104,12 +104,10 @@ class HRExpense(models.Model):
 
     def _get_recompute_advances(self):
         AnalyticAccount = self.env["account.analytic.account"]
-        # date_commit return list, so we check in list again
-        advance_date_commit = (
-            self.env.context.get("force_date_commit", False)
-            or self.mapped("date_commit")[:-1]
-            or False
-        )
+        # The expense batch helper already preserves each advance line's
+        # date_commit.  Only pass a date when the caller explicitly forces it;
+        # a mapped list cannot safely represent different dates in one context.
+        advance_date_commit = self.env.context.get("force_date_commit", False)
 
         # Commit Advance
         res = super(
