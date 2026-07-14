@@ -1,9 +1,8 @@
 # Copyright 2025 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-
 from odoo import Command, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tools import float_compare
 
 
@@ -78,10 +77,16 @@ class BudgetPlan(models.Model):
 
             rec.currency_id = next(iter(currencies), self.env.company.currency_id)
 
-    @api.depends("line_ids")
+    @api.depends(
+        "line_ids.amount",
+        "line_ids.amount_forward_in",
+        "line_ids.allocated_amount",
+        "line_ids.analytic_account_id",
+        "budget_period_id",
+    )
     def _compute_total_amount(self):
         for rec in self:
-            rec.total_amount = sum(rec.line_ids.mapped("amount"))
+            rec.total_amount = sum(rec.line_ids.mapped("allocated_amount"))
 
     @api.depends("line_ids")
     def _compute_budget_control(self):
@@ -136,9 +141,17 @@ class BudgetPlan(models.Model):
         plan_line = self.line_ids.with_context(active_test=False)
         dp = self.currency_id.decimal_places
         for line in plan_line:
-            budget_control = line.budget_control_ids.filtered("active")
+            budget_control = line.budget_control_ids.filtered(
+                lambda control, line=line: control.active
+                and control.budget_period_id == line.budget_period_id
+            )
             if not budget_control:
-                budget_control = line.budget_control_ids.sorted("id")[-1:]
+                budget_control = line.budget_control_ids.filtered(
+                    lambda control, line=line: control.budget_period_id
+                    == line.budget_period_id
+                ).sorted("id")[-1:]
+            if not budget_control:
+                continue
             if (
                 float_compare(
                     budget_control.allocated_amount,
@@ -160,10 +173,19 @@ class BudgetPlan(models.Model):
     def action_create_update_budget_control(self):
         self.ensure_one()
         analytic_plan = self.line_ids.mapped("analytic_account_id")
-        # Skip if budget control already exists
-        existing_budget_controls = self.with_context(
-            active_test=False
-        ).budget_control_ids
+        # A budget control is unique in the scope of a budget period and an
+        # analytic account.  The same analytic may legitimately have a budget
+        # control in every year (Extend carry-forward).
+        existing_budget_controls = (
+            self.env["budget.control"]
+            .with_context(active_test=False)
+            .search(
+                [
+                    ("budget_period_id", "=", self.budget_period_id.id),
+                    ("analytic_account_id", "in", analytic_plan.ids),
+                ]
+            )
+        )
         existing_analytics = existing_budget_controls.mapped("analytic_account_id")
         new_analytic = analytic_plan - existing_analytics
 
@@ -192,11 +214,17 @@ class BudgetPlan(models.Model):
     def check_plan_consumed(self):
         prec_digits = self.currency_id.decimal_places
         for line in self.mapped("line_ids"):
-            amount = line.amount
-            # Check amount + transferred is less than the amount consumed
+            amount = line.allocated_amount
+            active_controls = line.budget_control_ids.filtered(
+                lambda control, line=line: control.active
+                and control.budget_period_id == line.budget_period_id
+            )
+            transferred_amount = sum(active_controls.mapped("transferred_amount"))
+            released_amount = amount + transferred_amount
+            # Check allocated + transfers against the amount already consumed.
             if (
                 float_compare(
-                    amount + line.budget_control_ids.transferred_amount,
+                    released_amount,
                     line.amount_consumed,
                     precision_digits=prec_digits,
                 )
@@ -208,23 +236,20 @@ class BudgetPlan(models.Model):
                         f"has amount less than consumed."
                     )
                 )
-            # Update allocated/released if changed
-            if line.allocated_amount != amount or line.released_amount != amount:
-                # NOTE: If lines are large, this can change to direct SQL
-                # to update the plan line
-                line.write(
-                    {
-                        "allocated_amount": amount,
-                        "released_amount": amount,
-                    }
-                )
+            # Released is allocated plus the current transfers. Allocated is
+            # computed directly from New Budget + Forward Balance.
+            if line.released_amount != released_amount:
+                line.released_amount = released_amount
 
     def action_update_amount_consumed(self):
         """Update amount consumed and released from budget control"""
         for rec in self:
             for line in rec.line_ids:
                 # find consumed amount from budget control
-                active_control = line.budget_control_ids
+                active_control = line.budget_control_ids.filtered(
+                    lambda control, line=line: control.active
+                    and control.budget_period_id == line.budget_period_id
+                )
                 if not active_control:
                     continue
 
@@ -244,7 +269,8 @@ class BudgetPlan(models.Model):
             active_control = analytic.budget_control_ids.filtered(
                 lambda control, self=self: control.budget_period_id
                 == self.budget_period_id
-            )
+                and control.active
+            ).sorted("id")[-1:]
             lines.append(
                 Command.create(
                     {
@@ -335,9 +361,18 @@ class BudgetPlanLine(models.Model):
         comodel_name="account.analytic.account",
         required=True,
     )
-    allocated_amount = fields.Monetary(string="Allocated")
+    allocated_amount = fields.Monetary(
+        string="Allocated",
+        compute="_compute_budget_amounts",
+        help="New Budget + Forward Balance available for allocation.",
+    )
     released_amount = fields.Monetary(string="Released")
-    amount = fields.Monetary(string="New Amount")
+    amount = fields.Monetary(string="New Budget")
+    amount_forward_in = fields.Monetary(
+        string="Forward Balance",
+        compute="_compute_budget_amounts",
+        help="Available budget carried in from a completed forward balance.",
+    )
     amount_consumed = fields.Monetary(string="Consumed")
     company_ids = fields.Many2many(
         comodel_name="res.company", related="analytic_account_id.budget_company_ids"
@@ -349,10 +384,42 @@ class BudgetPlanLine(models.Model):
         default=True, help="Activate/Deactivate when create/Update Budget Control"
     )
 
-    @api.depends("analytic_account_id.budget_control_ids")
+    @api.depends("amount", "analytic_account_id", "budget_period_id")
+    def _compute_budget_amounts(self):
+        """Compute the forward balance and the total amount to allocate."""
+        period_ids = self.mapped("budget_period_id").ids
+        analytic_ids = self.mapped("analytic_account_id").ids
+        amounts = self.env["budget.balance.forward.line"]._get_forward_balance_map(
+            period_ids, analytic_ids
+        )
+        for rec in self:
+            rec.amount_forward_in = amounts[
+                (rec.budget_period_id.id, rec.analytic_account_id.id)
+            ]
+            rec.allocated_amount = rec.amount + rec.amount_forward_in
+
+    @api.constrains("amount")
+    def _check_amount_nonnegative(self):
+        for rec in self:
+            if (
+                float_compare(
+                    rec.amount,
+                    0.0,
+                    precision_rounding=rec.currency_id.rounding,
+                )
+                < 0
+            ):
+                raise ValidationError(self.env._("New Budget cannot be negative."))
+
+    @api.depends("analytic_account_id.budget_control_ids", "budget_period_id")
     def _compute_budget_control_ids(self):
         for rec in self.sudo():
-            rec.budget_control_ids = rec.analytic_account_id.budget_control_ids
+            rec.budget_control_ids = (
+                rec.analytic_account_id.budget_control_ids.filtered(
+                    lambda control, rec=rec: control.budget_period_id
+                    == rec.budget_period_id
+                )
+            )
 
     @api.constrains("analytic_account_id")
     def _check_duplicate_analytic_account(self):

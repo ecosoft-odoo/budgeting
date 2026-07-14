@@ -37,7 +37,6 @@
                     widget="many2many_tags"
                     optional="show"
                 />
-                <field name="initial_available" optional="show" />
                 <field name="initial_commit" optional="show" />
             </xpath>
         </field>
@@ -66,16 +65,6 @@
             <xpath expr="//group[@name='main']/group[2]" position="inside">
                 <field name="budget_actual_source" />
                 <field name="auto_adjust_date_commit" />
-                <label for="initial_available" />
-                <div>
-                    <field name="initial_available" class="oe_inline" />
-                    <button
-                        name="action_edit_initial_available"
-                        string="=> Edit"
-                        type="object"
-                        class="oe_link"
-                    />
-                </div>
                 <field name="initial_commit" />
             </xpath>
         </field>
@@ -115,11 +104,6 @@
                     optional="show"
                 />
                 <field name="budget_actual_source" optional="show" />
-                <field
-                    name="initial_available"
-                    sum="Total Available Initial"
-                    optional="show"
-                />
                 <field
                     name="initial_commit"
                     sum="Total Commit Initial"

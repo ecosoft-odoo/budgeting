@@ -10,6 +10,11 @@ class BudgetMonitorReport(models.Model):
 
     revision_number = fields.Char()
 
+    def _select_forward_balance_extra(self):
+        select = super()._select_forward_balance_extra()
+        select[70] = "null::char as revision_number"
+        return select
+
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()

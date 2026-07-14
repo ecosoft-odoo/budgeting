@@ -18,19 +18,7 @@
                                 optional="hide"
                             />
                             <field
-                                name="initial_available"
-                                force_save="1"
-                                optional="show"
-                                sum="Total"
-                            />
-                            <field
                                 name="initial_commit"
-                                force_save="1"
-                                optional="show"
-                                sum="Total"
-                            />
-                            <field
-                                name="amount_balance"
                                 force_save="1"
                                 optional="show"
                                 sum="Total"

@@ -6,6 +6,18 @@ from odoo import models
 class BudgetMonitorReport(models.Model):
     _inherit = "budget.monitor.report"
 
+    def _select_forward_balance_extra(self):
+        select = super()._select_forward_balance_extra()
+        dimension_fields = sorted(self._get_dimension_fields("budget.plan.line.detail"))
+        dimensions = ", ".join(
+            f"null::integer as {field}" for field in dimension_fields
+        )
+        dimensions = f", {dimensions}" if dimensions else ""
+        select[80] = (
+            "null::integer as fund_id, null::integer as fund_group_id" f"{dimensions}"
+        )
+        return select
+
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
