@@ -548,6 +548,10 @@ class BudgetPeriod(models.Model):
             if is_commit:
                 budget_info[col] = -amount  # Negate
                 budget_info["amount_commit"] += budget_info[col]
+            elif amount_type == "12_forward_out":
+                # The monitoring dataset stores outflows as negative ledger
+                # amounts. Present Forward Out as a positive business amount.
+                budget_info[col] = -amount
             elif amount_type == "80_actual":  # Negate consumed
                 budget_info[col] = -amount
             else:
@@ -556,7 +560,9 @@ class BudgetPeriod(models.Model):
             budget_info["amount_commit"] + budget_info["amount_actual"]
         )
         budget_info["amount_balance"] = (
-            budget_info["amount_budget"] - budget_info["amount_consumed"]
+            budget_info["amount_budget"]
+            - budget_info["amount_forward_out"]
+            - budget_info["amount_consumed"]
         )
         return budget_info
 
@@ -567,6 +573,7 @@ class BudgetPeriod(models.Model):
                     "10_budget",
                     False,
                 ),  # (amount_type, is_commit)
+                "amount_forward_out": ("12_forward_out", False),
                 "amount_actual": ("80_actual", False),
             },
             "fields": [

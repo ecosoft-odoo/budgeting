@@ -205,17 +205,16 @@ class BudgetBalanceForward(models.Model):
         self.ensure_one()
 
         def get_amount(k, v):
-            forwards = self.env["budget.balance.forward.line"].read_group(
+            forwards = self.env["budget.balance.forward.line"]._read_group(
                 [
                     ("forward_id", "=", self.id),
                     ("forward_id.state", "in", ["review", "done"]),
                     (k, "!=", False),
                 ],
-                [k, v],
                 [k],
-                orderby=v,
+                [f"{v}:sum"],
             )
-            return {f[k][0]: f[v] for f in forwards}
+            return {analytic.id: amount for analytic, amount in forwards}
 
         # From to_analytic_account_id
         res_a = get_amount("to_analytic_account_id", "amount_balance_forward")
@@ -233,23 +232,144 @@ class BudgetBalanceForward(models.Model):
         ]
         return res
 
-    def _do_update_initial_avaliable(self):
-        """Update all Analytic Account's initial commit value
-        related to budget period"""
-        self.ensure_one()
-        # Reset all lines
-        Analytic = self.env["account.analytic.account"]
-        analytic_carry_forward = self.forward_line_ids.mapped("to_analytic_account_id")
-        analytic_accumulate = self.forward_line_ids.mapped(
+    def _invalidate_forward_budget_records(self):
+        """Invalidate every non-stored total affected by these documents."""
+        lines = self.mapped("forward_line_ids")
+        if not lines:
+            return
+        source_analytics = lines.mapped("analytic_account_id")
+        target_analytics = lines.mapped("to_analytic_account_id") + lines.mapped(
             "accumulate_analytic_account_id"
         )
-        analytics = analytic_carry_forward + analytic_accumulate
-        analytics.write({"initial_available": 0.0})
-        # --
-        forward_vals = self._get_forward_initial_balance()
-        for val in forward_vals:
-            analytic = Analytic.browse(val["analytic_account_id"])
-            analytic.initial_available = val["initial_available"]
+        source_periods = self.mapped("from_budget_period_id")
+        target_periods = self.mapped("to_budget_period_id")
+
+        PlanLine = self.env["budget.plan.line"].sudo()
+        plan_lines = PlanLine.search(
+            [
+                ("budget_period_id", "in", target_periods.ids),
+                ("analytic_account_id", "in", target_analytics.ids),
+            ]
+        )
+        plan_lines.invalidate_recordset(["amount_forward_in", "allocated_amount"])
+        plans = plan_lines.mapped("plan_id")
+        plans.invalidate_recordset(["total_amount"])
+
+        if "budget.plan.line.detail" in self.env:
+            detail_plans = (
+                self.env["budget.plan.line.detail"]
+                .sudo()
+                .search(
+                    [
+                        ("plan_id.budget_period_id", "in", target_periods.ids),
+                        ("analytic_account_id", "in", target_analytics.ids),
+                    ]
+                )
+                .mapped("plan_id")
+            )
+            detail_plans.invalidate_recordset(["total_amount"])
+
+        controls = (
+            self.env["budget.control"]
+            .sudo()
+            .search(
+                [
+                    ("budget_period_id", "in", (source_periods + target_periods).ids),
+                    (
+                        "analytic_account_id",
+                        "in",
+                        (source_analytics + target_analytics).ids,
+                    ),
+                ]
+            )
+        )
+        controls.invalidate_recordset(
+            [
+                "amount_budget",
+                "amount_forward_in",
+                "amount_new_budget",
+                "amount_forward_out",
+                "amount_actual",
+                "amount_commit",
+                "amount_consumed",
+                "amount_balance",
+            ]
+        )
+        (source_analytics + target_analytics).invalidate_recordset(
+            [
+                "amount_budget",
+                "amount_forward_in",
+                "amount_forward_out",
+                "amount_consumed",
+                "amount_balance",
+            ]
+        )
+
+    def _check_can_cancel(self):
+        """Prevent cancelling after the target budget entered its workflow."""
+        target_periods = self.mapped("to_budget_period_id")
+        target_analytics = self.mapped("forward_line_ids.to_analytic_account_id")
+        target_analytics += self.mapped(
+            "forward_line_ids.accumulate_analytic_account_id"
+        )
+        plans = (
+            self.env["budget.plan"]
+            .sudo()
+            .search(
+                [
+                    ("budget_period_id", "in", target_periods.ids),
+                    ("line_ids.analytic_account_id", "in", target_analytics.ids),
+                    ("state", "in", ["confirm", "done"]),
+                ]
+            )
+        )
+        controls = (
+            self.env["budget.control"]
+            .sudo()
+            .search(
+                [
+                    ("budget_period_id", "in", target_periods.ids),
+                    ("analytic_account_id", "in", target_analytics.ids),
+                ]
+            )
+        )
+        for rec in self:
+            rec_target_analytics = rec.forward_line_ids.mapped(
+                "to_analytic_account_id"
+            ) + rec.forward_line_ids.mapped("accumulate_analytic_account_id")
+            if not rec_target_analytics:
+                continue
+            rec_plans = plans.filtered(
+                lambda plan,
+                period=rec.to_budget_period_id,
+                analytics=rec_target_analytics: plan.budget_period_id == period
+                and plan.line_ids.mapped("analytic_account_id") & analytics
+            )
+            rec_controls = controls.filtered(
+                lambda control,
+                period=rec.to_budget_period_id,
+                analytics=rec_target_analytics: control.budget_period_id == period
+                and control.analytic_account_id in analytics
+            )
+            submitted_controls = rec_controls.filtered(
+                lambda control: control.state in ("submit", "done")
+            )
+            distributed_controls = rec_controls.filtered(
+                lambda control: control.line_ids
+                and not control.currency_id.is_zero(control.amount_budget)
+            )
+            used_controls = rec_controls.filtered(
+                lambda control: not control.currency_id.is_zero(control.amount_consumed)
+            )
+            if rec_plans or submitted_controls or distributed_controls or used_controls:
+                raise UserError(
+                    _(
+                        "You cannot cancel this Forward Balance because its target "
+                        "budget has already been confirmed, submitted, controlled, "
+                        "or consumed. Use the Reverse Forward process to preserve "
+                        "the audit trail."
+                    )
+                )
 
     def action_budget_balance_forward(self):
         # For extend mode, make sure bm_date_to is extended
@@ -261,21 +381,59 @@ class BudgetBalanceForward(models.Model):
                     )
         # --
         self.write({"state": "done"})
-        self._do_update_initial_avaliable()
 
     def action_cancel(self):
         self.write({"state": "cancel"})
-        self._do_update_initial_avaliable()
 
     def action_draft(self):
+        self.filtered(lambda forward: forward.state == "done")._check_can_cancel()
         self.mapped("forward_line_ids").unlink()
         self.write({"state": "draft"})
-        self._do_update_initial_avaliable()
+
+    def write(self, vals):
+        if vals.get("state") == "cancel":
+            self._check_can_cancel()
+        period_changed = {"from_budget_period_id", "to_budget_period_id"} & vals.keys()
+        if period_changed:
+            self._invalidate_forward_budget_records()
+        res = super().write(vals)
+        if period_changed or "state" in vals:
+            self._invalidate_forward_budget_records()
+        return res
 
 
 class BudgetBalanceForwardLine(models.Model):
     _name = "budget.balance.forward.line"
     _description = "Budget Balance Forward Line"
+
+    @api.model
+    def _get_forward_balance_map(self, period_ids, analytic_ids):
+        """Return completed forward balances keyed by period and analytic.
+
+        Both destination fields are deliberately handled here so callers use
+        the same period-aware source of truth.
+        """
+        result = Counter()
+        if not analytic_ids:
+            return result
+        for analytic_field, amount_field in (
+            ("to_analytic_account_id", "amount_balance_forward"),
+            ("accumulate_analytic_account_id", "amount_balance_accumulate"),
+        ):
+            domain = [
+                ("forward_id.state", "=", "done"),
+                (analytic_field, "in", analytic_ids),
+            ]
+            if period_ids:
+                domain.append(("forward_id.to_budget_period_id", "in", period_ids))
+            groups = self.sudo()._read_group(
+                domain,
+                ["forward_id", analytic_field],
+                [f"{amount_field}:sum"],
+            )
+            for forward, analytic, amount in groups:
+                result[(forward.to_budget_period_id.id, analytic.id)] += amount
+        return result
 
     forward_id = fields.Many2one(
         comodel_name="budget.balance.forward",
@@ -335,6 +493,31 @@ class BudgetBalanceForwardLine(models.Model):
         store=True,
     )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super().create(vals_list)
+        lines.mapped("forward_id")._invalidate_forward_budget_records()
+        return lines
+
+    def write(self, vals):
+        forwards = self.mapped("forward_id")
+        scope_changed = {
+            "forward_id",
+            "analytic_account_id",
+            "to_analytic_account_id",
+            "accumulate_analytic_account_id",
+        } & vals.keys()
+        if scope_changed:
+            forwards._invalidate_forward_budget_records()
+        res = super().write(vals)
+        (forwards + self.mapped("forward_id"))._invalidate_forward_budget_records()
+        return res
+
+    def unlink(self):
+        forwards = self.mapped("forward_id")
+        forwards._invalidate_forward_budget_records()
+        return super().unlink()
+
     @api.constrains("amount_balance_forward", "amount_balance_accumulate")
     def _check_amount(self):
         for rec in self:
@@ -375,7 +558,7 @@ class BudgetBalanceForwardLine(models.Model):
                     auto_create=False
                 )
 
-    @api.depends("amount_balance_forward")
+    @api.depends("amount_balance", "amount_balance_forward")
     def _compute_amount_balance_accumulate(self):
         for rec in self:
             if rec.amount_balance <= 0:

@@ -1,7 +1,7 @@
 # Copyright 2021 Ecosoft - (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import fields, models
 
 
 class BudgetCommitForwardInfo(models.TransientModel):
@@ -52,26 +52,12 @@ class BudgetCommitForwardInfoLine(models.TransientModel):
         related="analytic_account_id.plan_id",
         readonly=True,
     )
-    initial_available = fields.Monetary(
-        string="Initial Available",
-        related="analytic_account_id.initial_available",
-        readonly=True,
-    )
     initial_commit = fields.Monetary(
         string="Initial Commitment",
         readonly=True,
-    )
-    amount_balance = fields.Monetary(
-        string="Available",
-        compute="_compute_amount_balance",
     )
     currency_id = fields.Many2one(
         comodel_name="res.currency",
         related="forward_info_id.currency_id",
         readonly=True,
     )
-
-    @api.depends("initial_available", "initial_commit")
-    def _compute_amount_balance(self):
-        for rec in self:
-            rec.amount_balance = rec.initial_available - rec.initial_commit

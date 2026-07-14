@@ -26,7 +26,6 @@
         "data/budget_data.xml",
         "data/sequence_data.xml",
         # Wizards
-        "wizards/analytic_budget_edit_view.xml",
         "wizards/analytic_budget_info_view.xml",
         "wizards/confirm_state_budget_view.xml",
         "wizards/budget_commit_forward_info_view.xml",

@@ -37,14 +37,16 @@
                 <field name="analytic_account_id" />
                 <field name="analytic_plan" optional="show" />
                 <field name="assignee_ids" optional="show" widget="many2many_tags" />
-                <field name="amount_initial" optional="show" />
+                <field name="amount_forward_in" optional="hide" />
+                <field name="amount_new_budget" optional="hide" />
+                <field name="amount_budget" optional="show" />
                 <field name="allocated_amount" optional="show" />
                 <field name="released_amount" optional="show" />
                 <field name="diff_amount" optional="hide" />
-                <field name="amount_budget" optional="show" />
                 <field name="amount_commit" optional="show" />
                 <field name="amount_actual" optional="hide" />
                 <field name="amount_consumed" optional="show" />
+                <field name="amount_forward_out" optional="hide" />
                 <field name="amount_balance" optional="show" />
                 <field
                     name="company_ids"
@@ -237,7 +239,6 @@
                                 groups="base.group_multi_currency"
                                 readonly="1"
                             />
-                            <field name="amount_initial" />
                             <field name="allocated_amount" readonly="1" />
                             <field name="released_amount" />
                             <field
@@ -293,11 +294,12 @@
                                     <div
                                         class="oe_subtotal_footer_separator oe_inline o_td_label"
                                     >
-                                        <label for="amount_budget" />
+                                        <!-- <label for="amount_budget" /> -->
                                     </div>
+                                    <field name="amount_forward_in" />
+                                    <field name="amount_new_budget" />
                                     <field
                                         name="amount_budget"
-                                        nolabel="1"
                                         class="oe_subtotal_footer_separator"
                                     />
                                     <field
@@ -307,6 +309,10 @@
                                     <field name="amount_actual" />
                                     <field
                                         name="amount_consumed"
+                                        class="oe_subtotal_footer_separator"
+                                    />
+                                    <field
+                                        name="amount_forward_out"
                                         class="oe_subtotal_footer_separator"
                                     />
                                     <div

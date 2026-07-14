@@ -63,6 +63,11 @@
                     string="Budget Cancelled"
                     domain="[('budget_state', 'in', ['cancel', False])]"
                 />
+                <filter
+                    name="forward_balance_out"
+                    string="Forward Balance Out"
+                    domain="[('amount_type', '=', '12_forward_out')]"
+                />
                 <separator orientation="vertical" />
                 <filter
                     name="active"
@@ -121,7 +126,7 @@
         <field name="res_model">budget.monitor.report</field>
         <field name="view_mode">pivot,list,graph</field>
         <field name="context">{
-            'group_by':[],
+            'group_by':['budget_period_id', 'analytic_account_id'],
             'group_by_no_leaf':1,
             'search_default_budget_state_done': True
         }</field>

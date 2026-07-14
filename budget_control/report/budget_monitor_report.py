@@ -83,13 +83,78 @@ class BudgetMonitorReport(models.Model):
             (SELECT %(select_budget)s %(from_budget)s)
             UNION ALL
             (SELECT %(select_actual)s %(from_actual)s %(where_actual)s)
+            UNION ALL
+            (%(select_forward_balance)s)
             """,
             select_budget=SQL(select_budget),
             from_budget=self._from_budget(),
             select_actual=SQL(select_actual),
             from_actual=self._from_statement("80_actual"),
             where_actual=self._where_actual(),
+            select_forward_balance=self._select_forward_balance(),
         )
+
+    @api.model
+    def _select_forward_balance(self) -> SQL:
+        """Return only the source-period deduction for monitoring.
+
+        The target matrix already includes Forward Balance, so exposing a
+        positive Forward In movement would double-count it in pivot totals.
+        Target composition remains available on Budget Plan and Budget Control.
+        """
+        companies = """
+            (
+                SELECT string_agg(company.name::text, ', ')
+                FROM budget_balance_forward_company_rel forward_company
+                INNER JOIN res_company company
+                    ON company.id = forward_company.company_id
+                WHERE forward_company.forward_id = forward.id
+            )
+        """
+        source_document = """
+            forward.name || ' (' || from_period.name || ' -> ' || to_period.name || ')'
+        """
+        extra_columns = self._select_forward_balance_extra()
+        extra_select = ", ".join(extra_columns[key] for key in sorted(extra_columns))
+        extra_select = f", {extra_select}" if extra_select else ""
+        return SQL(
+            f"""
+            SELECT
+                13000000000 + line.id AS id,
+                'budget.balance.forward.line,' || line.id AS res_id,
+                NULL::integer AS kpi_id,
+                line.analytic_account_id AS analytic_account_id,
+                source_analytic.plan_id AS analytic_plan,
+                from_period.bm_date_to AS date,
+                '12_forward_out' AS amount_type,
+                -(line.amount_balance_forward + line.amount_balance_accumulate)
+                    AS amount,
+                NULL::integer AS product_id,
+                NULL::integer AS account_id,
+                forward.name AS reference,
+                {source_document} AS source_document,
+                NULL::char AS budget_state,
+                FALSE AS fwd_commit,
+                {companies} AS companies,
+                TRUE AS active
+                {extra_select}
+            FROM budget_balance_forward_line line
+            INNER JOIN budget_balance_forward forward ON forward.id = line.forward_id
+            INNER JOIN budget_period from_period
+                ON from_period.id = forward.from_budget_period_id
+            INNER JOIN budget_period to_period
+                ON to_period.id = forward.to_budget_period_id
+            INNER JOIN account_analytic_account source_analytic
+                ON source_analytic.id = line.analytic_account_id
+            WHERE forward.state = 'done'
+                AND (line.amount_balance_forward + line.amount_balance_accumulate) != 0
+            """
+        )
+
+    @api.model
+    def _select_forward_balance_extra(self):
+        """Hook for extension dimensions on every forward UNION branch."""
+        return {}
 
     def _get_select_amount_types(self):
         sql_select = {}

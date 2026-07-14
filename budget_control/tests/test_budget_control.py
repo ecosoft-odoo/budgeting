@@ -6,7 +6,7 @@ from datetime import datetime
 from freezegun import freeze_time
 
 from odoo import Command
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests import Form, tagged
 
 from .common import get_budget_common_class
@@ -504,6 +504,20 @@ class TestBudgetControl(get_budget_common_class()):
         self.assertAlmostEqual(self.budget_control2.released_amount, 2440.0)
         self.assertAlmostEqual(self.budget_control2.transferred_amount, 40.0)
 
+        # Plan-line Allocated remains the original funding while Released
+        # follows the completed transfers.
+        self.budget_plan.check_plan_consumed()
+        plan_line_from = self.budget_plan.line_ids.filtered(
+            lambda line: line.analytic_account_id == self.costcenter1
+        )
+        plan_line_to = self.budget_plan.line_ids.filtered(
+            lambda line: line.analytic_account_id == self.costcenterX
+        )
+        self.assertAlmostEqual(plan_line_from.allocated_amount, 2400.0)
+        self.assertAlmostEqual(plan_line_from.released_amount, 2360.0)
+        self.assertAlmostEqual(plan_line_to.allocated_amount, 2400.0)
+        self.assertAlmostEqual(plan_line_to.released_amount, 2440.0)
+
         # Check snart button budget_control to transfer_items
         action_transfer_from = self.budget_control.action_open_budget_transfer_item()
         self.assertEqual(action_transfer_from["res_model"], "budget.transfer.item")
@@ -535,6 +549,9 @@ class TestBudgetControl(get_budget_common_class()):
         self.assertEqual(len(self.budget_control2.transfer_item_ids), 1)
         self.assertAlmostEqual(self.budget_control2.released_amount, 2400.0)
         self.assertAlmostEqual(self.budget_control2.transferred_amount, 0.0)
+        self.budget_plan.check_plan_consumed()
+        self.assertAlmostEqual(plan_line_from.released_amount, 2400.0)
+        self.assertAlmostEqual(plan_line_to.released_amount, 2400.0)
 
     @freeze_time("2001-02-01")
     def test_17_budget_adjustment(self):
@@ -578,6 +595,403 @@ class TestBudgetControl(get_budget_common_class()):
 
         budget_commit_forward.action_draft()
         self.assertEqual(budget_commit_forward.state, "draft")
+
+    def test_18a_budget_balance_forward_monitoring(self):
+        """A completed balance forward must reduce the source availability."""
+        BudgetPeriod = self.env["budget.period"]
+        BalanceForward = self.env["budget.balance.forward"]
+        BalanceForwardLine = self.env["budget.balance.forward.line"]
+        MonitorReport = self.env["budget.monitor.report"]
+
+        next_period = BudgetPeriod.create(
+            {
+                "name": f"Budget for FY{self.year + 1}",
+                "template_id": self.template.id,
+                "bm_date_from": f"{self.year + 1}-01-01",
+                "bm_date_to": f"{self.year + 1}-12-31",
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+            }
+        )
+        forward = BalanceForward.create(
+            {
+                "name": "Test: Budget Balance Forward",
+                "from_budget_period_id": self.budget_period.id,
+                "to_budget_period_id": next_period.id,
+            }
+        )
+        forward_line = BalanceForwardLine.create(
+            {
+                "forward_id": forward.id,
+                "analytic_account_id": self.costcenter1.id,
+                "amount_balance": 30.0,
+                "amount_balance_forward": 20.0,
+                "accumulate_analytic_account_id": self.costcenter1.id,
+            }
+        )
+        next_plan_vals = {
+            "name": "Budget Plan FY Next",
+            "budget_period_id": next_period.id,
+            "line_ids": [
+                Command.create(
+                    {
+                        "analytic_account_id": self.costcenter1.id,
+                        "amount": 20.0,
+                    }
+                )
+            ],
+        }
+        # budget_plan_detail overrides total_amount to use detail lines until
+        # the plan is confirmed.  This core test intentionally exercises the
+        # plan-line flow, so make that mode explicit when the optional module
+        # is installed (as it is in the full CI test suite).
+        if "is_confirm_plan" in self.BudgetPlan._fields:
+            next_plan_vals["is_confirm_plan"] = True
+        next_plan = self.BudgetPlan.create(next_plan_vals)
+        self.assertEqual(self.budget_control.amount_balance, 2400.0)
+        self.assertEqual(next_plan.line_ids.amount_forward_in, 0.0)
+        self.assertEqual(next_plan.line_ids.allocated_amount, 20.0)
+
+        forward.action_budget_balance_forward()
+        self.assertEqual(self.budget_control.amount_balance, 2370.0)
+        self.assertEqual(next_plan.line_ids.amount_forward_in, 30.0)
+        self.assertEqual(next_plan.line_ids.allocated_amount, 50.0)
+
+        # A line change must invalidate cached Plan and Control totals.
+        forward_line.amount_balance = 40.0
+        self.assertEqual(next_plan.line_ids.amount_forward_in, 40.0)
+        self.assertEqual(next_plan.line_ids.allocated_amount, 60.0)
+        forward_line.amount_balance = 30.0
+        self.assertEqual(next_plan.line_ids.amount_forward_in, 30.0)
+        self.assertEqual(next_plan.line_ids.allocated_amount, 50.0)
+
+        next_plan.check_plan_consumed()
+        next_plan.action_create_update_budget_control()
+        target_control = self.BudgetControl.search(
+            [
+                ("budget_period_id", "=", next_period.id),
+                ("analytic_account_id", "=", self.costcenter1.id),
+            ]
+        )
+        self.assertEqual(len(target_control), 1)
+        self.assertNotEqual(target_control, self.budget_control)
+        self.assertEqual(target_control.allocated_amount, 50.0)
+        target_line = self.env["budget.control.line"].create(
+            {
+                "budget_control_id": target_control.id,
+                "analytic_account_id": self.costcenter1.id,
+                "date_from": next_period.bm_date_from,
+                "date_to": next_period.bm_date_to,
+                "amount": 50.0,
+            }
+        )
+        target_control.allocated_amount = target_line.amount
+
+        self.assertEqual(self.budget_control.amount_forward_out, 30.0)
+        self.assertEqual(self.budget_control.amount_balance, 2370.0)
+        self.assertEqual(target_control.amount_forward_in, 30.0)
+        self.assertEqual(target_control.amount_new_budget, 20.0)
+        self.assertEqual(target_control.amount_budget, 50.0)
+        self.assertEqual(target_control.amount_balance, 50.0)
+        self.assertEqual(next_plan.line_ids.amount_forward_in, 30.0)
+        self.assertEqual(next_plan.line_ids.allocated_amount, 50.0)
+        self.assertEqual(next_plan.line_ids.released_amount, 50.0)
+        self.assertEqual(next_plan.total_amount, 50.0)
+        target_control.action_submit()
+        self.assertEqual(target_control.state, "submit")
+
+        carry_only_plan = self.BudgetPlan.create(
+            {
+                "name": "Carry Only Budget Plan FY Next",
+                "budget_period_id": next_period.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "analytic_account_id": self.costcenter1.id,
+                            "amount": 0.0,
+                        }
+                    )
+                ],
+            }
+        )
+        carry_only_plan.check_plan_consumed()
+        self.assertEqual(carry_only_plan.line_ids.allocated_amount, 30.0)
+        target_monitoring = target_control.action_view_monitoring()
+        self.assertIn(
+            ("budget_period_id", "=", next_period.id),
+            target_monitoring["domain"],
+        )
+
+        fields = ["budget_period_id", "amount_type", "amount"]
+        groupby = ["budget_period_id", "amount_type"]
+        source_data = MonitorReport.read_group(
+            [
+                ("analytic_account_id", "=", self.costcenter1.id),
+                ("budget_period_id", "=", self.budget_period.id),
+            ],
+            fields,
+            groupby,
+            lazy=False,
+        )
+        target_data = MonitorReport.read_group(
+            [
+                ("analytic_account_id", "=", self.costcenter1.id),
+                ("budget_period_id", "=", next_period.id),
+            ],
+            fields,
+            groupby,
+            lazy=False,
+        )
+        source_amounts = {row["amount_type"]: row["amount"] for row in source_data}
+        target_amounts = {row["amount_type"]: row["amount"] for row in target_data}
+        self.assertEqual(source_amounts["12_forward_out"], -30.0)
+        self.assertNotIn("11_forward_in", target_amounts)
+        self.assertEqual(target_amounts["10_budget"], 50.0)
+        self.assertEqual(sum(target_amounts.values()), 50.0)
+
+        with self.assertRaisesRegex(UserError, "Reverse Forward"):
+            forward.action_cancel()
+        self.assertEqual(forward.state, "done")
+        self.assertEqual(self.budget_control.amount_balance, 2370.0)
+        self.assertEqual(next_plan.line_ids.allocated_amount, 50.0)
+
+        # Cancellation is safe before a target Plan or Control enters workflow.
+        cancellable_forward = BalanceForward.create(
+            {
+                "name": "Test: Cancellable Budget Balance Forward",
+                "from_budget_period_id": self.budget_period.id,
+                "to_budget_period_id": next_period.id,
+            }
+        )
+        BalanceForwardLine.create(
+            {
+                "forward_id": cancellable_forward.id,
+                "analytic_account_id": self.costcenterX.id,
+                "amount_balance": 10.0,
+                "amount_balance_forward": 10.0,
+            }
+        )
+        self.assertEqual(self.budget_control2.amount_balance, 2400.0)
+        cancellable_forward.action_budget_balance_forward()
+        self.assertEqual(self.budget_control2.amount_balance, 2390.0)
+        cancellable_forward.action_cancel()
+        self.assertEqual(self.budget_control2.amount_balance, 2400.0)
+
+        with self.assertRaisesRegex(ValidationError, "cannot be negative"):
+            self.BudgetPlan.create(
+                {
+                    "name": "Invalid Negative Budget",
+                    "budget_period_id": next_period.id,
+                    "line_ids": [
+                        Command.create(
+                            {
+                                "analytic_account_id": self.costcenterX.id,
+                                "amount": -1.0,
+                            }
+                        )
+                    ],
+                }
+            )
+
+    @freeze_time("2001-02-01")
+    def test_18b_balance_forward_same_analytic(self):
+        """Forward balance on the same analytic reduces source and cancels safely."""
+        BalanceForwardLine = self.env["budget.balance.forward.line"]
+
+        next_period = self.env["budget.period"].create(
+            {
+                "name": f"Budget for FY{self.year + 1}",
+                "template_id": self.template.id,
+                "bm_date_from": f"{self.year + 1}-01-01",
+                "bm_date_to": f"{self.year + 1}-12-31",
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+            }
+        )
+        forward = self.env["budget.balance.forward"].create(
+            {
+                "name": "Test: Same Analytic Forward",
+                "from_budget_period_id": self.budget_period.id,
+                "to_budget_period_id": next_period.id,
+            }
+        )
+        BalanceForwardLine.create(
+            {
+                "forward_id": forward.id,
+                "analytic_account_id": self.costcenter1.id,
+                "amount_balance": 500.0,
+                "amount_balance_forward": 500.0,
+            }
+        )
+        # No bm_date_to -> the same analytic is reused as destination.
+        self.assertEqual(
+            forward.forward_line_ids.to_analytic_account_id, self.costcenter1
+        )
+
+        next_plan_vals = {
+            "name": "Same Analytic Plan FY Next",
+            "budget_period_id": next_period.id,
+            "line_ids": [
+                Command.create(
+                    {"analytic_account_id": self.costcenter1.id, "amount": 100.0}
+                )
+            ],
+        }
+        # Keep this core scenario on plan lines when budget_plan_detail is
+        # installed in the full CI suite. Its test helper otherwise creates
+        # default detail lines and replaces the explicit 100.0 with 2400.0.
+        if "is_confirm_plan" in self.BudgetPlan._fields:
+            next_plan_vals["is_confirm_plan"] = True
+        next_plan = self.BudgetPlan.create(next_plan_vals)
+        # Draft forward is not counted yet.
+        self.assertEqual(next_plan.line_ids.amount_forward_in, 0.0)
+
+        forward.action_budget_balance_forward()
+        self.budget_control.invalidate_recordset()
+        next_plan.invalidate_recordset()
+        # Source: 2400 - 500 forwarded out = 1900.
+        self.assertEqual(self.budget_control.amount_forward_out, 500.0)
+        self.assertEqual(self.budget_control.amount_balance, 1900.0)
+        self.costcenter1.invalidate_recordset()
+        self.assertEqual(self.costcenter1.amount_forward_out, 500.0)
+        # Target: 500 forwarded in + 100 new = 600 available.
+        self.assertEqual(next_plan.line_ids.amount_forward_in, 500.0)
+        self.assertEqual(next_plan.line_ids.allocated_amount, 600.0)
+
+        # --- Cancel a forward whose target is not yet in any workflow ---
+        cancellable = self.env["budget.balance.forward"].create(
+            {
+                "name": "Test: Cancellable Same Analytic Forward",
+                "from_budget_period_id": self.budget_period.id,
+                "to_budget_period_id": next_period.id,
+            }
+        )
+        BalanceForwardLine.create(
+            {
+                "forward_id": cancellable.id,
+                "analytic_account_id": self.costcenterX.id,
+                "amount_balance": 100.0,
+                "amount_balance_forward": 100.0,
+            }
+        )
+        self.budget_control2.invalidate_recordset()
+        cancellable.action_budget_balance_forward()
+        self.budget_control2.invalidate_recordset()
+        self.assertEqual(self.budget_control2.amount_balance, 2300.0)
+        cancellable.action_cancel()
+        self.budget_control2.invalidate_recordset()
+        # Cancel restores the source balance.
+        self.assertEqual(self.budget_control2.amount_balance, 2400.0)
+
+    @freeze_time("2001-02-01")
+    def test_18c_balance_forward_different_analytic(self):
+        """Forward balance to a different analytic (method_type 'new')
+        tracks correctly."""
+        BalanceForwardLine = self.env["budget.balance.forward.line"]
+        MonitorReport = self.env["budget.monitor.report"]
+
+        # Source analytic ends before the next period -> method_type 'new'.
+        self.costcenter1.bm_date_to = f"{self.year}-12-31"
+        next_period = self.env["budget.period"].create(
+            {
+                "name": f"Budget for FY{self.year + 1}",
+                "template_id": self.template.id,
+                "bm_date_from": f"{self.year + 1}-01-01",
+                "bm_date_to": f"{self.year + 1}-12-31",
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+            }
+        )
+        # The destination analytic is resolved via next_year_analytic().
+        next_analytic = self.costcenter1.next_year_analytic(auto_create=True)
+        self.assertNotEqual(next_analytic, self.costcenter1)
+        forward = self.env["budget.balance.forward"].create(
+            {
+                "name": "Test: Different Analytic Forward",
+                "from_budget_period_id": self.budget_period.id,
+                "to_budget_period_id": next_period.id,
+            }
+        )
+        BalanceForwardLine.create(
+            {
+                "forward_id": forward.id,
+                "analytic_account_id": self.costcenter1.id,
+                "amount_balance": 300.0,
+                "amount_balance_forward": 300.0,
+                "method_type": "new",
+            }
+        )
+        self.assertEqual(forward.forward_line_ids.to_analytic_account_id, next_analytic)
+
+        next_plan = self.create_budget_plan(
+            name="Different Analytic Plan FY Next",
+            budget_period=next_period,
+            lines=[
+                Command.create(
+                    {"analytic_account_id": next_analytic.id, "amount": 200.0}
+                )
+            ],
+        )
+        forward.action_budget_balance_forward()
+        self.budget_control.invalidate_recordset()
+        next_plan.invalidate_recordset()
+        # Source: 2400 - 300 forwarded out = 2100.
+        self.assertEqual(self.budget_control.amount_forward_out, 300.0)
+        self.assertEqual(self.budget_control.amount_balance, 2100.0)
+        # Target: 300 forwarded in + 200 new = 500 available.
+        self.assertEqual(next_plan.line_ids.amount_forward_in, 300.0)
+        self.assertEqual(next_plan.line_ids.allocated_amount, 500.0)
+
+        # Build the target budget control and verify its breakdown.
+        next_plan.action_create_update_budget_control()
+        target_control = self.BudgetControl.search(
+            [
+                ("budget_period_id", "=", next_period.id),
+                ("analytic_account_id", "=", next_analytic.id),
+            ]
+        )
+        self.env["budget.control.line"].create(
+            {
+                "budget_control_id": target_control.id,
+                "analytic_account_id": next_analytic.id,
+                "date_from": next_period.bm_date_from,
+                "date_to": next_period.bm_date_to,
+                "amount": 500.0,
+            }
+        )
+        target_control.allocated_amount = 500.0
+        target_control.invalidate_recordset()
+        self.assertEqual(target_control.amount_forward_in, 300.0)
+        self.assertEqual(target_control.amount_new_budget, 200.0)
+        self.assertEqual(target_control.amount_budget, 500.0)
+
+        # Monitoring keeps the signed negative ledger amount; the target analytic
+        # only exposes its budget line (forward_in stays out to avoid duplicates).
+        report_fields = ["amount_type", "amount"]
+        groupby = ["amount_type"]
+        source_data = MonitorReport.read_group(
+            [
+                ("analytic_account_id", "=", self.costcenter1.id),
+                ("budget_period_id", "=", self.budget_period.id),
+            ],
+            report_fields,
+            groupby,
+            lazy=False,
+        )
+        source_amounts = {row["amount_type"]: row["amount"] for row in source_data}
+        self.assertEqual(source_amounts["12_forward_out"], -300.0)
+        target_data = MonitorReport.read_group(
+            [
+                ("analytic_account_id", "=", next_analytic.id),
+                ("budget_period_id", "=", next_period.id),
+            ],
+            report_fields,
+            groupby,
+            lazy=False,
+        )
+        target_amounts = {row["amount_type"]: row["amount"] for row in target_data}
+        self.assertNotIn("11_forward_in", target_amounts)
+        self.assertEqual(target_amounts["10_budget"], 500.0)
 
     @freeze_time("2001-02-01")
     def test_19_unmatched_account_bypass_and_policy(self):

@@ -1,6 +1,8 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from collections import defaultdict
+
 from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models
@@ -59,6 +61,16 @@ class AccountAnalyticAccount(models.Model):
         compute="_compute_amount_budget_info",
         help="Sum of amount plan",
     )
+    amount_forward_in = fields.Monetary(
+        string="Forward In",
+        compute="_compute_amount_budget_info",
+        help="Available budget carried in from another budget period.",
+    )
+    amount_forward_out = fields.Monetary(
+        string="Forward Out",
+        compute="_compute_amount_budget_info",
+        help="Available budget carried out, shown as a positive amount.",
+    )
     amount_consumed = fields.Monetary(
         string="Consumed",
         compute="_compute_amount_budget_info",
@@ -67,13 +79,7 @@ class AccountAnalyticAccount(models.Model):
     amount_balance = fields.Monetary(
         string="Available",
         compute="_compute_amount_budget_info",
-        help="Available = Total Budget - Consumed",
-    )
-    initial_available = fields.Monetary(
-        copy=False,
-        readonly=True,
-        tracking=True,
-        help="Initial Balance come from carry forward available accumulated",
+        help="Available = Total Budget - Forward Out - Consumed",
     )
     initial_commit = fields.Monetary(
         string="Initial Commitment",
@@ -182,23 +188,36 @@ class AccountAnalyticAccount(models.Model):
         admin_uid = self.env.ref("base.user_admin").id
         dataset_all = MonitorReport.with_user(admin_uid).read_group(
             domain=domain,
-            fields=["analytic_account_id", "amount_type", "amount"],
+            fields=[
+                "analytic_account_id",
+                "amount_type",
+                "amount",
+            ],
             groupby=["analytic_account_id", "amount_type"],
             lazy=False,
         )
+        dataset_map = defaultdict(list)
+        for data in dataset_all:
+            dataset_map[data["analytic_account_id"][0]].append(data)
+        forward_map = self.env["budget.balance.forward.line"]._get_forward_balance_map(
+            ctx.get("budget_period_ids", []), analytic_ids
+        )
+        forward_totals = defaultdict(float)
+        for (_period_id, analytic_id), amount in forward_map.items():
+            forward_totals[analytic_id] += amount
         for rec in self:
-            # Filter according to budget_control parameter
-            dataset = list(
-                filter(
-                    lambda dataset: rec._filter_by_analytic_account(dataset),
-                    dataset_all,
-                )
-            )
             # Get data from dataset
+            dataset = [
+                data
+                for data in dataset_map[rec.id]
+                if rec._filter_by_analytic_account(data)
+            ]
             budget_info = BudgetPeriod.get_budget_info_from_dataset(query, dataset)
             rec.amount_budget = budget_info["amount_budget"]
+            rec.amount_forward_in = forward_totals[rec.id]
+            rec.amount_forward_out = budget_info["amount_forward_out"]
             rec.amount_consumed = budget_info["amount_consumed"]
-            rec.amount_balance = rec.amount_budget - rec.amount_consumed
+            rec.amount_balance = budget_info["amount_balance"]
 
     def _find_next_analytic(self, next_date_range):
         self.ensure_one()
@@ -308,13 +327,3 @@ class AccountAnalyticAccount(models.Model):
                 docline.date_commit = rec.bm_date_from
             elif rec.bm_date_to and rec.bm_date_to < docline.date_commit:
                 docline.date_commit = rec.bm_date_to
-
-    def action_edit_initial_available(self):
-        return {
-            "name": self.env._("Edit Analytic Budget"),
-            "type": "ir.actions.act_window",
-            "res_model": "analytic.budget.edit",
-            "view_mode": "form",
-            "target": "new",
-            "context": {"default_initial_available": self.initial_available},
-        }
