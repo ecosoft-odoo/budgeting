@@ -3,7 +3,7 @@
 
 from freezegun import freeze_time
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import Form, tagged
 
@@ -267,3 +267,63 @@ class TestBudgetControlExpense(get_budget_common_class()):
         self.budget_control.invalidate_recordset()
         self.assertAlmostEqual(self.budget_control.amount_expense, 0.0)
         self.assertAlmostEqual(self.budget_control.amount_actual, 0.0)
+
+    @freeze_time("2001-02-01")
+    def test_04_batch_precommit_and_reverse_period(self):
+        """Batching keeps manual dates and resolves reversals from expense date."""
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+
+        analytic_distribution = {str(self.costcenter1.id): 100}
+        sheet = self._create_expense_sheet(
+            [
+                {
+                    "product_id": self.product1,
+                    "product_qty": 1,
+                    "price_unit": 30,
+                    "analytic_distribution": analytic_distribution,
+                },
+                {
+                    "product_id": self.product2,
+                    "product_qty": 1,
+                    "price_unit": 40,
+                    "analytic_distribution": analytic_distribution,
+                },
+            ]
+        )
+        expenses = sheet.expense_line_ids.sorted("id")
+        manual_date = fields.Date.to_date("2001-02-10")
+        expenses[0].date_commit = manual_date
+        self.assertTrue(expenses._can_batch_budget_precommit())
+
+        budget_moves, reset_date_lines = expenses._create_precommit_budget_moves_batch()
+        moves_by_expense = {move.expense_id.id: move for move in budget_moves}
+        self.assertEqual(moves_by_expense[expenses[0].id].date, manual_date)
+        self.assertEqual(reset_date_lines, expenses[1])
+        budget_moves.unlink()
+        reset_date_lines.write({"date_commit": False})
+
+        sheet = sheet.with_context(force_date_commit=manual_date)
+        sheet.action_submit_sheet()
+        sheet.action_approve_expense_sheets()
+        sheet.action_sheet_move_post()
+
+        expense = expenses[0]
+        original_template_line = expense.budget_move_ids[:1].template_line_id
+        reverse_moves = expense.budget_move_ids.filtered("move_line_id")
+        reverse_moves.unlink()
+        expense.invalidate_recordset(["amount_commit"])
+
+        move_line = sheet.account_move_ids.invoice_line_ids.filtered(
+            lambda line: line.expense_id == expense
+        )
+        move_line.with_context(
+            skip_account_move_synchronization=True
+        ).date_commit = fields.Date.to_date("2002-01-01")
+        move_line.uncommit_expense_budget()
+
+        reverse_move = expense.budget_move_ids.filtered("move_line_id")
+        self.assertEqual(reverse_move.date, fields.Date.to_date("2002-01-01"))
+        self.assertEqual(reverse_move.template_line_id, original_template_line)

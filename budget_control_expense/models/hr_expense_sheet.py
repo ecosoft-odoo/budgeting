@@ -63,10 +63,3 @@ class HRExpenseSheet(models.Model):
                 doc.expense_line_ids, doc_type="expense"
             )
         return res
-
-    def action_sheet_move_create(self):
-        res = super().action_sheet_move_create()
-        BudgetPeriod = self.env["budget.period"]
-        for doc in self:
-            BudgetPeriod.check_budget(doc.account_move_ids.line_ids)
-        return res

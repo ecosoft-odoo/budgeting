@@ -16,19 +16,37 @@ class HRExpense(models.Model):
         inverse_name="expense_id",
     )
 
-    def recompute_budget_move(self):
+    def _recompute_budget_move_sequential(self):
+        """Keep the legacy order for carry-forward, whose checks are sheet-wide."""
         budget_field = self._budget_field()
         force_date_commit = self.env.context.get("force_date_commit", False)
         for expense in self:
-            # Make sure that date_commit not recompute
             ex_date_commit = force_date_commit or expense.date_commit
             expense[budget_field].unlink()
             expense.with_context(force_date_commit=ex_date_commit).commit_budget()
-            # credit will not over debit (auto adjust)
             expense.forward_commit()
+
+    def recompute_budget_move(self):
+        forwarded = self.filtered(
+            lambda expense: expense.fwd_analytic_distribution or expense.fwd_date_commit
+        )
+        if forwarded:
+            # forward_commit() can create an over-return adjustment based on all
+            # moves of the sheet.  Recreate the whole recordset sequentially when
+            # any line is forwarded so intermediate balances stay identical.
+            self._recompute_budget_move_sequential()
+        else:
+            # Normal expenses are independent and can safely share one
+            # unlink/create/template update operation.
+            self.recompute_budget_move_batch()
         self.mapped(
             "sheet_id.account_move_ids.invoice_line_ids"
         ).uncommit_expense_budget()
+
+    def _can_batch_budget_precommit(self):
+        # Advance lines override commit_budget() to use advance.budget.move;
+        # the generic batch helper uses one model for the whole recordset.
+        return not ("advance" in self._fields and any(self.mapped("advance")))
 
     def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
