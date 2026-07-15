@@ -31,10 +31,7 @@ class AccountMoveLine(models.Model):
         return res
 
     def recompute_budget_move(self):
-        for invoice_line in self:
-            invoice_line.budget_move_ids.unlink()
-            # Commit on invoice
-            invoice_line.commit_budget()
+        return self.recompute_budget_move_batch()
 
     def _init_docline_budget_vals(self, budget_vals):
         self.ensure_one()
