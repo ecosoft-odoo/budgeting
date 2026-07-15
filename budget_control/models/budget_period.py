@@ -1,7 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import SQL, float_compare, format_amount
 
@@ -242,27 +242,33 @@ class BudgetPeriod(models.Model):
             budget_moves_uncommit = doclines.with_context(
                 force_commit=True
             ).uncommit_purchase_budget()
-        # Commit budget
-        budget_moves = []
-        vals_date_commit = []
-        for line in doclines:
-            if not line.date_commit:
-                vals_date_commit.append(line.id)
-            budget_move = line.with_context(force_commit=True).commit_budget()
-            if budget_move:
-                budget_moves.append(budget_move)
-        # Update database, so we can check budget with query
-        if budget_move:
-            budget_move.flush_model()
+        # Batch only models that explicitly guarantee equivalence with their
+        # commit_budget() behavior. Other models keep the original line loop.
+        if doclines._can_batch_budget_precommit():
+            budget_moves, reset_date_lines = (
+                doclines._create_precommit_budget_moves_batch()
+            )
+            budget_move_groups = [budget_moves]
+        else:
+            budget_move_groups = []
+            reset_date_lines = doclines.filtered(lambda line: not line.date_commit)
+            for line in doclines:
+                budget_move = line.with_context(force_commit=True).commit_budget()
+                if budget_move:
+                    budget_move_groups.append(budget_move)
+        # Update database, so we can check budget with query.
+        flushed_models = set()
+        for budget_moves in budget_move_groups:
+            if budget_moves and budget_moves._name not in flushed_models:
+                budget_moves.flush_model()
+                flushed_models.add(budget_moves._name)
         # Check Budget
         self.env["budget.period"].check_budget(doclines, doc_type=doc_type)
         # Remove commits
-        for budget_move in budget_moves:
-            budget_move.unlink()
+        for budget_moves in budget_move_groups:
+            budget_moves.unlink()
         # Delete date commit from system create auto only
-        doclines.filtered(
-            lambda line, vals_date_commit=vals_date_commit: line.id in vals_date_commit
-        ).write({"date_commit": False})
+        reset_date_lines.write({"date_commit": False})
         # Remove uncommit budget
         if budget_moves_uncommit:
             budget_moves_uncommit.unlink()
@@ -424,7 +430,10 @@ class BudgetPeriod(models.Model):
         return self.env["budget.monitor.report"]
 
     def _get_budget_avaiable(self, analytic_id, template_lines):
-        self.env.flush_all()
+        # Callers that batch many queries can set env.context['skip_budget_flush']
+        # after flushing once themselves, avoiding a flush_all() per control.
+        if not self.env.context.get("skip_budget_flush"):
+            self.env.flush_all()
         self.env.cr.execute(
             SQL(
                 f"""
@@ -453,6 +462,12 @@ class BudgetPeriod(models.Model):
         company = self.env.user.company_id
         doc_currency = self.env.context.get("doc_currency")
         date_commit = self.env.context.get("date_commit")
+        # Flush once for all controls. Budget moves are not written while this
+        # loop runs (it only reads and raises/returns), so a single flush before
+        # the loop is enough and avoids repeating the expensive flush_all() per
+        # control when checking many analytics/KPIs.
+        self.env.flush_all()
+        self = self.with_context(skip_budget_flush=True)
         for control in controls:
             analytic_id = control["analytic_id"]
             # Get the KPI(s) to check the budget,
@@ -476,7 +491,7 @@ class BudgetPeriod(models.Model):
             )
             if budget_period.control_level == "analytic_kpi" and not data_budget:
                 raise UserError(
-                    _("Chosen KPI %s is not valid for budgeting")
+                    self.env._("Chosen KPI %s is not valid for budgeting")
                     % template_lines.display_name
                 )
             balance = sum(
@@ -497,7 +512,9 @@ class BudgetPeriod(models.Model):
                 if budget_period.control_level == "analytic_kpi":
                     analytic_name = f"{template_lines.display_name} & {analytic_name}"
                 warnings.append(
-                    _("{analytic_name}, will result in {formatted_balance}").format(
+                    self.env._(
+                        "{analytic_name}, will result in {formatted_balance}"
+                    ).format(
                         analytic_name=analytic_name, formatted_balance=fomatted_balance
                     )
                 )

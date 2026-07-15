@@ -84,12 +84,13 @@ class PurchaseRequestLine(models.Model):
             rec.account_id = rec._get_pr_line_account()
 
     def recompute_budget_move(self):
-        for pr_line in self:
-            pr_line.budget_move_ids.unlink()
-            pr_line.commit_budget()
-            # credit will not over debit (auto adjust)
+        self.recompute_budget_move_batch()
+        for pr_line in self.filtered("fwd_analytic_distribution"):
             pr_line.forward_commit()
-            pr_line.purchase_lines.uncommit_purchase_request_budget()
+        self.mapped("purchase_lines").uncommit_purchase_request_budget()
+
+    def _can_batch_budget_precommit(self):
+        return True
 
     def _get_pr_line_account(self):
         account = self.product_id.product_tmpl_id.get_product_accounts()["expense"]
