@@ -716,6 +716,11 @@ class BudgetDoclineMixin(models.AbstractModel):
                             self.env._("'_budget_date_commit_fields' is not set!")
                         )
                     target_date = docline._get_budget_date_commit(docline)
+                    if target_date:
+                        # Datetime sources such as write_date are converted to the
+                        # user's timezone by _get_budget_date_commit().  Normalize
+                        # them to a date before comparing with the analytic period.
+                        target_date = fields.Date.to_date(target_date)
                 for analytic in analytics.filtered("auto_adjust_date_commit"):
                     if analytic.bm_date_from and analytic.bm_date_from > target_date:
                         target_date = analytic.bm_date_from
