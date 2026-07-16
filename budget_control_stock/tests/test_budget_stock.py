@@ -3,7 +3,7 @@
 
 from freezegun import freeze_time
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 
@@ -710,3 +710,308 @@ class TestBudgetControlStock(get_budget_common_class()):
         # After validate: JE posted -> stock commit becomes actual.
         self.budget_control.invalidate_recordset()
         self.assertAlmostEqual(self.budget_control.amount_actual, 100.0)
+
+    # ------------------------------------------------------------------
+    # Parity tests: batched recompute/uncommit must equal the former per-record
+    # implementation, move for move.
+    # ------------------------------------------------------------------
+
+    def _snapshot_stock_budget_moves(self, picking):
+        """Stable, order-independent signature of a picking's budget moves."""
+        self.budget_control.invalidate_recordset()
+        moves = picking.budget_move_ids.sorted(
+            lambda m: (m.analytic_account_id.id, m.date, m.product_id.id, m.id)
+        )
+        return [
+            (
+                m.account_move_line_id.id,
+                m.analytic_account_id.id,
+                round(m.amount_currency, 4),
+                round(m.debit, 4),
+                round(m.credit, 4),
+                str(m.date),
+                m.template_line_id.id,
+                m.fwd_commit,
+                m.adj_commit,
+            )
+            for m in moves
+        ]
+
+    @freeze_time("2001-02-01")
+    def test_11_batch_recompute_matches_sequential_standard(self):
+        """Batched recompute == sequential recompute (standard_price source)."""
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        analytic_dist = {str(self.costcenter1.id): 100}
+        self._set_qty_on_hand(self.product_std, 2)
+
+        do = self._create_picking(
+            [
+                {
+                    "product_id": self.product_std,
+                    "product_qty": 2,
+                    "price_unit": 300,
+                    "analytic_distribution": analytic_dist,
+                }
+            ]
+        )
+        do.action_confirm()
+
+        moves = self.env["stock.move"].search([("picking_id", "=", do.id)])
+        moves.recompute_budget_move()
+        batch_snapshot = self._snapshot_stock_budget_moves(do)
+
+        moves.budget_move_ids.unlink()
+        moves._recompute_budget_move_sequential()
+        seq_snapshot = self._snapshot_stock_budget_moves(do)
+
+        self.assertEqual(batch_snapshot, seq_snapshot)
+
+    @freeze_time("2001-02-01")
+    def test_12_batch_recompute_matches_sequential_lot_price(self):
+        """Batched recompute == sequential recompute (lot_price, per-lot fan-out)."""
+        self.picking_type.budget_price_source = "lot_price"
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        analytic_dist = {str(self.costcenter1.id): 100}
+        self._set_qty_on_hand(self.product_lot, 1, self.lot1)
+        self._set_qty_on_hand(self.product_lot, 1, self.lot2)
+
+        do = self._create_picking(
+            [
+                {
+                    "product_id": self.product_lot,
+                    "product_qty": 2,
+                    "price_unit": 50,
+                    "analytic_distribution": analytic_dist,
+                }
+            ]
+        )
+        do.action_confirm()
+        move = do.move_ids[0]
+        self._assign_lots_to_move(move, [(self.lot1, 1.0), (self.lot2, 1.0)])
+        do.action_assign()
+
+        moves = self.env["stock.move"].search([("picking_id", "=", do.id)])
+        moves.recompute_budget_move()
+        batch_snapshot = self._snapshot_stock_budget_moves(do)
+
+        moves.budget_move_ids.unlink()
+        moves._recompute_budget_move_sequential()
+        seq_snapshot = self._snapshot_stock_budget_moves(do)
+
+        self.assertEqual(batch_snapshot, seq_snapshot)
+
+    @freeze_time("2001-02-01")
+    def test_13_batch_uncommit_matches_sequential(self):
+        """Batched uncommit_stock_budget == sequential (posted valuation JE)."""
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        analytic_dist = {str(self.costcenter1.id): 100}
+        self._set_qty_on_hand(self.product_std, 2)
+
+        def _snapshot_aml_uncommit(do):
+            je = do.move_ids.stock_valuation_layer_ids.account_move_id
+            reverse_moves = self.env["stock.budget.move"].search(
+                [("account_move_line_id", "in", je.line_ids.ids)]
+            )
+            reverse_moves = reverse_moves.sorted(
+                lambda m: (m.analytic_account_id.id, m.date, m.id)
+            )
+            return [
+                (
+                    m.account_move_line_id.id,
+                    m.analytic_account_id.id,
+                    round(m.amount_currency, 4),
+                    round(m.credit, 4),
+                    round(m.debit, 4),
+                    str(m.date),
+                    m.template_line_id.id,
+                )
+                for m in reverse_moves
+            ]
+
+        do = self._create_picking(
+            [
+                {
+                    "product_id": self.product_std,
+                    "product_qty": 1,
+                    "price_unit": 300,
+                    "analytic_distribution": analytic_dist,
+                }
+            ]
+        )
+        do.action_confirm()
+        do.with_context(skip_backorder=True).button_validate()
+        je = do.move_ids.stock_valuation_layer_ids.account_move_id
+        # Recompute triggers the batched uncommit via _recommit_via_valuation_lines.
+        do.move_ids.recompute_budget_move()
+        batch_snapshot = _snapshot_aml_uncommit(do)
+        self.env["stock.budget.move"].search(
+            [("account_move_line_id", "in", je.line_ids.ids)]
+        ).unlink()
+
+        je.line_ids._uncommit_stock_budget_sequential()
+        seq_snapshot = _snapshot_aml_uncommit(do)
+
+        self.assertEqual(batch_snapshot, seq_snapshot)
+
+    @freeze_time("2001-02-01")
+    def test_14_deferred_lot_does_not_set_date_commit(self):
+        """A lot-tracked move starts its commitment only after lot assignment."""
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        analytic_dist = {str(self.costcenter1.id): 100}
+
+        do = self._create_picking(
+            [
+                {
+                    "product_id": self.product_lot,
+                    "product_qty": 1,
+                    "price_unit": 50,
+                    "analytic_distribution": analytic_dist,
+                }
+            ]
+        )
+        do.action_confirm()
+        move = do.move_ids
+
+        self.assertFalse(move.move_line_ids.filtered("lot_id"))
+        self.assertFalse(move.date_commit)
+        self.assertFalse(move.budget_move_ids)
+
+        # The date chosen after reservation must reflect the latest schedule,
+        # not the schedule that existed while the commitment was deferred.
+        do.scheduled_date = fields.Datetime.to_datetime("2001-03-15 08:00:00")
+        self._set_qty_on_hand(self.product_lot, 1, self.lot1)
+        self._assign_lots_to_move(move, [(self.lot1, 1.0)])
+        do.action_assign()
+
+        self.assertEqual(move.date_commit, fields.Date.to_date("2001-03-15"))
+        self.assertEqual(move.budget_move_ids.date, move.date_commit)
+
+    @freeze_time("2001-02-01")
+    def test_15_batch_recompute_matches_sequential_multiple_moves(self):
+        """Batch valuation re-commit matches sequential for multiple moves."""
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        analytic_dist = {str(self.costcenter1.id): 100}
+        product_std_2 = self.Product.create(
+            {
+                "name": "Product Standard 2",
+                "type": "consu",
+                "is_storable": True,
+                "standard_price": 200.0,
+                "property_account_expense_id": self.account_kpi2.id,
+                "categ_id": self.product_categ.id,
+            }
+        )
+        self._set_qty_on_hand(self.product_std, 1)
+        self._set_qty_on_hand(product_std_2, 1)
+
+        do = self._create_picking(
+            [
+                {
+                    "product_id": self.product_std,
+                    "product_qty": 1,
+                    "price_unit": 100,
+                    "analytic_distribution": analytic_dist,
+                },
+                {
+                    "product_id": product_std_2,
+                    "product_qty": 1,
+                    "price_unit": 200,
+                    "analytic_distribution": analytic_dist,
+                },
+            ]
+        )
+        do.action_confirm()
+        do.action_assign()
+        do.with_context(skip_backorder=True).button_validate()
+        moves = do.move_ids
+        self.assertEqual(len(moves), 2)
+
+        moves.recompute_budget_move()
+        batch_snapshot = self._snapshot_stock_budget_moves(do)
+
+        moves.budget_move_ids.unlink()
+        moves._recompute_budget_move_sequential()
+        seq_snapshot = self._snapshot_stock_budget_moves(do)
+
+        self.assertEqual(batch_snapshot, seq_snapshot)
+
+    @freeze_time("2001-02-01")
+    def test_16_uncommit_period_lookup_matches_sequential(self):
+        """The JE date must not change the template selected by stock uncommit."""
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        self.budget_period.bm_date_to = fields.Date.to_date("2001-06-30")
+        next_template = self.BudgetTemplate.create({"name": "Next Stock Template"})
+        next_template_line = self.env["budget.template.line"].create(
+            {
+                "template_id": next_template.id,
+                "kpi_id": self.kpi1.id,
+                "account_ids": [Command.link(self.account_kpi1.id)],
+            }
+        )
+        self.env["budget.period"].create(
+            {
+                "name": "Budget for FY2001 H2",
+                "template_id": next_template.id,
+                "bm_date_from": "2001-07-01",
+                "bm_date_to": "2001-12-31",
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+            }
+        )
+        analytic_dist = {str(self.costcenter1.id): 100}
+        self._set_qty_on_hand(self.product_std, 1)
+
+        do = self._create_picking(
+            [
+                {
+                    "product_id": self.product_std,
+                    "product_qty": 1,
+                    "price_unit": 100,
+                    "analytic_distribution": analytic_dist,
+                }
+            ]
+        )
+        do.action_confirm()
+        do.with_context(skip_backorder=True).button_validate()
+        move = do.move_ids
+        je_lines = move.stock_valuation_layer_ids.account_move_id.line_ids
+        reverse_moves = self.env["stock.budget.move"].search(
+            [("account_move_line_id", "in", je_lines.ids)]
+        )
+        reverse_moves.unlink()
+        je_lines.with_context(skip_account_move_synchronization=True).write(
+            {"date_commit": fields.Date.to_date("2001-07-15")}
+        )
+
+        je_lines.uncommit_stock_budget()
+        batch_moves = self.env["stock.budget.move"].search(
+            [("account_move_line_id", "in", je_lines.ids)]
+        )
+        self.assertTrue(batch_moves)
+        self.assertEqual(batch_moves.template_line_id, self.template_line1)
+        self.assertNotEqual(batch_moves.template_line_id, next_template_line)
+
+        batch_snapshot = self._snapshot_stock_budget_moves(do)
+        batch_moves.unlink()
+        je_lines._uncommit_stock_budget_sequential()
+        seq_snapshot = self._snapshot_stock_budget_moves(do)
+
+        self.assertEqual(batch_snapshot, seq_snapshot)

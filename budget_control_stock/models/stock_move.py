@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 COMMIT_STATES = ["waiting", "confirmed", "assigned", "partially_available", "done"]
 
@@ -37,6 +38,76 @@ class StockMove(models.Model):
         return accounts.get("expense") or accounts.get("stock_input")
 
     def recompute_budget_move(self):
+        self._recompute_stock_commit_batch()
+        for move in self:
+            move.forward_commit()
+        # Re-apply all posted valuation JEs in one batch after every stock
+        # commitment is ready. This lets uncommit_stock_budget batch the create.
+        self._recommit_via_valuation_lines()
+
+    def _recompute_stock_commit_batch(self):
+        """Batched clear+commit; lot_price still fans out one commit per lot."""
+        doclines = self
+        if not doclines:
+            return self.env[doclines._budget_model()]
+        budget_model = doclines._budget_model()
+        preserved_dates = {docline.id: docline.date_commit for docline in doclines}
+        doclines.mapped(doclines._budget_field()).unlink()
+        lot_lines_by_move = {
+            move.id: move.move_line_ids.filtered("lot_id") for move in doclines
+        }
+        # Preserve the former deferred-lot behavior: a lot-tracked move without
+        # reserved lots must not be validated or assigned a commitment date yet.
+        commit_candidates = doclines.filtered(
+            lambda move: move.product_id.tracking == "none"
+            or lot_lines_by_move[move.id]
+        )
+        for docline in commit_candidates:
+            if docline._check_required_analytic():
+                raise UserError(self.env._("Please fill analytic account."))
+        commit_candidates.prepare_commit_batch(preserved_dates=preserved_dates)
+        to_commit = commit_candidates.filtered(
+            lambda line: line.can_commit
+            and (self.env.context.get("force_commit") or line._valid_commit_state())
+        )
+        if not to_commit:
+            return self.env[budget_model]
+        force_date_commit = self.env.context.get("force_date_commit", False)
+        budget_vals = []
+        for move in to_commit:
+            lot_lines = lot_lines_by_move[move.id]
+            st_date_commit = (
+                force_date_commit or preserved_dates.get(move.id) or move.date_commit
+            )
+            if (
+                move.picking_id.picking_type_id.budget_price_source == "lot_price"
+                and lot_lines
+            ):
+                for lot_line in lot_lines:
+                    budget_vals.extend(
+                        move.with_context(
+                            force_date_commit=st_date_commit,
+                            budget_lot_price=lot_line.lot_id.standard_price,
+                            product_qty=lot_line.quantity_product_uom,
+                        )._prepare_commit_vals()
+                    )
+            elif move.product_id.tracking == "none" or lot_lines:
+                # Non-lot product: commit immediately.
+                # Lot-tracked product with lots reserved: commit using product qty.
+                # Lot-tracked product with no lots yet: defer to action_assign so
+                # lot-traced PO uncommit can balance the commit in the same pass.
+                budget_vals.extend(
+                    move.with_context(
+                        force_date_commit=st_date_commit
+                    )._prepare_commit_vals()
+                )
+        if not budget_vals:
+            return self.env[budget_model]
+        budget_moves = self.env[budget_model].create(budget_vals)
+        return to_commit._update_template_line_batch(budget_moves)
+
+    def _recompute_budget_move_sequential(self):
+        """Former per-record recompute, kept for parity tests only."""
         budget_field = self._budget_field()
         force_date_commit = self.env.context.get("force_date_commit", False)
         for move in self:
@@ -54,20 +125,15 @@ class StockMove(models.Model):
                         product_qty=lot_line.quantity_product_uom,
                     ).commit_budget()
             elif move.product_id.tracking == "none" or lot_lines:
-                # Non-lot product: commit immediately.
-                # Lot-tracked product with lots reserved: commit using product qty.
-                # Lot-tracked product with no lots yet: defer to action_assign so
-                # lot-traced PO uncommit can balance the commit in the same pass.
                 move.with_context(force_date_commit=st_date_commit).commit_budget()
             move.forward_commit()
-            # Re-apply uncommit for posted valuation JEs
             move._recommit_via_valuation_lines()
 
     def _recommit_via_valuation_lines(self):
         """Re-apply uncommit entries for posted valuation JEs after a recompute."""
-        self.ensure_one()
         # For 2-step delivery: PICK has no SVL; valuation is on OUT (dest) move.
-        svl_moves = self if self.stock_valuation_layer_ids else self.move_dest_ids
+        direct_svl_moves = self.filtered("stock_valuation_layer_ids")
+        svl_moves = direct_svl_moves | (self - direct_svl_moves).mapped("move_dest_ids")
         posted_je_lines = svl_moves.stock_valuation_layer_ids.filtered(
             lambda svl: svl.account_move_id and svl.account_move_id.state == "posted"
         ).mapped("account_move_id.line_ids")
