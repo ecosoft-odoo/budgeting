@@ -10,12 +10,14 @@ class BudgetCommonMonitoring(models.AbstractModel):
 
     res_id = fields.Reference(
         selection=lambda self: [("budget.control.line", "Budget Control Lines")]
+        + [("budget.balance.forward.line", "Budget Balance Forward Line")]
         + self._get_budget_docline_model(),
         string="Resource ID",
     )
     reference = fields.Char()
     amount_type = fields.Selection(
         selection=lambda self: [("10_budget", "Budget")]
+        + [("12_forward_out", "Forward Balance Out")]
         + self._get_budget_amount_type(),
         string="Type",
     )

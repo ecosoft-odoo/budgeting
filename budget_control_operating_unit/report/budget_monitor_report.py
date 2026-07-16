@@ -10,6 +10,11 @@ class BudgetMonitorReport(models.Model):
 
     operating_unit_id = fields.Many2one(comodel_name="operating.unit")
 
+    def _select_forward_balance_extra(self):
+        select = super()._select_forward_balance_extra()
+        select[30] = "null::integer as operating_unit_id"
+        return select
+
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()

@@ -22,14 +22,41 @@ class BudgetPlan(models.Model):
         tracking=True,
     )
 
-    @api.depends("line_ids", "line_detail_ids")
+    @api.depends(
+        "line_ids.amount",
+        "line_ids.amount_forward_in",
+        "line_ids.allocated_amount",
+        "line_ids.analytic_account_id",
+        "line_detail_ids.allocated_amount",
+        "line_detail_ids.analytic_account_id",
+        "budget_period_id",
+        "is_confirm_plan",
+    )
     def _compute_total_amount(self):
         """Overwrite to show amount from details or plan"""
+        detail_plans = self.filtered(lambda plan: not plan.is_confirm_plan)
+        analytics_by_plan = {
+            plan.id: plan.line_detail_ids.mapped("analytic_account_id")
+            for plan in detail_plans
+        }
+        forward_amounts = self.env[
+            "budget.balance.forward.line"
+        ]._get_forward_balance_map(
+            detail_plans.mapped("budget_period_id").ids,
+            detail_plans.mapped("line_detail_ids.analytic_account_id").ids,
+        )
         for rec in self:
-            if not rec.is_confirm_plan:
-                rec.total_amount = sum(rec.line_detail_ids.mapped("allocated_amount"))
-            else:
-                rec.total_amount = sum(rec.line_ids.mapped("amount"))
+            if rec.is_confirm_plan:
+                rec.total_amount = sum(rec.line_ids.mapped("allocated_amount"))
+                continue
+
+            forward_amount = sum(
+                forward_amounts[(rec.budget_period_id.id, analytic.id)]
+                for analytic in analytics_by_plan[rec.id]
+            )
+            rec.total_amount = (
+                sum(rec.line_detail_ids.mapped("allocated_amount")) + forward_amount
+            )
 
     def _update_plan_line_relation(self):
         """Add relation between `plan line` and `plan line detail`"""
