@@ -1,75 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
-
-
-class HRExpenseSheet(models.Model):
-    _inherit = "hr.expense.sheet"
-    _docline_rel = "expense_line_ids"
-    _docline_type = "expense"
-
-    budget_move_ids = fields.One2many(
-        comodel_name="expense.budget.move",
-        inverse_name="sheet_id",
-    )
-
-    @api.constrains("expense_line_ids")
-    def recompute_budget_move(self):
-        self.mapped("expense_line_ids").recompute_budget_move()
-
-    def close_budget_move(self):
-        self.mapped("expense_line_ids").close_budget_move()
-
-    def write(self, vals):
-        """
-        Uncommit the budget when the document state is "approved" or
-        when it is canceled/drafted. If the document is canceled or moved to draft,
-        all budget commitments will be deleted.
-
-        For expenses, the state is a computed field.
-        Therefore, we check the `approval_state` instead:
-            - "approve" = Approved
-            - "cancel" = Canceled
-            - False = To Submit (Draft)
-        """
-        res = super().write(vals)
-        if vals.get("approval_state") in ("approve", "cancel", False):
-            doclines = self.mapped("expense_line_ids")
-            if vals.get("approval_state") in ("cancel", False):
-                doclines.write({"date_commit": False})
-            doclines.recompute_budget_move()
-        return res
-
-    def unlink(self):
-        # Compute commit again after unlink
-        expenses = self.mapped("expense_line_ids")
-        res = super().unlink()
-        expenses._compute_commit()
-        return res
-
-    def action_approve_expense_sheets(self):
-        res = super().action_approve_expense_sheets()
-        BudgetPeriod = self.env["budget.period"]
-        for doc in self:
-            BudgetPeriod.check_budget(doc.expense_line_ids, doc_type="expense")
-        return res
-
-    def action_submit_sheet(self):
-        res = super().action_submit_sheet()
-        BudgetPeriod = self.env["budget.period"]
-        for doc in self:
-            BudgetPeriod.check_budget_precommit(
-                doc.expense_line_ids, doc_type="expense"
-            )
-        return res
-
-    def action_sheet_move_create(self):
-        res = super().action_sheet_move_create()
-        BudgetPeriod = self.env["budget.period"]
-        for doc in self:
-            BudgetPeriod.check_budget(doc.account_move_ids.line_ids)
-        return res
+from odoo import fields, models
 
 
 class HRExpense(models.Model):
@@ -84,19 +16,37 @@ class HRExpense(models.Model):
         inverse_name="expense_id",
     )
 
-    def recompute_budget_move(self):
+    def _recompute_budget_move_sequential(self):
+        """Keep the legacy order for carry-forward, whose checks are sheet-wide."""
         budget_field = self._budget_field()
         force_date_commit = self.env.context.get("force_date_commit", False)
         for expense in self:
-            # Make sure that date_commit not recompute
             ex_date_commit = force_date_commit or expense.date_commit
             expense[budget_field].unlink()
             expense.with_context(force_date_commit=ex_date_commit).commit_budget()
-            # credit will not over debit (auto adjust)
             expense.forward_commit()
+
+    def recompute_budget_move(self):
+        forwarded = self.filtered(
+            lambda expense: expense.fwd_analytic_distribution or expense.fwd_date_commit
+        )
+        if forwarded:
+            # forward_commit() can create an over-return adjustment based on all
+            # moves of the sheet.  Recreate the whole recordset sequentially when
+            # any line is forwarded so intermediate balances stay identical.
+            self._recompute_budget_move_sequential()
+        else:
+            # Normal expenses are independent and can safely share one
+            # unlink/create/template update operation.
+            self.recompute_budget_move_batch()
         self.mapped(
             "sheet_id.account_move_ids.invoice_line_ids"
         ).uncommit_expense_budget()
+
+    def _can_batch_budget_precommit(self):
+        # Advance lines override commit_budget() to use advance.budget.move;
+        # the generic batch helper uses one model for the whole recordset.
+        return not ("advance" in self._fields and any(self.mapped("advance")))
 
     def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()

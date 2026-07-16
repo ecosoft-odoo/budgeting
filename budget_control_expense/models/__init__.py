@@ -14,4 +14,5 @@ from . import account_move_line
 
 # Expense Module
 from . import expense_budget_move
+from . import hr_expense_sheet
 from . import hr_expense

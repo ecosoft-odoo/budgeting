@@ -144,6 +144,7 @@ class TestBudgetControlAdvance(get_budget_common_class()):
         analytic_distribution = {str(self.costcenter1.id): 100}
         # Create advance = 100
         advance = self._create_advance_sheet(100, analytic_distribution)
+        self.assertFalse(advance.expense_line_ids._can_batch_budget_precommit())
         # (1) No budget check first
         self.budget_period.advance = False
         self.budget_period.control_level = "analytic_kpi"
@@ -404,3 +405,125 @@ class TestBudgetControlAdvance(get_budget_common_class()):
         self.assertAlmostEqual(advance.clearing_residual, 70.0)
         self.assertAlmostEqual(self.budget_control.amount_advance, 70.0)
         self.assertAlmostEqual(self.budget_control.amount_balance, 2330.0)
+
+    @freeze_time("2001-02-01")
+    def test_05_batch_clearing_matches_sequential(self):
+        """Batch allocation keeps the legacy line order and capped amount."""
+        analytic_distribution = {str(self.costcenter1.id): 100}
+        advance = self._create_advance_sheet(30, analytic_distribution)
+        date_commit = fields.Date.to_date("2001-02-01")
+        advance.expense_line_ids.with_context(
+            force_commit=True, force_date_commit=date_commit
+        ).recompute_budget_move()
+
+        clearing = self._create_clearing_sheet(
+            advance,
+            [
+                {
+                    "product_id": self.product1,
+                    "product_qty": 1,
+                    "price_unit": 1,
+                    "analytic_distribution": analytic_distribution,
+                }
+                for _index in range(50)
+            ],
+        )
+        clearings = clearing.expense_line_ids.sorted("id")
+        clearings.write({"date_commit": date_commit})
+
+        batch_moves = clearings.with_context(
+            force_commit=True
+        ).uncommit_advance_budget()
+        batch_result = [
+            (
+                move.clearing_id.id,
+                move.debit,
+                move.credit,
+                move.date,
+                move.template_line_id.id,
+            )
+            for move in batch_moves.sorted("id")
+        ]
+        self.assertEqual(batch_moves.mapped("clearing_id"), clearings[:30])
+        self.assertAlmostEqual(sum(batch_moves.mapped("credit")), 30.0)
+
+        batch_moves.unlink()
+        advance.expense_line_ids.invalidate_recordset(["amount_commit"])
+        sequential_moves = clearings.with_context(
+            force_commit=True
+        )._uncommit_advance_budget_sequential()
+        sequential_result = [
+            (
+                move.clearing_id.id,
+                move.debit,
+                move.credit,
+                move.date,
+                move.template_line_id.id,
+            )
+            for move in sequential_moves.sorted("id")
+        ]
+        self.assertEqual(batch_result, sequential_result)
+
+    @freeze_time("2001-02-01")
+    def test_06_clearing_analytic_must_match_advance(self):
+        """A clearing cannot uncommit an analytic absent from its advance."""
+        advance_distribution = {str(self.costcenter1.id): 100}
+        advance = self._create_advance_sheet(30, advance_distribution)
+        date_commit = fields.Date.to_date("2001-02-01")
+        advance.expense_line_ids.with_context(
+            force_commit=True, force_date_commit=date_commit
+        ).recompute_budget_move()
+
+        clearing_distribution = {str(self.costcenterX.id): 100}
+        clearing = self._create_clearing_sheet(
+            advance,
+            [
+                {
+                    "product_id": self.product1,
+                    "product_qty": 1,
+                    "price_unit": 10,
+                    "analytic_distribution": clearing_distribution,
+                }
+            ],
+        )
+
+        with self.assertRaisesRegex(UserError, "Analytic distribution mismatch"):
+            clearing.expense_line_ids.with_context(
+                force_commit=True
+            ).uncommit_advance_budget()
+
+    @freeze_time("2001-02-01")
+    def test_07_over_returned_entries_keep_sequential_adjustment(self):
+        """An exceptional over-return uses commit_budget's adjustment path."""
+        analytic_distribution = {str(self.costcenter1.id): 100}
+        advance_sheet = self._create_advance_sheet(30, analytic_distribution)
+        date_commit = fields.Date.to_date("2001-02-01")
+        advance = advance_sheet.expense_line_ids.with_context(
+            force_commit=True,
+            force_date_commit=date_commit,
+            alt_budget_move_model="advance.budget.move",
+            alt_budget_move_field="advance_budget_move_ids",
+        )
+        advance.recompute_budget_move()
+
+        commit_kwargs = {
+            "amount_currency": 31,
+            "analytic_account_id": self.costcenter1,
+            "date": date_commit,
+        }
+        entries = [
+            (
+                advance,
+                commit_kwargs,
+                advance._prepare_commit_vals(reverse=True, **commit_kwargs),
+            )
+        ]
+        self.assertFalse(advance._entries_can_create_in_batch(entries))
+
+        returned_moves = advance._create_advance_uncommit_entries(entries)
+
+        self.assertEqual(len(returned_moves), 1)
+        self.assertAlmostEqual(returned_moves.credit, 31.0)
+        adjustment = advance_sheet.advance_budget_move_ids.filtered("adj_commit")
+        self.assertEqual(len(adjustment), 1)
+        self.assertAlmostEqual(adjustment.debit, 1.0)

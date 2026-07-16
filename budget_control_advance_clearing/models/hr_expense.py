@@ -3,6 +3,7 @@
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 
 class HRExpenseSheet(models.Model):
@@ -104,12 +105,10 @@ class HRExpense(models.Model):
 
     def _get_recompute_advances(self):
         AnalyticAccount = self.env["account.analytic.account"]
-        # date_commit return list, so we check in list again
-        advance_date_commit = (
-            self.env.context.get("force_date_commit", False)
-            or self.mapped("date_commit")[:-1]
-            or False
-        )
+        # The batch helper preserves date_commit per expense line.  A mapped
+        # list cannot represent different dates in one context and is not a
+        # valid value for fields.Date.to_date().
+        advance_date_commit = self.env.context.get("force_date_commit", False)
 
         # Commit Advance
         res = super(
@@ -234,21 +233,175 @@ class HRExpense(models.Model):
             )
         return super().commit_budget(reverse=reverse, **vals)
 
-    def uncommit_advance_budget(self):
-        """For clearing in valid state,
-        do uncommit for related Advance sorted by date commit."""
-        budget_moves = self.env["advance.budget.move"]
-        AnalyticAccount = self.env["account.analytic.account"]
-        # Sorted clearing by date_commit first. for case clearing > advance
-        # it should uncommit clearing that approved first
+    def _get_sorted_clearings(self):
+        """Keep the allocation order used by the former per-line implementation."""
         clearing_approved = self.filtered("date_commit")
         clearing_not_approved = self - clearing_approved
-        clearing_sorted = (
+        return (
             clearing_approved.sorted(key=lambda clearing: clearing.date_commit)
             + clearing_not_approved
         )
+
+    def _get_clearing_advance_data(self, clearing, cache, remaining):
+        """Cache invariant advance data and validate the analytic distribution."""
+        advance_sheet = clearing.sheet_id.advance_sheet_id
+        if advance_sheet.id not in cache:
+            advance_lines = advance_sheet.expense_line_ids
+            advances = advance_lines.filtered("amount_commit")
+            analytic_ids = set()
+            for advance in advance_lines:
+                analytic_ids.update(advance.fwd_analytic_distribution or {})
+                analytic_ids.update(advance.analytic_distribution or {})
+            cache[advance_sheet.id] = (advances, analytic_ids)
+            for advance in advances:
+                for analytic_id, amount in (advance.amount_commit or {}).items():
+                    remaining[(advance.id, analytic_id)] = amount
+
+        advances, advance_analytic_ids = cache[advance_sheet.id]
+        if any(
+            analytic_id not in advance_analytic_ids
+            for analytic_id in clearing.analytic_distribution
+        ):
+            raise UserError(
+                self.env._(
+                    "Analytic distribution mismatch. "
+                    "Please align with the original advance."
+                )
+            )
+        return advances
+
+    def _prepare_advance_for_batch(self, advance, prepared_advances):
+        if advance.id not in prepared_advances:
+            batch_advance = advance.with_context(
+                alt_budget_move_model="advance.budget.move",
+                alt_budget_move_field="advance_budget_move_ids",
+            )
+            batch_advance.prepare_commit()
+            can_create = batch_advance.can_commit and (
+                self.env.context.get("force_commit")
+                or batch_advance._valid_commit_state()
+            )
+            prepared_advances[advance.id] = batch_advance if can_create else False
+        return prepared_advances[advance.id]
+
+    def _prepare_advance_uncommit_entries(self):
+        AnalyticAccount = self.env["account.analytic.account"]
         config_budget_include_tax = self.env.company.budget_include_tax
-        for clearing in clearing_sorted:
+        force_commit = self.env.context.get("force_commit")
+        advance_cache = {}
+        remaining = {}
+        prepared_advances = {}
+        entries = []
+        draft_clearing_ids = []
+
+        for clearing in self._get_sorted_clearings():
+            if not force_commit and clearing.sheet_id.state not in (
+                "approve",
+                "post",
+                "done",
+            ):
+                draft_clearing_ids.append(clearing.id)
+                continue
+
+            advances = self._get_clearing_advance_data(
+                clearing, advance_cache, remaining
+            )
+            if not advances:
+                continue
+            origin_amount = (
+                clearing.total_amount_currency
+                if config_budget_include_tax
+                else clearing.untaxed_amount_currency
+            )
+            for analytic_id, percent in clearing.analytic_distribution.items():
+                clearing_amount = origin_amount * (percent / 100)
+                analytic = AnalyticAccount.browse(int(analytic_id))
+                for advance in advances:
+                    remaining_key = (advance.id, str(analytic_id))
+                    available = remaining.get(remaining_key, 0.0)
+                    if not available:
+                        continue
+                    amount = min(available, clearing_amount)
+                    remaining[remaining_key] -= amount
+                    clearing_amount -= amount
+                    batch_advance = self._prepare_advance_for_batch(
+                        advance, prepared_advances
+                    )
+                    if not batch_advance:
+                        return False, draft_clearing_ids
+                    commit_kwargs = {
+                        "clearing_id": clearing.id,
+                        "amount_currency": amount,
+                        "analytic_account_id": analytic,
+                        "date": clearing.date_commit,
+                    }
+                    entries.append(
+                        (
+                            batch_advance,
+                            commit_kwargs,
+                            batch_advance._prepare_commit_vals(
+                                reverse=True, **commit_kwargs
+                            ),
+                        )
+                    )
+                    if clearing_amount <= 0:
+                        break
+        return entries, draft_clearing_ids
+
+    def _entries_can_create_in_batch(self, entries):
+        entries_by_sheet = {}
+        for entry in entries:
+            entries_by_sheet.setdefault(entry[0].sheet_id.id, []).append(entry)
+        for sheet_entries in entries_by_sheet.values():
+            existing_moves = sheet_entries[0][0].sheet_id.advance_budget_move_ids
+            projected_debit = sum(existing_moves.mapped("debit"))
+            projected_credit = sum(existing_moves.mapped("credit"))
+            for _advance, _commit_kwargs, vals_list in sheet_entries:
+                projected_debit += sum(vals["debit"] for vals in vals_list)
+                projected_credit += sum(vals["credit"] for vals in vals_list)
+                if float_compare(projected_credit, projected_debit, 2) == 1:
+                    return False
+        return True
+
+    def _create_advance_uncommit_entries(self, entries):
+        budget_moves = self.env["advance.budget.move"]
+        if not entries:
+            return budget_moves
+        if not self._entries_can_create_in_batch(entries):
+            for advance, commit_kwargs, _vals in entries:
+                budget_moves |= advance.commit_budget(reverse=True, **commit_kwargs)
+            return budget_moves
+
+        budget_vals = []
+        move_period_dates = []
+        for advance, _commit_kwargs, vals_list in entries:
+            budget_vals.extend(vals_list)
+            move_period_dates.extend([advance.date_commit] * len(vals_list))
+        budget_moves = budget_moves.create(budget_vals)
+        period_dates = dict(zip(budget_moves.ids, move_period_dates, strict=False))
+        self._update_template_line_batch(budget_moves, period_dates=period_dates)
+        return budget_moves
+
+    def uncommit_advance_budget(self):
+        """Return clearing amounts in legacy order, then create moves in bulk."""
+        entries, draft_clearing_ids = self._prepare_advance_uncommit_entries()
+        if entries is False:
+            # This can only happen for an invalid advance state.  Preserve the
+            # old behavior by letting commit_budget() handle the entries one by one.
+            return self._uncommit_advance_budget_sequential()
+        budget_moves = self._create_advance_uncommit_entries(entries)
+        if draft_clearing_ids:
+            self.env["advance.budget.move"].search(
+                [("clearing_id", "in", draft_clearing_ids)]
+            ).unlink()
+        return budget_moves
+
+    def _uncommit_advance_budget_sequential(self):
+        """Compatibility path for an unexpected invalid advance state."""
+        budget_moves = self.env["advance.budget.move"]
+        AnalyticAccount = self.env["account.analytic.account"]
+        config_budget_include_tax = self.env.company.budget_include_tax
+        for clearing in self._get_sorted_clearings():
             cl_state = clearing.sheet_id.state
             if self.env.context.get("force_commit") or cl_state in (
                 "approve",
@@ -309,7 +462,6 @@ class HRExpense(models.Model):
                         if clearing_amount <= 0:
                             break
             else:
-                # Cancel or draft, not commitment line
                 self.env["advance.budget.move"].search(
                     [("clearing_id", "=", clearing.id)]
                 ).unlink()
