@@ -71,6 +71,17 @@ class TestBudgetControlAdvance(get_budget_common_class()):
         product = cls.env.ref("hr_expense_advance_clearing.product_emp_advance")
         product.property_account_expense_id = cls.account_kpiAV
 
+        # Configure the journal required to create advance clearing moves
+        cls.clearing_journal = cls.env["account.journal"].create(
+            {
+                "name": "Budget Control Clearing",
+                "code": "BCAC",
+                "type": "general",
+                "company_id": cls.env.company.id,
+            }
+        )
+        cls.env.company.clearing_journal_id = cls.clearing_journal
+
     @freeze_time("2001-02-01")
     def _create_advance_sheet(self, amount, analytic_distribution):
         Expense = self.env["hr.expense"]
