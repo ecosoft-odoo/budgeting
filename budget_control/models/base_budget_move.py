@@ -369,14 +369,20 @@ class BudgetDoclineMixin(models.AbstractModel):
         return budget_move
 
     @api.model
-    def _update_template_line_batch(self, budget_moves):
+    def _update_template_line_batch(self, budget_moves, period_dates=None):
         """Assign template/KPI once per period and account, instead of once
         per docline via _update_template_line. Behavior-equivalent because
         _update_template_line always resolves with need_control=True, which
         reduces _prepare_controls' gating to just budget_bypass + account_id.
+
+        ``period_dates`` (``{move_id: date}``) lets a caller force the period
+        lookup to use a different date than the move's own ``date`` field,
+        needed when a reverse move's own date differs from the source
+        docline's date_commit that _update_template_line() would have used.
         """
         if not budget_moves:
             return budget_moves
+        period_dates = period_dates or {}
         BudgetPeriod = self.env["budget.period"]
         periods_by_date = {}
         grouped_move_ids = {}
@@ -384,11 +390,12 @@ class BudgetDoclineMixin(models.AbstractModel):
         for move in budget_moves:
             if move.account_id.budget_bypass or not move.account_id:
                 continue
-            if move.date not in periods_by_date:
-                periods_by_date[move.date] = BudgetPeriod._get_eligible_budget_period(
-                    move.date
+            period_date = period_dates.get(move.id, move.date)
+            if period_date not in periods_by_date:
+                periods_by_date[period_date] = BudgetPeriod._get_eligible_budget_period(
+                    period_date
                 )
-            period = periods_by_date[move.date]
+            period = periods_by_date[period_date]
             if not period:
                 continue
             key = (period.id, move.account_id.id)
@@ -422,14 +429,14 @@ class BudgetDoclineMixin(models.AbstractModel):
         BudgetPeriod = self.env["budget.period"]
         for docline in self:
             if not docline.fwd_analytic_account_id or not docline.fwd_date_commit:
-                return
+                continue
             if (
                 docline[self._budget_analytic_field] == docline.fwd_analytic_account_id
                 and docline.date_commit == docline.fwd_date_commit
             ):  # no forward to same date
                 # docline.fwd_analytic_account_id = False
                 # docline.fwd_date_commit = False
-                return
+                continue
             domain_fwd_line = self._get_domain_fwd_line(docline)
             fwd_lines = ForwardLine.search(domain_fwd_line)
             # NOTE: this function will support commit forward more than 1 time
@@ -615,6 +622,50 @@ class BudgetDoclineMixin(models.AbstractModel):
             return self.env[doclines._budget_model()]
         budget_moves = self.env[doclines._budget_model()].create(budget_vals_list)
         return doclines._update_template_line_batch(budget_moves)
+
+    def _can_batch_budget_precommit(self):
+        """Opt in only when batch precommit matches commit_budget() semantics."""
+        return False
+
+    def _create_precommit_budget_moves_batch(self):
+        """Batched replacement for check_budget_precommit()'s per-line
+        `line.with_context(force_commit=True).commit_budget()` loop.
+
+        force_commit=True makes prepare_commit()'s eligibility gate and
+        commit_budget()'s to_commit always true, so the per-line outcome
+        reduces to can_commit; this reproduces that with batched writes.
+        """
+        doclines = self.sudo()
+        # Captured before any mutation below, matching the original's
+        # inline-per-iteration capture (safe: no docline's commit here
+        # affects another docline's date_commit).
+        reset_date_lines = doclines.filtered(lambda line: not line.date_commit)
+        force_doclines = doclines.with_context(force_commit=True)
+
+        for line in force_doclines:
+            if line._check_required_analytic():
+                raise UserError(_("Please fill analytic account."))
+
+        force_doclines.prepare_commit_batch()
+        to_commit = force_doclines.filtered("can_commit")
+        not_to_commit = force_doclines - to_commit
+        if not_to_commit:
+            not_to_commit.mapped(not_to_commit._budget_field()).unlink()
+
+        budget_vals_list = []
+        move_dates = []
+        for line in to_commit:
+            line_vals = line._prepare_commit_vals()
+            if line_vals:
+                budget_vals_list.append(line_vals)
+                move_dates.append(line.date_commit)
+        if not budget_vals_list:
+            return self.env[force_doclines._budget_model()], reset_date_lines
+
+        budget_moves = self.env[force_doclines._budget_model()].create(budget_vals_list)
+        period_dates = dict(zip(budget_moves.ids, move_dates))
+        to_commit._update_template_line_batch(budget_moves, period_dates=period_dates)
+        return budget_moves, reset_date_lines
 
     def _required_fields_to_commit(self):
         return [self._budget_analytic_field]

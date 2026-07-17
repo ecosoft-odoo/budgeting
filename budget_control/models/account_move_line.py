@@ -33,6 +33,9 @@ class AccountMoveLine(models.Model):
     def recompute_budget_move(self):
         return self.recompute_budget_move_batch()
 
+    def _can_batch_budget_precommit(self):
+        return True
+
     def _init_docline_budget_vals(self, budget_vals):
         self.ensure_one()
         if self.move_id.move_type == "entry":

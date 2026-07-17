@@ -231,24 +231,28 @@ class BudgetPeriod(models.Model):
             budget_moves_uncommit = doclines.with_context(
                 force_commit=True
             ).uncommit_purchase_budget()
-        # Commit budget
-        budget_moves = []
-        vals_date_commit = []
-        for line in doclines:
-            if not line.date_commit:
-                vals_date_commit.append(line.id)
-            budget_move = line.with_context(force_commit=True).commit_budget()
-            if budget_move:
-                budget_moves.append(budget_move)
+        # Batch only models that explicitly guarantee equivalence with their
+        # commit_budget() behavior. Other models keep the original line loop.
+        if doclines._can_batch_budget_precommit():
+            (
+                budget_moves,
+                reset_date_lines,
+            ) = doclines._create_precommit_budget_moves_batch()
+            budget_move_groups = [budget_moves]
+        else:
+            budget_move_groups = []
+            reset_date_lines = doclines.filtered(lambda line: not line.date_commit)
+            for line in doclines:
+                budget_move = line.with_context(force_commit=True).commit_budget()
+                if budget_move:
+                    budget_move_groups.append(budget_move)
         # Check Budget
         self.env["budget.period"].check_budget(doclines, doc_type=doc_type)
         # Remove commits
-        for budget_move in budget_moves:
-            budget_move.unlink()
+        for budget_moves in budget_move_groups:
+            budget_moves.unlink()
         # Delete date commit from system create auto only
-        doclines.filtered(lambda l: l.id in vals_date_commit).write(
-            {"date_commit": False}
-        )
+        reset_date_lines.write({"date_commit": False})
         # Remove uncommit budget
         if budget_moves_uncommit:
             budget_moves_uncommit.unlink()
@@ -397,7 +401,10 @@ class BudgetPeriod(models.Model):
         return self.env["budget.monitor.report"]
 
     def _get_budget_avaiable(self, analytic_id, template_lines):
-        self.flush()
+        # Callers that batch many controls can flush once themselves and set
+        # skip_budget_flush, avoiding a flush() per control.
+        if not self.env.context.get("skip_budget_flush"):
+            self.flush()
         self._cr.execute(
             sql.SQL(
                 """SELECT * FROM ({monitoring}) report
@@ -425,6 +432,12 @@ class BudgetPeriod(models.Model):
         company = self.env.user.company_id
         doc_currency = self.env.context.get("doc_currency")
         date_commit = self.env.context.get("date_commit")
+        # Flush once for all controls. Budget moves are not written while this
+        # loop runs (it only reads and raises/returns), so a single flush
+        # before the loop is enough and avoids repeating flush() per control
+        # when checking many analytics/KPIs.
+        self.flush()
+        self = self.with_context(skip_budget_flush=True)
         for control in controls:
             analytic_id = control["analytic_id"]
             # Get the KPI(s) to check the budget,
