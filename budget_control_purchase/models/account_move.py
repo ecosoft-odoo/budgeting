@@ -15,7 +15,7 @@ class AccountMove(models.Model):
             # invoice reversal. Update only the reversal owned by these invoice
             # lines; draft/cancel removes it and posted creates it.
             invoice_lines = self.mapped("invoice_line_ids").filtered("purchase_line_id")
-            invoice_lines.uncommit_purchase_budget()
+            invoice_lines._call_budget_method_guarded("uncommit_purchase_budget")
             # Budget totals are non-stored SQL aggregates with no declared
             # dependency, so they don't auto-invalidate off budget-move writes.
             # Explicitly drop any totals cached earlier in the transaction (the

@@ -18,6 +18,8 @@ class PurchaseRequest(models.Model):
     # Allow trigger, because purchase request line is editable even when approved.
     @api.constrains("line_ids")
     def recompute_budget_move(self):
+        if self.env.context.get("_skip_auto_recompute_budget_move"):
+            return
         self.mapped("line_ids").recompute_budget_move()
 
     def close_budget_move(self):
@@ -28,7 +30,10 @@ class PurchaseRequest(models.Model):
         - Commit budget when state changes to approved
         - Cancel/Draft document should delete all budget commitment
         """
-        res = super().write(vals)
+        ctx_self = self
+        if vals.get("state") in ("approved", "rejected", "draft"):
+            ctx_self = self.with_context(_skip_auto_recompute_budget_move=True)
+        res = super(PurchaseRequest, ctx_self).write(vals)
         if vals.get("state") in ("approved", "rejected", "draft"):
             doclines = self.mapped("line_ids")
             if vals.get("state") in ("rejected", "draft"):
