@@ -178,44 +178,53 @@ class BudgetPeriod(models.Model):
             return
         self = self.sudo()
         budget_constraints = self._get_budget_constraint()
-        # Check budget by group analytic. For case many budget periods in one document.
+        # Pass 1: resolve each analytic account's group, no DB hit yet
+        groups = []
         for aa in doclines[doclines._budget_analytic_field]:
-            doclines = doclines.filtered(
+            aa_doclines = doclines.filtered(
                 lambda l: l[doclines._budget_analytic_field] == aa
             )
             # Find active budget.period based on latest doclines date_commit
-            date_commit = doclines.filtered("date_commit").mapped("date_commit")
+            date_commit = aa_doclines.filtered("date_commit").mapped("date_commit")
             if not date_commit:
-                return
+                continue
             date_commit = max(date_commit)
             budget_period = self._get_eligible_budget_period(
                 date_commit, doc_type=doc_type
             )
             if not budget_period:
-                return
+                continue
             # Find combination of account (KPI) + analytic (i.e., project) to control
-            controls = self._prepare_controls(budget_period, doclines)
+            controls = self._prepare_controls(budget_period, aa_doclines)
             if not controls:
-                return
+                continue
+            groups.append((aa_doclines, date_commit, budget_period, controls))
+        if not groups:
+            return
+        # Pass 2: one shared prefetch instead of one scan per control
+        all_controls = [c for group in groups for c in group[3]]
+        avail_cache = self._prefetch_budget_available(all_controls)
+        self = self.with_context(_budget_avail_cache=avail_cache)
+        for aa_doclines, date_commit, budget_period, controls in groups:
             # The budget_control of these analytics must be active
             analytic_ids = [x["analytic_id"] for x in controls]
             analytics = self.env["account.analytic.account"].browse(analytic_ids)
             analytics._check_budget_control_status(budget_period_id=budget_period.id)
             # Check budget on each control element against each KPI/avail (period)
             currency = (
-                "currency_id" in doclines
-                and doclines.mapped("currency_id")[:1]
+                "currency_id" in aa_doclines
+                and aa_doclines.mapped("currency_id")[:1]
                 or self.env.context.get("doc_currency", self.env.company.currency_id)
             )
             warnings = self.with_context(
-                date_commit=date_commit, doc_currency=currency, doclines=doclines
+                date_commit=date_commit, doc_currency=currency, doclines=aa_doclines
             )._check_budget_available(controls, budget_period)
             if warnings:
                 msg = "\n".join(["Budget not sufficient,", "\n".join(warnings)])
                 raise UserError(msg)
             # Check budget constraint following your customize condition
-            elif doclines and budget_constraints and budget_period:
-                self.check_budget_constraint(budget_constraints, doclines)
+            elif aa_doclines and budget_constraints and budget_period:
+                self.check_budget_constraint(budget_constraints, aa_doclines)
         return
 
     @api.model
@@ -400,9 +409,47 @@ class BudgetPeriod(models.Model):
         """Hook for add context"""
         return self.env["budget.monitor.report"]
 
+    def _prefetch_budget_available(self, controls):
+        """One monitor-report scan for all controls' analytic accounts, keyed by analytic_id."""
+        analytic_ids = sorted(
+            {c["analytic_id"] for c in controls if c.get("analytic_id")}
+        )
+        if not analytic_ids:
+            return {}
+        self.flush()
+        ids_csv = ",".join(str(i) for i in analytic_ids)
+        self._cr.execute(
+            sql.SQL(
+                """SELECT * FROM ({monitoring}) report
+                WHERE analytic_account_id in ({ids_csv})""".format(
+                    monitoring=self._get_budget_monitor_report()._table_query,
+                    ids_csv=ids_csv,
+                )
+            )
+        )
+        cache = {}
+        for row in self.env.cr.dictfetchall():
+            cache.setdefault(row["analytic_account_id"], []).append(row)
+        return cache
+
     def _get_budget_avaiable(self, analytic_id, template_lines):
-        # Callers that batch many controls can flush once themselves and set
-        # skip_budget_flush, avoiding a flush() per control.
+        cache = self.env.context.get("_budget_avail_cache")
+        # Cache only covers the base filter shape; custom _get_where_domain()
+        # overrides (e.g. budget_allocation's fund_id) fall through to a fresh query.
+        if cache is not None and (
+            not template_lines or template_lines._name == "budget.template.line"
+        ):
+            rows = cache.get(analytic_id, [])
+            if (
+                template_lines
+                and self._context.get("control_level", False) != "analytic"
+            ):
+                kpi_ids = set(template_lines.kpi_id.ids)
+                rows = [r for r in rows if r.get("kpi_id") in kpi_ids]
+            return rows
+        # Callers that batch many controls (check_budget()'s _check_budget_available)
+        # can flush once themselves and set skip_budget_flush, avoiding a flush()
+        # per control on this fallback (uncached) path too.
         if not self.env.context.get("skip_budget_flush"):
             self.flush()
         self._cr.execute(
