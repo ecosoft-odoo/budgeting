@@ -99,7 +99,12 @@ class PurchaseOrderLine(models.Model):
         for purchase_line in self.filtered("fwd_analytic_distribution"):
             # credit will not over debit (auto adjust)
             purchase_line.forward_commit()
+        self._recompute_budget_move_before_invoice_uncommit()
         self.mapped("invoice_lines").uncommit_purchase_budget()
+
+    def _recompute_budget_move_before_invoice_uncommit(self):
+        """Hook after PO/forward commitments and before invoice uncommit."""
+        return None
 
     def _can_batch_budget_precommit(self):
         return True
