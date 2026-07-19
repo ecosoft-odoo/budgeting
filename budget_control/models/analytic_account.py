@@ -88,22 +88,6 @@ class AccountAnalyticAccount(models.Model):
         tracking=True,
         help="Initial Balance from carry forward commitment",
     )
-    budget_actual_source = fields.Selection(
-        selection=lambda self: self.env[
-            "account.analytic.plan"
-        ]._selection_budget_actual_source(),
-        help="Determines where budget actual is recorded for this analytic.\n"
-        "Empty = inherit from plan.\n"
-        "Stock option requires budget_control_stock.",
-    )
-
-    def _get_effective_budget_actual_source(self):
-        self.ensure_one()
-        return (
-            self.budget_actual_source
-            or self.plan_id.budget_actual_source_default
-            or "bill"
-        )
 
     @api.depends("code", "partner_id", "budget_period_id")
     def _compute_display_name(self):
