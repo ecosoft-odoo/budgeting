@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 =====================================
 Budget Control on Purchase with Stock
 =====================================
@@ -17,7 +13,7 @@ Budget Control on Purchase with Stock
 .. |badge1| image:: https://img.shields.io/badge/maturity-Alpha-red.png
     :target: https://odoo-community.org/page/development-status
     :alt: Alpha
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github
@@ -26,20 +22,36 @@ Budget Control on Purchase with Stock
 
 |badge1| |badge2| |badge3|
 
-This module is a bridge between budget_control_purchase and
-budget_control_stock.
+This module bridges purchase and stock budget control with a
+product-category inventory recognition policy and a company fallback:
 
-When an outgoing delivery order (with lot tracing) is confirmed, the
-system traces each lot back to its source purchase order line and
-creates a reversed purchase.budget.move to uncommit the corresponding PO
-budget commitment.
+- **Vendor Bill**: posting the bill releases the PO commitment and
+  records budget actual. Outgoing stock operations do not affect budget.
+- **Stock Issue Valuation**: posting the bill affects neither actual nor
+  the PO commitment. Confirming an outgoing operation replaces the
+  traceable PO commitment with a stock commitment; posting its valuation
+  entry replaces that stock commitment with budget actual.
 
-When the vendor bill is posted, the uncommit quantity is automatically
-capped to the remaining PO commitment (undelivered lots only),
-preventing double-uncommit.
+Each product category can use **Company Default**, **Vendor Bill**, or
+**Stock Issue Valuation**. The resolved policy is captured independently
+on each purchase order line and stock move, so mixed-policy purchase
+orders are supported and later configuration changes do not rewrite
+confirmed transactions. Returns preserve the original stock move policy.
 
-When the delivery order is cancelled, the lot-traced PO uncommit entries
-are removed and the PO commitment is restored.
+Services and other non-storable products always use Vendor Bill. Stock
+Issue requires automated inventory valuation. It also applies to
+outgoing quantities that did not originate from a purchase (for example,
+manufactured stock) when their product category uses Stock Issue; a
+Vendor Bill category intentionally excludes all of its outgoing stock
+operations from budget.
+
+Lot-tracked products release the exact source PO commitment. Non-lot
+products use company- and budget-period-scoped product FIFO across
+received PO lines, ordered by PO date. Quantity is converted between
+stock and purchase UoMs, and remaining commitment caps use
+company-currency values. Cancelling an outgoing operation restores its
+PO commitment, while a stock return reverses the issue actual without
+recreating the fulfilled PO commitment.
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
@@ -50,6 +62,20 @@ are removed and the PO commitment is restored.
 
 .. contents::
    :local:
+
+Configuration
+=============
+
+1. In **Budget > Configuration > Settings**, choose the company's
+   **Default Inventory Budget Actual Source**.
+2. On each **Product Category**, choose **Company Default**, **Vendor
+   Bill**, or **Stock Issue Valuation** under Inventory Valuation.
+3. Categories using Stock Issue must use automated inventory valuation.
+
+The category setting is company-specific. Services and non-storable
+products always use Vendor Bill. Company and category changes apply to
+new PO-line and stock-move snapshots; finish open purchase/delivery
+flows before changing a policy for the same product.
 
 Bug Tracker
 ===========

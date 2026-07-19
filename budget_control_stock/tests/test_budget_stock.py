@@ -87,6 +87,13 @@ class TestBudgetControlStock(get_budget_common_class()):
                 "property_stock_journal": cls.stock_journal.id,
             }
         )
+        # Keep stock fixtures explicit when the optional purchase bridge is loaded.
+        (cls.product1 | cls.product2).write(
+            {"is_storable": True, "categ_id": cls.product_categ.id}
+        )
+        if "budget_inventory_actual_source" in cls.product_categ._fields:
+            cls.env.company.budget_inventory_actual_source = "stock_issue"
+            cls.product_categ.budget_inventory_actual_source = "stock_issue"
 
         # Additional products for flow tests
         cls.product_std = cls.Product.create(
@@ -647,8 +654,8 @@ class TestBudgetControlStock(get_budget_common_class()):
     @freeze_time("2001-02-01")
     def test_10_svl_je_not_affect_budget_by_picking_type(self):
         """
-        The SVL JE's not_affect_budget flag mirrors the picking type's
-        budget_commit setting.
+        Without an upstream move, the SVL JE's not_affect_budget flag mirrors
+        the valuation move's picking type budget_commit setting.
 
         (1) Picking type WITHOUT budget_commit: validating creates an SVL JE
             that is flagged not_affect_budget and records no actual.
@@ -710,3 +717,90 @@ class TestBudgetControlStock(get_budget_common_class()):
         # After validate: JE posted -> stock commit becomes actual.
         self.budget_control.invalidate_recordset()
         self.assertAlmostEqual(self.budget_control.amount_actual, 100.0)
+
+    def test_11_svl_je_uses_upstream_two_step_budget_source(self):
+        """A DO valuation uses the budget commitment from its upstream PICK."""
+        analytic_dist = {str(self.costcenter1.id): 100}
+        output_location = self.warehouse.wh_output_stock_loc_id
+        output_location.active = True
+        pick_type = self.warehouse.pick_type_id
+        pick_type.update(
+            {
+                "active": True,
+                "budget_commit": True,
+                "budget_price_source": "standard_price",
+            }
+        )
+        self.picking_type.budget_commit = False
+
+        delivery = self.env["stock.picking"].create(
+            {
+                "picking_type_id": self.picking_type.id,
+                "location_id": output_location.id,
+                "location_dest_id": self.location_dest.id,
+                "move_ids_without_package": [
+                    Command.create(
+                        {
+                            "name": self.product_std.name,
+                            "product_id": self.product_std.id,
+                            "product_uom_qty": 1,
+                            "product_uom": self.product_std.uom_id.id,
+                            "price_unit": 100,
+                            "analytic_distribution": analytic_dist,
+                            "location_id": output_location.id,
+                            "location_dest_id": self.location_dest.id,
+                        }
+                    )
+                ],
+            }
+        )
+        pick = self.env["stock.picking"].create(
+            {
+                "picking_type_id": pick_type.id,
+                "location_id": self.location_src.id,
+                "location_dest_id": output_location.id,
+                "move_ids_without_package": [
+                    Command.create(
+                        {
+                            "name": self.product_std.name,
+                            "product_id": self.product_std.id,
+                            "product_uom_qty": 1,
+                            "product_uom": self.product_std.uom_id.id,
+                            "price_unit": 100,
+                            "analytic_distribution": analytic_dist,
+                            "location_id": self.location_src.id,
+                            "location_dest_id": output_location.id,
+                            "move_dest_ids": [Command.link(delivery.move_ids.id)],
+                        }
+                    )
+                ],
+            }
+        )
+
+        delivery_move = delivery.move_ids
+        self.assertEqual(delivery_move._get_budget_commit_source_moves(), pick.move_ids)
+        valuation_entry = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "journal_id": self.stock_journal.id,
+                "stock_move_id": delivery_move.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "Two-step valuation",
+                            "account_id": self.stock_output_account.id,
+                            "balance": 100,
+                            "analytic_distribution": analytic_dist,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "Two-step valuation",
+                            "account_id": self.valuation_account.id,
+                            "balance": -100,
+                        }
+                    ),
+                ],
+            }
+        )
+        self.assertFalse(valuation_entry.not_affect_budget)
