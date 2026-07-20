@@ -186,6 +186,26 @@ class BudgetDoclineMixin(models.AbstractModel):
     def _budget_field(self):
         return self.env.context.get("alt_budget_move_field") or self._budget_move_field
 
+    def _call_budget_method_guarded(self, method_name):
+        """Call <method_name>() unless it's already in progress for this
+        exact recordset higher up the current call stack (write() MRO can
+        re-enter for the same records).
+        """
+        if not self:
+            return
+        in_progress = getattr(self.env.cr, "_budget_recompute_in_progress", None)
+        if in_progress is None:
+            in_progress = set()
+            self.env.cr._budget_recompute_in_progress = in_progress
+        key = (self._name, method_name, frozenset(self.ids))
+        if key in in_progress:
+            return
+        in_progress.add(key)
+        try:
+            getattr(self, method_name)()
+        finally:
+            in_progress.discard(key)
+
     def _valid_commit_state(self):
         raise ValidationError(self.env._("No implementation error!"))
 

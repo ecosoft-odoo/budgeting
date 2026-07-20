@@ -99,7 +99,9 @@ class AccountMove(models.Model):
         if vals.get("state") in ("posted", "cancel", "draft") or vals.get(
             "not_affect_budget"
         ):
-            self.mapped("invoice_line_ids").recompute_budget_move()
+            self.mapped("invoice_line_ids")._call_budget_method_guarded(
+                "recompute_budget_move"
+            )
         return res
 
     def _filtered_move_check_budget(self):
