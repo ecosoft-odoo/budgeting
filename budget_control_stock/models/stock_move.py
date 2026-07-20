@@ -36,6 +36,37 @@ class StockMove(models.Model):
         accounts = self.product_id.product_tmpl_id.get_product_accounts(fiscal_pos=fpos)
         return accounts.get("expense") or accounts.get("stock_input")
 
+    def _get_budget_commit_source_moves(self):
+        """Return the nearest moves owning the valuation budget commitment.
+
+        A valuation layer is created on the final OUT move. In a multi-step
+        delivery, however, the budget commitment can belong to an upstream PICK
+        move. Returns must follow the original outgoing move and its upstream
+        chain instead of the return operation type.
+        """
+        budget_moves = self.env["stock.move"]
+        for move in self:
+            candidates = move.origin_returned_move_id or move
+            visited = self.env["stock.move"]
+            while candidates:
+                candidates -= visited
+                if not candidates:
+                    break
+                visited |= candidates
+                committed = candidates.filtered(
+                    lambda candidate: (
+                        candidate.picking_id.picking_type_id.budget_commit
+                    )
+                )
+                budget_moves |= committed
+                candidates = (candidates - committed).mapped("move_orig_ids")
+        return budget_moves
+
+    def _should_valuation_affect_budget(self):
+        """Whether this move's valuation entry should record budget actual."""
+        self.ensure_one()
+        return bool(self._get_budget_commit_source_moves())
+
     def recompute_budget_move(self):
         budget_field = self._budget_field()
         force_date_commit = self.env.context.get("force_date_commit", False)

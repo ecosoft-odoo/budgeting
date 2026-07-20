@@ -9,7 +9,7 @@ class AccountMove(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Flag SVL JEs of non-commit picking types as not_affect_budget."""
+        """Flag SVL JEs without a stock budget source as not_affect_budget."""
         moves = super().create(vals_list)
         moves._compute_not_affect_budget_for_svl()
         return moves
@@ -19,29 +19,26 @@ class AccountMove(models.Model):
 
         recompute_budget_move handles both re-commit and uncommit
         (via _recommit_via_valuation_lines) in one pass.
-        Only recompute for moves belonging to picking types with budget_commit enabled.
+        For multi-step deliveries, recompute the upstream PICK move that owns
+        the commitment even though the valuation entry belongs to the OUT move.
         """
         res = super().write(vals)
         if vals.get("state") in ("draft", "posted", "cancel"):
             stock_moves = self.mapped("stock_valuation_layer_ids.stock_move_id")
-            stock_moves = stock_moves.filtered(
-                lambda m: m.picking_id.picking_type_id.budget_commit
-            )
-            stock_moves.recompute_budget_move()
+            stock_moves._get_budget_commit_source_moves().recompute_budget_move()
             self._compute_not_affect_budget_for_svl()
         return res
 
     def _compute_not_affect_budget_for_svl(self):
-        """Flag SVL JE of a picking type without budget_commit as not_affect_budget."""
+        """Flag an SVL JE only when its move chain has no budget source."""
         for move in self:
             if move.move_type != "entry":
                 continue
             stock_move = move.stock_move_id
-            # A picking type that does not commit budget (e.g. receipts) should
-            # not record actual via its valuation JE either, mirroring the rule
-            # already applied to stock.move (see StockMove._compute_can_commit).
             not_affect = bool(
-                stock_move and not stock_move.picking_id.picking_type_id.budget_commit
+                stock_move and not stock_move._should_valuation_affect_budget()
             )
             if move.not_affect_budget != not_affect:
                 move.not_affect_budget = not_affect
+                if not not_affect and move.state == "posted":
+                    move.recompute_budget_move()

@@ -13,18 +13,4 @@
             </xpath>
         </field>
     </record>
-
-    <record id="purchase_order_form_budget_stock" model="ir.ui.view">
-        <field name="name">purchase.order.form.budget.stock</field>
-        <field name="model">purchase.order</field>
-        <field name="inherit_id" ref="budget_control_purchase.purchase_order_form" />
-        <field name="arch" type="xml">
-            <xpath
-                expr="//page[@name='budget_commit']//field[@name='budget_move_ids']//field[@name='move_id']"
-                position="before"
-            >
-                <field name="stock_picking_id" optional="show" />
-            </xpath>
-        </field>
-    </record>
 </odoo>
