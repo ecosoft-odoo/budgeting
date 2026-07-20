@@ -1656,3 +1656,57 @@ class TestBudgetControl(get_budget_common_class()):
         self.assertEqual(
             sum(len(line.budget_move_ids) for line in bill3.invoice_line_ids), 0
         )
+
+    @freeze_time("2001-02-01")
+    def test_27_multi_analytic_budget_check(self):
+        """Every analytic used by a document must be budget checked."""
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        budget_controls = self.budget_control | self.budget_control2
+        budget_controls.action_submit()
+        budget_controls.action_done()
+
+        bill = self._create_simple_bill(
+            {self.costcenter1.id: 100}, self.account_kpi1, 100
+        )
+        second_line_vals = {
+            "quantity": 1,
+            "account_id": self.account_kpi1.id,
+            "price_unit": 100000,
+            "analytic_distribution": {self.costcenterX.id: 100},
+        }
+        if getattr(self, "check_plan_detail_installed", False):
+            second_line_vals.update(
+                {
+                    "fund_id": self.fund1_g1.id,
+                    "analytic_tag_ids": [Command.link(self.analytic_tag1.id)],
+                }
+            )
+        bill.write({"invoice_line_ids": [Command.create(second_line_vals)]})
+
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
+            bill.action_post()
+
+    @freeze_time("2001-02-01")
+    def test_28_combined_analytic_distribution_key(self):
+        """Comma-separated analytic keys must not bypass budget checks."""
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        budget_controls = self.budget_control | self.budget_control2
+        budget_controls.action_submit()
+        budget_controls.action_done()
+
+        distribution_key = f"{self.costcenter1.id},{self.costcenterX.id}"
+        bill = self._create_simple_bill(
+            {distribution_key: 100}, self.account_kpi1, 100000
+        )
+
+        grouped_analytics = {
+            analytic_id
+            for analytic_id, _lines in self.env[
+                "budget.period"
+            ]._group_doclines_by_analytic(bill.invoice_line_ids)
+        }
+        self.assertEqual(grouped_analytics, {self.costcenter1.id, self.costcenterX.id})
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
+            bill.action_post()
