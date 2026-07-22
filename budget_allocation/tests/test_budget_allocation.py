@@ -297,3 +297,59 @@ class TestBudgetAllocation(BudgetControlCommon):
         transfer.action_reverse()
         self.assertEqual(budget_control_ids[0].diff_amount, 0.0)
         self.assertEqual(budget_control_ids[1].diff_amount, 0.0)
+
+    @freeze_time("2001-02-01")
+    def test_04_forward_balance_vs_init_amount(self):
+        """Budget Allocation's Initial Amount only knows about newly
+        allocated funds, not Forward Balance. The plan's Initial Amount
+        check must therefore compare against New Budget only (not the
+        Forward-Balance-inclusive Total Amount), or confirming a plan with
+        any carried-forward balance would always fail."""
+        prev_period = self.env["budget.period"].create(
+            {
+                "name": "Budget for FY Prev",
+                "template_id": self.template.id,
+                "bm_date_from": "%s-01-01" % (self.year - 1),
+                "bm_date_to": "%s-12-31" % (self.year - 1),
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+            }
+        )
+        forward = self.env["budget.balance.forward"].create(
+            {
+                "name": "Test Forward for Allocation",
+                "from_budget_period_id": prev_period.id,
+                "to_budget_period_id": self.budget_period.id,
+            }
+        )
+        self.env["budget.balance.forward.line"].create(
+            {
+                "forward_id": forward.id,
+                "analytic_account_id": self.costcenter1.id,
+                "amount_balance": 60.0,
+                "amount_balance_forward": 60.0,
+            }
+        )
+        forward.action_budget_balance_forward()
+        self.assertEqual(forward.state, "done")
+
+        budget_allocation_id = self._create_budget_allocation(100)
+        budget_allocation_id.action_done()
+        plan_id = budget_allocation_id.plan_id
+        line_cc1 = plan_id.line_ids.filtered(
+            lambda line: line.analytic_account_id == self.costcenter1
+        )
+        # New Budget from allocation only (300), Forward Balance kept apart
+        self.assertEqual(line_cc1.amount, 300.0)
+        self.assertEqual(line_cc1.amount_forward_in, 60.0)
+        self.assertEqual(line_cc1.allocated_amount, 360.0)
+
+        self.assertEqual(plan_id.init_amount, 400.0)
+        self.assertEqual(plan_id.total_new_budget, 400.0)
+        # Total Amount includes Forward Balance, so it legitimately diverges
+        # from Initial Amount once a forward balance exists.
+        self.assertEqual(plan_id.total_amount, 460.0)
+
+        # Must not raise: the check compares init_amount to total_new_budget
+        plan_id.action_confirm()
+        self.assertEqual(plan_id.state, "confirm")

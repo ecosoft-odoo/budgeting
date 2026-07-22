@@ -13,6 +13,7 @@ class BudgetMonitorReport(models.Model):
 
     res_id = fields.Reference(
         selection=lambda self: [("budget.control.line", "Budget Control Lines")]
+        + [("budget.balance.forward.line", "Budget Balance Forward Line")]
         + self._get_budget_docline_model(),
         string="Resource ID",
     )
@@ -32,6 +33,7 @@ class BudgetMonitorReport(models.Model):
     amount = fields.Float()
     amount_type = fields.Selection(
         selection=lambda self: [("10_budget", "Budget")]
+        + [("12_forward_out", "Forward Balance Out")]
         + self._get_budget_amount_type(),
         string="Type",
     )
@@ -171,6 +173,59 @@ class BudgetMonitorReport(models.Model):
     def _where_actual(self):
         return ""
 
+    def _select_forward_balance(self):
+        """Return only the source-period deduction for monitoring.
+
+        The target budget control/plan already shows Forward In separately,
+        so exposing a positive inflow here would double-count it in pivots.
+        """
+        return {
+            0: """
+            13000000000 + line.id as id,
+            'budget.balance.forward.line,' || line.id as res_id,
+            null::integer as kpi_id,
+            line.analytic_account_id as analytic_account_id,
+            source_analytic.group_id as analytic_group,
+            from_period.bm_date_to as date,
+            '12_forward_out' as amount_type,
+            -(line.amount_balance_forward + line.amount_balance_accumulate)
+                as amount,
+            null::integer as product_id,
+            null::integer as account_id,
+            forward.name as reference,
+            forward.name || ' (' || from_period.name || ' -> '
+                || to_period.name || ')' as source_document,
+            null::char as budget_state,
+            0::boolean as fwd_commit,
+            true as active
+            """
+        }
+
+    def _select_forward_balance_extra(self):
+        """Hook for extension dimensions, keyed the same way as
+        ``_select_budget()``/``_select_statement()`` so every module that
+        extends those two extends this branch too."""
+        return {}
+
+    def _from_forward_balance(self):
+        return """
+            from budget_balance_forward_line line
+            inner join budget_balance_forward forward
+                on forward.id = line.forward_id
+            inner join budget_period from_period
+                on from_period.id = forward.from_budget_period_id
+            inner join budget_period to_period
+                on to_period.id = forward.to_budget_period_id
+            inner join account_analytic_account source_analytic
+                on source_analytic.id = line.analytic_account_id
+        """
+
+    def _where_forward_balance(self):
+        return """
+            where forward.state = 'done'
+                and (line.amount_balance_forward + line.amount_balance_accumulate) != 0
+        """
+
     def _get_sql(self):
         select_budget_query = self._select_budget()
         key_select_budget_list = sorted(select_budget_query.keys())
@@ -182,12 +237,26 @@ class BudgetMonitorReport(models.Model):
         select_actual = ", ".join(
             select_actual_query[x] for x in key_select_actual_list
         )
-        return "(select {} {}) union (select {} {} {})".format(
+        select_forward_query = self._select_forward_balance()
+        select_forward_extra = self._select_forward_balance_extra()
+        key_select_forward_list = sorted(
+            list(select_forward_query.keys()) + list(select_forward_extra.keys())
+        )
+        select_forward = ", ".join(
+            select_forward_query.get(x, select_forward_extra.get(x))
+            for x in key_select_forward_list
+        )
+        return (
+            "(select {} {}) union (select {} {} {}) union (select {} {} {})"
+        ).format(
             select_budget,
             self._from_budget(),
             select_actual,
             self._from_statement("80_actual"),
             self._where_actual(),
+            select_forward,
+            self._from_forward_balance(),
+            self._where_forward_balance(),
         )
 
     def _get_where_clause(self):

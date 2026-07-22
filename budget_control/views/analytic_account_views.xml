@@ -33,7 +33,8 @@
                     widget="many2many_tags"
                     optional="show"
                 />
-                <field name="initial_available" optional="show" />
+                <field name="amount_forward_in" optional="show" />
+                <field name="amount_forward_out" optional="hide" />
                 <field name="initial_commit" optional="show" />
             </field>
         </field>
@@ -51,17 +52,8 @@
             </field>
             <xpath expr="//group[@name='main']/group[2]" position="inside">
                 <field name="auto_adjust_date_commit" />
-                <label for="initial_available" />
-                <div>
-                    <field name="initial_available" class="oe_inline" />
-                    <button
-                        name="action_edit_initial_available"
-                        string="=> Edit"
-                        type="object"
-                        class="oe_link"
-                        attrs="{'invisible': [('initial_available', '=', 0)]}"
-                    />
-                </div>
+                <field name="amount_forward_in" />
+                <field name="amount_forward_out" />
                 <field name="initial_commit" />
             </xpath>
         </field>
@@ -95,8 +87,8 @@
                     optional="show"
                 />
                 <field
-                    name="initial_available"
-                    sum="Total Available Initial"
+                    name="amount_forward_in"
+                    sum="Total Forward In"
                     optional="show"
                 />
                 <field
@@ -106,6 +98,11 @@
                 />
                 <field name="amount_budget" sum="Total Budget" />
                 <field name="amount_consumed" sum="Total Consumed" />
+                <field
+                    name="amount_forward_out"
+                    sum="Total Forward Out"
+                    optional="hide"
+                />
                 <field name="amount_balance" sum="Balance" />
             </tree>
         </field>

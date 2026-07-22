@@ -79,12 +79,13 @@ class TestBudgetPlan(BudgetControlCommon):
         self.assertEqual(len(budget_plan.line_ids), 2)
         self.assertEqual(budget_plan.state, "draft")
         self.assertEqual(budget_plan.total_amount, 300.0)
-        self.assertFalse(budget_plan.line_ids[0].allocated_amount)
+        # Allocated = New Budget + Forward Balance (0 here), live even in draft
+        self.assertEqual(budget_plan.line_ids[0].allocated_amount, 100.0)
         self.assertFalse(budget_plan.line_ids[0].released_amount)
         self.assertEqual(budget_plan.line_ids[0].amount, 100.0)
         budget_plan.action_confirm()
         self.assertEqual(budget_plan.state, "confirm")
-        # After confirm, it will update allocated, released following amount
+        # After confirm, Released follows Allocated (no Forward Balance here)
         self.assertEqual(budget_plan.line_ids[0].allocated_amount, 100.0)
         self.assertEqual(budget_plan.line_ids[0].released_amount, 100.0)
         self.assertEqual(budget_plan.line_ids[0].amount, 100.0)

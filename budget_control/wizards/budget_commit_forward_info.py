@@ -52,25 +52,17 @@ class BudgetCommitForwardInfoLine(models.TransientModel):
         related="analytic_account_id.group_id",
         readonly=True,
     )
-    initial_available = fields.Monetary(
-        string="Initial Available",
-        related="analytic_account_id.initial_available",
-        readonly=True,
-    )
     initial_commit = fields.Monetary(
         string="Initial Commitment",
         readonly=True,
     )
     amount_balance = fields.Monetary(
         string="Available",
-        compute="_compute_amount_balance",
+        related="analytic_account_id.amount_balance",
+        readonly=True,
     )
     currency_id = fields.Many2one(
         comodel_name="res.currency",
         related="forward_info_id.currency_id",
         readonly=True,
     )
-
-    def _compute_amount_balance(self):
-        for rec in self:
-            rec.amount_balance = rec.initial_available - rec.initial_commit
