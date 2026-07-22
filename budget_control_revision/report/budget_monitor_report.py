@@ -20,3 +20,8 @@ class BudgetMonitorReport(models.Model):
         select_statement = super()._select_statement(amount_type)
         select_statement[70] = "null::char as revision_number"
         return select_statement
+
+    def _select_forward_balance_extra(self):
+        select_forward_extra = super()._select_forward_balance_extra()
+        select_forward_extra[70] = "null::char as revision_number"
+        return select_forward_extra
