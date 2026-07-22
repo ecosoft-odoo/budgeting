@@ -97,8 +97,13 @@ class StockMove(models.Model):
     def _recommit_via_valuation_lines(self):
         """Re-apply uncommit entries for posted valuation JEs after a recompute."""
         self.ensure_one()
+        sudo_move = self.sudo()
         # For 2-step delivery: PICK has no SVL; valuation is on OUT (dest) move.
-        svl_moves = self if self.stock_valuation_layer_ids else self.move_dest_ids
+        svl_moves = (
+            sudo_move
+            if sudo_move.stock_valuation_layer_ids
+            else sudo_move.move_dest_ids
+        )
         posted_je_lines = svl_moves.stock_valuation_layer_ids.filtered(
             lambda svl: svl.account_move_id and svl.account_move_id.state == "posted"
         ).mapped("account_move_id.line_ids")
