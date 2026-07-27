@@ -12,11 +12,11 @@ class SourceFundMonitorReport(models.Model):
     # Budget
     def _select_budget(self):
         select_budget_query = super()._select_budget()
-        select_budget_query[30] = "bc.revision_number::char as revision_number"
+        select_budget_query[30] = "bc.revision_number::text as revision_number"
         return select_budget_query
 
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)
-        select_statement[30] = "null::char as revision_number"
+        select_statement[30] = "null::text as revision_number"
         return select_statement
