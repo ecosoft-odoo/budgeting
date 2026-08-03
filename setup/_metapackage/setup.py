@@ -50,6 +50,7 @@ setuptools.setup(
         'odoo-addon-budget_control_purchase_requisition>=15.0dev,<15.1dev',
         'odoo-addon-budget_control_purchase_work_acceptance_late_fines>=15.0dev,<15.1dev',
         'odoo-addon-budget_control_queue>=15.0dev,<15.1dev',
+        'odoo-addon-budget_control_report>=15.0dev,<15.1dev',
         'odoo-addon-budget_control_request_document>=15.0dev,<15.1dev',
         'odoo-addon-budget_control_request_document_expense>=15.0dev,<15.1dev',
         'odoo-addon-budget_control_revision>=15.0dev,<15.1dev',
