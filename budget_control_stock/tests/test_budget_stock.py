@@ -652,6 +652,45 @@ class TestBudgetControlStock(get_budget_common_class()):
         self.assertFalse(orphan)
 
     @freeze_time("2001-02-01")
+    def test_10_manual_je_preserves_not_affect_budget(self):
+        """Posting a manual JE must not apply stock valuation defaults."""
+        analytic_dist = {str(self.costcenterX.id): 100}
+        move = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "journal_id": self.stock_journal.id,
+                "not_affect_budget": True,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "Manual entry",
+                            "account_id": self.account_kpi1.id,
+                            "balance": 100,
+                            "analytic_distribution": analytic_dist,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "Manual entry",
+                            "account_id": self.stock_output_account.id,
+                            "balance": -100,
+                        }
+                    ),
+                ],
+            }
+        )
+        self.assertFalse(move.stock_move_id)
+        self.assertTrue(move.not_affect_budget)
+        self.assertTrue(all(move.line_ids.mapped("not_affect_budget")))
+
+        move.action_post()
+
+        self.assertEqual(move.state, "posted")
+        self.assertTrue(move.not_affect_budget)
+        self.assertTrue(all(move.line_ids.mapped("not_affect_budget")))
+        self.assertFalse(move.line_ids.budget_move_ids)
+
+    @freeze_time("2001-02-01")
     def test_10_svl_je_not_affect_budget_by_picking_type(self):
         """
         Without an upstream move, the SVL JE's not_affect_budget flag mirrors

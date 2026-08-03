@@ -32,12 +32,13 @@ class AccountMove(models.Model):
     def _compute_not_affect_budget_for_svl(self):
         """Flag an SVL JE only when its move chain has no budget source."""
         for move in self:
-            if move.move_type != "entry":
+            # This hook only owns stock valuation entries.  A regular manual
+            # journal entry has no stock move, so its user-selected setting
+            # must be left untouched.
+            if move.move_type != "entry" or not move.stock_move_id:
                 continue
             stock_move = move.stock_move_id
-            not_affect = bool(
-                stock_move and not stock_move._should_valuation_affect_budget()
-            )
+            not_affect = bool(not stock_move._should_valuation_affect_budget())
             if move.not_affect_budget != not_affect:
                 move.not_affect_budget = not_affect
                 if not not_affect and move.state == "posted":
