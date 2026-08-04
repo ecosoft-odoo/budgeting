@@ -83,10 +83,7 @@ class SaleOrder(models.Model):
                 # Same SO re-confirmed (reset to draft): skip to avoid
                 # doubling the allocated amount.
                 if order not in existing.sale_order_ids:
-                    add_amount = sum(
-                        line.purchase_price * line.product_uom_qty
-                        for line in order.order_line
-                    )
+                    add_amount = order._get_budget_control_allocated_amount()
                     existing.write(
                         {
                             "allocated_amount": existing.allocated_amount + add_amount,
@@ -129,18 +126,27 @@ class SaleOrder(models.Model):
 
     def _prepare_budget_control_vals(self, analytic_account, budget_period):
         self.ensure_one()
-        allocated_amount = sum(
-            line.purchase_price * line.product_uom_qty for line in self.order_line
-        )
         return {
             "name": analytic_account.name,
             "analytic_account_id": analytic_account.id,
             "budget_period_id": budget_period.id,
             "plan_date_range_type_id": budget_period.plan_date_range_type_id.id,
             "currency_id": self.company_id.currency_id.id,
-            "allocated_amount": allocated_amount,
+            "allocated_amount": self._get_budget_control_allocated_amount(),
             "sale_order_ids": [Command.link(self.id)],
         }
+
+    def _get_budget_control_allocated_amount(self):
+        """Return the SO cost allocated to a budget control.
+
+        Keep the default implementation based on ``purchase_price`` so this
+        addon remains independent from optional sale cost customizations.
+        Implementations that use another cost source can override this hook.
+        """
+        self.ensure_one()
+        return sum(
+            line.purchase_price * line.product_uom_qty for line in self.order_line
+        )
 
     def action_open_budget_control(self):
         self.ensure_one()
