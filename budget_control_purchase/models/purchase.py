@@ -73,25 +73,34 @@ class PurchaseOrderLine(models.Model):
 
     @api.depends("budget_move_ids", "budget_move_ids.date")
     def _compute_commit(self):
-        """Move amount commit negative to first line positive"""
+        """Move amount commit negative to first line positive, per analytic account"""
         res = super()._compute_commit()
 
         negative_lines = self.filtered(lambda po: po.price_subtotal < 0.0)
         for purchase_line in negative_lines:
-            amount_commit = abs(purchase_line.amount_commit)
+            amount_commit_dict = dict(purchase_line.amount_commit or {})
 
             # Get all positive lines in the same order (computed once per purchase_line)
             available_lines = purchase_line.order_id.order_line.filtered(
-                lambda line: line.price_subtotal > 0.0 and line.amount_commit > 0.0
+                lambda line: line.price_subtotal > 0.0 and line.amount_commit
             )
 
-            # Check amount commit each line
-            for line in available_lines:
-                if amount_commit > 0 and line.amount_commit > 0:
-                    amount_to_commit = min(amount_commit, line.amount_commit)
-                    purchase_line.amount_commit += amount_to_commit
-                    line.amount_commit -= amount_to_commit
+            # Check amount commit each analytic account, each line
+            for analytic_id, value in list(amount_commit_dict.items()):
+                if not isinstance(value, int | float) or value >= 0:
+                    continue
+                amount_commit = abs(value)
+                for line in available_lines:
+                    line_commit_dict = dict(line.amount_commit or {})
+                    line_amount = line_commit_dict.get(analytic_id, 0.0)
+                    if amount_commit <= 0 or line_amount <= 0:
+                        continue
+                    amount_to_commit = min(amount_commit, line_amount)
+                    amount_commit_dict[analytic_id] += amount_to_commit
+                    line_commit_dict[analytic_id] = line_amount - amount_to_commit
+                    line.amount_commit = line_commit_dict
                     amount_commit -= amount_to_commit
+            purchase_line.amount_commit = amount_commit_dict
         return res
 
     def recompute_budget_move(self):
