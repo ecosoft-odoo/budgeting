@@ -26,7 +26,9 @@
                 </button>
             </xpath>
             <xpath expr="//field[@name='allocated_amount']" position="attributes">
-                <attribute name="readonly">state != 'draft'</attribute>
+                <attribute
+                    name="readonly"
+                >state != 'draft' or budget_plan_id</attribute>
             </xpath>
         </field>
     </record>

@@ -80,6 +80,7 @@ class TestBudgetControlSaleStock(get_budget_common_class()):
         bc = sale.budget_control_id
         # allocated_amount = (50*2) + (80*1) = 180
         self.assertAlmostEqual(bc.allocated_amount, 180.0)
+        self.assertFalse(bc.budget_plan_id)
         self.assertIn(sale, bc.sale_order_ids)
         self.assertEqual(bc.sale_order_count, 1)
 
