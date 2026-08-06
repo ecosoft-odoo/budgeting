@@ -137,15 +137,51 @@ class SaleOrder(models.Model):
         }
 
     def _get_budget_control_allocated_amount(self):
-        """Return the SO cost allocated to a budget control.
+        """Return the SO cost allocated to a budget control in company currency.
 
         Keep the default implementation based on ``purchase_price`` so this
         addon remains independent from optional sale cost customizations.
         Implementations that use another cost source can override this hook.
         """
         self.ensure_one()
-        return sum(
+        amount = sum(
             line.purchase_price * line.product_uom_qty for line in self.order_line
+        )
+        return self._convert_budget_amount_to_company_currency(amount)
+
+    def _get_budget_control_sale_amount(self):
+        """Return the untaxed SO amount in company currency."""
+        self.ensure_one()
+        return self._convert_budget_amount_to_company_currency(self.amount_untaxed)
+
+    def _convert_budget_amount_to_company_currency(self, amount):
+        """Convert an amount expressed in SO currency to company currency.
+
+        Optional addons can override ``_get_budget_control_currency_rate`` to
+        provide another rate source, such as a manual currency rate on the SO.
+        """
+        self.ensure_one()
+        company = self.company_id or self.env.company
+        rate = self._get_budget_control_currency_rate()
+        return company.currency_id.round(amount * rate)
+
+    def _get_budget_control_currency_rate(self):
+        """Return the SO-to-company currency multiplier used by the budget.
+
+        This hook intentionally belongs to ``sale.order`` so an optional addon
+        can use SO-specific information. For example, a manual currency addon
+        can override this method, return its manual rate when enabled, and call
+        ``super()`` otherwise.
+        """
+        self.ensure_one()
+        company = self.company_id or self.env.company
+        currency = self.currency_id or company.currency_id
+        conversion_date = self.date_order or fields.Date.context_today(self)
+        return self.env["res.currency"]._get_conversion_rate(
+            currency,
+            company.currency_id,
+            company,
+            conversion_date,
         )
 
     def action_open_budget_control(self):
