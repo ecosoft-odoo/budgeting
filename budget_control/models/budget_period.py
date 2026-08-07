@@ -151,7 +151,7 @@ class BudgetPeriod(models.Model):
             return
         self = self.sudo()
         budget_constraints = self._get_budget_constraint()
-        all_analytics = doclines.mapped(doclines._budget_analytic_field)
+        all_analytics = [line[doclines._budget_analytic_field] for line in doclines]
 
         # Get All Analytic Account
         all_analytic_ids = set()
