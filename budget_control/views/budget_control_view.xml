@@ -36,6 +36,7 @@
                 <field name="name" />
                 <field name="analytic_account_id" />
                 <field name="analytic_plan" optional="show" />
+                <field name="budget_plan_id" optional="hide" />
                 <field name="assignee_ids" optional="show" widget="many2many_tags" />
                 <field name="amount_forward_in" optional="hide" />
                 <field name="amount_new_budget" optional="hide" />
@@ -217,6 +218,11 @@
                         </group>
                         <group name="budget_control_right">
                             <field name="active" invisible="1" />
+                            <field
+                                name="budget_plan_id"
+                                readonly="1"
+                                invisible="not budget_plan_id"
+                            />
                             <field name="budget_period_id" readonly="1" />
                             <label for="date_from" string="Date Range" />
                             <div name="date_range" class="o_row">

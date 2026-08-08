@@ -24,11 +24,12 @@ class BudgetPlan(models.Model):
     date_to = fields.Date(related="budget_period_id.bm_date_to")
     budget_control_ids = fields.One2many(
         comodel_name="budget.control",
-        compute="_compute_budget_control",
+        inverse_name="budget_plan_id",
+        context={"active_test": False},
     )
     budget_control_count = fields.Integer(
         string="# of Budget Control",
-        compute="_compute_budget_control",
+        compute="_compute_budget_control_count",
         help="Count budget control in Plan",
     )
     total_amount = fields.Monetary(compute="_compute_total_amount")
@@ -88,12 +89,10 @@ class BudgetPlan(models.Model):
         for rec in self:
             rec.total_amount = sum(rec.line_ids.mapped("allocated_amount"))
 
-    @api.depends("line_ids")
-    def _compute_budget_control(self):
-        """Find all budget controls of the same period"""
-        for rec in self.with_context(active_test=False).sudo():
-            rec.budget_control_ids = rec.line_ids.mapped("budget_control_ids")
-            rec.budget_control_count = len(rec.line_ids.mapped("budget_control_ids"))
+    @api.depends("budget_control_ids")
+    def _compute_budget_control_count(self):
+        for rec in self:
+            rec.budget_control_count = len(rec.budget_control_ids)
 
     def button_open_budget_control(self):
         self.ensure_one()
@@ -130,6 +129,7 @@ class BudgetPlan(models.Model):
                 "template_line_ids": template_lines,
                 "budget_period_id": budget_period.id,
                 "currency_id": currency_id,
+                "budget_plan_id": self.id,
             }
             for x in analytic_plan
         ]
@@ -186,7 +186,58 @@ class BudgetPlan(models.Model):
                 ]
             )
         )
-        existing_analytics = existing_budget_controls.mapped("analytic_account_id")
+        controls_by_analytic = {}
+        for control in existing_budget_controls.sorted("id"):
+            controls_by_analytic.setdefault(
+                control.analytic_account_id.id, self.env["budget.control"]
+            )
+            controls_by_analytic[control.analytic_account_id.id] |= control
+
+        target_controls = self.env["budget.control"]
+        conflicting_controls = self.env["budget.control"]
+        for analytic in analytic_plan:
+            candidates = controls_by_analytic.get(
+                analytic.id, self.env["budget.control"]
+            )
+            active_control = candidates.filtered(
+                lambda control: control.active and control.state != "cancel"
+            )[-1:]
+            if (
+                active_control
+                and active_control.budget_plan_id
+                and active_control.budget_plan_id != self
+            ):
+                conflicting_controls |= active_control
+                continue
+            if active_control:
+                target_controls |= active_control
+                continue
+            reusable_control = candidates.filtered(
+                lambda control: not control.budget_plan_id
+                or control.budget_plan_id == self
+            )[-1:]
+            target_controls |= reusable_control
+
+        if conflicting_controls:
+            plan_names = ", ".join(
+                conflicting_controls.mapped("budget_plan_id.display_name")
+            )
+            analytic_names = ", ".join(
+                conflicting_controls.mapped("analytic_account_id.display_name")
+            )
+            raise UserError(
+                self.env._(
+                    "Budget Control for %(analytics)s is already managed by "
+                    "another Budget Plan: %(plans)s.",
+                    analytics=analytic_names,
+                    plans=plan_names,
+                )
+            )
+
+        target_controls.filtered(lambda control: not control.budget_plan_id).write(
+            {"budget_plan_id": self.id}
+        )
+        existing_analytics = target_controls.mapped("analytic_account_id")
         new_analytic = analytic_plan - existing_analytics
 
         # Create new budget control if new plan line is added
@@ -411,13 +462,15 @@ class BudgetPlanLine(models.Model):
             ):
                 raise ValidationError(self.env._("New Budget cannot be negative."))
 
-    @api.depends("analytic_account_id.budget_control_ids", "budget_period_id")
+    @api.depends(
+        "analytic_account_id.budget_control_ids.budget_plan_id",
+        "plan_id",
+    )
     def _compute_budget_control_ids(self):
         for rec in self.sudo():
             rec.budget_control_ids = (
                 rec.analytic_account_id.budget_control_ids.filtered(
-                    lambda control, rec=rec: control.budget_period_id
-                    == rec.budget_period_id
+                    lambda control, rec=rec: control.budget_plan_id == rec.plan_id
                 )
             )
 
