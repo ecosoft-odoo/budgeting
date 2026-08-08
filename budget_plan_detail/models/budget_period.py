@@ -7,6 +7,11 @@ from odoo import models
 class BudgetPeriod(models.Model):
     _inherit = "budget.period"
 
+    def _can_use_budget_available_cache(self, template_lines):
+        if template_lines and template_lines._name == "budget.plan.line.detail":
+            return False
+        return super()._can_use_budget_available_cache(template_lines)
+
     def _get_where_domain(self, analytic_id, template_lines):
         if template_lines._name == "budget.plan.line.detail":
             unique_fund_ids = template_lines.mapped("fund_id")

@@ -269,6 +269,7 @@ class TestBudgetControlPurchase(get_budget_common_class()):
         # PO Commit = 700, INV Actual = 0
         self.assertAlmostEqual(self.budget_control.amount_purchase, 700.0)
         self.assertAlmostEqual(self.budget_control.amount_actual, 0.0)
+
         # Create and post invoice
         purchase.action_create_invoice()
         self.assertEqual(purchase.invoice_status, "invoiced")
@@ -299,3 +300,40 @@ class TestBudgetControlPurchase(get_budget_common_class()):
         self.budget_control.invalidate_recordset()
         self.assertAlmostEqual(self.budget_control.amount_purchase, 0.0)
         self.assertAlmostEqual(self.budget_control.amount_actual, 0.0)
+
+    @freeze_time("2001-02-01")
+    def test_04_confirmed_line_edit_and_manual_recompute(self):
+        """State-write guard must not suppress later intentional recomputes."""
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+
+        analytic_distribution = {str(self.costcenter1.id): 100}
+        purchase = self._create_purchase(
+            [
+                {
+                    "product_id": self.product1,
+                    "product_qty": 2,
+                    "price_unit": 100,
+                    "analytic_distribution": analytic_distribution,
+                }
+            ]
+        ).with_context(force_date_commit=datetime.today())
+        purchase.button_confirm()
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 200.0)
+
+        # Editing an approved PO through its order_line commands must trigger
+        # the constraint normally; the skip flag is set only on state writes.
+        purchase.write(
+            {
+                "order_line": [
+                    Command.update(purchase.order_line.id, {"price_unit": 150})
+                ]
+            }
+        )
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 300.0)
+
+        # The object button invokes this method without the internal skip
+        # context and must always rebuild the commitment from current values.
+        purchase.order_line.write({"price_unit": 175})
+        purchase.recompute_budget_move()
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 350.0)

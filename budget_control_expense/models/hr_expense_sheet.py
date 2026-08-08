@@ -16,6 +16,8 @@ class HRExpenseSheet(models.Model):
 
     @api.constrains("expense_line_ids")
     def recompute_budget_move(self):
+        if self.env.context.get("_skip_auto_recompute_budget_move"):
+            return
         self.mapped("expense_line_ids").recompute_budget_move()
 
     def close_budget_move(self):
@@ -33,7 +35,13 @@ class HRExpenseSheet(models.Model):
             - "cancel" = Canceled
             - False = To Submit (Draft)
         """
-        res = super().write(vals)
+        # The write() below re-runs recompute_budget_move() explicitly, so skip
+        # the @api.constrains auto-trigger for those states to avoid doing it
+        # twice (the constrains fires on expense_line_ids writes done by super).
+        ctx_self = self
+        if vals.get("approval_state") in ("approve", "cancel", False):
+            ctx_self = self.with_context(_skip_auto_recompute_budget_move=True)
+        res = super(HRExpenseSheet, ctx_self).write(vals)
         if vals.get("approval_state") in ("approve", "cancel", False):
             doclines = self.mapped("expense_line_ids")
             if vals.get("approval_state") in ("cancel", False):

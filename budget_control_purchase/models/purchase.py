@@ -17,6 +17,8 @@ class PurchaseOrder(models.Model):
     # Allow trigger, because purchase order line is editable even when approved.
     @api.constrains("order_line")
     def recompute_budget_move(self):
+        if self.env.context.get("_skip_auto_recompute_budget_move"):
+            return
         self.mapped("order_line").recompute_budget_move()
 
     def close_budget_move(self):
@@ -27,7 +29,13 @@ class PurchaseOrder(models.Model):
         - Commit budget when state changes to purchase
         - Cancel/Draft document should delete all budget commitment
         """
-        res = super().write(vals)
+        # The write() below re-runs recompute_budget_move() explicitly, so skip
+        # the @api.constrains auto-trigger for those states to avoid doing it
+        # twice (the constrains fires on order_line writes done by super().write).
+        ctx_self = self
+        if vals.get("state") in ("purchase", "cancel", "draft"):
+            ctx_self = self.with_context(_skip_auto_recompute_budget_move=True)
+        res = super(PurchaseOrder, ctx_self).write(vals)
         if vals.get("state") in ("purchase", "cancel", "draft"):
             doclines = self.mapped("order_line")
             if vals.get("state") in ("cancel", "draft"):
