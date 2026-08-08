@@ -1,8 +1,11 @@
 # Copyright 2026 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from unittest.mock import patch
+
 from freezegun import freeze_time
 
+from odoo import fields
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 
@@ -29,11 +32,13 @@ class TestBudgetControlSaleStock(get_budget_common_class()):
         # Analytic plan for sale budget (used when SO has no project)
         cls.sale_plan = cls.AnalyticPlan.create({"name": "Sale Budget Plan"})
 
-    def _create_sale_order(self, project=None, lines=None):
+    def _create_sale_order(self, project=None, lines=None, pricelist=None):
         """Create SO with optional project and order lines."""
         vals = {"partner_id": self.customer.id}
         if project:
             vals["project_id"] = project.id
+        if pricelist:
+            vals["pricelist_id"] = pricelist.id
         order = self.env["sale.order"].create(vals)
         if lines:
             for lv in lines:
@@ -80,7 +85,7 @@ class TestBudgetControlSaleStock(get_budget_common_class()):
 
         # sale_price = sum of SO amount_untaxed
         self.assertAlmostEqual(bc.sale_price, sale.amount_untaxed)
-        # gross_profit = sale_price - allocated_amount
+        # gross_profit = sale_price - current allocated budget
         expected_profit = sale.amount_untaxed - 180.0
         self.assertAlmostEqual(bc.gross_profit, expected_profit)
         if sale.amount_untaxed:
@@ -139,12 +144,16 @@ class TestBudgetControlSaleStock(get_budget_common_class()):
         bc = sale1.budget_control_id
         # (50*2) = 100
         self.assertAlmostEqual(bc.allocated_amount, 100.0)
+        # Keep a manual adjustment separate from the SO estimated cost.
+        bc.allocated_amount = 125.0
+        self.assertAlmostEqual(bc.gross_profit, 75.0)
 
         sale2.action_confirm()
         # sale2 must link to same existing BC (same analytic + period)
         self.assertEqual(sale2.budget_control_id, bc)
-        # accumulated: 100 + (80*3) = 340
-        self.assertAlmostEqual(bc.allocated_amount, 340.0)
+        # SO cost accumulates to 340; the manual adjustment remains 25.
+        self.assertAlmostEqual(bc.allocated_amount, 365.0)
+        self.assertAlmostEqual(bc.gross_profit, 135.0)
         self.assertEqual(bc.sale_order_count, 2)
 
     @freeze_time("2001-02-01")
@@ -257,3 +266,72 @@ class TestBudgetControlSaleStock(get_budget_common_class()):
         # SO lines should have analytic distribution
         for line in sale.order_line:
             self.assertIn(str(analytic.id), line.analytic_distribution or {})
+
+    @freeze_time("2001-02-01")
+    def test_07_foreign_currency_amounts_use_company_currency(self):
+        """SO revenue and cost are converted before creating the budget."""
+        foreign_currency = self.env["res.currency"].create(
+            {"name": "XSS", "symbol": "XSS", "rounding": 0.01}
+        )
+        self.env["res.currency.rate"].create(
+            {
+                "name": fields.Date.today(),
+                "rate": 2.0,
+                "currency_id": foreign_currency.id,
+                "company_id": self.env.company.id,
+            }
+        )
+        pricelist = self.env["product.pricelist"].create(
+            {
+                "name": "Foreign Sale Pricelist",
+                "currency_id": foreign_currency.id,
+            }
+        )
+        sale = self._create_sale_order(
+            project=self.project,
+            pricelist=pricelist,
+            lines=[
+                {
+                    "product_id": self.product1.id,
+                    "product_uom_qty": 2,
+                    "price_unit": 150.0,
+                    "purchase_price": 50.0,
+                }
+            ],
+        )
+
+        sale.action_confirm()
+
+        bc = sale.budget_control_id
+        # Rate 2 means 300 foreign = 150 company and 100 foreign = 50 company.
+        self.assertEqual(bc.currency_id, self.env.company.currency_id)
+        self.assertAlmostEqual(bc.sale_price, 150.0)
+        self.assertAlmostEqual(bc.allocated_amount, 50.0)
+        self.assertAlmostEqual(bc.gross_profit, 100.0)
+
+    @freeze_time("2001-02-01")
+    def test_08_budget_currency_rate_is_extendable(self):
+        """Revenue and cost conversions use the SO-specific rate hook."""
+        sale = self._create_sale_order(
+            project=self.project,
+            lines=[
+                {
+                    "product_id": self.product1.id,
+                    "product_uom_qty": 2,
+                    "price_unit": 150.0,
+                    "purchase_price": 50.0,
+                }
+            ],
+        )
+
+        with patch.object(
+            type(sale),
+            "_get_budget_control_currency_rate",
+            return_value=0.25,
+        ):
+            sale.action_confirm()
+            bc = sale.budget_control_id
+            self.assertEqual(bc.currency_id, self.env.company.currency_id)
+            self.assertAlmostEqual(bc.sale_price, 75.0)
+            self.assertAlmostEqual(bc.allocated_amount, 25.0)
+            self.assertAlmostEqual(bc.gross_profit, 50.0)

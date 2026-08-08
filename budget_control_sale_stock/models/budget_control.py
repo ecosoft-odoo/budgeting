@@ -16,11 +16,12 @@ class BudgetControl(models.Model):
         copy=False,
     )
     sale_order_count = fields.Integer(compute="_compute_sale_order_count")
-    sale_price = fields.Float(
+    sale_price = fields.Monetary(
+        string="Sales Untaxed",
         compute="_compute_sale_fields",
         store=True,
     )
-    gross_profit = fields.Float(
+    gross_profit = fields.Monetary(
         compute="_compute_sale_fields",
         store=True,
     )
@@ -34,10 +35,18 @@ class BudgetControl(models.Model):
         for rec in self:
             rec.sale_order_count = len(rec.sale_order_ids)
 
-    @api.depends("sale_order_ids.amount_untaxed", "allocated_amount")
+    @api.depends(
+        "sale_order_ids.amount_untaxed",
+        "sale_order_ids.currency_id",
+        "sale_order_ids.company_id.currency_id",
+        "sale_order_ids.date_order",
+        "allocated_amount",
+    )
     def _compute_sale_fields(self):
         for rec in self:
-            sale_price = sum(rec.sale_order_ids.mapped("amount_untaxed"))
+            sale_price = sum(
+                order._get_budget_control_sale_amount() for order in rec.sale_order_ids
+            )
             profit = sale_price - rec.allocated_amount
             rec.sale_price = sale_price
             rec.gross_profit = profit
