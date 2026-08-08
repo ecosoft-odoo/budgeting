@@ -8,3 +8,7 @@ confirmation so the DO can be created without a budget error.
 After SO confirmation, all subsequent DO operations (validate, unreserve, etc.)
 enforce the budget check normally, requiring the user to confirm the Budget
 Control before the DO can be processed.
+
+Budget Controls created from Sales Orders can have their allocated amount
+adjusted while in draft. If a control is managed by a Budget Plan, Sales Orders
+only link to it and the plan remains the owner of its allocated amount.

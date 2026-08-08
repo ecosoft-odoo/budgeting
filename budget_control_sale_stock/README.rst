@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 =================================
 Budget Control on Sale with Stock
 =================================
@@ -17,7 +13,7 @@ Budget Control on Sale with Stock
 .. |badge1| image:: https://img.shields.io/badge/maturity-Alpha-red.png
     :target: https://odoo-community.org/page/development-status
     :alt: Alpha
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github
@@ -37,6 +33,11 @@ budget error.
 After SO confirmation, all subsequent DO operations (validate,
 unreserve, etc.) enforce the budget check normally, requiring the user
 to confirm the Budget Control before the DO can be processed.
+
+Budget Controls created from Sales Orders can have their allocated
+amount adjusted while in draft. If a control is managed by a Budget
+Plan, Sales Orders only link to it and the plan remains the owner of its
+allocated amount.
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.

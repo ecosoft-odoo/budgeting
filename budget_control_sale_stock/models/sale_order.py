@@ -83,14 +83,14 @@ class SaleOrder(models.Model):
                 # Same SO re-confirmed (reset to draft): skip to avoid
                 # doubling the allocated amount.
                 if order not in existing.sale_order_ids:
-                    add_amount = order._get_budget_control_allocated_amount()
-                    existing.write(
-                        {
-                            "allocated_amount": existing.allocated_amount + add_amount,
-                            "sale_order_ids": [Command.link(order.id)],
-                        }
-                    )
-                    existing.action_draft()
+                    vals = {"sale_order_ids": [Command.link(order.id)]}
+                    if not existing.budget_plan_id:
+                        add_amount = order._get_budget_control_allocated_amount()
+                        vals["allocated_amount"] = (
+                            existing.allocated_amount + add_amount
+                        )
+                        existing.action_draft()
+                    existing.write(vals)
                 order.budget_control_id = existing.id
             else:
                 vals = order._prepare_budget_control_vals(
