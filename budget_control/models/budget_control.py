@@ -39,6 +39,14 @@ class BudgetControl(models.Model):
         help="Budget Period that inline with date from/to",
         ondelete="restrict",
     )
+    budget_plan_id = fields.Many2one(
+        comodel_name="budget.plan",
+        index=True,
+        copy=False,
+        ondelete="restrict",
+        tracking=True,
+        help="Budget Plan that owns and manages this control's allocated amount.",
+    )
     date_from = fields.Date(related="budget_period_id.bm_date_from")
     date_to = fields.Date(related="budget_period_id.bm_date_to")
     active = fields.Boolean(default=True)

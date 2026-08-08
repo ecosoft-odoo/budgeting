@@ -54,6 +54,11 @@ module,
   nothing too fancy. Once we have budget allocations, the system is
   ready to perform budget check.
 
+  Budget Controls created or adopted by a Budget Plan keep a direct
+  link to that plan. This makes ownership of the allocated amount
+  explicit and prevents another plan from taking over the same active
+  control.
+
 - **Budget Checking**
 
   By calling function -- check_budget(), system will check whether the
