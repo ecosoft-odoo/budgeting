@@ -163,6 +163,12 @@ class TestBudgetControl(get_budget_common_class()):
     @freeze_time("2001-02-01")
     def test_03_budget_plan_check_control(self):
         self.assertEqual(len(self.budget_plan.budget_control_ids), 2)
+        self.assertTrue(
+            all(
+                control.budget_plan_id == self.budget_plan
+                for control in self.budget_plan.budget_control_ids
+            )
+        )
         action = self.budget_plan.button_open_budget_control()
         self.assertEqual(
             action["domain"][0][2], self.budget_plan.budget_control_ids.ids
@@ -1710,3 +1716,63 @@ class TestBudgetControl(get_budget_common_class()):
         self.assertEqual(grouped_analytics, {self.costcenter1.id, self.costcenterX.id})
         with self.assertRaisesRegex(UserError, "Budget not sufficient"):
             bill.action_post()
+
+    @freeze_time("2001-02-01")
+    def test_29_budget_plan_adopts_unowned_control(self):
+        """A plan owns an existing manual control before updating its amount."""
+        analytic = self.Analytic.create(
+            {"name": "Adopted control", "plan_id": self.aa_plan1.id}
+        )
+        period = self.env["budget.period"].create(
+            {
+                "name": "Budget for FY2002",
+                "template_id": self.template.id,
+                "bm_date_from": "2002-01-01",
+                "bm_date_to": "2002-12-31",
+                "plan_date_range_type_id": self.date_range_type.id,
+            }
+        )
+        control = self.BudgetControl.create(
+            {
+                "name": "Manual control",
+                "analytic_account_id": analytic.id,
+                "budget_period_id": period.id,
+                "plan_date_range_type_id": self.date_range_type.id,
+                "currency_id": self.env.company.currency_id.id,
+                "allocated_amount": 125.0,
+            }
+        )
+        plan = self.create_budget_plan(
+            name="Adopting plan",
+            budget_period=period,
+            lines=[
+                Command.create({"analytic_account_id": analytic.id, "amount": 500.0})
+            ],
+        )
+        plan.action_confirm()
+        plan.action_create_update_budget_control()
+
+        self.assertEqual(control.budget_plan_id, plan)
+        self.assertEqual(plan.budget_control_ids, control)
+        self.assertAlmostEqual(control.allocated_amount, 500.0)
+
+    @freeze_time("2001-02-01")
+    def test_30_budget_plan_cannot_take_another_plans_control(self):
+        """A live control has exactly one managing Budget Plan."""
+        other_plan = self.create_budget_plan(
+            name="Conflicting plan",
+            budget_period=self.budget_period,
+            lines=[
+                Command.create(
+                    {"analytic_account_id": self.costcenter1.id, "amount": 100.0}
+                )
+            ],
+        )
+        other_plan.action_confirm()
+
+        with self.assertRaisesRegex(
+            UserError, "already managed by another Budget Plan"
+        ):
+            other_plan.action_create_update_budget_control()
+
+        self.assertEqual(self.budget_control.budget_plan_id, self.budget_plan)
