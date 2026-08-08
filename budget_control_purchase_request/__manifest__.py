@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control on Purchase Request",
-    "version": "18.0.1.4.0",
+    "version": "18.0.1.5.0",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",
