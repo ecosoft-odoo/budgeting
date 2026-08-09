@@ -2,11 +2,16 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class BudgetControl(models.Model):
     _inherit = "budget.control"
 
+    project_id = fields.Many2one(
+        comodel_name="project.project",
+        related="budget_period_id.project_id",
+    )
     sale_order_ids = fields.Many2many(
         comodel_name="sale.order",
         relation="budget_control_sale_order_rel",
@@ -63,3 +68,36 @@ class BudgetControl(models.Model):
             "view_mode": "list,form",
             "domain": [("id", "in", self.sale_order_ids.ids)],
         }
+
+    def _check_project_lifetime_dates(self):
+        for control in self.filtered(
+            lambda rec: rec.budget_scope == "lifetime" and rec.project_id
+        ):
+            project = control.project_id
+            if not project.date_start or not project.date:
+                raise ValidationError(
+                    self.env._(
+                        "Set both Planned Start and End dates on Project "
+                        "%(project)s before submitting its lifetime budget.",
+                        project=project.display_name or control.name,
+                    )
+                )
+            if (
+                control.date_from != project.date_start
+                or control.date_to != project.date
+            ):
+                raise ValidationError(
+                    self.env._(
+                        "Project Lifetime Budget Control dates must match the "
+                        "Planned Dates of Project %(project)s.",
+                        project=project.display_name,
+                    )
+                )
+
+    def action_submit(self):
+        self._check_project_lifetime_dates()
+        return super().action_submit()
+
+    def action_done(self):
+        self._check_project_lifetime_dates()
+        return super().action_done()

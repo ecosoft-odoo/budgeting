@@ -2,5 +2,7 @@
 
 from . import res_company
 from . import res_config_settings
+from . import project_project
+from . import budget_period
 from . import budget_control
 from . import sale_order

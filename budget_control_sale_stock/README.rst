@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 =================================
 Budget Control on Sale with Stock
 =================================
@@ -17,7 +13,7 @@ Budget Control on Sale with Stock
 .. |badge1| image:: https://img.shields.io/badge/maturity-Alpha-red.png
     :target: https://odoo-community.org/page/development-status
     :alt: Alpha
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github
@@ -38,10 +34,33 @@ After SO confirmation, all subsequent DO operations (validate,
 unreserve, etc.) enforce the budget check normally, requiring the user
 to confirm the Budget Control before the DO can be processed.
 
-Budget Controls created from Sales Orders can have their allocated
-amount adjusted while in draft. If a control is managed by a Budget
-Plan, Sales Orders only link to it and the plan remains the owner of its
-allocated amount.
+An SO that creates a new Project defaults to **Lifetime** budgeting. The
+system creates one Project-scoped Budget Period and one Budget Control
+for the total estimated SO cost. After the user enters the Project
+Planned Dates, the draft period follows those dates. Commitments and
+actual costs in every fiscal year inside that range consume the same
+total Project balance.
+
+The SO can instead select **Fiscal Period** before confirmation. That
+mode keeps the annual behavior: one Budget Control per fiscal period,
+with audited carry forward between Fiscal Periods when required.
+
+Lifetime periods are exclusive to one analytic account, so they may
+overlap the normal fiscal periods used by departments. They do not use
+carry forward because the Project balance does not reset at fiscal year
+end.
+
+This also supports department analytics that are not linked to a
+Project. If a control is managed by a Budget Plan, the plan remains the
+owner of its allocated amount; a Sale Order only links to that control.
+
+The Sale Order cost added to a Budget Control is a planning snapshot
+taken when the order is linked. Later quantity, cost, or cancellation
+changes do not silently rewrite an approved budget; a budget manager
+reopens and adjusts the control explicitly when required.
+
+One Sale Order may create only one budgeted Project. Splitting an SO
+that would generate several Projects keeps cost ownership explicit.
 
 .. IMPORTANT::
    This is an alpha version, the data model and design can change at any time without warning.
@@ -52,6 +71,42 @@ allocated amount.
 
 .. contents::
    :local:
+
+Usage
+=====
+
+To control one total cost budget for a Project that may span several
+years:
+
+1. Configure a service product with **Create on Order = Project** (or
+   **Project & Task**).
+2. Add that product to one Sale Order. Leave **Project Budget Scope** as
+   **Lifetime** and confirm the order.
+3. Odoo creates the Project and Analytic Account. This module copies the
+   fiscal period's control configuration into a private Lifetime period
+   and creates one draft Budget Control for the total SO cost.
+4. Open the generated Project and enter both Planned Start and End
+   dates. The draft Budget Control follows those dates automatically.
+5. Open the Budget smart button, select the KPIs, prepare plan amounts
+   equal to the total estimated cost, then submit and control the
+   budget.
+6. Use the same Project Analytic Account on purchases, stock moves,
+   expenses, and bills. Documents in every year within the Planned Dates
+   consume the same Project balance.
+7. Use the Project's **Budget Controls** smart button for monitoring.
+
+The Project Lifetime Budget cannot be submitted until both Planned Dates
+are set. Once submitted, set it back to Draft before changing the
+Project dates. It does not use Forward Budget Balance.
+
+The allocated amount is a snapshot of the Sale Order line costs at the
+time the Budget Control is created. Later Sale Order edits do not
+silently rewrite an approved budget.
+
+For annual Project budgeting, choose **Fiscal Period** on the SO before
+confirmation. Create or link real SOs/Budget Plans in each fiscal
+period. Use a Forward Budget Balance document when unused annual balance
+may continue.
 
 Bug Tracker
 ===========
