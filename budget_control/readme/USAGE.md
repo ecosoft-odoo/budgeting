@@ -21,6 +21,9 @@ Followings are sample steps to start with,
     > - Control Budget = True (if not check = not check budget for this
     >   period)
 
+    Normal periods use the **Fiscal Period** scope. Lifetime periods are
+    restricted to one analytic account and may overlap fiscal periods safely.
+
 4.  Create Budget Control Sheet
 
     To create budget control sheet, you can either create manually one
@@ -65,3 +68,31 @@ Followings are sample steps to start with,
     As we have checked Control Budget = True in third step, checking
     will occur every time an invoice is validated. You can test by
     validate invoice with big amount to exceed.
+
+8.  Create a Lifetime budget without a Project
+
+    - Open the Analytic Account and click **Create Lifetime Budget**.
+    - Enter the fixed Start Date, End Date, Budget Template, planning range, and
+      Total Budget.
+    - Ensure the selected planning range has Date Ranges covering the complete
+      Lifetime duration. The setup stops without creating partial records when a
+      range is missing.
+    - The system creates one dedicated Lifetime Period and one draft Budget
+      Control. Distribute the total on its control lines, then submit and
+      control it normally.
+
+    Lifetime is suitable for a campaign, grant, contract, or other one-off
+    initiative that can span several fiscal years. It does not use a Budget
+    Plan or carry forward.
+
+9.  Carry an unused balance to the next period
+
+    - Create a **Forward Budget Balance** document and select the source and
+      target Fiscal Periods, then click **Review Budget Balance**.
+    - Review the proposed active analytics. Adjust the amounts or remove lines
+      that must lapse before completing the forward.
+    - Create the target-period Budget Plan. Its Forward Balance is included in
+      the amount available for the new Budget Control Sheet.
+
+    Lifetime periods cannot be selected because their balance remains available
+    for their complete duration.

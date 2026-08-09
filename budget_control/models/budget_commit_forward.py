@@ -17,6 +17,7 @@ class BudgetCommitForward(models.Model):
         comodel_name="budget.period",
         required=True,
         ondelete="restrict",
+        domain=[("budget_scope", "=", "fiscal")],
     )
     to_date_commit = fields.Date(
         related="to_budget_period_id.bm_date_from",

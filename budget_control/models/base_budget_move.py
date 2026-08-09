@@ -286,35 +286,40 @@ class BudgetDoclineMixin(models.AbstractModel):
             if not analytic_account:
                 rec.json_budget_popover = False
                 continue
-            # Budget Period is required, even a False one
-            budget_period = self.env["budget.period"]._get_eligible_budget_period(
-                date=rec.date_commit
-            )
+            analytic_values = []
+            for analytic in analytic_account:
+                budget_period = (
+                    self.env["budget.period"]
+                    .with_context(budget_analytic_id=analytic.id)
+                    ._get_eligible_budget_period(date=rec.date_commit)
+                )
+                scoped_analytic = analytic.with_context(
+                    budget_period_ids=budget_period.ids
+                )
+                analytic_values.append(
+                    {
+                        "id": analytic.id,
+                        "name": analytic.display_name,
+                        "budget": FloatConverter.value_to_html(
+                            scoped_analytic.amount_budget,
+                            {"decimal_precision": "Product Price"},
+                        ),
+                        "consumed": FloatConverter.value_to_html(
+                            scoped_analytic.amount_consumed,
+                            {"decimal_precision": "Product Price"},
+                        ),
+                        "balance": FloatConverter.value_to_html(
+                            scoped_analytic.amount_balance,
+                            {"decimal_precision": "Product Price"},
+                        ),
+                    }
+                )
             rec.json_budget_popover = dumps(
                 {
                     "title": self.env._("Budget Figure"),
                     "icon": "fa-info-circle",
                     "popoverTemplate": "budget_control.budgetPopOver",
-                    "analytic": [
-                        {
-                            "id": aa.id,
-                            "name": aa.display_name,
-                            "budget": FloatConverter.value_to_html(
-                                aa.amount_budget, {"decimal_precision": "Product Price"}
-                            ),
-                            "consumed": FloatConverter.value_to_html(
-                                aa.amount_consumed,
-                                {"decimal_precision": "Product Price"},
-                            ),
-                            "balance": FloatConverter.value_to_html(
-                                aa.amount_balance,
-                                {"decimal_precision": "Product Price"},
-                            ),
-                        }
-                        for aa in analytic_account.with_context(
-                            budget_period_ids=[budget_period.id]
-                        )
-                    ],
+                    "analytic": analytic_values,
                 }
             )
 
@@ -372,7 +377,9 @@ class BudgetDoclineMixin(models.AbstractModel):
         """Return the currency_id of the active budget control
         for analytic at date_commit."""
         BudgetPeriod = self.env["budget.period"]
-        period = BudgetPeriod._get_eligible_budget_period(date=date_commit)
+        period = BudgetPeriod.with_context(
+            budget_analytic_id=analytic.id
+        )._get_eligible_budget_period(date=date_commit)
         if not period:
             return self.env["res.currency"]
         bc = (
@@ -452,7 +459,9 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     def _update_template_line(self, budget_move):
         self.ensure_one()
-        BudgetPeriod = self.env["budget.period"]
+        BudgetPeriod = self.env["budget.period"].with_context(
+            budget_analytic_id=budget_move.analytic_account_id.id
+        )
         budget_period = BudgetPeriod._get_eligible_budget_period(self.date_commit)
         if not budget_period:
             return budget_move
@@ -491,7 +500,7 @@ class BudgetDoclineMixin(models.AbstractModel):
         period_dates = period_dates or {}
         BudgetPeriod = self.env["budget.period"]
         control_key = self.env.company.budget_control_key
-        periods_by_date = {}
+        periods_by_analytic_date = {}
         grouped_move_ids = {}
         group_periods = {}
 
@@ -499,14 +508,15 @@ class BudgetDoclineMixin(models.AbstractModel):
             if move.account_id.budget_bypass or not move[control_key]:
                 continue
             period_date = period_dates.get(move.id, move.date)
-            if period_date not in periods_by_date:
-                periods_by_date[period_date] = BudgetPeriod._get_eligible_budget_period(
-                    period_date
-                )
-            period = periods_by_date[period_date]
+            period_key = (move.analytic_account_id.id, period_date)
+            if period_key not in periods_by_analytic_date:
+                periods_by_analytic_date[period_key] = BudgetPeriod.with_context(
+                    budget_analytic_id=move.analytic_account_id.id
+                )._get_eligible_budget_period(period_date)
+            period = periods_by_analytic_date[period_key]
             if not period:
                 continue
-            key = (period.id, move[control_key].id)
+            key = (period.id, move.analytic_account_id.id, move[control_key].id)
             grouped_move_ids.setdefault(key, []).append(move.id)
             group_periods[key] = period
 
@@ -517,7 +527,7 @@ class BudgetDoclineMixin(models.AbstractModel):
                 continue
             template_line = BudgetPeriod._get_kpi_by_control_key(
                 template_lines,
-                {control_key: key[1]},
+                {control_key: key[2]},
                 budget_period=period,
             )
             if template_line:

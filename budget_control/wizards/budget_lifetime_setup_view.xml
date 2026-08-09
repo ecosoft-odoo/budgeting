@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="budget_lifetime_setup_view_form" model="ir.ui.view">
+        <field name="name">budget.lifetime.setup.form</field>
+        <field name="model">budget.lifetime.setup</field>
+        <field name="arch" type="xml">
+            <form string="Create Lifetime Budget">
+                <group>
+                    <field name="analytic_account_id" />
+                    <field name="name" />
+                </group>
+                <group>
+                    <group>
+                        <field name="date_from" />
+                        <field name="date_to" />
+                        <field name="template_id" />
+                        <field name="plan_date_range_type_id" />
+                    </group>
+                    <group>
+                        <field name="control_level" />
+                        <field name="unmatched_account_policy" />
+                        <field name="currency_id" invisible="1" />
+                        <field
+                            name="allocated_amount"
+                            widget="monetary"
+                            options="{'currency_field': 'currency_id'}"
+                        />
+                    </group>
+                </group>
+                <p class="text-muted">
+                    The system creates one dedicated Lifetime Period and one draft
+                    Budget Control. Distribute the Total Budget on the control lines
+                    before submitting it. Existing planning ranges must cover the
+                    complete Lifetime period; missing ranges are reported before
+                    anything is created.
+                </p>
+                <footer>
+                    <button
+                        name="action_create_lifetime_budget"
+                        string="Create Lifetime Budget"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Discard" special="cancel" class="btn-secondary" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

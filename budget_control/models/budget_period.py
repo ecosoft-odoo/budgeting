@@ -14,6 +14,19 @@ class BudgetPeriod(models.Model):
     _description = "For each fiscal year, manage how budget is controlled"
 
     name = fields.Char(required=True, tracking=True)
+    budget_scope = fields.Selection(
+        selection=[
+            ("fiscal", "Fiscal Period"),
+            ("lifetime", "Lifetime"),
+        ],
+        required=True,
+        default="fiscal",
+        index=True,
+        tracking=True,
+        help="Fiscal periods are selected by document date. Lifetime periods are "
+        "selected only for their assigned analytic account, so they "
+        "may safely overlap fiscal years.",
+    )
     bm_date_from = fields.Date(
         string="Date From",
         required=True,
@@ -101,6 +114,57 @@ class BudgetPeriod(models.Model):
         res = super().default_get(default_fields)
         res["template_id"] = self.env.company.budget_template_id.id
         return res
+
+    @api.constrains(
+        "budget_scope",
+        "control_all_analytic_accounts",
+        "control_analytic_account_ids",
+    )
+    def _check_lifetime_scope(self):
+        for period in self.filtered(lambda rec: rec.budget_scope == "lifetime"):
+            if period.control_all_analytic_accounts:
+                raise ValidationError(
+                    self.env._(
+                        "A Lifetime Budget Period must be restricted to "
+                        "one analytic account."
+                    )
+                )
+            if len(period.control_analytic_account_ids) != 1:
+                raise ValidationError(
+                    self.env._(
+                        "A Lifetime Budget Period must have exactly one "
+                        "controlled analytic account."
+                    )
+                )
+            duplicate = self.search(
+                [
+                    ("id", "!=", period.id),
+                    ("budget_scope", "=", "lifetime"),
+                    (
+                        "control_analytic_account_ids",
+                        "in",
+                        period.control_analytic_account_ids.ids,
+                    ),
+                ],
+                limit=1,
+            )
+            if duplicate:
+                raise ValidationError(
+                    self.env._(
+                        "Analytic %(analytic)s already has Lifetime Budget Period "
+                        "%(period)s.",
+                        analytic=period.control_analytic_account_ids.display_name,
+                        period=duplicate.display_name,
+                    )
+                )
+
+    @api.constrains("bm_date_from", "bm_date_to")
+    def _check_period_dates(self):
+        for period in self:
+            if period.bm_date_from > period.bm_date_to:
+                raise ValidationError(
+                    self.env._("Budget Period start date must be before its end date.")
+                )
 
     @api.depends("control_budget")
     def _compute_control_account(self):
@@ -205,18 +269,20 @@ class BudgetPeriod(models.Model):
             if not date_commit:
                 continue
             date_commit = max(date_commit)
-            if date_commit not in period_cache:
-                period_cache[date_commit] = self._get_eligible_budget_period(
+            period_key = (analytic_id, date_commit)
+            scoped_period = self.with_context(budget_analytic_id=analytic_id)
+            if period_key not in period_cache:
+                period_cache[period_key] = scoped_period._get_eligible_budget_period(
                     date_commit, doc_type=doc_type
                 )
-            budget_period = period_cache[date_commit]
+            budget_period = period_cache[period_key]
             if not budget_period:
                 continue
             # Find KPI controls only for this analytic. A line may contain several
             # analytics and consequently several budget moves.
-            controls_key = (budget_period.id, tuple(aa_doclines.ids))
+            controls_key = (budget_period.id, analytic_id, tuple(aa_doclines.ids))
             if controls_key not in controls_cache:
-                controls_cache[controls_key] = self._prepare_controls(
+                controls_cache[controls_key] = scoped_period._prepare_controls(
                     budget_period, aa_doclines
                 )
             controls = [
@@ -331,17 +397,31 @@ class BudgetPeriod(models.Model):
         """
         if not date:
             date = fields.Date.context_today(self)
+        date = fields.Date.to_date(date)
         BudgetPeriod = self.env["budget.period"]
         company_id = self.env.company.id
-        budget_period = BudgetPeriod.search(
-            [
-                ("bm_date_from", "<=", date),
-                ("bm_date_to", ">=", date),
-                "|",
-                ("company_ids", "=", False),
-                ("company_ids", "in", company_id),
-            ]
-        )
+        analytic = self.env["account.analytic.account"]
+        analytic_id = self.env.context.get("budget_analytic_id")
+        if analytic_id:
+            analytic = analytic.browse(analytic_id).exists()
+
+        if analytic and analytic.budget_control_scope == "lifetime":
+            budget_period = analytic.budget_period_id.filtered(
+                lambda period: period.budget_scope == "lifetime"
+                and period.bm_date_from <= date <= period.bm_date_to
+                and (not period.company_ids or self.env.company in period.company_ids)
+            )
+        else:
+            budget_period = BudgetPeriod.search(
+                [
+                    ("budget_scope", "=", "fiscal"),
+                    ("bm_date_from", "<=", date),
+                    ("bm_date_to", ">=", date),
+                    "|",
+                    ("company_ids", "=", False),
+                    ("company_ids", "in", company_id),
+                ]
+            )
         if budget_period and len(budget_period) > 1:
             raise ValidationError(
                 self.env._(
@@ -366,6 +446,11 @@ class BudgetPeriod(models.Model):
         controls = set()
         control_analytics = budget_period.control_analytic_account_ids
         budget_moves = doclines.mapped(doclines._budget_field())
+        analytic_id = self.env.context.get("budget_analytic_id")
+        if analytic_id:
+            budget_moves = budget_moves.filtered(
+                lambda move: move.analytic_account_id.id == analytic_id
+            )
         # Get budget moves from the period only
         budget_moves_period = budget_moves.filtered(
             lambda move, budget_period=budget_period: move.date

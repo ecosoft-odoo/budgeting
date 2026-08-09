@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from dateutil.relativedelta import relativedelta
 
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -15,6 +15,20 @@ class AccountAnalyticAccount(models.Model):
 
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
+    )
+    budget_control_scope = fields.Selection(
+        selection=[
+            ("fiscal", "Fiscal Period"),
+            ("lifetime", "Lifetime"),
+        ],
+        string="Budget Scope",
+        required=True,
+        default="fiscal",
+        index=True,
+        tracking=True,
+        help="Fiscal analytics use the Budget Period matching each document date. "
+        "Lifetime analytics use one dedicated period for their complete duration "
+        "and do not reset at fiscal year end.",
     )
     budget_control_ids = fields.One2many(
         string="Budget Control(s)",
@@ -99,7 +113,11 @@ class AccountAnalyticAccount(models.Model):
             analytic.display_name = name
         return res
 
-    @api.depends("budget_period_id")
+    @api.depends(
+        "budget_period_id",
+        "budget_period_id.bm_date_from",
+        "budget_period_id.bm_date_to",
+    )
     def _compute_bm_date(self):
         """Default effective date, but changable"""
         for rec in self:
@@ -148,6 +166,142 @@ class AccountAnalyticAccount(models.Model):
                         "must use the same currency.",
                     )
                 )
+
+    @api.constrains(
+        "budget_control_scope",
+        "budget_period_id",
+    )
+    def _check_budget_control_scope(self):
+        for rec in self:
+            active_controls = rec.budget_control_ids.filtered(
+                lambda control: control.active and control.state != "cancel"
+            )
+            incompatible = active_controls.filtered(
+                lambda control, rec=rec: control.budget_scope
+                != rec.budget_control_scope
+                or (
+                    rec.budget_control_scope == "lifetime"
+                    and control.budget_period_id != rec.budget_period_id
+                )
+            )
+            if incompatible:
+                raise UserError(
+                    self.env._(
+                        "Archive or cancel incompatible Budget Control "
+                        "%(control)s before changing the budget scope of analytic "
+                        "%(analytic)s.",
+                        control=incompatible[:1].display_name,
+                        analytic=rec.display_name,
+                    )
+                )
+        for rec in self.filtered(
+            lambda analytic: analytic.budget_control_scope == "lifetime"
+        ):
+            if (
+                not rec.budget_period_id
+                or rec.budget_period_id.budget_scope != "lifetime"
+            ):
+                raise UserError(
+                    self.env._(
+                        "Lifetime analytic %(analytic)s needs its dedicated "
+                        "Lifetime Budget Period.",
+                        analytic=rec.display_name,
+                    )
+                )
+            if rec not in rec.budget_period_id.control_analytic_account_ids:
+                raise UserError(
+                    self.env._(
+                        "Lifetime Budget Period %(period)s must control "
+                        "analytic %(analytic)s.",
+                        period=rec.budget_period_id.display_name,
+                        analytic=rec.display_name,
+                    )
+                )
+
+    def _create_lifetime_budget_period(self, period_vals, reference_period=False):
+        """Create and atomically assign one dedicated Lifetime period."""
+        self.ensure_one()
+        existing_period = self.budget_period_id.filtered(
+            lambda period: period.budget_scope == "lifetime"
+        )
+        if self.budget_control_scope == "lifetime" or existing_period:
+            raise UserError(
+                self.env._(
+                    "Analytic %(analytic)s already has a Lifetime Budget Period.",
+                    analytic=self.display_name,
+                )
+            )
+
+        active_controls = self.budget_control_ids.filtered(
+            lambda control: control.active and control.state != "cancel"
+        )
+        if active_controls:
+            raise UserError(
+                self.env._(
+                    "Archive or cancel Budget Control %(control)s before creating "
+                    "a Lifetime budget for analytic %(analytic)s.",
+                    control=active_controls[:1].display_name,
+                    analytic=self.display_name,
+                )
+            )
+
+        vals = {
+            **period_vals,
+            "budget_scope": "lifetime",
+            "control_all_analytic_accounts": False,
+            "control_analytic_account_ids": [Command.set(self.ids)],
+        }
+        period = (
+            reference_period.copy(default=vals)
+            if reference_period
+            else self.env["budget.period"].create(vals)
+        )
+        self.write(
+            {
+                "budget_control_scope": "lifetime",
+                "budget_period_id": period.id,
+            }
+        )
+        return period
+
+    def action_open_lifetime_budget_setup(self):
+        """Open the atomic Lifetime Period and Budget Control setup."""
+        self.ensure_one()
+        active_controls = self.budget_control_ids.filtered(
+            lambda control: control.active and control.state != "cancel"
+        )
+        if self.budget_control_scope == "lifetime":
+            raise UserError(
+                self.env._(
+                    "Analytic %(analytic)s already uses Lifetime budgeting.",
+                    analytic=self.display_name,
+                )
+            )
+        if active_controls:
+            raise UserError(
+                self.env._(
+                    "Archive or cancel Budget Control %(control)s before creating "
+                    "a Lifetime budget for analytic %(analytic)s.",
+                    control=active_controls[:1].display_name,
+                    analytic=self.display_name,
+                )
+            )
+        company = self.company_id or self.env.company
+        return {
+            "name": self.env._("Create Lifetime Budget"),
+            "type": "ir.actions.act_window",
+            "res_model": "budget.lifetime.setup",
+            "view_mode": "form",
+            "view_id": self.env.ref(
+                "budget_control.budget_lifetime_setup_view_form"
+            ).id,
+            "target": "new",
+            "context": {
+                "default_analytic_account_id": self.id,
+                "default_name": self.name,
+                "default_template_id": company.budget_template_id.id,
+            },
+        }
 
     def _filter_by_analytic_account(self, val):
         if val["analytic_account_id"][0] == self.id:

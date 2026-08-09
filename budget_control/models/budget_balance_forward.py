@@ -19,12 +19,14 @@ class BudgetBalanceForward(models.Model):
         comodel_name="budget.period",
         required=True,
         ondelete="restrict",
+        domain=[("budget_scope", "=", "fiscal")],
         default=lambda self: self.env["budget.period"]._get_eligible_budget_period(),
     )
     to_budget_period_id = fields.Many2one(
         comodel_name="budget.period",
         required=True,
         ondelete="restrict",
+        domain=[("budget_scope", "=", "fiscal")],
     )
     state = fields.Selection(
         [
@@ -68,6 +70,13 @@ class BudgetBalanceForward(models.Model):
     @api.constrains("from_budget_period_id", "to_budget_period_id")
     def _check_budget_period(self):
         for rec in self:
+            if (
+                rec.from_budget_period_id.budget_scope != "fiscal"
+                or rec.to_budget_period_id.budget_scope != "fiscal"
+            ):
+                raise ValidationError(
+                    self.env._("Forward Budget Balance only supports Fiscal Periods.")
+                )
             if (
                 rec.to_budget_period_id.bm_date_from
                 <= rec.from_budget_period_id.bm_date_to
@@ -120,7 +129,11 @@ class BudgetBalanceForward(models.Model):
         )
         # Analyic Account from budget control sheet of the previous year
         BudgetControl = self.env["budget.control"]
-        bc_domain = [("budget_period_id", "=", self.from_budget_period_id.id)]
+        bc_domain = [
+            ("budget_period_id", "=", self.from_budget_period_id.id),
+            ("active", "=", True),
+            ("state", "!=", "cancel"),
+        ]
         if self.company_ids:
             bc_domain += [("company_ids", "in", self.company_ids.ids)]
         budget_controls = BudgetControl.search(bc_domain)

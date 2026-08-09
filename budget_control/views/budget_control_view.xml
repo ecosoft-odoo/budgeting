@@ -224,6 +224,7 @@
                                 invisible="not budget_plan_id"
                             />
                             <field name="budget_period_id" readonly="1" />
+                            <field name="budget_scope" readonly="1" />
                             <label for="date_from" string="Date Range" />
                             <div name="date_range" class="o_row">
                                 <field name="date_from" />

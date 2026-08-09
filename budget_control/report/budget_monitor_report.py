@@ -54,8 +54,18 @@ class BudgetMonitorReport(models.Model):
         return SQL(
             """
             FROM (%(table)s) a
+            LEFT JOIN account_analytic_account analytic
+                ON analytic.id = a.analytic_account_id
             LEFT JOIN budget_period p
-                ON a.date between p.bm_date_from AND p.bm_date_to
+                ON (
+                    analytic.budget_control_scope = 'lifetime'
+                    AND p.id = analytic.budget_period_id
+                    AND a.date between p.bm_date_from AND p.bm_date_to
+                ) OR (
+                    COALESCE(analytic.budget_control_scope, 'fiscal') = 'fiscal'
+                    AND p.budget_scope = 'fiscal'
+                    AND a.date between p.bm_date_from AND p.bm_date_to
+                )
             LEFT JOIN date_range d ON a.date between d.date_start AND d.date_end
                 AND d.type_id = p.plan_date_range_type_id
             """,
@@ -243,7 +253,7 @@ class BudgetMonitorReport(models.Model):
         Hook this function for add where clause for budget
         use for module budget_control_operating_unit
         """
-        return "b.active = TRUE"
+        return "b.active = TRUE AND b.state != 'cancel'"
 
     def _select_statement(self, amount_type):
         return self._get_select_amount_types()[amount_type]
