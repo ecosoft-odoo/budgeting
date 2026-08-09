@@ -115,6 +115,35 @@ class TestBudgetControl(get_budget_common_class()):
         )
         return invoice
 
+    def _create_lifetime_test_analytic(self, name):
+        return self.Analytic.create(
+            {
+                "name": name,
+                "plan_id": self.aa_plan1.id,
+            }
+        )
+
+    def _get_lifetime_period_vals(self, name):
+        return {
+            "name": name,
+            "template_id": self.template.id,
+            "bm_date_from": f"{self.year}-01-01",
+            "bm_date_to": f"{self.year + 1}-12-31",
+            "plan_date_range_type_id": self.date_range_type.id,
+            "control_level": "analytic_kpi",
+        }
+
+    def _create_fiscal_control(self, analytic):
+        return self.BudgetControl.create(
+            {
+                "name": f"Fiscal Control - {analytic.name}",
+                "analytic_account_id": analytic.id,
+                "budget_period_id": self.budget_period.id,
+                "plan_date_range_type_id": self.date_range_type.id,
+                "currency_id": self.env.company.currency_id.id,
+            }
+        )
+
     @freeze_time("2001-02-01")
     def test_01_budget_plan_create_line_from_wizard(self):
         self.assertEqual(len(self.budget_plan.line_ids), 2)
@@ -996,6 +1025,56 @@ class TestBudgetControl(get_budget_common_class()):
         self.assertEqual(target_amounts["10_budget"], 500.0)
 
     @freeze_time("2001-02-01")
+    def test_18d_balance_forward_uses_active_fiscal_controls(self):
+        """All active Fiscal controls are proposed for manager review."""
+        next_period = self.env["budget.period"].create(
+            {
+                "name": f"Budget for FY{self.year + 1} - Carry Policy",
+                "template_id": self.template.id,
+                "bm_date_from": f"{self.year + 1}-01-01",
+                "bm_date_to": f"{self.year + 1}-12-31",
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+            }
+        )
+        forward = self.env["budget.balance.forward"].create(
+            {
+                "name": "Department Carry Policy",
+                "from_budget_period_id": self.budget_period.id,
+                "to_budget_period_id": next_period.id,
+            }
+        )
+
+        analytic_ids = {
+            vals["analytic_account_id"] for vals in forward._prepare_vals_forward()
+        }
+        self.assertIn(self.costcenter1.id, analytic_ids)
+        self.assertIn(self.costcenterX.id, analytic_ids)
+
+        self.budget_control2.active = False
+        analytic_ids = {
+            vals["analytic_account_id"] for vals in forward._prepare_vals_forward()
+        }
+        self.assertNotIn(self.costcenterX.id, analytic_ids)
+
+        lifetime_period = self.budget_period.copy(
+            {
+                "name": "Lifetime Period Cannot Be Forwarded",
+                "budget_scope": "lifetime",
+                "control_all_analytic_accounts": False,
+                "control_analytic_account_ids": [Command.set(self.costcenter1.ids)],
+            }
+        )
+        with self.assertRaisesRegex(ValidationError, "only supports Fiscal Periods"):
+            self.env["budget.balance.forward"].create(
+                {
+                    "name": "Invalid Lifetime Forward",
+                    "from_budget_period_id": lifetime_period.id,
+                    "to_budget_period_id": next_period.id,
+                }
+            )
+
+    @freeze_time("2001-02-01")
     def test_19_unmatched_account_bypass_and_policy(self):
         """
         account_kpiX is not in template. Test two bypass mechanisms:
@@ -1776,3 +1855,357 @@ class TestBudgetControl(get_budget_common_class()):
             other_plan.action_create_update_budget_control()
 
         self.assertEqual(self.budget_control.budget_plan_id, self.budget_plan)
+
+    @freeze_time("2001-02-01")
+    def test_31_core_lifetime_setup_overrides_fiscal_period(self):
+        """Core creates one multi-year budget without any Project module flow."""
+        analytic = self.Analytic.create(
+            {"name": "Lifetime Initiative", "plan_id": self.aa_plan1.id}
+        )
+        fiscal_2002 = self.budget_period.copy(
+            {
+                "name": "Budget for FY2002",
+                "bm_date_from": "2002-01-01",
+                "bm_date_to": "2002-12-31",
+            }
+        )
+        setup_action = analytic.action_open_lifetime_budget_setup()
+        self.assertEqual(setup_action["res_model"], "budget.lifetime.setup")
+        setup = (
+            self.env["budget.lifetime.setup"]
+            .with_context(**setup_action["context"])
+            .create(
+                {
+                    "date_from": "2001-02-01",
+                    "date_to": "2002-12-31",
+                    "template_id": self.template.id,
+                    "plan_date_range_type_id": self.date_range_type.id,
+                    "control_level": "analytic_kpi",
+                    "allocated_amount": 500.0,
+                }
+            )
+        )
+        with self.assertRaisesRegex(UserError, "does not cover the complete Lifetime"):
+            setup.action_create_lifetime_budget()
+        analytic.invalidate_recordset(["budget_control_scope", "budget_period_id"])
+        self.assertEqual(analytic.budget_control_scope, "fiscal")
+        self.assertFalse(analytic.budget_period_id)
+
+        for name, date_start, date_end in (
+            ("2002/Test/Q-1", "2002-01-01", "2002-03-31"),
+            ("2002/Test/Q-2", "2002-04-01", "2002-06-30"),
+            ("2002/Test/Q-3", "2002-07-01", "2002-09-30"),
+            ("2002/Test/Q-4", "2002-10-01", "2002-12-31"),
+        ):
+            self.env["date.range"].create(
+                {
+                    "name": name,
+                    "date_start": date_start,
+                    "date_end": date_end,
+                    "type_id": self.date_range_type.id,
+                }
+            )
+        control_action = setup.action_create_lifetime_budget()
+        control = self.BudgetControl.browse(control_action["res_id"])
+        lifetime_period = control.budget_period_id
+
+        self.assertEqual(analytic.budget_control_scope, "lifetime")
+        self.assertEqual(analytic.budget_period_id, lifetime_period)
+        self.assertEqual(lifetime_period.budget_scope, "lifetime")
+        self.assertEqual(lifetime_period.name, analytic.name)
+        self.assertTrue(lifetime_period.control_budget)
+        self.assertFalse(lifetime_period.control_all_analytic_accounts)
+        self.assertEqual(lifetime_period.control_analytic_account_ids, analytic)
+        self.assertFalse(control.budget_plan_id)
+        self.assertEqual(control.allocated_amount, 500.0)
+        self.assertEqual(len(control.line_ids), 24)
+        self.assertEqual(
+            min(control.line_ids.mapped("date_from")).isoformat(), "2001-02-01"
+        )
+
+        control.line_ids.unlink()
+        self.env["budget.control.line"].create(
+            {
+                "budget_control_id": control.id,
+                "analytic_account_id": analytic.id,
+                "date_from": "2001-02-01",
+                "date_to": "2002-12-31",
+                "template_line_id": self.template_line1.id,
+                "amount": 500.0,
+            }
+        )
+        control.action_submit()
+        control.action_done()
+
+        with self.assertRaisesRegex(
+            ValidationError, "already has Lifetime Budget Period"
+        ):
+            self.budget_period.copy(
+                {
+                    "name": "Duplicate Lifetime Period",
+                    "budget_scope": "lifetime",
+                    "control_all_analytic_accounts": False,
+                    "control_analytic_account_ids": [Command.set(analytic.ids)],
+                }
+            )
+
+        BudgetPeriod = self.env["budget.period"]
+        self.assertEqual(
+            BudgetPeriod._get_eligible_budget_period("2002-06-01"), fiscal_2002
+        )
+        self.assertEqual(
+            BudgetPeriod.with_context(
+                budget_analytic_id=analytic.id
+            )._get_eligible_budget_period("2002-06-01"),
+            lifetime_period,
+        )
+
+        bill = self._create_simple_bill(
+            {str(analytic.id): 100}, self.account_kpi1, 400.0
+        )
+        bill.invoice_date = "2002-06-01"
+        bill.action_post()
+        control.invalidate_recordset()
+        self.assertAlmostEqual(control.amount_actual, 400.0)
+        self.assertAlmostEqual(control.amount_balance, 100.0)
+
+        excessive_bill = self._create_simple_bill(
+            {str(analytic.id): 100}, self.account_kpi1, 101.0
+        )
+        excessive_bill.invoice_date = "2002-07-01"
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
+            excessive_bill.action_post()
+
+    def test_32_lifetime_analytic_account(self):
+        # Scope default and period date dependency
+        analytic = self._create_lifetime_test_analytic("Fiscal Date Dependency")
+        self.assertEqual(analytic.budget_control_scope, "fiscal")
+        self.assertEqual(self.budget_period.budget_scope, "fiscal")
+        self.assertEqual(self.budget_plan.budget_period_id, self.budget_period)
+        self.budget_plan._check_fiscal_budget_period()
+
+        period = self.budget_period.copy(
+            {
+                "name": "Fiscal Period Date Dependency",
+                "bm_date_from": f"{self.year}-02-01",
+                "bm_date_to": f"{self.year}-11-30",
+            }
+        )
+        analytic.budget_period_id = period
+        self.assertEqual(analytic.bm_date_from, period.bm_date_from)
+        self.assertEqual(analytic.bm_date_to, period.bm_date_to)
+
+        period.write(
+            {
+                "bm_date_from": f"{self.year}-03-01",
+                "bm_date_to": f"{self.year}-10-31",
+            }
+        )
+        analytic.invalidate_recordset(["bm_date_from", "bm_date_to"])
+        self.assertEqual(analytic.bm_date_from, period.bm_date_from)
+        self.assertEqual(analytic.bm_date_to, period.bm_date_to)
+
+        # Create a new Lifetime Period
+        analytic = self._create_lifetime_test_analytic("New Lifetime Period")
+        period = analytic._create_lifetime_budget_period(
+            {
+                **self._get_lifetime_period_vals("New Lifetime Period"),
+                "budget_scope": "fiscal",
+                "control_all_analytic_accounts": True,
+            }
+        )
+
+        self.assertEqual(analytic.budget_control_scope, "lifetime")
+        self.assertEqual(analytic.budget_period_id, period)
+        self.assertEqual(period.budget_scope, "lifetime")
+        self.assertFalse(period.control_all_analytic_accounts)
+        self.assertEqual(period.control_analytic_account_ids, analytic)
+
+        # Resolve Fiscal and Lifetime Periods independently for the same date
+        BudgetPeriod = self.env["budget.period"]
+        scoped_period = BudgetPeriod.with_context(budget_analytic_id=analytic.id)
+        self.assertEqual(
+            BudgetPeriod._get_eligible_budget_period(f"{self.year}-01-15"),
+            self.budget_period,
+        )
+        self.assertEqual(
+            scoped_period._get_eligible_budget_period(f"{self.year}-06-01"),
+            period,
+        )
+        self.assertFalse(
+            scoped_period._get_eligible_budget_period(f"{self.year + 2}-01-01")
+        )
+
+        # A company-specific Lifetime Period is not eligible in another company
+        period.company_ids = self.env.company
+        self.assertEqual(
+            scoped_period._get_eligible_budget_period(f"{self.year}-06-01"),
+            period,
+        )
+        self.assertFalse(
+            scoped_period.with_company(self.company_b)._get_eligible_budget_period(
+                f"{self.year}-06-01"
+            )
+        )
+
+        # Create a Lifetime Period by copying a reference period
+        analytic = self._create_lifetime_test_analytic("Copied Lifetime Period")
+        period = analytic._create_lifetime_budget_period(
+            self._get_lifetime_period_vals("Copied Lifetime Period"),
+            reference_period=self.budget_period,
+        )
+
+        self.assertNotEqual(period, self.budget_period)
+        self.assertEqual(period.name, "Copied Lifetime Period")
+        self.assertEqual(period.budget_scope, "lifetime")
+        self.assertEqual(period.control_analytic_account_ids, analytic)
+        self.assertEqual(analytic.budget_period_id, period)
+
+        # Archived controls do not block the Lifetime setup action
+        analytic = self._create_lifetime_test_analytic("Lifetime Setup Action")
+        control = self._create_fiscal_control(analytic)
+        control.active = False
+        self.env.company.budget_template_id = self.template
+
+        action = analytic.action_open_lifetime_budget_setup()
+
+        self.assertEqual(action["res_model"], "budget.lifetime.setup")
+        self.assertEqual(action["target"], "new")
+        self.assertEqual(action["context"]["default_analytic_account_id"], analytic.id)
+        self.assertEqual(action["context"]["default_name"], analytic.name)
+        self.assertEqual(action["context"]["default_template_id"], self.template.id)
+
+    def test_33_lifetime_analytic_errors(self):
+        BudgetPeriod = self.env["budget.period"]
+        controlled = self._create_lifetime_test_analytic("Controlled Lifetime")
+
+        with (
+            self.assertRaisesRegex(ValidationError, "start date must be before"),
+            self.env.cr.savepoint(),
+        ):
+            BudgetPeriod.create(
+                {
+                    **self._get_lifetime_period_vals("Invalid Period Dates"),
+                    "bm_date_from": f"{self.year + 1}-12-31",
+                    "bm_date_to": f"{self.year}-01-01",
+                }
+            )
+        with (
+            self.assertRaisesRegex(ValidationError, "must be restricted to"),
+            self.env.cr.savepoint(),
+        ):
+            BudgetPeriod.create(
+                {
+                    **self._get_lifetime_period_vals("Unrestricted Lifetime Period"),
+                    "budget_scope": "lifetime",
+                    "control_all_analytic_accounts": True,
+                    "control_analytic_account_ids": [Command.set(controlled.ids)],
+                }
+            )
+        with (
+            self.assertRaisesRegex(ValidationError, "exactly one controlled analytic"),
+            self.env.cr.savepoint(),
+        ):
+            BudgetPeriod.create(
+                {
+                    **self._get_lifetime_period_vals("Empty Lifetime Period"),
+                    "budget_scope": "lifetime",
+                    "control_all_analytic_accounts": False,
+                    "control_analytic_account_ids": [Command.clear()],
+                }
+            )
+
+        missing_period = self._create_lifetime_test_analytic("Missing Lifetime Period")
+        with self.assertRaisesRegex(UserError, "needs its dedicated Lifetime"):
+            missing_period.budget_control_scope = "lifetime"
+
+        uncontrolled = self._create_lifetime_test_analytic("Uncontrolled Lifetime")
+        other_period = BudgetPeriod.create(
+            {
+                **self._get_lifetime_period_vals("Other Analytic Lifetime Period"),
+                "budget_scope": "lifetime",
+                "control_all_analytic_accounts": False,
+                "control_analytic_account_ids": [Command.set(controlled.ids)],
+            }
+        )
+        with (
+            self.assertRaisesRegex(ValidationError, "Budget Plans use Fiscal Periods"),
+            self.env.cr.savepoint(),
+        ):
+            self.BudgetPlan.create(
+                {
+                    "name": "Invalid Lifetime Budget Plan",
+                    "budget_period_id": other_period.id,
+                }
+            )
+        with self.assertRaisesRegex(UserError, "must control analytic"):
+            uncontrolled.write(
+                {
+                    "budget_control_scope": "lifetime",
+                    "budget_period_id": other_period.id,
+                }
+            )
+
+        lifetime_analytic = self._create_lifetime_test_analytic("Lifetime Guards")
+        lifetime_analytic._create_lifetime_budget_period(
+            self._get_lifetime_period_vals("Lifetime Guards")
+        )
+        with self.assertRaisesRegex(UserError, "already has a Lifetime Budget Period"):
+            lifetime_analytic._create_lifetime_budget_period(
+                self._get_lifetime_period_vals("Duplicate Lifetime")
+            )
+        with self.assertRaisesRegex(UserError, "already uses Lifetime budgeting"):
+            lifetime_analytic.action_open_lifetime_budget_setup()
+
+        active_analytic = self._create_lifetime_test_analytic("Active Fiscal Control")
+        active_control = self._create_fiscal_control(active_analytic)
+        with self.assertRaisesRegex(UserError, "Archive or cancel Budget Control"):
+            active_analytic.action_open_lifetime_budget_setup()
+        with self.assertRaisesRegex(UserError, "Archive or cancel Budget Control"):
+            active_analytic._create_lifetime_budget_period(
+                self._get_lifetime_period_vals("Blocked Lifetime")
+            )
+
+        active_lifetime_period = BudgetPeriod.create(
+            {
+                **self._get_lifetime_period_vals("Active Control Lifetime Period"),
+                "budget_scope": "lifetime",
+                "control_all_analytic_accounts": False,
+                "control_analytic_account_ids": [Command.set(active_analytic.ids)],
+            }
+        )
+        with self.assertRaisesRegex(UserError, "incompatible Budget Control"):
+            active_analytic.write(
+                {
+                    "budget_control_scope": "lifetime",
+                    "budget_period_id": active_lifetime_period.id,
+                }
+            )
+
+        active_control.state = "cancel"
+        active_analytic.write(
+            {
+                "budget_control_scope": "lifetime",
+                "budget_period_id": active_lifetime_period.id,
+            }
+        )
+        self.assertEqual(active_analytic.budget_control_scope, "lifetime")
+
+        existing_period_analytic = self._create_lifetime_test_analytic(
+            "Existing Lifetime Period"
+        )
+        existing_period = BudgetPeriod.create(
+            {
+                **self._get_lifetime_period_vals("Existing Lifetime Period"),
+                "budget_scope": "lifetime",
+                "control_all_analytic_accounts": False,
+                "control_analytic_account_ids": [
+                    Command.set(existing_period_analytic.ids)
+                ],
+            }
+        )
+        existing_period_analytic.budget_period_id = existing_period
+        with self.assertRaisesRegex(UserError, "already has a Lifetime Budget Period"):
+            existing_period_analytic._create_lifetime_budget_period(
+                self._get_lifetime_period_vals("Duplicate Existing Lifetime")
+            )

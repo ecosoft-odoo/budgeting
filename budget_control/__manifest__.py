@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control",
-    "version": "18.0.3.2.0",
+    "version": "18.0.3.3.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
@@ -31,6 +31,7 @@
         "wizards/budget_commit_forward_info_view.xml",
         "wizards/budget_balance_forward_info_view.xml",
         "wizards/budget_plan_analytic_select_view.xml",
+        "wizards/budget_lifetime_setup_view.xml",
         # Budget
         "views/budget_menuitem.xml",
         "views/res_config_settings_views.xml",

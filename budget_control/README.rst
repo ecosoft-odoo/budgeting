@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 ==============
 Budget Control
 ==============
@@ -17,7 +13,7 @@ Budget Control
 .. |badge1| image:: https://img.shields.io/badge/maturity-Alpha-red.png
     :target: https://odoo-community.org/page/development-status
     :alt: Alpha
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github
@@ -71,13 +67,17 @@ Budget Control Core Features:
   - Analytic account in controlled
   - Control Level
 
-  Although not mandatory, an organization will most likely use fiscal
-  year as budget period. In such case, there will be 1 budget period per
-  fiscal year, and multiple budget control sheet (one per analytic).
+  Although not mandatory, an organization will most likely use a fiscal
+  year as its normal budget period. A Lifetime analytic, such as a
+  campaign, grant, or one-off initiative, may instead use one dedicated
+  multi-year period. Because that period is scoped to one analytic
+  account, it may overlap the organization's fiscal periods without
+  making document-period selection ambiguous.
 
 - **Budget Control Sheet (budget.control)**
 
-  Each analytic account can have one budget control sheet per budget
+  Each fiscal analytic account can have one budget control sheet per
+  budget period. A Lifetime analytic has one sheet for its dedicated
   period. The budget control is used to allocate budget amount in a
   simpler way. In the backend it simply create budget.control.line,
   nothing too fancy. Once we have budget allocations, the system is
@@ -125,6 +125,14 @@ Budget Control Core Features:
 
   This module allow transferring allocated budget from one budget
   control sheet to other
+
+- **Budget Balance Forward**
+
+  Active controls from a Fiscal Period are proposed in the audited
+  Forward Budget Balance document. A budget manager reviews the
+  analytics and amounts before posting them to the next Fiscal Period.
+  Lifetime periods already span their complete duration and cannot use
+  carry forward.
 
 Extended Modules:
 -----------------
@@ -208,6 +216,10 @@ Followings are sample steps to start with,
       - Control Budget = True (if not check = not check budget for this
         period)
 
+   Normal periods use the **Fiscal Period** scope. Lifetime periods are
+   restricted to one analytic account and may overlap fiscal periods
+   safely.
+
 4. Create Budget Control Sheet
 
    To create budget control sheet, you can either create manually one by
@@ -252,6 +264,34 @@ Followings are sample steps to start with,
    As we have checked Control Budget = True in third step, checking will
    occur every time an invoice is validated. You can test by validate
    invoice with big amount to exceed.
+
+8. Create a Lifetime budget without a Project
+
+   - Open the Analytic Account and click **Create Lifetime Budget**.
+   - Enter the fixed Start Date, End Date, Budget Template, planning
+     range, and Total Budget.
+   - Ensure the selected planning range has Date Ranges covering the
+     complete Lifetime duration. The setup stops without creating
+     partial records when a range is missing.
+   - The system creates one dedicated Lifetime Period and one draft
+     Budget Control. Distribute the total on its control lines, then
+     submit and control it normally.
+
+   Lifetime is suitable for a campaign, grant, contract, or other
+   one-off initiative that can span several fiscal years. It does not
+   use a Budget Plan or carry forward.
+
+9. Carry an unused balance to the next period
+
+   - Create a **Forward Budget Balance** document and select the source
+     and target Fiscal Periods, then click **Review Budget Balance**.
+   - Review the proposed active analytics. Adjust the amounts or remove
+     lines that must lapse before completing the forward.
+   - Create the target-period Budget Plan. Its Forward Balance is
+     included in the amount available for the new Budget Control Sheet.
+
+   Lifetime periods cannot be selected because their balance remains
+   available for their complete duration.
 
 Bug Tracker
 ===========
