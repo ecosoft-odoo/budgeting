@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name" />
+                <field name="budget_scope" />
                 <field name="bm_date_from" />
                 <field name="bm_date_to" />
             </list>
@@ -29,6 +30,7 @@
                     <group>
                         <group>
                             <field name="template_id" />
+                            <field name="budget_scope" readonly="1" />
                         </group>
                         <group>
                             <field name="bm_date_from" />

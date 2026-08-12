@@ -42,14 +42,18 @@ module,
   - Analytic account in controlled
   - Control Level
 
-  Although not mandatory, an organization will most likely use fiscal
-  year as budget period. In such case, there will be 1 budget period per
-  fiscal year, and multiple budget control sheet (one per analytic).
+  Although not mandatory, an organization will most likely use a fiscal
+  year as its normal budget period. A Lifetime analytic, such as a campaign,
+  grant, or one-off initiative, may instead use one dedicated multi-year
+  period. Because that period is scoped to one
+  analytic account, it may overlap the organization's fiscal periods without
+  making document-period selection ambiguous.
 
 - **Budget Control Sheet (budget.control)**
 
-  Each analytic account can have one budget control sheet per budget
-  period. The budget control is used to allocate budget amount in a
+  Each fiscal analytic account can have one budget control sheet per budget
+  period. A Lifetime analytic has one sheet for its dedicated period.
+  The budget control is used to allocate budget amount in a
   simpler way. In the backend it simply create budget.control.line,
   nothing too fancy. Once we have budget allocations, the system is
   ready to perform budget check.
@@ -97,6 +101,13 @@ module,
 
   This module allow transferring allocated budget from one budget
   control sheet to other
+
+- **Budget Balance Forward**
+
+  Active controls from a Fiscal Period are proposed in the audited Forward
+  Budget Balance document. A budget manager reviews the analytics and amounts
+  before posting them to the next Fiscal Period. Lifetime periods already span
+  their complete duration and cannot use carry forward.
 
 ## Extended Modules:
 

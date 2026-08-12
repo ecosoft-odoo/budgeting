@@ -19,6 +19,7 @@ class BudgetPlan(models.Model):
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
         required=True,
+        domain=[("budget_scope", "=", "fiscal")],
     )
     date_from = fields.Date(related="budget_period_id.bm_date_from")
     date_to = fields.Date(related="budget_period_id.bm_date_to")
@@ -63,6 +64,16 @@ class BudgetPlan(models.Model):
         default="draft",
         tracking=True,
     )
+
+    @api.constrains("budget_period_id")
+    def _check_fiscal_budget_period(self):
+        if self.filtered(lambda plan: plan.budget_period_id.budget_scope != "fiscal"):
+            raise ValidationError(
+                self.env._(
+                    "Budget Plans use Fiscal Periods. Lifetime budgets are managed "
+                    "directly from their Analytic Budget Control."
+                )
+            )
 
     @api.depends("company_ids")
     def _compute_currency_id(self):

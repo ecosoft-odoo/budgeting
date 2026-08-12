@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from collections import defaultdict
+from datetime import timedelta
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
@@ -38,6 +39,9 @@ class BudgetControl(models.Model):
         comodel_name="budget.period",
         help="Budget Period that inline with date from/to",
         ondelete="restrict",
+    )
+    budget_scope = fields.Selection(
+        related="budget_period_id.budget_scope",
     )
     budget_plan_id = fields.Many2one(
         comodel_name="budget.plan",
@@ -241,6 +245,33 @@ class BudgetControl(models.Model):
                     )
                 )
 
+    @api.constrains("analytic_account_id", "budget_period_id", "active", "state")
+    def _check_budget_scope_matches_analytic(self):
+        for control in self.filtered(lambda rec: rec.active and rec.state != "cancel"):
+            analytic = control.analytic_account_id
+            if control.budget_scope == "lifetime":
+                if (
+                    analytic.budget_control_scope != "lifetime"
+                    or analytic.budget_period_id != control.budget_period_id
+                ):
+                    raise ValidationError(
+                        self.env._(
+                            "Lifetime Budget Control %(control)s must use "
+                            "the dedicated period of analytic %(analytic)s.",
+                            control=control.display_name,
+                            analytic=analytic.display_name,
+                        )
+                    )
+            elif analytic.budget_control_scope == "lifetime":
+                raise ValidationError(
+                    self.env._(
+                        "Lifetime analytic %(analytic)s cannot use Fiscal "
+                        "Period Budget Control %(control)s.",
+                        analytic=analytic.display_name,
+                        control=control.display_name,
+                    )
+                )
+
     @api.constrains("line_ids")
     def _check_budget_control_over_consumed(self):
         BudgetPeriod = self.env["budget.period"]
@@ -441,11 +472,16 @@ class BudgetControl(models.Model):
         return [("id", "in", self.template_line_ids.ids)]
 
     def _get_dict_budget_lines(self, date_range, template_line):
+        date_from = date_range.date_start
+        date_to = date_range.date_end
+        if self.budget_scope == "lifetime":
+            date_from = max(date_from, self.date_from)
+            date_to = min(date_to, self.date_to)
         return {
             "template_line_id": template_line.id,
             "date_range_id": date_range.id,
-            "date_from": date_range.date_start,
-            "date_to": date_range.date_end,
+            "date_from": date_from,
+            "date_to": date_to,
             "analytic_account_id": self.analytic_account_id.id,
             "budget_control_id": self.id,
         }
@@ -463,22 +499,52 @@ class BudgetControl(models.Model):
                 dict_value["amount"] = line_amount[0].get("amount", 0.0)
         return dict_value
 
+    def _check_lifetime_date_range_coverage(self, date_ranges):
+        """Avoid silently creating an incomplete multi-year planning matrix."""
+        self.ensure_one()
+        next_date = self.date_from
+        for date_range in date_ranges:
+            range_start = max(date_range.date_start, self.date_from)
+            range_end = min(date_range.date_end, self.date_to)
+            if range_start > next_date:
+                break
+            if range_end >= next_date:
+                next_date = range_end + timedelta(days=1)
+            if next_date > self.date_to:
+                return
+        raise UserError(
+            self.env._(
+                "Plan Date Range %(range)s does not cover the complete Lifetime "
+                "period. Generate the missing range starting on %(date)s first.",
+                range=self.plan_date_range_type_id.display_name,
+                date=next_date,
+            )
+        )
+
     def prepare_budget_control_matrix(self):
         BudgetTemplateLine = self.env["budget.template.line"]
         DateRange = self.env["date.range"]
+        items = []
         for bc in self:
             if not bc.plan_date_range_type_id:
                 raise UserError(self.env._("Please select range"))
 
             template_lines = BudgetTemplateLine.search(bc._domain_template_line())
-            date_ranges = DateRange.search(
-                [
-                    ("type_id", "=", bc.plan_date_range_type_id.id),
+            date_domain = [("type_id", "=", bc.plan_date_range_type_id.id)]
+            if bc.budget_scope == "lifetime":
+                date_domain += [
+                    ("date_start", "<=", bc.date_to),
+                    ("date_end", ">=", bc.date_from),
+                ]
+            else:
+                date_domain += [
                     ("date_start", ">=", bc.date_from),
                     ("date_end", "<=", bc.date_to),
                 ]
-            )
-            items = [
+            date_ranges = DateRange.search(date_domain, order="date_start, id")
+            if bc.budget_scope == "lifetime":
+                bc._check_lifetime_date_range_coverage(date_ranges)
+            items += [
                 bc._get_budget_lines(date_range, template_line)
                 for date_range in date_ranges  # Loop1
                 for template_line in template_lines  # Loop2
