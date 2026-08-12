@@ -17,11 +17,34 @@ class SaleOrder(models.Model):
     can_create_budget = fields.Boolean(
         compute="_compute_can_create_budget",
     )
+    generated_project_budget_scope = fields.Selection(
+        selection=[
+            ("lifetime", "Lifetime"),
+            ("fiscal", "Fiscal Period"),
+        ],
+        string="Project Budget Scope",
+        required=True,
+        default="lifetime",
+        help="Applied only when confirmation creates a new Project. Lifetime "
+        "controls the total estimated cost with one budget; Fiscal "
+        "Period creates annual Budget Controls.",
+    )
+    will_create_project = fields.Boolean(
+        compute="_compute_will_create_project",
+    )
 
-    @api.depends("budget_control_id", "project_id")
+    @api.depends("budget_control_id")
     def _compute_can_create_budget(self):
         for order in self:
             order.can_create_budget = not order.budget_control_id
+
+    @api.depends("order_line.product_id.service_tracking")
+    def _compute_will_create_project(self):
+        for order in self:
+            order.will_create_project = any(
+                tracking in ("project_only", "task_in_project")
+                for tracking in order.order_line.mapped("product_id.service_tracking")
+            )
 
     def action_confirm(self):
         """Bypass stock budget commit check during SO confirmation.
@@ -40,56 +63,107 @@ class SaleOrder(models.Model):
     def action_create_budget_control(self):
         """Manual create budget control"""
         self.ensure_one()
+        if not self._get_budget_project() and self.will_create_project:
+            raise UserError(
+                self.env._(
+                    "Confirm the Sale Order first so Odoo can create its Project "
+                    "before creating the Budget Control."
+                )
+            )
         self._create_budget_control()
         return True
 
     def _action_confirm(self):
+        projects_before = {order.id: order._get_budget_project() for order in self}
         res = super()._action_confirm()
+        for order in self:
+            project = order._get_budget_project()
+            generated_from_order = (
+                project
+                and not projects_before[order.id]
+                and project.sale_line_id.order_id == order
+            )
+            if generated_from_order:
+                project.budget_control_scope = order.generated_project_budget_scope
         self.filtered(
-            lambda rec: not rec.budget_control_id and rec.project_id
+            lambda rec: not rec.budget_control_id and rec._get_budget_project()
         )._create_budget_control()
         return res
 
+    def _get_budget_project(self):
+        self.ensure_one()
+        projects = self.project_id | self.order_line.project_id
+        if len(projects) > 1:
+            raise UserError(
+                self.env._(
+                    "Sale Order %(order)s has more than one Project. Split it into "
+                    "one Sale Order per budgeted Project.",
+                    order=self.display_name,
+                )
+            )
+        return projects
+
+    def _get_sale_budget_period(self, analytic_account):
+        self.ensure_one()
+        date = self.date_order.date() if self.date_order else fields.Date.today()
+        budget_period = (
+            self.env["budget.period"]
+            .with_company(self.company_id)
+            ._get_eligible_budget_period(date)
+        )
+        if not budget_period:
+            raise UserError(
+                self.env._(
+                    "No budget period found for date %(date)s on sale order "
+                    "%(order)s.",
+                    date=date,
+                    order=self.name,
+                )
+            )
+        project = self._get_budget_project()
+        if (
+            project
+            and analytic_account == project.account_id
+            and project.budget_control_scope == "lifetime"
+        ):
+            return project._ensure_lifetime_budget_period(budget_period, date)
+        return budget_period
+
     def _create_budget_control(self):
-        BudgetPeriod = self.env["budget.period"]
         BudgetControl = self.env["budget.control"]
         for order in self:
             analytic_account = order._get_budget_analytic_account()
             if not analytic_account:
                 continue
 
-            date = order.date_order.date() if order.date_order else fields.Date.today()
-            budget_period = BudgetPeriod.search(
-                [("bm_date_from", "<=", date), ("bm_date_to", ">=", date)],
-                limit=1,
-            )
-            if not budget_period:
-                raise UserError(
-                    self.env._(
-                        f"No budget period found for date {date} "
-                        f"on sale order {order.name}."
-                    )
-                )
+            budget_period = order._get_sale_budget_period(analytic_account)
             existing = BudgetControl.search(
                 [
                     ("analytic_account_id", "=", analytic_account.id),
                     ("budget_period_id", "=", budget_period.id),
+                    ("active", "=", True),
                     ("state", "!=", "cancel"),
                 ],
                 limit=1,
             )
             if existing:
-                # New SO on same analytic+period: add to existing budget.
-                # Same SO re-confirmed (reset to draft): skip to avoid
-                # doubling the allocated amount.
+                # New SO on the same analytic and period adds to the existing
+                # control. Reconfirming the same SO must not add it twice.
                 if order not in existing.sale_order_ids:
                     vals = {"sale_order_ids": [Command.link(order.id)]}
                     if not existing.budget_plan_id:
+                        if existing.state != "draft":
+                            raise UserError(
+                                self.env._(
+                                    "Budget Control %(control)s must be set to Draft "
+                                    "before adding another Sale Order.",
+                                    control=existing.display_name,
+                                )
+                            )
                         add_amount = order._get_budget_control_allocated_amount()
                         vals["allocated_amount"] = (
                             existing.allocated_amount + add_amount
                         )
-                        existing.action_draft()
                     existing.write(vals)
                 order.budget_control_id = existing.id
             else:
@@ -103,21 +177,29 @@ class SaleOrder(models.Model):
     def _get_budget_analytic_account(self):
         """Return the analytic account to use for budget control.
 
-        By default, use the project's analytic account.
-        If no project, auto-create an analytic account named after the sale order
-        using the configured analytic plan from company settings.
+        By default, use the project's analytic account. If there is no
+        Project, create an analytic account using the configured Sale Budget
+        Analytic Plan.
         """
         self.ensure_one()
-        project = self.project_id
+        project = self._get_budget_project()
         if project:
+            if not project.account_id:
+                raise UserError(
+                    self.env._(
+                        "Project %(project)s needs an analytic account before a "
+                        "Budget Control can be created.",
+                        project=project.display_name,
+                    )
+                )
             return project.account_id
         plan = self.company_id.budget_sale_analytic_plan_id
         if not plan:
             raise UserError(
                 self.env._(
                     "Please configure 'Sale Budget Analytic Plan' in Settings > "
-                    "Invoicing > Budget Control before creating budget from "
-                    "sale order without project."
+                    "Budgeting > Budget Control Options before creating budget from "
+                    "a sale order without project."
                 )
             )
         return self.env["account.analytic.account"].create(
@@ -194,8 +276,32 @@ class SaleOrder(models.Model):
         }
 
     def _update_order_lines_analytic(self, analytic_account):
-        """Update order lines analytic distribution with the given analytic account."""
+        """Add the budget analytic without replacing other analytic plans."""
         self.ensure_one()
-        self.order_line.write(
-            {"analytic_distribution": {str(analytic_account.id): 100.0}}
-        )
+        for line in self.order_line.filtered(lambda rec: not rec.display_type):
+            distribution = line.analytic_distribution or {}
+            account_ids = {
+                int(account_id) for key in distribution for account_id in key.split(",")
+            }
+            applied_accounts = (
+                self.env["account.analytic.account"].browse(account_ids).exists()
+            )
+            if analytic_account in applied_accounts:
+                continue
+            if analytic_account.root_plan_id in applied_accounts.root_plan_id:
+                raise UserError(
+                    self.env._(
+                        "Sale order line %(line)s already uses another analytic "
+                        "account from plan %(plan)s.",
+                        line=line.display_name,
+                        plan=analytic_account.root_plan_id.display_name,
+                    )
+                )
+            line.analytic_distribution = (
+                {
+                    f"{key},{analytic_account.id}": percentage
+                    for key, percentage in distribution.items()
+                }
+                if distribution
+                else {str(analytic_account.id): 100.0}
+            )

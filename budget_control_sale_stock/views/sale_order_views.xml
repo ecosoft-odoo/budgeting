@@ -13,6 +13,13 @@
                     invisible="not can_create_budget"
                 />
             </xpath>
+            <xpath expr="//field[@name='project_id'][1]" position="after">
+                <field name="will_create_project" invisible="1" />
+                <field
+                    name="generated_project_budget_scope"
+                    invisible="not will_create_project or project_id or state != 'draft'"
+                />
+            </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button
                     name="action_open_budget_control"
