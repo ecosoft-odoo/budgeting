@@ -27,6 +27,6 @@ class PurchaseRequisitionLine(models.Model):
         fy_dates = self.company_id.compute_fiscalyear_dates(
             fields.Date.context_today(self)
         )
-        if self.date_commit > fy_dates["date_to"]:
+        if self.date_commit and self.date_commit > fy_dates["date_to"]:
             res["date_commit"] = self.date_commit
         return res
