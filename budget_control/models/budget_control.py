@@ -389,6 +389,22 @@ class BudgetControl(models.Model):
                         symbol=rec.currency_id.symbol,
                     ).format(rec.released_amount)
                 )
+            # Check released vs already consumed (e.g. forwarded commitments)
+            if (
+                float_compare(
+                    rec.released_amount,
+                    rec.amount_consumed,
+                    precision_rounding=rec.currency_id.rounding,
+                )
+                == -1
+            ):
+                raise UserError(
+                    _(
+                        "Released amount must not be less than the "
+                        "consumed amount {:,.2f} %(symbol)s",
+                        symbol=rec.currency_id.symbol,
+                    ).format(rec.amount_consumed)
+                )
 
     def action_draft(self):
         return self.write({"state": "draft"})
