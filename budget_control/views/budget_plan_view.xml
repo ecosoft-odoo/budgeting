@@ -10,7 +10,7 @@
                 <field name="date_to" column_invisible="1" />
                 <field
                     name="analytic_account_id"
-                    domain="['|', ('budget_company_ids','in', parent.company_ids), ('budget_company_ids', '=', False)] if parent.company_ids else []"
+                    domain="[('budget_control_scope', '=', 'fiscal')] + (['|', ('budget_company_ids', 'in', parent.company_ids), ('budget_company_ids', '=', False)] if parent.company_ids else [])"
                 />
                 <field
                     name="budget_control_ids"

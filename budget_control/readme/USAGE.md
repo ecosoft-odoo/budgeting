@@ -83,7 +83,10 @@ Followings are sample steps to start with,
 
     Lifetime is suitable for a campaign, grant, contract, or other one-off
     initiative that can span several fiscal years. It does not use a Budget
-    Plan or carry forward.
+    Plan or carry forward. Lifetime analytics are therefore excluded from
+    Fiscal Budget Plan allocation, including the **Refresh** and **Get All
+    Analytic Accounts** actions; allocate them directly on their dedicated
+    Budget Control instead.
 
 9.  Carry an unused balance to the next period
 

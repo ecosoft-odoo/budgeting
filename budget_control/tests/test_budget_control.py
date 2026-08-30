@@ -2209,3 +2209,66 @@ class TestBudgetControl(get_budget_common_class()):
             existing_period_analytic._create_lifetime_budget_period(
                 self._get_lifetime_period_vals("Duplicate Existing Lifetime")
             )
+
+    def test_34_budget_plan_uses_only_fiscal_analytics(self):
+        companies = self.env.company | self.company_b
+        analytic_model = self.Analytic.with_context(allowed_company_ids=companies.ids)
+        fiscal_analytic = analytic_model.create(
+            {
+                "name": "Fiscal Plan Analytic",
+                "plan_id": self.aa_plan1.id,
+                "company_id": self.env.company.id,
+                "budget_company_ids": [Command.set(self.env.company.ids)],
+                "budget_period_id": self.budget_period.id,
+            }
+        )
+        other_company_analytic = analytic_model.create(
+            {
+                "name": "Other Company Fiscal Analytic",
+                "plan_id": self.aa_plan1.id,
+                "company_id": self.company_b.id,
+                "budget_company_ids": [Command.set(self.company_b.ids)],
+                "budget_period_id": self.budget_period.id,
+            }
+        )
+        lifetime_analytic = analytic_model.create(
+            {
+                "name": "Lifetime Plan Analytic",
+                "plan_id": self.aa_plan1.id,
+                "company_id": self.env.company.id,
+                "budget_company_ids": [Command.set(self.env.company.ids)],
+            }
+        )
+        lifetime_analytic._create_lifetime_budget_period(
+            self._get_lifetime_period_vals("Lifetime Plan Analytic")
+        )
+        plan = self.BudgetPlan.with_context(allowed_company_ids=companies.ids).create(
+            {
+                "name": "Fiscal-only Budget Plan",
+                "budget_period_id": self.budget_period.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+            }
+        )
+
+        plan.action_update_plan()
+
+        plan_analytics = plan.line_ids.mapped("analytic_account_id")
+        self.assertIn(fiscal_analytic, plan_analytics)
+        self.assertNotIn(lifetime_analytic, plan_analytics)
+        self.assertNotIn(other_company_analytic, plan_analytics)
+
+        plan.action_confirm()
+        plan.action_create_update_budget_control()
+        self.assertEqual(plan.budget_control_ids.analytic_account_id, fiscal_analytic)
+        self.assertEqual(plan.budget_control_ids.budget_scope, "fiscal")
+
+        with (
+            self.assertRaisesRegex(ValidationError, "only Fiscal analytics"),
+            self.env.cr.savepoint(),
+        ):
+            self.env["budget.plan.line"].create(
+                {
+                    "plan_id": plan.id,
+                    "analytic_account_id": lifetime_analytic.id,
+                }
+            )
