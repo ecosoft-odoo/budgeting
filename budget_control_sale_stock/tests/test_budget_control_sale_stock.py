@@ -813,3 +813,43 @@ class TestBudgetControlSaleStock(get_budget_common_class()):
         self.assertEqual(sale.budget_control_id.budget_scope, "lifetime")
         self.assertEqual(sale.budget_control_id.budget_period_id.project_id, project)
         self.assertEqual(project.account_id.budget_control_scope, "lifetime")
+
+    @freeze_time("2001-02-01")
+    def test_17_lifetime_sale_is_excluded_from_fiscal_budget_plan(self):
+        sale = self._create_sale_order(
+            lines=[
+                {
+                    "product_id": self.project_service.id,
+                    "product_uom_qty": 1,
+                    "price_unit": 200.0,
+                    "purchase_price": 120.0,
+                },
+            ]
+        )
+        sale.action_confirm()
+        lifetime_analytic = sale.project_id.account_id
+        lifetime_control = sale.budget_control_id
+        fiscal_analytic = self.Analytic.create(
+            {
+                "name": "Fiscal Analytic Beside Lifetime Sale",
+                "plan_id": self.aa_plan1.id,
+                "budget_period_id": self.budget_period.id,
+            }
+        )
+        plan_vals = {
+            "name": "Fiscal Plan Beside Lifetime Sale",
+            "budget_period_id": self.budget_period.id,
+        }
+        if "is_confirm_plan" in self.BudgetPlan._fields:
+            plan_vals["is_confirm_plan"] = True
+        plan = self.BudgetPlan.create(plan_vals)
+
+        plan.action_confirm()
+
+        plan_analytics = plan.line_ids.mapped("analytic_account_id")
+        self.assertIn(fiscal_analytic, plan_analytics)
+        self.assertNotIn(lifetime_analytic, plan_analytics)
+        plan.action_create_update_budget_control()
+        self.assertEqual(plan.budget_control_ids.analytic_account_id, fiscal_analytic)
+        self.assertFalse(lifetime_control.budget_plan_id)
+        self.assertEqual(lifetime_control.budget_scope, "lifetime")

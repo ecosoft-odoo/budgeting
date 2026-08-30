@@ -23,7 +23,7 @@
                         <page name="analytic_account" string="Analytic Account">
                             <field
                                 name="analytic_account_ids"
-                                domain="['|', ('budget_company_ids','in', company_ids), ('budget_company_ids', '=', False)] if company_ids else []"
+                                domain="[('budget_control_scope', '=', 'fiscal')] + (['|', ('budget_company_ids', 'in', company_ids), ('budget_company_ids', '=', False)] if company_ids else [])"
                             />
                         </page>
                     </notebook>

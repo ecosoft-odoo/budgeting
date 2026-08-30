@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 ==============
 Budget Control
 ==============
@@ -17,7 +13,7 @@ Budget Control
 .. |badge1| image:: https://img.shields.io/badge/maturity-Alpha-red.png
     :target: https://odoo-community.org/page/development-status
     :alt: Alpha
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github
@@ -283,7 +279,10 @@ Followings are sample steps to start with,
 
    Lifetime is suitable for a campaign, grant, contract, or other
    one-off initiative that can span several fiscal years. It does not
-   use a Budget Plan or carry forward.
+   use a Budget Plan or carry forward. Lifetime analytics are therefore
+   excluded from Fiscal Budget Plan allocation, including the
+   **Refresh** and **Get All Analytic Accounts** actions; allocate them
+   directly on their dedicated Budget Control instead.
 
 9. Carry an unused balance to the next period
 
