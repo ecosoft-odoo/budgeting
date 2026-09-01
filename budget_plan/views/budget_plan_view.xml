@@ -18,9 +18,14 @@
                     widget="many2many_tags"
                     optional="hide"
                 />
-                <field name="allocated_amount" sum="Total Allocated" />
+                <field
+                    name="amount_forward_in"
+                    sum="Total Forward Balance"
+                    readonly="1"
+                />
+                <field name="amount" sum="Total New Budget" />
+                <field name="allocated_amount" sum="Total Allocated" readonly="1" />
                 <field name="released_amount" sum="Total Released" />
-                <field name="amount" sum="Total Amount" />
                 <field name="amount_consumed" sum="Total Consumed" />
                 <field name="active_status" optional="show" widget="boolean_toggle" />
             </tree>
@@ -38,9 +43,10 @@
                         <field name="active_status" />
                     </group>
                     <group>
-                        <field name="allocated_amount" />
-                        <field name="released_amount" />
+                        <field name="amount_forward_in" readonly="1" />
                         <field name="amount" />
+                        <field name="allocated_amount" readonly="1" />
+                        <field name="released_amount" />
                         <field name="amount_consumed" />
                     </group>
                 </group>

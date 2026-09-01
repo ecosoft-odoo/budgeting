@@ -57,3 +57,18 @@ class BudgetMonitorReport(models.Model):
             formatted_dimension_fields
         )
         return select_statement
+
+    # Forward Balance Out - no fund/dimension context on a carry-forward line
+    def _select_forward_balance_extra(self):
+        select_forward_extra = super()._select_forward_balance_extra()
+        dimension_fields = self._get_dimension_fields()
+        formatted_dimension_fields = ""
+        if dimension_fields:
+            dimension_fields = [f"null::integer as {x}" for x in dimension_fields]
+            formatted_dimension_fields = ", " + ", ".join(dimension_fields)
+        select_forward_extra[
+            80
+        ] = "null::integer as fund_id, null::integer as fund_group_id {}".format(
+            formatted_dimension_fields
+        )
+        return select_forward_extra

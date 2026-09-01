@@ -59,7 +59,6 @@ class BudgetBalanceForward(models.Model):
                     )
         # --
         self.write({"state": "done"})
-        self._do_update_initial_avaliable()
 
     def action_budget_balance_forward(self):
         if not self.use_queue_job:
