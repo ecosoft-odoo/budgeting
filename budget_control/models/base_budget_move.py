@@ -7,6 +7,8 @@ from json import dumps
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
+ADDON = "budget_control"
+
 
 class BaseBudgetMove(models.AbstractModel):
     _name = "base.budget.move"
@@ -183,6 +185,9 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     @api.depends(lambda self: [self._budget_analytic_field])
     def _compute_auto_adjust_date_commit(self):
+        if self.env.context.get("module") == ADDON:
+            return
+
         for docline in self:
             docline.auto_adjust_date_commit = docline[
                 self._budget_analytic_field
@@ -191,6 +196,9 @@ class BudgetDoclineMixin(models.AbstractModel):
     @api.depends()
     def _compute_can_commit(self):
         """Determine if this document is eligible for budget commitment."""
+        if self.env.context.get("module") == ADDON:
+            return
+
         # All required fields are set
         required_fields = self._required_fields_to_commit()
         domain = [(field, "!=", False) for field in required_fields]
@@ -210,6 +218,9 @@ class BudgetDoclineMixin(models.AbstractModel):
         - Calc amount_commit from all budget_move_ids
         - Calc date_commit if not exists and on 1st budget_move_ids only or False
         """
+        if self.env.context.get("module") == ADDON:
+            return
+
         for rec in self:
             debit = sum(rec.budget_move_ids.mapped("debit"))
             credit = sum(rec.budget_move_ids.mapped("credit"))
@@ -220,6 +231,9 @@ class BudgetDoclineMixin(models.AbstractModel):
                 rec.date_commit = rec.date_commit
 
     def _compute_json_budget_popover(self):
+        if self.env.context.get("module") == ADDON:
+            return
+
         FloatConverter = self.env["ir.qweb.field.float"]
         for rec in self:
             analytic = rec[self._budget_analytic_field]
