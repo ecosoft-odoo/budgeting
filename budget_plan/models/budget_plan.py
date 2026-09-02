@@ -36,17 +36,30 @@ class BudgetPlan(models.Model):
         help="Count budget control in Plan",
     )
     total_amount = fields.Monetary(compute="_compute_total_amount")
-    company_id = fields.Many2one(
+    # company_id = fields.Many2one(
+    #     comodel_name="res.company",
+    #     default=lambda self: self.env.user.company_id,
+    #     required=False,
+    #     string="Company",
+    #     readonly=True,
+    #     states={"draft": [("readonly", False)]},
+    # )
+    # currency_id = fields.Many2one(
+    #     comodel_name="res.currency", related="company_id.currency_id"
+    # )
+    company_ids = fields.Many2many(
         comodel_name="res.company",
-        default=lambda self: self.env.user.company_id,
-        required=False,
-        string="Company",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
+        relation="budget_plan_company_rel",
+        column1="budget_plan_id",
+        column2="company_id",
+        string="Companies",
+        default=lambda self: self.env.context.get("allowed_company_ids"),
+        tracking=True,
     )
     currency_id = fields.Many2one(
-        comodel_name="res.currency", related="company_id.currency_id"
+        comodel_name="res.currency", compute="_compute_currency_id"
     )
+
     line_ids = fields.One2many(
         comodel_name="budget.plan.line",
         inverse_name="plan_id",
@@ -66,6 +79,18 @@ class BudgetPlan(models.Model):
         default="draft",
         tracking=True,
     )
+
+    @api.depends("company_ids")
+    def _compute_currency_id(self):
+        for rec in self:
+            currencies = rec.company_ids.mapped(
+                "currency_id"
+            )  # Get all currencies from companies
+            unique_currencies = set(currencies.ids)  # Get unique currency IDs
+            if len(unique_currencies) > 1:
+                raise UserError(_("Selected companies have different currencies!"))
+
+            rec.currency_id = next(iter(currencies), self.env.company.currency_id)
 
     @api.depends("line_ids")
     def _compute_total_amount(self):
@@ -106,6 +131,9 @@ class BudgetPlan(models.Model):
                     ("bm_date_from", "<=", rec.date_to),
                     ("bm_date_to", ">=", rec.date_from),
                     ("id", "not in", plan_analytic.ids),
+                    "|",
+                    ("budget_company_ids", "=", False),
+                    ("budget_company_ids", "in", rec.company_ids.ids),
                 ]
             )
             lines = []
@@ -268,6 +296,15 @@ class BudgetPlanLine(models.Model):
     amount_consumed = fields.Float(string="Consumed", readonly=True)
     active_status = fields.Boolean(
         default=True, help="Activate/Deactivate when create/Update Budget Control"
+    )
+    company_ids = fields.Many2many(
+        comodel_name="res.company",
+        relation="budget_plan_line_company_rel",
+        column1="budget_plan_line_id",
+        column2="company_id",
+        string="Companies",
+        related="plan_id.company_ids",
+        store=True,
     )
 
     def _domain_budget_control(self):

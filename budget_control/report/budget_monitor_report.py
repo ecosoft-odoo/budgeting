@@ -53,6 +53,7 @@ class BudgetMonitorReport(models.Model):
         ],
     )
     fwd_commit = fields.Boolean()
+    companies = fields.Char()
     active = fields.Boolean()
 
     @property
@@ -109,6 +110,7 @@ class BudgetMonitorReport(models.Model):
                 a.source_document as source_document,
                 null::char as budget_state,
                 a.fwd_commit,
+                c.name::text AS companies,
                 1::boolean as active
                 """
                 % (amount_type[:2], res_model, res_field, amount_type)
@@ -127,6 +129,7 @@ class BudgetMonitorReport(models.Model):
             ] = """
                 from {} a
                 left outer join {} b on a.{} = b.id
+                left outer join res_company c on b.company_id = c.id
             """.format(
                 budget_table,
                 doc_table,
@@ -151,6 +154,7 @@ class BudgetMonitorReport(models.Model):
             null::char as source_document,
             b.state as budget_state,
             0::boolean as fwd_commit,
+            string_agg(d.name::text, ', ') AS companies,
             a.active as active
         """
         }
@@ -158,8 +162,38 @@ class BudgetMonitorReport(models.Model):
     def _from_budget(self):
         return """
             from budget_control_line a
-            join budget_control b on a.budget_control_id = b.id
-            and b.active = true
+            join budget_control b
+                on a.budget_control_id = b.id
+            left join budget_control_company_rel c
+                on b.id = c.budget_control_id
+            left join res_company d on d.id = c.company_id
+        """
+
+    def _where_budget(self):
+        visible_company = self.env.context.get("allowed_company_ids")
+        if not visible_company:
+            return "where b.active = true"
+
+        if len(visible_company) > 1:
+            companies = tuple(visible_company)
+        else:
+            companies = "({})".format(tuple(visible_company)[0])
+        return "where b.active = true and (c.company_id in {} or c.company_id is null)".format(
+            companies
+        )
+
+    def _groupby_budget(self):
+        return """
+            group by
+                a.id,
+                a.kpi_id,
+                a.analytic_account_id,
+                b.analytic_group,
+                a.date_to,
+                a.amount,
+                b.name,
+                b.state,
+                a.active
         """
 
     def _select_statement(self, amount_type):
@@ -169,7 +203,15 @@ class BudgetMonitorReport(models.Model):
         return self._get_from_amount_types()[amount_type]
 
     def _where_actual(self):
-        return ""
+        visible_company = self.env.context.get("allowed_company_ids")
+        if not visible_company:
+            return ""
+
+        if len(visible_company) > 1:
+            companies = tuple(visible_company)
+        else:
+            companies = "({})".format(tuple(visible_company)[0])
+        return "where a.company_id in {}".format(companies)
 
     def _get_sql(self):
         select_budget_query = self._select_budget()
@@ -182,9 +224,11 @@ class BudgetMonitorReport(models.Model):
         select_actual = ", ".join(
             select_actual_query[x] for x in key_select_actual_list
         )
-        return "(select {} {}) union (select {} {} {})".format(
+        return "(select {} {} {} {}) union (select {} {} {})".format(
             select_budget,
             self._from_budget(),
+            self._where_budget(),
+            self._groupby_budget(),
             select_actual,
             self._from_statement("80_actual"),
             self._where_actual(),

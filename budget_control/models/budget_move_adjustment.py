@@ -41,6 +41,11 @@ class BudgetMoveAdjustment(models.Model):
         states={"draft": [("readonly", False)]},
         tracking=True,
     )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        required=True,
+    )
     currency_id = fields.Many2one(
         comodel_name="res.currency",
         default=lambda self: self.env.user.company_id.currency_id,
