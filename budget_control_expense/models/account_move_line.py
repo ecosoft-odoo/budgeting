@@ -24,6 +24,7 @@ class AccountMoveLine(models.Model):
         self = self.sudo()
         Expense = self.env["hr.expense"]
         for ml in self:
+            account = ml.account_id
             inv_state = ml.move_id.state
             move_type = ml.move_id.move_type
             if move_type != "entry":
@@ -31,7 +32,7 @@ class AccountMoveLine(models.Model):
             if inv_state == "posted":
                 expense = ml.expense_id.filtered("amount_commit")
                 # Because this is not invoice, we need to compare account
-                if not expense:
+                if not expense or expense.account_id != account:
                     continue
                 # Also test for future advance extension, never uncommit for advance
                 if hasattr(expense, "advance") and expense["advance"]:
