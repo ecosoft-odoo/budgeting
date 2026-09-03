@@ -11,5 +11,7 @@ class AccountMove(models.Model):
         """Uncommit budget for source expense document."""
         res = super().write(vals)
         if vals.get("state") in ("draft", "posted", "cancel"):
-            self.mapped("line_ids.expense_id").recompute_budget_move()
+            self.mapped("line_ids.expense_id")._call_budget_method_guarded(
+                "recompute_budget_move"
+            )
         return res
