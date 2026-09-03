@@ -43,7 +43,6 @@ class PurchaseOrder(models.Model):
 
     def button_confirm(self):
         res = super().button_confirm()
-        self.flush()
         BudgetPeriod = self.env["budget.period"]
         for doc in self.filtered(lambda l: l.state == "purchase"):
             BudgetPeriod.check_budget(doc.order_line, doc_type="purchase")
