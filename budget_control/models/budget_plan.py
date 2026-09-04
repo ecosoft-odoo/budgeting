@@ -183,6 +183,7 @@ class BudgetPlan(models.Model):
 
     def action_create_update_budget_control(self):
         self.ensure_one()
+        self.line_ids._check_fiscal_analytic_account()
         analytic_plan = self.line_ids.mapped("analytic_account_id")
         # A budget control is unique in the scope of a budget period and an
         # analytic account.  The same analytic may legitimately have a budget
@@ -326,13 +327,24 @@ class BudgetPlan(models.Model):
                 line.released_amount = active_control.released_amount
 
     def _prepare_update_plan_lines(self, analytics):
+        self.ensure_one()
+        if not analytics:
+            return []
+        active_controls = self.env["budget.control"].search(
+            [
+                ("analytic_account_id", "in", analytics.ids),
+                ("budget_period_id", "=", self.budget_period_id.id),
+                ("active", "=", True),
+            ],
+            order="id",
+        )
+        controls_by_analytic = {
+            control.analytic_account_id.id: control for control in active_controls
+        }
+        empty_control = self.env["budget.control"]
         lines = []
         for analytic in analytics:
-            active_control = analytic.budget_control_ids.filtered(
-                lambda control, self=self: control.budget_period_id
-                == self.budget_period_id
-                and control.active
-            ).sorted("id")[-1:]
+            active_control = controls_by_analytic.get(analytic.id, empty_control)
             lines.append(
                 Command.create(
                     {
@@ -344,18 +356,31 @@ class BudgetPlan(models.Model):
             )
         return lines
 
+    def _get_eligible_analytic_domain(self):
+        self.ensure_one()
+        domain = [
+            ("budget_control_scope", "=", "fiscal"),
+            ("bm_date_from", "<=", self.date_to),
+            ("bm_date_to", ">=", self.date_from),
+        ]
+        if self.company_ids:
+            domain += [
+                "|",
+                ("budget_company_ids", "in", self.company_ids.ids),
+                ("budget_company_ids", "=", False),
+            ]
+        return domain
+
     def action_update_plan(self):
         """Update plan line is not in plan line"""
         Analytic = self.env["account.analytic.account"]
 
+        self.mapped("line_ids")._check_fiscal_analytic_account()
         for rec in self:
-            existing_analytic_ids = set(rec.line_ids.mapped("analytic_account_id.id"))
-            domain = [
-                ("bm_date_from", "<=", rec.date_to),
-                ("bm_date_to", ">=", rec.date_from),
-            ]
+            existing_analytic_ids = rec.line_ids.analytic_account_id.ids
+            domain = rec._get_eligible_analytic_domain()
             if existing_analytic_ids:
-                domain.append(("id", "not in", list(existing_analytic_ids)))
+                domain.append(("id", "not in", existing_analytic_ids))
 
             new_analytics = Analytic.search(domain)
 
@@ -472,6 +497,24 @@ class BudgetPlanLine(models.Model):
                 < 0
             ):
                 raise ValidationError(self.env._("New Budget cannot be negative."))
+
+    @api.constrains("analytic_account_id")
+    def _check_fiscal_analytic_account(self):
+        invalid_lines = self.filtered(
+            lambda line: line.analytic_account_id.budget_control_scope != "fiscal"
+        )
+        if invalid_lines:
+            analytic_names = ", ".join(
+                sorted(set(invalid_lines.mapped("analytic_account_id.display_name")))
+            )
+            raise ValidationError(
+                self.env._(
+                    "Budget Plan lines can use only Fiscal analytics. Manage the "
+                    "following Lifetime analytics directly from their Budget "
+                    "Controls: %(analytics)s.",
+                    analytics=analytic_names,
+                )
+            )
 
     @api.depends(
         "analytic_account_id.budget_control_ids.budget_plan_id",
