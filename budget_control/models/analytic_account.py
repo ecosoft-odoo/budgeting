@@ -252,11 +252,11 @@ class AccountAnalyticAccount(models.Model):
             "control_analytic_account_ids": [Command.set(self.ids)],
         }
         period = (
-            reference_period.copy(default=vals)
+            reference_period.sudo().copy(default=vals)
             if reference_period
-            else self.env["budget.period"].create(vals)
+            else self.env["budget.period"].sudo().create(vals)
         )
-        self.write(
+        self.sudo().write(
             {
                 "budget_control_scope": "lifetime",
                 "budget_period_id": period.id,
