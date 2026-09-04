@@ -6,8 +6,8 @@ from unittest.mock import patch
 from freezegun import freeze_time
 
 from odoo import Command, fields
-from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.exceptions import AccessError, UserError
+from odoo.tests import new_test_user, tagged
 
 from odoo.addons.budget_control.tests.common import get_budget_common_class
 
@@ -40,6 +40,15 @@ class TestBudgetControlSaleStock(get_budget_common_class()):
         )
         # Analytic plan for sale budget (used when SO has no project)
         cls.sale_plan = cls.AnalyticPlan.create({"name": "Sale Budget Plan"})
+        cls.budget_user = new_test_user(
+            cls.env,
+            login="sale-budget-user",
+            groups=(
+                "budget_control.group_budget_control_user,"
+                "project.group_project_user,"
+                "sales_team.group_sale_salesman_all_leads"
+            ),
+        )
 
     def _create_sale_order(self, project=None, lines=None, pricelist=None):
         """Create SO with optional project and order lines."""
@@ -762,3 +771,45 @@ class TestBudgetControlSaleStock(get_budget_common_class()):
         self.assertEqual(sale.project_id.account_id.budget_control_scope, "fiscal")
         self.assertEqual(sale.budget_control_id.budget_scope, "fiscal")
         self.assertEqual(sale.budget_control_id.budget_period_id, self.budget_period)
+
+    @freeze_time("2001-02-01")
+    def test_16_budget_user_can_create_lifetime_budget(self):
+        """A Budget User can trigger the system-managed Lifetime period."""
+        project = self.env["project.project"].create(
+            {
+                "name": "Lifetime Project",
+                "account_id": self.costcenterX.id,
+                "budget_control_scope": "lifetime",
+                "date_start": "2001-01-01",
+                "date": "2002-12-31",
+            }
+        )
+        sale = self._create_sale_order(
+            project=project,
+            lines=[
+                {
+                    "product_id": self.product1.id,
+                    "product_uom_qty": 1,
+                    "price_unit": 100.0,
+                    "purchase_price": 60.0,
+                }
+            ],
+        )
+
+        BudgetPeriod = self.env["budget.period"].with_user(self.budget_user)
+        self.assertFalse(
+            self.budget_user.has_group("budget_control.group_budget_control_manager")
+        )
+        with self.assertRaises(AccessError):
+            BudgetPeriod.create(
+                {
+                    "name": "Unauthorized Period",
+                    "bm_date_from": "2001-01-01",
+                    "bm_date_to": "2001-12-31",
+                }
+            )
+
+        self.assertTrue(sale.with_user(self.budget_user).action_create_budget_control())
+        self.assertEqual(sale.budget_control_id.budget_scope, "lifetime")
+        self.assertEqual(sale.budget_control_id.budget_period_id.project_id, project)
+        self.assertEqual(project.account_id.budget_control_scope, "lifetime")
