@@ -77,7 +77,7 @@ class ProjectProject(models.Model):
         for project in self.filtered(
             lambda rec: rec.budget_control_scope == "lifetime"
         ):
-            locked_controls = project.account_id.budget_control_ids.filtered(
+            locked_controls = project.account_id.sudo().budget_control_ids.filtered(
                 lambda control: control.active
                 and control.state not in ("draft", "cancel")
             )
@@ -104,7 +104,7 @@ class ProjectProject(models.Model):
                 period.bm_date_from != project.date_start
                 or period.bm_date_to != project.date
             ):
-                period.with_context(sync_project_lifetime_dates=True).write(
+                period.sudo().with_context(sync_project_lifetime_dates=True).write(
                     {
                         "bm_date_from": project.date_start,
                         "bm_date_to": project.date,
