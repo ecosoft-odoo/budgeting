@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control on Sale with Stock",
-    "version": "18.0.1.3.2",
+    "version": "18.0.1.3.3",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",
