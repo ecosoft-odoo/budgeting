@@ -12,6 +12,7 @@
         "views/res_config_settings_views.xml",
         "views/product_category_views.xml",
         "views/purchase_view.xml",
+        "views/stock_move_views.xml",
         "views/purchase_budget_move_view.xml",
     ],
     "installable": True,
