@@ -101,6 +101,7 @@ class BudgetControl(models.Model):
         required=True,
         tracking=True,
         readonly=True,
+        default=lambda self: self.env.company.currency_id,
     )
     allocated_amount = fields.Monetary(
         string="Allocated",
