@@ -72,7 +72,7 @@ class AccountMove(models.Model):
                 doclines.with_context(skip_account_move_synchronization=True).write(
                     {"date_commit": False}
                 )
-            doclines.recompute_budget_move()
+            doclines._call_budget_method_guarded("recompute_budget_move")
         return res
 
     def _filtered_move_check_budget(self):

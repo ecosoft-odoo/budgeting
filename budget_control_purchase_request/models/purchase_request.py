@@ -18,6 +18,8 @@ class PurchaseRequest(models.Model):
     # Allow trigger, because purchase request line is editable even when approved.
     @api.constrains("line_ids")
     def recompute_budget_move(self):
+        if self.env.context.get("_skip_auto_recompute_budget_move"):
+            return
         self.mapped("line_ids").recompute_budget_move()
 
     def close_budget_move(self):
@@ -28,7 +30,10 @@ class PurchaseRequest(models.Model):
         - Commit budget when state changes to approved
         - Cancel/Draft document should delete all budget commitment
         """
-        res = super().write(vals)
+        ctx_self = self
+        if vals.get("state") in ("approved", "rejected", "draft"):
+            ctx_self = self.with_context(_skip_auto_recompute_budget_move=True)
+        res = super(PurchaseRequest, ctx_self).write(vals)
         if vals.get("state") in ("approved", "rejected", "draft"):
             doclines = self.mapped("line_ids")
             if vals.get("state") in ("rejected", "draft"):
@@ -84,12 +89,13 @@ class PurchaseRequestLine(models.Model):
             rec.account_id = rec._get_pr_line_account()
 
     def recompute_budget_move(self):
-        for pr_line in self:
-            pr_line.budget_move_ids.unlink()
-            pr_line.commit_budget()
-            # credit will not over debit (auto adjust)
+        self.recompute_budget_move_batch()
+        for pr_line in self.filtered("fwd_analytic_account_id"):
             pr_line.forward_commit()
-            pr_line.purchase_lines.uncommit_purchase_request_budget()
+        self.mapped("purchase_lines").uncommit_purchase_request_budget()
+
+    def _can_batch_budget_precommit(self):
+        return True
 
     def _get_pr_line_account(self):
         account = self.product_id.product_tmpl_id.get_product_accounts()["expense"]
