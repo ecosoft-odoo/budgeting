@@ -122,7 +122,7 @@
                                         nolabel="1"
                                         string="Budget Figure"
                                         width="10px"
-                                        widget="popover_widget"
+                                        widget="budget_popover_widget"
                                         attrs="{'invisible': [('analytic_account_id', '=', False)]}"
                                         groups="budget_control.group_budget_control_user"
                                     />
