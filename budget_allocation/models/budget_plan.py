@@ -30,14 +30,18 @@ class BudgetPlan(models.Model):
         # Compare against New Budget only: total_amount now also includes
         # Forward Balance, which Budget Allocation has no notion of.
         prec_digits = self.env.user.company_id.currency_id.decimal_places
-        if self.state not in ["draft", "cancel"] and any(
-            float_compare(
-                rec.init_amount, rec.total_new_budget, precision_digits=prec_digits
-            )
-            != 0
-            for rec in self
-        ):
-            raise UserError(_("Total New Budget is not equal Initial Amount."))
+        for rec in self:
+            # A plan not raised from a Budget Allocation has nothing to
+            # reconcile against - init_amount is simply 0 for it.
+            if rec.state in ["draft", "cancel"] or not rec.budget_allocation_id:
+                continue
+            if (
+                float_compare(
+                    rec.init_amount, rec.total_new_budget, precision_digits=prec_digits
+                )
+                != 0
+            ):
+                raise UserError(_("Total New Budget is not equal Initial Amount."))
 
     def unlink(self):
         """Delete budget plan, budget allocation must reset to draft for generate new plan"""
