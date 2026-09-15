@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates id="template" xml:space="preserve">
+    <div t-name="budget_allocation.budgetAllocationPopOver">
+        <p>
+            <t t-esc="analytic" />
+        </p>
+        <table class="table table-borderless">
+            <tbody>
+                <tr>
+                    <td>
+                        Forward Balance
+                    </td>
+                    <td class="text-right">
+                        <t t-esc="forward_in" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Forward Commit
+                    </td>
+                    <td class="text-right">
+                        + <t t-esc="forward_commit" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        New Budget
+                    </td>
+                    <td class="text-right">
+                        + <t t-esc="allocated" />
+                    </td>
+                </tr>
+                <tr class="table-info">
+                    <td>
+                        Allocated
+                    </td>
+                    <td class="text-right text-nowrap">
+                        = <t t-esc="total" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</templates>
