@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <templates id="template" xml:space="preserve">
+    <t t-name="budget_control.popoverButton">
+        <a
+            tabindex="0"
+            t-attf-class="p-1 fa #{ icon || 'fa-info-circle'} #{ color || 'text-primary'}"
+        />
+    </t>
+    <div t-name="budget_control.popoverContent">
+        <t t-esc="msg" />
+    </div>
     <div t-name="budget_control.budgetPopOver">
         <p>
             <t t-esc="analytic" />

@@ -48,6 +48,7 @@
     "assets": {
         "web.assets_backend": [
             "budget_control/static/src/scss/pivot_view.scss",
+            "budget_control/static/src/js/budget_popover_widget.js",
         ],
         "web.assets_qweb": [
             "budget_control/static/src/xml/budget_popover.xml",
