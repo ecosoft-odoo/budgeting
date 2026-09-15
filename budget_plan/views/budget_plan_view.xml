@@ -4,7 +4,7 @@
         <field name="name">budget.plan.line.tree</field>
         <field name="model">budget.plan.line</field>
         <field name="arch" type="xml">
-            <tree editable="bottom">
+            <tree editable="bottom" decoration-danger="amount &lt; 0">
                 <field name="budget_period_id" optional="hide" />
                 <field name="date_from" invisible="True" />
                 <field name="date_to" invisible="True" />
@@ -21,6 +21,11 @@
                 <field
                     name="amount_forward_in"
                     sum="Total Forward Balance"
+                    readonly="1"
+                />
+                <field
+                    name="amount_forward_commit"
+                    sum="Total Forward Commit"
                     readonly="1"
                 />
                 <field name="amount" sum="Total New Budget" />
@@ -44,6 +49,7 @@
                     </group>
                     <group>
                         <field name="amount_forward_in" readonly="1" />
+                        <field name="amount_forward_commit" readonly="1" />
                         <field name="amount" />
                         <field name="allocated_amount" readonly="1" />
                         <field name="released_amount" />

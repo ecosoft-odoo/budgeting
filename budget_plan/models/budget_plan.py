@@ -70,6 +70,7 @@ class BudgetPlan(models.Model):
     @api.depends(
         "line_ids.amount",
         "line_ids.amount_forward_in",
+        "line_ids.amount_forward_commit",
         "line_ids.allocated_amount",
         "line_ids.analytic_account_id",
         "budget_period_id",
@@ -204,8 +205,8 @@ class BudgetPlan(models.Model):
         self.action_update_plan()
         prec_digits = self.env.user.company_id.currency_id.decimal_places
         for line in self.mapped("line_ids"):
-            # Allocated already includes Forward Balance; check it plus
-            # transfers against what has been consumed.
+            # Allocated already includes both forwarded amounts; check it
+            # plus transfers against what has been consumed.
             released_amount = (
                 line.allocated_amount + line.budget_control_ids.transferred_amount
             )
@@ -222,12 +223,37 @@ class BudgetPlan(models.Model):
                         line.analytic_account_id.display_name
                     )
                 )
-            # Allocated is computed from New Budget + Forward Balance; only
-            # Released still needs syncing here.
+            # Allocated is computed from the plan line; only Released still
+            # needs syncing here.
             if line.released_amount != released_amount:
                 line.released_amount = released_amount
 
+    def _check_amount_negative(self):
+        """New Budget may go negative on screen, but not through confirmation."""
+        for rec in self:
+            currency = rec.currency_id or self.env.company.currency_id
+            negative_lines = rec.line_ids.filtered(
+                lambda line: float_compare(
+                    line.amount, 0.0, precision_rounding=currency.rounding
+                )
+                < 0
+            )
+            if negative_lines:
+                raise UserError(
+                    _(
+                        "New Budget cannot be negative. Fix these lines, "
+                        "or their Budget Allocation:\n%s"
+                    )
+                    % "\n".join(
+                        "- {}: {:,.2f}".format(
+                            line.analytic_account_id.display_name, line.amount
+                        )
+                        for line in negative_lines
+                    )
+                )
+
     def action_confirm(self):
+        self._check_amount_negative()
         self.check_plan_consumed()
         self.write({"state": "confirm"})
 
@@ -268,7 +294,9 @@ class BudgetPlanLine(models.Model):
     allocated_amount = fields.Float(
         string="Allocated",
         compute="_compute_budget_amounts",
-        help="New Budget + Forward Balance available for allocation.",
+        help="Forward Balance + Forward Commit + New Budget.\n"
+        "Derived only: New Budget is what Budget Allocation drives, so the "
+        "total cannot be typed back here without orphaning the allocation lines.",
     )
     released_amount = fields.Float(string="Released", readonly=True)
     amount = fields.Float(string="New Budget")
@@ -276,6 +304,11 @@ class BudgetPlanLine(models.Model):
         string="Forward Balance",
         compute="_compute_budget_amounts",
         help="Available budget carried in from a completed forward balance.",
+    )
+    amount_forward_commit = fields.Float(
+        string="Forward Commit",
+        compute="_compute_budget_amounts",
+        help="Commitment carried in from a completed forward commitment.",
     )
     amount_consumed = fields.Float(string="Consumed", readonly=True)
     active_status = fields.Boolean(
@@ -294,24 +327,20 @@ class BudgetPlanLine(models.Model):
 
     @api.depends("amount", "analytic_account_id", "budget_period_id")
     def _compute_budget_amounts(self):
-        """Compute the forward balance and the total amount to allocate."""
+        """Compute the forwarded amounts and the total amount to allocate."""
         period_ids = self.mapped("budget_period_id").ids
         analytic_ids = self.mapped("analytic_account_id").ids
-        amounts = self.env["budget.balance.forward.line"]._get_forward_balance_map(
+        balances = self.env["budget.balance.forward.line"]._get_forward_balance_map(
+            period_ids, analytic_ids
+        )
+        commits = self.env["budget.commit.forward.line"]._get_forward_commit_map(
             period_ids, analytic_ids
         )
         for rec in self:
-            rec.amount_forward_in = amounts[
-                (rec.budget_period_id.id, rec.analytic_account_id.id)
-            ]
-            rec.allocated_amount = rec.amount + rec.amount_forward_in
-
-    @api.constrains("amount")
-    def _check_amount_nonnegative(self):
-        for rec in self:
-            currency = rec.plan_id.currency_id or self.env.company.currency_id
-            if float_compare(rec.amount, 0.0, precision_rounding=currency.rounding) < 0:
-                raise ValidationError(_("New Budget cannot be negative."))
+            key = (rec.budget_period_id.id, rec.analytic_account_id.id)
+            rec.amount_forward_in = balances[key]
+            rec.amount_forward_commit = commits[key]
+            rec.allocated_amount = rec.amount + balances[key] + commits[key]
 
     @api.depends("analytic_account_id.budget_control_ids")
     def _compute_budget_control_ids(self):
