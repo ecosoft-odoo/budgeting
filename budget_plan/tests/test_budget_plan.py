@@ -79,12 +79,13 @@ class TestBudgetPlan(BudgetControlCommon):
         self.assertEqual(len(budget_plan.line_ids), 2)
         self.assertEqual(budget_plan.state, "draft")
         self.assertEqual(budget_plan.total_amount, 300.0)
-        self.assertFalse(budget_plan.line_ids[0].allocated_amount)
+        # Allocated = New Budget + Forward Balance (0 here), live even in draft
+        self.assertEqual(budget_plan.line_ids[0].allocated_amount, 100.0)
         self.assertFalse(budget_plan.line_ids[0].released_amount)
         self.assertEqual(budget_plan.line_ids[0].amount, 100.0)
         budget_plan.action_confirm()
         self.assertEqual(budget_plan.state, "confirm")
-        # After confirm, it will update allocated, released following amount
+        # After confirm, Released follows Allocated (no Forward Balance here)
         self.assertEqual(budget_plan.line_ids[0].allocated_amount, 100.0)
         self.assertEqual(budget_plan.line_ids[0].released_amount, 100.0)
         self.assertEqual(budget_plan.line_ids[0].amount, 100.0)
@@ -124,3 +125,76 @@ class TestBudgetPlan(BudgetControlCommon):
         budget_plan.line_ids[0].amount = 70
         with self.assertRaises(UserError):
             budget_plan.action_confirm()
+
+    @freeze_time("2001-02-01")
+    def test_02_allocated_amount_includes_forwarded_amounts(self):
+        """A budget officer plans next year for a cost center that carries a
+        balance forward. Allocated shows the carried amount on top of the new
+        money, and the officer never types it - only New Budget is theirs to
+        set. Typing a negative New Budget leaves the plan unconfirmable until
+        it is raised back."""
+        next_period = self.env["budget.period"].create(
+            {
+                "name": "Budget for FY%s" % (self.year + 1),
+                "template_id": self.budget_period.template_id.id,
+                "bm_date_from": "%s-01-01" % (self.year + 1),
+                "bm_date_to": "%s-12-31" % (self.year + 1),
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+            }
+        )
+        # Carry the whole available balance of CostCenter1 to next year
+        forward = self.env["budget.balance.forward"].create(
+            {
+                "name": "Balance Forward {}".format(self.year + 1),
+                "from_budget_period_id": self.budget_period.id,
+                "to_budget_period_id": next_period.id,
+            }
+        )
+        forward.get_budget_balance_forward()
+        forward_line = forward.forward_line_ids.filtered(
+            lambda line: line.analytic_account_id == self.costcenter1
+        )
+        self.assertEqual(forward_line.amount_balance, 300.0)
+        forward_line.amount_balance_forward = 300.0
+        forward.action_budget_balance_forward()
+
+        budget_plan = self.BudgetPlan.create(
+            {
+                "name": "Budget Plan Test {}".format(self.year + 1),
+                "budget_period_id": next_period.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "analytic_account_id": self.costcenter1.id,
+                            "amount": 100.0,
+                        },
+                    )
+                ],
+            }
+        )
+        plan_line = budget_plan.line_ids
+        # Allocated = Forward Balance + Forward Commit + New Budget
+        self.assertEqual(plan_line.amount_forward_in, 300.0)
+        self.assertEqual(plan_line.amount_forward_commit, 0.0)
+        self.assertEqual(plan_line.allocated_amount, 400.0)
+        self.assertEqual(budget_plan.total_amount, 400.0)
+
+        # New Budget is the only amount the officer sets; Allocated follows it
+        plan_line.amount = 50.0
+        self.assertEqual(plan_line.amount_forward_in, 300.0)
+        self.assertEqual(plan_line.allocated_amount, 350.0)
+
+        # A negative New Budget blocks confirmation
+        plan_line.amount = -50.0
+        with self.assertRaises(UserError) as error:
+            budget_plan.action_confirm()
+        self.assertIn("New Budget cannot be negative", error.exception.args[0])
+        self.assertEqual(budget_plan.state, "draft")
+
+        plan_line.amount = 100.0
+        budget_plan.action_confirm()
+        self.assertEqual(budget_plan.state, "confirm")
+        self.assertEqual(plan_line.released_amount, 400.0)

@@ -1,6 +1,8 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from collections import Counter
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import float_is_zero
@@ -260,6 +262,20 @@ class BudgetCommitForward(models.Model):
             else:
                 analytic.initial_commit += val["initial_commit"]
 
+    def _invalidate_forward_commit_records(self):
+        """Drop the non-stored plan amounts that read from completed forwards.
+
+        Odoo 15 has no recordset-scoped ``invalidate_recordset``, so this drops
+        the cache for the whole model - broader than needed, but cheap since
+        these fields are computed on read.
+        """
+        if "budget.plan" not in self.env:
+            return
+        self.env["budget.plan.line"].invalidate_cache(
+            ["amount_forward_commit", "allocated_amount"]
+        )
+        self.env["budget.plan"].invalidate_cache(["total_amount"])
+
     def _recompute_budget_move(self):
         for rec in self:
             # Recompute budget on document number
@@ -270,12 +286,14 @@ class BudgetCommitForward(models.Model):
         self._do_forward_commit()
         self.write({"state": "done"})
         self._do_update_initial_commit()
+        self._invalidate_forward_commit_records()
         self._recompute_budget_move()
 
     def _action_cancel(self):
         self.filtered(lambda l: l.state == "done")._do_forward_commit(reverse=True)
         self.write({"state": "cancel"})
         self._do_update_initial_commit(reverse=True)
+        self._invalidate_forward_commit_records()
         self._recompute_budget_move()
 
     def action_cancel(self):
@@ -297,12 +315,50 @@ class BudgetCommitForward(models.Model):
         self.mapped("forward_line_ids").unlink()
         self.write({"state": "draft"})
         self._do_update_initial_commit(reverse=True)
+        self._invalidate_forward_commit_records()
         self._recompute_budget_move()
 
 
 class BudgetCommitForwardLine(models.Model):
     _name = "budget.commit.forward.line"
     _description = "Budget Commit Forward Line"
+
+    @api.model
+    def _get_forward_commit_map(self, period_ids, analytic_ids):
+        """Return completed forward commits keyed by (budget_period_id, analytic_id).
+
+        Mirrors ``budget.balance.forward.line._get_forward_balance_map`` so
+        callers get the same period-aware source of truth for "commit carried in".
+        """
+        result = Counter()
+        if not analytic_ids:
+            return result
+        domain = [
+            ("forward_id.state", "=", "done"),
+            ("to_analytic_account_id", "in", analytic_ids),
+        ]
+        if period_ids:
+            domain.append(("forward_id.to_budget_period_id", "in", period_ids))
+        groups = self.sudo().read_group(
+            domain,
+            ["to_analytic_account_id", "amount_commit", "forward_id"],
+            ["to_analytic_account_id", "forward_id"],
+            lazy=False,
+        )
+        if not groups:
+            return result
+        forward_ids = {g["forward_id"][0] for g in groups if g.get("forward_id")}
+        period_by_forward = {
+            fwd.id: fwd.to_budget_period_id.id
+            for fwd in self.env["budget.commit.forward"].sudo().browse(forward_ids)
+        }
+        for group in groups:
+            if not group.get("to_analytic_account_id") or not group.get("forward_id"):
+                continue
+            analytic_id = group["to_analytic_account_id"][0]
+            period_id = period_by_forward.get(group["forward_id"][0])
+            result[(period_id, analytic_id)] += group["amount_commit"]
+        return result
 
     forward_id = fields.Many2one(
         comodel_name="budget.commit.forward",

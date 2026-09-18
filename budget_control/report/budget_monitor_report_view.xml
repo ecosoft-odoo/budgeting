@@ -63,6 +63,11 @@
                     string="Budget Cancelled"
                     domain="[('budget_state', 'in', ['cancel', False])]"
                 />
+                <filter
+                    name="forward_balance_out"
+                    string="Forward Balance Out"
+                    domain="[('amount_type', '=', '12_forward_out')]"
+                />
                 <separator orientation="vertical" />
                 <filter
                     name="active"

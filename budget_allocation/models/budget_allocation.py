@@ -1,6 +1,8 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from json import dumps
+
 from odoo import _, api, fields, models
 
 
@@ -235,8 +237,77 @@ class BudgetAllocationLine(models.Model):
         comodel_name="res.currency", related="company_id.currency_id"
     )
     active = fields.Boolean(related="budget_allocation_id.active")
+    json_budget_popover = fields.Char(
+        compute="_compute_json_budget_popover",
+        help="What this analytic will have available in the allocation's budget "
+        "period, before any budget plan is created",
+    )
 
     @api.depends("allocated_amount")
     def _compute_estimated_amount(self):
         for rec in self:
             rec.estimated_amount = rec.estimated_amount or rec.allocated_amount
+
+    def _get_period_allocated_amount(self):
+        """Total allocated to this analytic across the whole budget period.
+
+        ``budget.allocation`` is unique per budget period (see its
+        ``_sql_constraints``), so the period total is this document's own lines
+        for the same analytic - no query needed, and it stays live while the
+        user is still editing the lines. A cancelled document allocates nothing.
+        """
+        self.ensure_one()
+        allocation = self.budget_allocation_id
+        if allocation.state == "cancel":
+            return 0.0
+        siblings = allocation.line_ids.filtered(
+            lambda line: line.analytic_account_id == self.analytic_account_id
+        )
+        return sum(siblings.mapped("allocated_amount"))
+
+    @api.depends(
+        "analytic_account_id",
+        "budget_period_id",
+        "budget_allocation_id.state",
+        "budget_allocation_id.line_ids.allocated_amount",
+        "budget_allocation_id.line_ids.analytic_account_id",
+    )
+    def _compute_json_budget_popover(self):
+        """Preview the analytic's budget for the period, the way the budget
+        plan will later compute it: both forwarded amounts plus allocation."""
+        FloatConverter = self.env["ir.qweb.field.float"]
+        period_ids = self.mapped("budget_period_id").ids
+        analytic_ids = self.mapped("analytic_account_id").ids
+        balances = self.env["budget.balance.forward.line"]._get_forward_balance_map(
+            period_ids, analytic_ids
+        )
+        commits = self.env["budget.commit.forward.line"]._get_forward_commit_map(
+            period_ids, analytic_ids
+        )
+
+        def to_html(amount):
+            return FloatConverter.value_to_html(
+                amount, {"decimal_precision": "Product Price"}
+            )
+
+        for rec in self:
+            if not rec.analytic_account_id:
+                rec.json_budget_popover = False
+                continue
+            key = (rec.budget_period_id.id, rec.analytic_account_id.id)
+            forward_in = balances[key]
+            forward_commit = commits[key]
+            allocated = rec._get_period_allocated_amount()
+            rec.json_budget_popover = dumps(
+                {
+                    "title": _("Budget Figure"),
+                    "icon": "fa-info-circle",
+                    "popoverTemplate": "budget_allocation.budgetAllocationPopOver",
+                    "analytic": rec.analytic_account_id.display_name,
+                    "period": rec.budget_period_id.display_name,
+                    "forward_in": to_html(forward_in),
+                    "forward_commit": to_html(forward_commit),
+                    "allocated": to_html(allocated),
+                    "total": to_html(forward_in + forward_commit + allocated),
+                }
+            )

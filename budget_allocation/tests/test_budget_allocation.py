@@ -1,6 +1,8 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from json import loads
+
 from freezegun import freeze_time
 
 from odoo.exceptions import UserError
@@ -297,3 +299,121 @@ class TestBudgetAllocation(BudgetControlCommon):
         transfer.action_reverse()
         self.assertEqual(budget_control_ids[0].diff_amount, 0.0)
         self.assertEqual(budget_control_ids[1].diff_amount, 0.0)
+
+    @freeze_time("2001-02-01")
+    def test_04_forward_balance_vs_init_amount(self):
+        """Budget Allocation's Initial Amount only knows about newly
+        allocated funds, not Forward Balance. The plan's Initial Amount
+        check must therefore compare against New Budget only (not the
+        Forward-Balance-inclusive Total Amount), or confirming a plan with
+        any carried-forward balance would always fail."""
+        prev_period = self.env["budget.period"].create(
+            {
+                "name": "Budget for FY Prev",
+                "template_id": self.template.id,
+                "bm_date_from": "%s-01-01" % (self.year - 1),
+                "bm_date_to": "%s-12-31" % (self.year - 1),
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+            }
+        )
+        forward = self.env["budget.balance.forward"].create(
+            {
+                "name": "Test Forward for Allocation",
+                "from_budget_period_id": prev_period.id,
+                "to_budget_period_id": self.budget_period.id,
+            }
+        )
+        self.env["budget.balance.forward.line"].create(
+            {
+                "forward_id": forward.id,
+                "analytic_account_id": self.costcenter1.id,
+                "amount_balance": 60.0,
+                "amount_balance_forward": 60.0,
+            }
+        )
+        forward.action_budget_balance_forward()
+        self.assertEqual(forward.state, "done")
+
+        budget_allocation_id = self._create_budget_allocation(100)
+        budget_allocation_id.action_done()
+        plan_id = budget_allocation_id.plan_id
+        line_cc1 = plan_id.line_ids.filtered(
+            lambda line: line.analytic_account_id == self.costcenter1
+        )
+        # New Budget from allocation only (300), Forward Balance kept apart
+        self.assertEqual(line_cc1.amount, 300.0)
+        self.assertEqual(line_cc1.amount_forward_in, 60.0)
+        self.assertEqual(line_cc1.allocated_amount, 360.0)
+
+        self.assertEqual(plan_id.init_amount, 400.0)
+        self.assertEqual(plan_id.total_new_budget, 400.0)
+        # Total Amount includes Forward Balance, so it legitimately diverges
+        # from Initial Amount once a forward balance exists.
+        self.assertEqual(plan_id.total_amount, 460.0)
+
+        # Must not raise: the check compares init_amount to total_new_budget
+        plan_id.action_confirm()
+        self.assertEqual(plan_id.state, "confirm")
+
+    @freeze_time("2001-02-01")
+    def test_05_budget_figure_popover(self):
+        """Before building any budget plan, a budget officer hovers the Budget
+        Figure on an allocation line and sees what that cost center will really
+        have for the period: what was carried forward, what this allocation
+        adds across all its funds, and the total - which must be exactly what
+        the budget plan ends up allocating. Cancelling the allocation drops its
+        contribution to zero."""
+        forward = self.env["budget.balance.forward"].create(
+            {
+                "name": "Test Forward for Budget Figure",
+                "from_budget_period_id": self.env["budget.period"]
+                .create(
+                    {
+                        "name": "Budget for FY Prev (Figure)",
+                        "template_id": self.template.id,
+                        "bm_date_from": "%s-01-01" % (self.year - 1),
+                        "bm_date_to": "%s-12-31" % (self.year - 1),
+                        "plan_date_range_type_id": self.date_range_type.id,
+                        "control_level": "analytic_kpi",
+                    }
+                )
+                .id,
+                "to_budget_period_id": self.budget_period.id,
+            }
+        )
+        self.env["budget.balance.forward.line"].create(
+            {
+                "forward_id": forward.id,
+                "analytic_account_id": self.costcenter1.id,
+                "amount_balance": 60.0,
+                "amount_balance_forward": 60.0,
+            }
+        )
+        forward.action_budget_balance_forward()
+
+        # CostCenter1 gets 3 lines of 100 across 2 funds, CostCenterX gets 1
+        budget_allocation_id = self._create_budget_allocation(100)
+        line_cc1 = budget_allocation_id.line_ids.filtered(
+            lambda line: line.analytic_account_id == self.costcenter1
+        )[:1]
+        popover = loads(line_cc1.json_budget_popover)
+        self.assertEqual(popover["analytic"], self.costcenter1.display_name)
+        self.assertEqual(popover["forward_in"], "60.00")
+        self.assertEqual(popover["forward_commit"], "0.00")
+        # Allocated is the analytic's whole period, not just this one fund line
+        self.assertEqual(popover["allocated"], "300.00")
+        self.assertEqual(popover["total"], "360.00")
+
+        # The figure is a promise about the plan: it must match what it creates
+        budget_allocation_id.action_done()
+        plan_line_cc1 = budget_allocation_id.plan_id.line_ids.filtered(
+            lambda line: line.analytic_account_id == self.costcenter1
+        )
+        self.assertEqual(plan_line_cc1.allocated_amount, 360.0)
+
+        # A cancelled allocation contributes nothing
+        budget_allocation_id.action_cancel()
+        popover = loads(line_cc1.json_budget_popover)
+        self.assertEqual(popover["allocated"], "0.00")
+        self.assertEqual(popover["total"], "60.00")

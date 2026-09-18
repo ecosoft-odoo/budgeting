@@ -51,3 +51,11 @@ class BudgetMonitorReport(models.Model):
                 left outer join res_project rp on aa.project_id = rp.id",
             ]
         )
+
+    def _select_forward_balance_extra(self):
+        select_forward_extra = super()._select_forward_balance_extra()
+        select_forward_extra[
+            50
+        ] = "null::integer as project_id, null::char as parent_project_name, \
+            null::integer as department_id"
+        return select_forward_extra

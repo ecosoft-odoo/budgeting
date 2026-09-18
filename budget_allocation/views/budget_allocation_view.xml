@@ -17,6 +17,15 @@
                     domain="[('bm_date_to', '&gt;=', date_from), ('bm_date_from', '&lt;=', date_to)]"
                     options="{'no_create': 1}"
                 />
+                <field
+                    name="json_budget_popover"
+                    optional="show"
+                    nolabel="1"
+                    string="Budget Figure"
+                    width="10px"
+                    widget="budget_popover_widget"
+                    attrs="{'invisible': [('analytic_account_id', '=', False)]}"
+                />
                 <field name="domain_tag_ids" invisible="1" />
                 <field
                     name="analytic_tag_ids"
