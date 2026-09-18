@@ -28,6 +28,12 @@ class BudgetCommitForward(models.Model):
         related="to_budget_period_id.bm_date_from",
         string="Move commit to date",
     )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        default=lambda self: self.env.company,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
     state = fields.Selection(
         [
             ("draft", "Draft"),
@@ -84,6 +90,8 @@ class BudgetCommitForward(models.Model):
             ("date_commit", "<", self.to_date_commit),
             ("fwd_date_commit", "!=", self.to_date_commit),
         ]
+        if self.company_id:
+            domain.append(("company_id", "=", self.company_id.id))
         return domain
 
     def _get_commit_docline(self, res_model):

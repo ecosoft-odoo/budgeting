@@ -1,6 +1,8 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import api, fields, models
+
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class GenerateBudgetControl(models.TransientModel):
@@ -47,6 +49,12 @@ class GenerateBudgetControl(models.TransientModel):
         "with Intial KPIs",
     )
     use_all_kpis = fields.Boolean(string="Use All KPIs")
+    budget_currency_id = fields.Many2one(
+        comodel_name="res.currency",
+        default=lambda self: self.env.company.currency_id,
+        readonly=True,
+        required=True,
+    )
     template_id = fields.Many2one(
         comodel_name="budget.template",
         required=True,
@@ -78,6 +86,12 @@ class GenerateBudgetControl(models.TransientModel):
 
     @api.model
     def default_get(self, default_fields):
+        all_companies = self.env["res.company"].sudo().search([])
+        if len(all_companies.currency_id) > 1:
+            raise UserError(
+                _("All companies must have the same currency for budgeting.")
+            )
+
         values = super().default_get(default_fields)
         period_id = self.env.context.get("active_id")
         period = self.env["budget.period"].browse(period_id)
@@ -137,6 +151,7 @@ class GenerateBudgetControl(models.TransientModel):
         use_all_kpis = self.use_all_kpis
         budget_period_id = self.budget_period_id.id
         template_lines = self.template_line_ids.ids
+        currency_id = self.budget_currency_id.id
         return list(
             map(
                 lambda l: {
@@ -146,6 +161,7 @@ class GenerateBudgetControl(models.TransientModel):
                         or l["analytic_account_id"].name
                     ),
                     "analytic_account_id": l["analytic_account_id"].id,
+                    "currency_id": currency_id,
                     "plan_date_range_type_id": plan_date_range_id,
                     "use_all_kpis": use_all_kpis,
                     "template_line_ids": template_lines,

@@ -17,6 +17,7 @@
                         <group string="Options">
                             <field name="init_kpis" />
                             <field name="init_budget_commit" />
+                            <field name="budget_currency_id" />
                         </group>
                     </group>
                     <notebook>
