@@ -11,9 +11,7 @@ class AccountMoveLine(models.Model):
     _budget_move_model = "account.budget.move"
     _doc_rel = "move_id"
 
-    can_commit = fields.Boolean(
-        compute="_compute_can_commit",
-    )
+    can_commit = fields.Boolean(store=True)
     budget_move_ids = fields.One2many(
         comodel_name="account.budget.move",
         inverse_name="move_line_id",
@@ -21,14 +19,23 @@ class AccountMoveLine(models.Model):
     )
     return_amount_commit = fields.Boolean(
         related="move_id.return_amount_commit",
+        store=True,
     )
 
-    @api.depends()
+    @api.depends("move_id.not_affect_budget", "analytic_account_id")
     def _compute_can_commit(self):
-        res = super()._compute_can_commit()
-        no_budget_moves = self.mapped("move_id").filtered("not_affect_budget")
-        no_budget_moves.mapped("line_ids").update({"can_commit": False})
-        return res
+        """Overwrite this main method to spped-up performance,
+        and Skip compute when install this module first time.
+        """
+        if self.env.context.get("module") == "budget_control":
+            return
+
+        for rec in self:
+            if rec.move_id.not_affect_budget:
+                rec.can_commit = False
+                continue
+
+            rec.can_commit = bool(rec.analytic_account_id)
 
     def recompute_budget_move(self):
         for invoice_line in self:
