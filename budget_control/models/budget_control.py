@@ -266,8 +266,11 @@ class BudgetControl(models.Model):
 
     @api.depends("allocated_amount")
     def _compute_allocated_released_amount(self):
+        """Released = Allocated + Transferred"""
+        # transfer_item_ids has no depends, its cached value can be stale
+        self.invalidate_cache(["transfer_item_ids", "transferred_amount"], self.ids)
         for rec in self:
-            rec.released_amount = rec.allocated_amount
+            rec.released_amount = rec.allocated_amount + rec.transferred_amount
 
     @api.depends("released_amount", "amount_budget")
     def _compute_diff_amount(self):
