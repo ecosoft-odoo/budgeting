@@ -39,6 +39,18 @@ class BudgetControl(models.Model):
         )
         return res and revision_number == self.revision_number
 
+    def _get_domain_transfer_item_ids(self):
+        """Transfers stay linked to the revision they were made on"""
+        self.ensure_one()
+        revisions = self.with_context(active_test=False)
+        revision_ids = (revisions | revisions.old_revision_ids).ids
+        return [
+            ("state", "=", "transfer"),
+            "|",
+            ("budget_control_from_id", "in", revision_ids),
+            ("budget_control_to_id", "in", revision_ids),
+        ]
+
     def _get_new_rev_data(self, new_rev_number):
         """Update revision budget control"""
         self.ensure_one()
