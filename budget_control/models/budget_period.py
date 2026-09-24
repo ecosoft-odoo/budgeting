@@ -451,7 +451,14 @@ class BudgetPeriod(models.Model):
                 if q["amount"] is not None and q["budget_period_id"] == budget_period.id
             )
             # Show a warning if the budget is not sufficient
-            if float_compare(balance, 0.0, precision_rounding=2) == -1:
+            if (
+                float_compare(
+                    balance,
+                    0.0,
+                    precision_rounding=company.currency_id.rounding,
+                )
+                == -1
+            ):
                 # Convert the balance to the document currency
                 balance_currency = self._get_balance_currency(
                     company, balance, doc_currency, date_commit
