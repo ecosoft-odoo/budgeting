@@ -9,12 +9,6 @@ class BudgetControl(models.Model):
     _inherit = ["budget.control", "base.exception"]
 
     @api.model
-    def check_exception_all_draft_orders(self):
-        order_set = self.search([("state", "=", "draft")])
-        order_set.detect_exceptions()
-        return True
-
-    @api.model
     def _reverse_field(self):
         return "budget_control_ids"
 
@@ -36,9 +30,11 @@ class BudgetControl(models.Model):
             self.ignore_exception = False
 
     def action_done(self):
-        if self.detect_exceptions() and not self.ignore_exception:
-            return self._popup_exceptions()
+        self.detect_exceptions()
         return super().action_done()
+
+    def _must_popup_exception(self):
+        return True
 
     def action_draft(self):
         res = super().action_draft()
@@ -76,3 +72,7 @@ class BudgetControlLine(models.Model):
     def _detect_exceptions(self, rule):
         records = super()._detect_exceptions(rule)
         return records.mapped("budget_control_id")
+
+    def _detect_exception_get_exc_class_values(self):
+        res = super()._detect_exception_get_exc_class_values()
+        return dict(res, target_model="budget.control")

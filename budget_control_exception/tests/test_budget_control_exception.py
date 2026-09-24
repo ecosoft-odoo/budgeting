@@ -1,9 +1,13 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
+import json
+from unittest import TestCase
+
 from odoo import Command
 from odoo.tests import Form, tagged
 
+from odoo.addons.base_exception.exceptions import BaseExceptionError
 from odoo.addons.budget_control.tests.common import get_budget_common_class
 
 
@@ -65,6 +69,23 @@ class TestBudgetControlExpense(get_budget_common_class()):
         # reset
         self.budget_control.action_draft()
 
+    def _check_detected_exception(self, rule, source_model):
+        # base_exception keeps the rules in the test transaction and raises
+        # to roll back the attempted state change. Odoo's assertRaises would
+        # roll back the linked rules as well.
+        with TestCase.assertRaises(self, BaseExceptionError) as caught:
+            self.budget_control.action_done()
+        self.assertEqual(
+            json.loads(str(caught.exception)),
+            {"src_model": source_model, "target_model": "budget.control"},
+        )
+        self.assertEqual(self.budget_control.state, "draft")
+        self.assertIn(rule, self.budget_control.exception_ids)
+        self.assertEqual(
+            self.budget_control.action_popup_exceptions()["res_model"],
+            "budget.control.exception.confirm",
+        )
+
     def test_01_budget_control_exception(self):
         self.exception_checkassignee.active = True
         # Normally Case
@@ -72,12 +93,8 @@ class TestBudgetControlExpense(get_budget_common_class()):
         self._check_normal_process()
         # Exception Case
         self.budget_control.assignee_ids = [(5,)]
-        self.assertEqual(self.budget_control.state, "draft")
-        self.budget_control.action_done()
-        self.assertEqual(self.budget_control.state, "draft")
+        self._check_detected_exception(self.exception_checkassignee, "budget.control")
 
-        self.budget_control.check_exception_all_draft_orders()
-        self.assertEqual(self.budget_control.state, "draft")
         # Check ignore exception in wizard.
         self.assertFalse(self.budget_control.ignore_exception)
         exception_wiz = self.BudgetControlExceptionConfirm.with_context(
@@ -104,12 +121,9 @@ class TestBudgetControlExpense(get_budget_common_class()):
         total_amount = sum(self.budget_control.line_ids.mapped("amount"))
         self.budget_control.released_amount = total_amount
 
-        self.assertEqual(self.budget_control.state, "draft")
-        self.budget_control.action_done()
-        self.assertEqual(self.budget_control.state, "draft")
-
-        self.budget_control.check_exception_all_draft_orders()
-        self.assertEqual(self.budget_control.state, "draft")
+        self._check_detected_exception(
+            self.exception_checkamount, "budget.control.line"
+        )
 
         self.budget_control.ignore_exception = True
         self.budget_control.action_done()
