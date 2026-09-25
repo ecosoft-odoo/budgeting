@@ -44,7 +44,7 @@ class BudgetTemplateLine(models.Model):
         required=True,
     )
 
-    @api.depends("kpi_id")
+    @api.depends("kpi_id", "kpi_id.name")
     def _compute_name(self):
         for rec in self:
             rec.name = rec.kpi_id.name

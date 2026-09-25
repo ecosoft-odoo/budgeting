@@ -5,6 +5,7 @@ from collections import Counter
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import float_is_zero
 
 
 class BudgetCommitForward(models.Model):
@@ -103,6 +104,10 @@ class BudgetCommitForward(models.Model):
     def _prepare_vals_forward(self, docs, res_model):
         self.ensure_one()
         value_dict = []
+        rounding = self.currency_id.rounding
+        docs = docs.filtered(
+            lambda l: not float_is_zero(l.amount_commit, precision_rounding=rounding)
+        )
         for doc in docs:
             analytic_account = (
                 doc.fwd_analytic_account_id or doc[doc._budget_analytic_field]

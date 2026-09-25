@@ -85,7 +85,7 @@ class HRExpense(models.Model):
             )
             expense[self._budget_field()].unlink()
             expense.with_context(force_date_commit=ex_date_commit).commit_budget()
-            move_lines = expense.sheet_id.account_move_id.line_ids
+            move_lines = expense.sheet_id.account_move_id.sudo().line_ids
             # credit will not over debit (auto adjust)
             expense.forward_commit()
             move_lines.uncommit_expense_budget()

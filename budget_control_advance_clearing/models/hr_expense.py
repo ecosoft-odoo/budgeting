@@ -128,7 +128,7 @@ class HRExpense(models.Model):
             clearings.uncommit_advance_budget()
             # If the advances has any reconcile (return advance),
             # reverse commit them from advance
-            aml_debit = advance_sheet.account_move_id.line_ids.filtered(
+            aml_debit = advance_sheet.account_move_id.sudo().line_ids.filtered(
                 lambda l: l.debit
             )
             ml_reconcile = aml_debit.matched_credit_ids
