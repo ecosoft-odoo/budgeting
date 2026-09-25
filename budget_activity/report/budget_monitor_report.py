@@ -30,3 +30,8 @@ class BudgetMonitorReport(models.Model):
             ]
         )
         return from_statment
+
+    def _select_forward_balance_extra(self):
+        select_forward_extra = super()._select_forward_balance_extra()
+        select_forward_extra[20] = "null::char as activity"
+        return select_forward_extra

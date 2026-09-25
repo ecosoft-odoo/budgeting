@@ -16,6 +16,7 @@
         "data/budget_constraint_data.xml",
         "views/budget_source_fund_view.xml",
         "views/budget_allocation_view.xml",
+        "views/res_config_settings_views.xml",
         "views/budget_plan_view.xml",
         "views/budget_control_view.xml",
         "views/budget_transfer_item_view.xml",
@@ -25,6 +26,11 @@
         "report/budget_monitor_report_view.xml",
         "report/budget_source_fund_report_view.xml",
     ],
+    "assets": {
+        "web.assets_qweb": [
+            "budget_allocation/static/src/xml/budget_allocation_popover.xml",
+        ],
+    },
     "installable": True,
     "maintainers": ["ps-tubtim"],
     "post_init_hook": "post_init_hook",

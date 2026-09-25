@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form_budget_allocation" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.budget.allocation</field>
+        <field name="model">res.config.settings</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.res_config_settings_view_form_budget"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//div[@name='budget_plan_setting_container']"
+                position="inside"
+            >
+                <div
+                    class="col-12 col-lg-6 o_setting_box"
+                    id="budget_allocation_amount_basis"
+                >
+                    <div class="o_setting_right_pane">
+                        <label for="budget_allocation_amount_basis" />
+                        <div class="text-muted">
+                            Interpret Budget Allocation line amounts as New Budget or
+                            as Allocated including forwarded amounts.
+                        </div>
+                        <field name="budget_allocation_amount_basis" />
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

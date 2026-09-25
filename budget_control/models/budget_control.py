@@ -115,15 +115,25 @@ class BudgetControl(models.Model):
         compute="_compute_diff_amount",
         help="Diff from Released - Budget",
     )
-    # Total Amount
-    amount_initial = fields.Monetary(
-        string="Initial Balance",
-        compute="_compute_initial_balance",
-    )
     amount_budget = fields.Monetary(
         string="Budget",
         compute="_compute_budget_info",
         help="Sum of amount plan",
+    )
+    amount_forward_in = fields.Monetary(
+        string="Opening Balance",
+        compute="_compute_budget_info",
+        help="Available budget carried in from a completed forward balance.",
+    )
+    amount_new_budget = fields.Monetary(
+        string="New Budget",
+        compute="_compute_budget_info",
+        help="New Budget = Budget - Forward Balance.",
+    )
+    amount_forward_out = fields.Monetary(
+        string="Forward Out",
+        compute="_compute_budget_info",
+        help="Budget carried to another period, shown as a positive amount.",
     )
     amount_actual = fields.Monetary(
         string="Actual",
@@ -212,14 +222,6 @@ class BudgetControl(models.Model):
             raise UserError(
                 _("Multiple budget control on the same period for: %s")
                 % ", ".join(analytics.mapped("name"))
-            )
-
-    @api.depends("analytic_account_id")
-    def _compute_initial_balance(self):
-        for rec in self:
-            rec.amount_initial = (
-                rec.analytic_account_id.initial_available
-                + rec.analytic_account_id.initial_commit
             )
 
     @api.constrains("line_ids")
@@ -313,14 +315,29 @@ class BudgetControl(models.Model):
         )
         return query, dataset_all
 
+    @api.depends(
+        "line_ids.amount",
+        "analytic_account_id",
+        "budget_period_id",
+    )
     def _compute_budget_info(self):
         BudgetPeriod = self.env["budget.period"]
         query, dataset_all = self._get_query_dataset_all()
+        forward_map = self.env["budget.balance.forward.line"]._get_forward_balance_map(
+            self.mapped("budget_period_id").ids,
+            self.mapped("analytic_account_id").ids,
+        )
         for rec in self:
             # Filter according to budget_control parameter
             dataset = [x for x in dataset_all if rec._filter_by_budget_control(x)]
             # Get data from dataset
             budget_info = BudgetPeriod.get_budget_info_from_dataset(query, dataset)
+            budget_info["amount_forward_in"] = forward_map[
+                (rec.budget_period_id.id, rec.analytic_account_id.id)
+            ]
+            budget_info["amount_new_budget"] = (
+                budget_info["amount_budget"] - budget_info["amount_forward_in"]
+            )
             rec.update(budget_info)
 
     def _get_lines_init_date(self):
@@ -345,7 +362,8 @@ class BudgetControl(models.Model):
                     q["amount"]
                     for q in query_data
                     if q["amount"] is not None
-                    and q["amount_type"] not in ["10_budget", "80_actual"]
+                    and q["amount_type"]
+                    not in ["10_budget", "12_forward_out", "80_actual"]
                 )
                 line.update({"amount": abs(balance_commit)})
 
@@ -371,21 +389,21 @@ class BudgetControl(models.Model):
                         symbol=rec.currency_id.symbol,
                     ).format(rec.released_amount)
                 )
-            # Check plan vs intial
+            # Check released vs already consumed (e.g. forwarded commitments)
             if (
                 float_compare(
-                    rec.amount_initial,
-                    rec.amount_budget,
+                    rec.released_amount,
+                    rec.amount_consumed,
                     precision_rounding=rec.currency_id.rounding,
                 )
-                == 1
+                == -1
             ):
                 raise UserError(
                     _(
-                        "Planning amount should be greater than "
-                        "initial balance {:,.2f} %(symbol)s",
+                        "Released amount must not be less than the "
+                        "consumed amount {:,.2f} %(symbol)s",
                         symbol=rec.currency_id.symbol,
-                    ).format(rec.amount_initial)
+                    ).format(rec.amount_consumed)
                 )
 
     def action_draft(self):
@@ -463,10 +481,16 @@ class BudgetControl(models.Model):
             )
 
     def _get_domain_budget_monitoring(self):
-        return [("analytic_account_id", "=", self.analytic_account_id.id)]
+        return [
+            ("analytic_account_id", "=", self.analytic_account_id.id),
+            ("budget_period_id", "=", self.budget_period_id.id),
+        ]
 
     def _get_context_budget_monitoring(self):
-        ctx = {"search_default_group_by_analytic_account": 1}
+        ctx = {
+            "search_default_group_by_res_id": 1,
+            "search_default_group_by_analytic_account": 1,
+        }
         return ctx
 
     def action_view_monitoring(self):

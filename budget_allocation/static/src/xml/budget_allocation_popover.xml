@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <templates id="template" xml:space="preserve">
-    <t t-name="budget_control.popoverButton">
-        <a
-            tabindex="0"
-            t-attf-class="p-1 fa #{ icon || 'fa-info-circle'} #{ color || 'text-primary'}"
-        />
-    </t>
-    <div t-name="budget_control.popoverContent">
-        <t t-esc="msg" />
-    </div>
-    <div t-name="budget_control.budgetPopOver">
+    <div t-name="budget_allocation.budgetAllocationPopOver">
         <p>
             <t t-esc="analytic" />
         </p>
@@ -17,27 +8,34 @@
             <tbody>
                 <tr>
                     <td>
-                        Planned
+                        Forward Balance
                     </td>
                     <td class="text-right">
-                        <t t-esc="budget" />
+                        <t t-esc="forward_in" />
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        Used
+                        Forward Commit
                     </td>
                     <td class="text-right">
-                        - <t t-esc="consumed" />
+                        <t t-esc="forward_commit" />
                     </td>
                 </tr>
-                <!-- <t t-raw="lead_days_description"/> -->
+                <tr>
+                    <td>
+                        New Budget
+                    </td>
+                    <td class="text-right">
+                        <t t-esc="new_budget" />
+                    </td>
+                </tr>
                 <tr class="table-info">
                     <td>
-                        Available
+                        Allocated
                     </td>
                     <td class="text-right text-nowrap">
-                        = <t t-esc="balance" />
+                        = <t t-esc="total" />
                     </td>
                 </tr>
             </tbody>
