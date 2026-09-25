@@ -7,6 +7,7 @@ from freezegun import freeze_time
 
 from odoo.exceptions import UserError
 from odoo.tests import tagged
+from odoo.tests.common import Form
 
 from .common import BudgetControlCommon
 
@@ -273,3 +274,54 @@ class TestBudgetControl(BudgetControlCommon):
             bill1.budget_move_ids[0].date,
             bill1.invoice_line_ids[0].date_commit,
         )
+
+    @freeze_time("2001-02-01")
+    def test_11_multi_analytic_budget_check(self):
+        """Every distinct analytic account on a document must be budget
+        checked, not just the first one found."""
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        self.budget_control.allocated_amount = 2400
+        self.budget_control.action_done()
+        # Second analytic account with its own, much smaller, budget
+        costcenter2 = self.Analytic.create({"name": "CostCenter2"})
+        budget_control2 = self.BudgetControl.create(
+            {
+                "name": "CostCenter2/%s" % self.year,
+                "template_id": self.budget_period.template_id.id,
+                "budget_period_id": self.budget_period.id,
+                "analytic_account_id": costcenter2.id,
+                "plan_date_range_type_id": self.date_range_type.id,
+                "template_line_ids": [
+                    self.template_line1.id,
+                    self.template_line2.id,
+                    self.template_line3.id,
+                ],
+            }
+        )
+        budget_control2.prepare_budget_control_matrix()
+        budget_control2.line_ids.write({"amount": 10})
+        budget_control2.allocated_amount = 120
+        budget_control2.action_done()
+        # One bill, two lines on two different analytic accounts:
+        # costcenter1 within budget, costcenter2 far over budget
+        Invoice = self.env["account.move"]
+        with Form(
+            Invoice.with_context(default_move_type="in_invoice"),
+            view="account.view_move_form",
+        ) as inv:
+            inv.partner_id = self.vendor
+            inv.invoice_date = datetime.today()
+            with inv.invoice_line_ids.new() as line:
+                line.quantity = 1
+                line.account_id = self.account_kpi1
+                line.price_unit = 100
+                line.analytic_account_id = self.costcenter1
+            with inv.invoice_line_ids.new() as line:
+                line.quantity = 1
+                line.account_id = self.account_kpi1
+                line.price_unit = 100000
+                line.analytic_account_id = costcenter2
+        bill = inv.save()
+        with self.assertRaises(UserError):
+            bill.action_post()

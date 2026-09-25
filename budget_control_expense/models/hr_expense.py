@@ -16,6 +16,8 @@ class HRExpenseSheet(models.Model):
 
     @api.constrains("expense_line_ids")
     def recompute_budget_move(self):
+        if self.env.context.get("_skip_auto_recompute_budget_move"):
+            return
         self.mapped("expense_line_ids").recompute_budget_move()
 
     def close_budget_move(self):
@@ -26,7 +28,10 @@ class HRExpenseSheet(models.Model):
         Uncommit budget when the state is "approve" or cancel/draft the document.
         When the document is cancelled or drafted, delete all budget commitments.
         """
-        res = super().write(vals)
+        ctx_self = self
+        if vals.get("state") in ("approve", "cancel", "draft"):
+            ctx_self = self.with_context(_skip_auto_recompute_budget_move=True)
+        res = super(HRExpenseSheet, ctx_self).write(vals)
         if vals.get("state") in ("approve", "cancel", "draft"):
             doclines = self.mapped("expense_line_ids")
             if vals.get("state") in ("cancel", "draft"):

@@ -17,6 +17,8 @@ class PurchaseOrder(models.Model):
     # Allow trigger, because purchase order line is editable even when approved.
     @api.constrains("order_line")
     def recompute_budget_move(self):
+        if self.env.context.get("_skip_auto_recompute_budget_move"):
+            return
         self.mapped("order_line").recompute_budget_move()
 
     def close_budget_move(self):
@@ -27,7 +29,10 @@ class PurchaseOrder(models.Model):
         - Commit budget when state changes to purchase
         - Cancel/Draft document should delete all budget commitment
         """
-        res = super().write(vals)
+        ctx_self = self
+        if vals.get("state") in ("purchase", "cancel", "draft"):
+            ctx_self = self.with_context(_skip_auto_recompute_budget_move=True)
+        res = super(PurchaseOrder, ctx_self).write(vals)
         if vals.get("state") in ("purchase", "cancel", "draft"):
             doclines = self.mapped("order_line")
             if vals.get("state") in ("cancel", "draft"):
@@ -91,12 +96,14 @@ class PurchaseOrderLine(models.Model):
         return res
 
     def recompute_budget_move(self):
-        for purchase_line in self:
-            purchase_line.budget_move_ids.unlink()
-            purchase_line.commit_budget()
+        self.recompute_budget_move_batch()
+        for purchase_line in self.filtered("fwd_analytic_account_id"):
             # credit will not over debit (auto adjust)
             purchase_line.forward_commit()
-            purchase_line.invoice_lines.uncommit_purchase_budget()
+        self.mapped("invoice_lines").uncommit_purchase_budget()
+
+    def _can_batch_budget_precommit(self):
+        return True
 
     def _get_po_line_account(self):
         fpos = self.order_id.fiscal_position_id

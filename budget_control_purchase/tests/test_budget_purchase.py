@@ -151,11 +151,17 @@ class TestBudgetControlPurchase(BudgetControlCommon):
         purchase.action_create_invoice()
         self.assertEqual(purchase.invoice_status, "invoiced")
         invoice = purchase.invoice_ids[:1]
+        original_purchase_move_ids = set(purchase.budget_move_ids.ids)
         # Change qty to 1
         invoice.with_context(check_move_validity=False).invoice_line_ids[0].quantity = 1
         invoice.with_context(check_move_validity=False)._onchange_invoice_line_ids()
         invoice.invoice_date = invoice.date
         invoice.action_post()
+        # Posting a bill only adds its PO reversal; it must not rebuild the
+        # original PO commitments (a costly O(lines) delete/create cycle).
+        self.assertTrue(
+            original_purchase_move_ids.issubset(set(purchase.budget_move_ids.ids))
+        )
         # PO Commit = 20, INV Actual = 10, Balance = 270
         self.budget_control.invalidate_cache()
         self.assertEqual(self.budget_control.amount_commit, 20)
