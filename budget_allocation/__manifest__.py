@@ -16,6 +16,7 @@
         "data/budget_constraint_data.xml",
         "views/budget_source_fund_view.xml",
         "views/budget_allocation_view.xml",
+        "views/res_config_settings_views.xml",
         "views/budget_plan_view.xml",
         "views/budget_control_view.xml",
         "views/budget_transfer_item_view.xml",

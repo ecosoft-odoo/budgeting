@@ -46,3 +46,4 @@ class TestBudgetAllocationRevision(TestBudgetAllocation):
         new_budget_plan = new_budget_allocation.plan_id
         self.assertNotEqual(new_budget_plan, budget_plan)
         self.assertEqual(new_budget_plan.revision_number, 1)
+        self.assertEqual(new_budget_plan.budget_allocation_id, new_budget_allocation)

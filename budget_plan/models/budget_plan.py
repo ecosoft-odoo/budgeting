@@ -229,24 +229,22 @@ class BudgetPlan(models.Model):
                 line.released_amount = released_amount
 
     def _check_amount_negative(self):
-        """New Budget may go negative on screen, but not through confirmation."""
+        """New Budget may be negative, but each allocated total must not be."""
         for rec in self:
             currency = rec.currency_id or self.env.company.currency_id
             negative_lines = rec.line_ids.filtered(
                 lambda line: float_compare(
-                    line.amount, 0.0, precision_rounding=currency.rounding
+                    line.allocated_amount, 0.0, precision_rounding=currency.rounding
                 )
                 < 0
             )
             if negative_lines:
                 raise UserError(
-                    _(
-                        "New Budget cannot be negative. Fix these lines, "
-                        "or their Budget Allocation:\n%s"
-                    )
+                    _("Allocated cannot be negative on these plan lines:\n%s")
                     % "\n".join(
                         "- {}: {:,.2f}".format(
-                            line.analytic_account_id.display_name, line.amount
+                            line.analytic_account_id.display_name,
+                            line.allocated_amount,
                         )
                         for line in negative_lines
                     )
@@ -295,8 +293,7 @@ class BudgetPlanLine(models.Model):
         string="Allocated",
         compute="_compute_budget_amounts",
         help="Forward Balance + Forward Commit + New Budget.\n"
-        "Derived only: New Budget is what Budget Allocation drives, so the "
-        "total cannot be typed back here without orphaning the allocation lines.",
+        "Derived from New Budget and forwarded amounts; cannot be edited directly.",
     )
     released_amount = fields.Float(string="Released", readonly=True)
     amount = fields.Float(string="New Budget")

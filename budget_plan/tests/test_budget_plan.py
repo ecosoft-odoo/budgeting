@@ -130,9 +130,7 @@ class TestBudgetPlan(BudgetControlCommon):
     def test_02_allocated_amount_includes_forwarded_amounts(self):
         """A budget officer plans next year for a cost center that carries a
         balance forward. Allocated shows the carried amount on top of the new
-        money, and the officer never types it - only New Budget is theirs to
-        set. Typing a negative New Budget leaves the plan unconfirmable until
-        it is raised back."""
+        money. New Budget may be negative as long as Allocated is not."""
         next_period = self.env["budget.period"].create(
             {
                 "name": "Budget for FY%s" % (self.year + 1),
@@ -187,14 +185,19 @@ class TestBudgetPlan(BudgetControlCommon):
         self.assertEqual(plan_line.amount_forward_in, 300.0)
         self.assertEqual(plan_line.allocated_amount, 350.0)
 
-        # A negative New Budget blocks confirmation
+        # A negative New Budget is allowed when Allocated stays positive.
         plan_line.amount = -50.0
+        self.assertEqual(plan_line.allocated_amount, 250.0)
+        # Allocated cannot become negative.
+        plan_line.amount = -350.0
         with self.assertRaises(UserError) as error:
             budget_plan.action_confirm()
-        self.assertIn("New Budget cannot be negative", error.exception.args[0])
+        self.assertIn("Allocated cannot be negative", error.exception.args[0])
         self.assertEqual(budget_plan.state, "draft")
+        with self.assertRaises(UserError):
+            budget_plan.action_done()
 
-        plan_line.amount = 100.0
+        plan_line.amount = -50.0
         budget_plan.action_confirm()
         self.assertEqual(budget_plan.state, "confirm")
-        self.assertEqual(plan_line.released_amount, 400.0)
+        self.assertEqual(plan_line.released_amount, 250.0)

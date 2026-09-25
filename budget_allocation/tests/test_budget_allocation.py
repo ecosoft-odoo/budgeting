@@ -402,7 +402,7 @@ class TestBudgetAllocation(BudgetControlCommon):
         self.assertEqual(popover["forward_in"], "60.00")
         self.assertEqual(popover["forward_commit"], "0.00")
         # Allocated is the analytic's whole period, not just this one fund line
-        self.assertEqual(popover["allocated"], "300.00")
+        self.assertEqual(popover["new_budget"], "300.00")
         self.assertEqual(popover["total"], "360.00")
 
         # The figure is a promise about the plan: it must match what it creates
@@ -415,5 +415,85 @@ class TestBudgetAllocation(BudgetControlCommon):
         # A cancelled allocation contributes nothing
         budget_allocation_id.action_cancel()
         popover = loads(line_cc1.json_budget_popover)
-        self.assertEqual(popover["allocated"], "0.00")
+        self.assertEqual(popover["new_budget"], "0.00")
         self.assertEqual(popover["total"], "60.00")
+
+    @freeze_time("2001-02-01")
+    def test_06_company_policy_targets_allocated_amount(self):
+        previous_period = self.env["budget.period"].create(
+            {
+                "name": "Budget for FY Prev (Allocated Policy)",
+                "template_id": self.template.id,
+                "bm_date_from": "%s-01-01" % (self.year - 1),
+                "bm_date_to": "%s-12-31" % (self.year - 1),
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+            }
+        )
+        forward = self.env["budget.balance.forward"].create(
+            {
+                "name": "Forward for Allocated Policy",
+                "from_budget_period_id": previous_period.id,
+                "to_budget_period_id": self.budget_period.id,
+            }
+        )
+        forward_only = self.AnalyticAccount.create(
+            {
+                "name": "Forward Only",
+                "budget_period_id": self.budget_period.id,
+            }
+        )
+        for analytic, amount in ((self.costcenter1, 400.0), (forward_only, 50.0)):
+            self.env["budget.balance.forward.line"].create(
+                {
+                    "forward_id": forward.id,
+                    "analytic_account_id": analytic.id,
+                    "amount_balance": amount,
+                    "amount_balance_forward": amount,
+                }
+            )
+        forward.action_budget_balance_forward()
+
+        self.env.company.budget_allocation_amount_basis = "new_budget"
+        allocation = self._create_budget_allocation(100.0)
+        self.assertEqual(allocation.amount_basis, "new_budget")
+        allocation.action_done()
+        plan = allocation.plan_id
+        line_cc1 = plan.line_ids.filtered(
+            lambda line: line.analytic_account_id == self.costcenter1
+        )
+        self.assertEqual(line_cc1.amount, 300.0)
+        self.assertEqual(line_cc1.allocated_amount, 700.0)
+        self.assertEqual(plan.total_amount, 850.0)
+
+        settings = self.env["res.config.settings"].create(
+            {"company_id": self.env.company.id}
+        )
+        settings.budget_allocation_amount_basis = "allocated"
+        self.assertEqual(self.env.company.budget_allocation_amount_basis, "allocated")
+        allocation.action_draft()
+        allocation_line = allocation.line_ids.filtered(
+            lambda line: line.analytic_account_id == self.costcenter1
+        )[:1]
+        popover = loads(allocation_line.json_budget_popover)
+        self.assertEqual(popover["new_budget"].replace("\ufeff", ""), "-100.00")
+        self.assertEqual(popover["total"], "300.00")
+
+        allocation.action_done()
+        self.assertEqual(allocation.amount_basis, "allocated")
+        line_forward_only = plan.line_ids.filtered(
+            lambda line: line.analytic_account_id == forward_only
+        )
+        self.assertEqual(plan.company_id, allocation.company_id)
+        self.assertEqual(line_cc1.amount, -100.0)
+        self.assertEqual(line_cc1.allocated_amount, 300.0)
+        self.assertEqual(line_forward_only.amount, 0.0)
+        self.assertEqual(line_forward_only.allocated_amount, 50.0)
+        self.assertEqual(plan.init_amount, 400.0)
+        self.assertEqual(plan.total_amount, 450.0)
+        plan.action_confirm()
+        self.assertEqual(plan.state, "confirm")
+        # A later settings change does not rewrite an already completed plan.
+        self.env.company.budget_allocation_amount_basis = "new_budget"
+        self.assertEqual(allocation.amount_basis, "allocated")
+        self.assertEqual(line_cc1.amount, -100.0)
