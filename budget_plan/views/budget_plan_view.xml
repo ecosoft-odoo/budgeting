@@ -4,7 +4,7 @@
         <field name="name">budget.plan.line.tree</field>
         <field name="model">budget.plan.line</field>
         <field name="arch" type="xml">
-            <tree editable="bottom" decoration-danger="amount &lt; 0">
+            <tree editable="bottom" decoration-danger="allocated_amount &lt; 0">
                 <field name="budget_period_id" optional="hide" />
                 <field name="date_from" invisible="True" />
                 <field name="date_to" invisible="True" />

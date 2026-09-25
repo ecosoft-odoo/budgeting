@@ -19,7 +19,7 @@
                         Forward Commit
                     </td>
                     <td class="text-right">
-                        + <t t-esc="forward_commit" />
+                        <t t-esc="forward_commit" />
                     </td>
                 </tr>
                 <tr>
@@ -27,7 +27,7 @@
                         New Budget
                     </td>
                     <td class="text-right">
-                        + <t t-esc="allocated" />
+                        <t t-esc="new_budget" />
                     </td>
                 </tr>
                 <tr class="table-info">

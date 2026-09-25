@@ -27,21 +27,28 @@ class BudgetPlan(models.Model):
 
     @api.constrains("state")
     def _check_amount_initial(self):
-        # Compare against New Budget only: total_amount now also includes
-        # Forward Balance, which Budget Allocation has no notion of.
-        prec_digits = self.env.user.company_id.currency_id.decimal_places
         for rec in self:
-            # A plan not raised from a Budget Allocation has nothing to
-            # reconcile against - init_amount is simply 0 for it.
             if rec.state in ["draft", "cancel"] or not rec.budget_allocation_id:
                 continue
-            if (
-                float_compare(
-                    rec.init_amount, rec.total_new_budget, precision_digits=prec_digits
+            prec_digits = rec.currency_id.decimal_places
+            if rec.budget_allocation_id.amount_basis == "allocated":
+                analytic_ids = set(
+                    rec.budget_allocation_id.line_ids.mapped("analytic_account_id").ids
                 )
+                plan_total = sum(
+                    line.allocated_amount
+                    for line in rec.line_ids
+                    if line.analytic_account_id.id in analytic_ids
+                )
+                amount_label = _("Total Allocated")
+            else:
+                plan_total = rec.total_new_budget
+                amount_label = _("Total New Budget")
+            if (
+                float_compare(rec.init_amount, plan_total, precision_digits=prec_digits)
                 != 0
             ):
-                raise UserError(_("Total New Budget is not equal Initial Amount."))
+                raise UserError(_("%s is not equal to Initial Amount.") % amount_label)
 
     def unlink(self):
         """Delete budget plan, budget allocation must reset to draft for generate new plan"""
