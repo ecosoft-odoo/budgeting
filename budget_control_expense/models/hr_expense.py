@@ -71,6 +71,7 @@ class HRExpense(models.Model):
     _budget_date_commit_fields = ["sheet_id.write_date"]
     _budget_move_model = "expense.budget.move"
     _doc_rel = "sheet_id"
+    _budget_currency_date_field = "date"
 
     budget_move_ids = fields.One2many(
         comodel_name="expense.budget.move",
