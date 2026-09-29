@@ -273,3 +273,83 @@ class TestBudgetControl(BudgetControlCommon):
             bill1.budget_move_ids[0].date,
             bill1.invoice_line_ids[0].date_commit,
         )
+
+    @freeze_time("2001-02-01")
+    def test_11_budget_balance_forward(self):
+        """A completed Balance Forward moves the source period's available
+        amount into the target period's Opening Balance, without touching
+        any stored field on the analytic account, and can no longer be
+        cancelled once the target budget has been submitted."""
+        self.budget_period.control_budget = True
+        self.budget_control.allocated_amount = 2400
+        self.budget_control.action_done()
+        self.assertEqual(self.budget_control.amount_balance, 2400.0)
+
+        next_period = self.env["budget.period"].create(
+            {
+                "name": "Budget for FY%s" % (self.year + 1),
+                "template_id": self.template.id,
+                "bm_date_from": "%s-01-01" % (self.year + 1),
+                "bm_date_to": "%s-12-31" % (self.year + 1),
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic_kpi",
+            }
+        )
+        forward = self.env["budget.balance.forward"].create(
+            {
+                "name": "Test Balance Forward",
+                "from_budget_period_id": self.budget_period.id,
+                "to_budget_period_id": next_period.id,
+            }
+        )
+        forward.get_budget_balance_forward()
+        forward_line = forward.forward_line_ids.filtered(
+            lambda line: line.analytic_account_id == self.costcenter1
+        )
+        self.assertEqual(forward_line.amount_balance, 2400.0)
+        forward_line.amount_balance_forward = 2400.0
+
+        # Before confirming: source is untouched, target sees nothing yet
+        self.assertEqual(self.budget_control.amount_forward_out, 0.0)
+        self.assertEqual(self.budget_control.amount_balance, 2400.0)
+
+        forward.action_budget_balance_forward()
+        self.assertEqual(forward.state, "done")
+        # Forward Out reduces the source period's Available
+        self.assertEqual(self.budget_control.amount_forward_out, 2400.0)
+        self.assertEqual(self.budget_control.amount_balance, 0.0)
+
+        next_control = self.BudgetControl.create(
+            {
+                "name": "CostCenter1/%s" % (self.year + 1),
+                "template_id": next_period.template_id.id,
+                "budget_period_id": next_period.id,
+                "analytic_account_id": self.costcenter1.id,
+                "plan_date_range_type_id": self.date_range_type.id,
+                "template_line_ids": [
+                    self.template_line1.id,
+                    self.template_line2.id,
+                    self.template_line3.id,
+                ],
+            }
+        )
+        # Opening Balance comes from the completed forward
+        self.assertEqual(next_control.amount_forward_in, 2400.0)
+
+        next_control.prepare_budget_control_matrix()
+        # Carry-forward only, no new money this period
+        next_control.line_ids.filtered(lambda x: x.kpi_id == self.kpi1).write(
+            {"amount": 200}
+        )
+        next_control.line_ids.filtered(lambda x: x.kpi_id == self.kpi2).write(
+            {"amount": 400}
+        )
+        self.assertEqual(next_control.amount_budget, 2400.0)
+        self.assertEqual(next_control.amount_new_budget, 0.0)
+        self.assertEqual(next_control.amount_balance, 2400.0)
+
+        # Cannot cancel the forward once the target has been submitted
+        next_control.allocated_amount = 2400
+        next_control.action_submit()
+        with self.assertRaises(UserError):
+            forward.action_cancel()

@@ -47,3 +47,8 @@ class BudgetMonitorReport(models.Model):
         select_statement = super()._select_statement(amount_type)
         select_statement[30] = "a.operating_unit_id"
         return select_statement
+
+    def _select_forward_balance_extra(self):
+        select_forward_extra = super()._select_forward_balance_extra()
+        select_forward_extra[30] = "null::integer as operating_unit_id"
+        return select_forward_extra
