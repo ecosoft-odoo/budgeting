@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 =====================================
 Budget Control on Purchase with Stock
 =====================================
@@ -49,10 +45,17 @@ manufactured stock) when their product category uses Stock Issue; a
 Vendor Bill category intentionally excludes all of its outgoing stock
 operations from budget.
 
-Lot-tracked products release the exact source PO commitment. Non-lot
-products use company- and budget-period-scoped product FIFO across
-received PO lines, ordered by PO date. Quantity is converted between
-stock and purchase UoMs, and remaining commitment caps use
+Lot-tracked products trace their source PO lines through completed
+receipts. When a lot was received on several PO lines, each outgoing
+move line prefers the source with the same analytic accounts, then the
+oldest receipt. If no source has matching analytics, receipt FIFO still
+releases the original PO commitment when stock is issued to another
+project. Different outgoing moves can therefore release different PO
+lines even when they share one lot.
+
+Non-lot products use company- and budget-period-scoped product FIFO
+across received PO lines, ordered by PO date. Quantity is converted
+between stock and purchase UoMs, and remaining commitment caps use
 company-currency values. Cancelling an outgoing operation restores its
 PO commitment, while a stock return reverses the issue actual without
 recreating the fulfilled PO commitment.

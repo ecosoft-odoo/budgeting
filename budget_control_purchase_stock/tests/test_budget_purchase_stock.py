@@ -1642,3 +1642,141 @@ class TestBudgetControlPurchaseStock(get_budget_common_class()):
                 lambda move: move.stock_picking_id == deliveries[-1]
             )
         )
+
+    @freeze_time("2001-02-01")
+    def test_19_shared_lot_releases_each_moves_analytic_po_line(self):
+        """One lot on two PO lines must not release the first project's budget."""
+        self.budget_plan.line_ids.write({"amount": 100})
+        self.budget_control.allocated_amount = 100
+        self.budget_control.line_ids.write({"amount": 0})
+        self.budget_control.line_ids[0].amount = 100
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        distribution = {str(self.costcenter1.id): 100}
+        other_distribution = {str(self.costcenterX.id): 100}
+        purchase = self._create_purchase(
+            [
+                {
+                    "product_id": self.product_lot,
+                    "product_qty": 2,
+                    "price_unit": 50,
+                    "analytic_distribution": analytic,
+                }
+                for analytic in (other_distribution, distribution)
+            ]
+        ).with_context(force_date_commit=fields.Date.today())
+        purchase.button_confirm()
+        receipt = purchase.picking_ids
+        receipt.move_line_ids.unlink()
+        for move in receipt.move_ids:
+            self.env["stock.move.line"].create(
+                {
+                    "move_id": move.id,
+                    "picking_id": receipt.id,
+                    "product_id": self.product_lot.id,
+                    "product_uom_id": self.product_lot.uom_id.id,
+                    "lot_id": self.lot1.id,
+                    "quantity": 2,
+                    "location_id": receipt.location_id.id,
+                    "location_dest_id": receipt.location_dest_id.id,
+                }
+            )
+        receipt.with_context(skip_backorder=True).button_validate()
+        delivery = self._create_delivery(
+            [
+                {
+                    "product_id": self.product_lot,
+                    "product_qty": 2,
+                    "price_unit": 50,
+                    "analytic_distribution": analytic,
+                }
+                for analytic in (other_distribution, distribution)
+            ]
+        )
+        # Keep both project moves separate in this focused stock fixture.
+        delivery.move_ids._action_confirm(merge=False)
+        self.assertEqual(len(delivery.move_ids), 2)
+        delivery.move_line_ids.unlink()
+        for move in delivery.move_ids:
+            self.env["stock.move.line"].create(
+                {
+                    "move_id": move.id,
+                    "picking_id": delivery.id,
+                    "product_id": self.product_lot.id,
+                    "product_uom_id": self.product_lot.uom_id.id,
+                    "lot_id": self.lot1.id,
+                    "quantity": 2,
+                    "location_id": delivery.location_id.id,
+                    "location_dest_id": delivery.location_dest_id.id,
+                }
+            )
+        delivery.recompute_budget_move()
+        project_line = purchase.order_line.filtered(
+            lambda line: line.analytic_distribution == distribution
+        )
+        other_line = purchase.order_line - project_line
+        for po_line in purchase.order_line:
+            release = po_line.budget_move_ids.filtered(
+                lambda budget_move: budget_move.stock_picking_id == delivery
+            )
+            self.assertAlmostEqual(sum(release.mapped("credit")), 100)
+            self.assertAlmostEqual(sum(po_line.amount_commit.values()), 0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 0)
+        self.assertAlmostEqual(self.budget_control.amount_stock, 100)
+
+        # Tight budget: the PO handoff must pass without double commitment.
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        project_move = delivery.move_ids.filtered(
+            lambda move: move.analytic_distribution == distribution
+        )
+        self.env["budget.period"].check_budget(project_move, doc_type="stock")
+
+        # Both stock and PO recomputation must retain the same handoff.
+        delivery.recompute_budget_move()
+        project_line.recompute_budget_move()
+        self.assertAlmostEqual(sum(project_line.amount_commit.values()), 0)
+        self.assertAlmostEqual(sum(other_line.amount_commit.values()), 0)
+        self.env["budget.period"].check_budget(project_move, doc_type="stock")
+
+        delivery.action_cancel()
+        for po_line in purchase.order_line:
+            self.assertAlmostEqual(sum(po_line.amount_commit.values()), 100)
+        self.assertAlmostEqual(self.budget_control.amount_stock, 0)
+
+    @freeze_time("2001-02-01")
+    def test_20_lot_source_without_matching_analytic_keeps_fifo(self):
+        """Issuing purchased stock to another project still releases its PO."""
+        purchase = self._create_purchase(
+            [
+                {
+                    "product_id": self.product_lot,
+                    "product_qty": 4,
+                    "price_unit": 50,
+                    "analytic_distribution": {str(self.costcenter1.id): 100},
+                }
+            ]
+        ).with_context(force_date_commit=fields.Date.today())
+        purchase.button_confirm()
+        self._validate_receipt_with_lots(
+            purchase, [self.lot1, self.lot2, self.lot3, self.lot4]
+        )
+        delivery = self._create_delivery(
+            [
+                {
+                    "product_id": self.product_lot,
+                    "product_qty": 2,
+                    "price_unit": 50,
+                    "analytic_distribution": {str(self.costcenterX.id): 100},
+                }
+            ]
+        )
+        delivery.action_confirm()
+        self._assign_lots_to_delivery(delivery, [self.lot1, self.lot2])
+        delivery.recompute_budget_move()
+        releases = purchase.order_line.budget_move_ids.filtered(
+            lambda budget_move: budget_move.stock_picking_id == delivery
+        )
+        self.assertEqual(releases.analytic_account_id, self.costcenter1)
+        self.assertAlmostEqual(sum(releases.mapped("credit")), 100)
+        self.assertAlmostEqual(sum(purchase.order_line.amount_commit.values()), 100)
