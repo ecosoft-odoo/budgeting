@@ -12,25 +12,28 @@ _STOCK_COMMIT_STATES = frozenset(
 class StockPicking(models.Model):
     _inherit = "stock.picking"
 
-    def _get_lot_source_purchase_lines(self):
-        """Return {lot_id (int): purchase.order.line} for outgoing move lines.
+    def _get_move_line_source_purchase_lines(self):
+        """Return {outgoing_move_line_id: source purchase.order.line}.
 
-        Single batched search. FIFO: oldest receipt wins when a lot appears in
-        multiple incoming moves.
+        A lot can be received on several PO lines with different analytics.
+        Resolve each outgoing line independently, preferring the source with
+        the same analytic accounts and retaining receipt FIFO within matches.
+        If no source matches, FIFO still supports issuing stock to another
+        project. Only completed receipts in this company are considered.
         """
-        lot_ids = (
-            self.move_line_ids.filtered(
-                lambda line: line.lot_id
+        self.ensure_one()
+        outgoing_lines = self.move_line_ids.filtered(
+            lambda line: (
+                line.lot_id
+                and line.move_id.analytic_distribution
                 and line.move_id.budget_actual_source == "stock_issue"
             )
-            .mapped("lot_id")
-            .ids
         )
-        if not lot_ids:
+        if not outgoing_lines:
             return {}
         incoming_mls = self.env["stock.move.line"].search(
             [
-                ("lot_id", "in", lot_ids),
+                ("lot_id", "in", outgoing_lines.lot_id.ids),
                 ("state", "=", "done"),
                 ("move_id.purchase_line_id", "!=", False),
                 (
@@ -43,12 +46,28 @@ class StockPicking(models.Model):
             ],
             order="date asc, id asc",
         )
-        lot_po_map = {}
-        for ml in incoming_mls:
-            lid = ml.lot_id.id
-            if lid not in lot_po_map:
-                lot_po_map[lid] = ml.move_id.purchase_line_id
-        return lot_po_map
+        sources_by_lot = {}
+        source_analytics = {}
+        for receipt_line in incoming_mls:
+            po_line = receipt_line.move_id.purchase_line_id
+            sources_by_lot.setdefault(receipt_line.lot_id.id, []).append(po_line)
+            if po_line.id not in source_analytics:
+                source_analytics[po_line.id] = set(po_line._convert_analytics().ids)
+        move_line_po_map = {}
+        for line in outgoing_lines:
+            sources = sources_by_lot.get(line.lot_id.id, [])
+            if not sources:
+                continue
+            analytic_ids = set(line.move_id._convert_analytics().ids)
+            move_line_po_map[line.id] = next(
+                (
+                    source
+                    for source in sources
+                    if source_analytics[source.id] == analytic_ids
+                ),
+                sources[0],
+            )
+        return move_line_po_map
 
     @api.model
     def _batch_po_uncommit(self, pairs):
@@ -64,8 +83,10 @@ class StockPicking(models.Model):
                 raise UserError(self.env._("Please fill analytic account."))
         po_lines.prepare_commit_batch()
         to_commit = po_lines.filtered(
-            lambda line: line.can_commit
-            and (self.env.context.get("force_commit") or line._valid_commit_state())
+            lambda line: (
+                line.can_commit
+                and (self.env.context.get("force_commit") or line._valid_commit_state())
+            )
         )
         budget_vals = []
         move_period_dates = []
@@ -99,15 +120,16 @@ class StockPicking(models.Model):
         Only creates entries when positive commitment remains on the PO line.
         """
         self.ensure_one()
-        lot_po_map = self._get_lot_source_purchase_lines()
-        if not lot_po_map:
+        move_line_po_map = self._get_move_line_source_purchase_lines()
+        if not move_line_po_map:
             return self.env["purchase.budget.move"]
         po_line_qty = {}
         for ml in self.move_line_ids.filtered(
-            lambda line: line.lot_id
-            and line.move_id.budget_actual_source == "stock_issue"
+            lambda line: (
+                line.lot_id and line.move_id.budget_actual_source == "stock_issue"
+            )
         ):
-            po_line = lot_po_map.get(ml.lot_id.id)
+            po_line = move_line_po_map.get(ml.id)
             if po_line:
                 po_line_qty[po_line] = (
                     po_line_qty.get(po_line, 0.0) + ml.quantity_product_uom
@@ -128,15 +150,16 @@ class StockPicking(models.Model):
     def _uncommit_source_po_by_lots_sequential(self):
         """Former per-record lot uncommit, kept for parity tests only."""
         self.ensure_one()
-        lot_po_map = self._get_lot_source_purchase_lines()
-        if not lot_po_map:
+        move_line_po_map = self._get_move_line_source_purchase_lines()
+        if not move_line_po_map:
             return
         po_line_qty = {}
         for ml in self.move_line_ids.filtered(
-            lambda line: line.lot_id
-            and line.move_id.budget_actual_source == "stock_issue"
+            lambda line: (
+                line.lot_id and line.move_id.budget_actual_source == "stock_issue"
+            )
         ):
-            po_line = lot_po_map.get(ml.lot_id.id)
+            po_line = move_line_po_map.get(ml.id)
             if po_line:
                 po_line_qty[po_line] = (
                     po_line_qty.get(po_line, 0.0) + ml.quantity_product_uom
@@ -173,9 +196,11 @@ class StockPicking(models.Model):
         """
         self.ensure_one()
         non_lot_moves = self.move_ids.filtered(
-            lambda m: m.analytic_distribution
-            and m.product_id.tracking == "none"
-            and m.budget_actual_source == "stock_issue"
+            lambda m: (
+                m.analytic_distribution
+                and m.product_id.tracking == "none"
+                and m.budget_actual_source == "stock_issue"
+            )
         )
         if not non_lot_moves:
             return self.env["purchase.budget.move"]
@@ -238,9 +263,11 @@ class StockPicking(models.Model):
         """Former per-record non-lot uncommit, kept for parity tests only."""
         self.ensure_one()
         non_lot_moves = self.move_ids.filtered(
-            lambda m: m.analytic_distribution
-            and m.product_id.tracking == "none"
-            and m.budget_actual_source == "stock_issue"
+            lambda m: (
+                m.analytic_distribution
+                and m.product_id.tracking == "none"
+                and m.budget_actual_source == "stock_issue"
+            )
         )
         if not non_lot_moves:
             return
@@ -356,14 +383,16 @@ class StockPicking(models.Model):
             return self.env["purchase.budget.move"]
         pairs = []
         for picking in self:
-            lot_po_map = picking._get_lot_source_purchase_lines()
+            move_line_po_map = picking._get_move_line_source_purchase_lines()
             qty = sum(
                 ml.quantity_product_uom
                 for ml in picking.move_line_ids.filtered(
-                    lambda line: line.lot_id
-                    and line.move_id.budget_actual_source == "stock_issue"
+                    lambda line: (
+                        line.lot_id
+                        and line.move_id.budget_actual_source == "stock_issue"
+                    )
                 )
-                if lot_po_map.get(ml.lot_id.id) == purchase_line
+                if move_line_po_map.get(ml.id) == purchase_line
             )
             if not qty:
                 continue
@@ -382,14 +411,16 @@ class StockPicking(models.Model):
         if purchase_line.budget_actual_source != "stock_issue":
             return
         for picking in self:
-            lot_po_map = picking._get_lot_source_purchase_lines()
+            move_line_po_map = picking._get_move_line_source_purchase_lines()
             qty = sum(
                 ml.quantity_product_uom
                 for ml in picking.move_line_ids.filtered(
-                    lambda line: line.lot_id
-                    and line.move_id.budget_actual_source == "stock_issue"
+                    lambda line: (
+                        line.lot_id
+                        and line.move_id.budget_actual_source == "stock_issue"
+                    )
                 )
-                if lot_po_map.get(ml.lot_id.id) == purchase_line
+                if move_line_po_map.get(ml.id) == purchase_line
             )
             if not qty:
                 continue
@@ -425,10 +456,12 @@ class StockPicking(models.Model):
             if remaining_qty <= 0:
                 break
             matching_moves = picking.move_ids.filtered(
-                lambda m: m.product_id == purchase_line.product_id
-                and m.analytic_distribution
-                and m.product_id.tracking == "none"
-                and m.budget_actual_source == "stock_issue"
+                lambda m: (
+                    m.product_id == purchase_line.product_id
+                    and m.analytic_distribution
+                    and m.product_id.tracking == "none"
+                    and m.budget_actual_source == "stock_issue"
+                )
             )
             if not matching_moves:
                 continue
@@ -457,10 +490,12 @@ class StockPicking(models.Model):
             return
         for picking in self:
             matching_moves = picking.move_ids.filtered(
-                lambda m: m.product_id == purchase_line.product_id
-                and m.analytic_distribution
-                and m.product_id.tracking == "none"
-                and m.budget_actual_source == "stock_issue"
+                lambda m: (
+                    m.product_id == purchase_line.product_id
+                    and m.analytic_distribution
+                    and m.product_id.tracking == "none"
+                    and m.budget_actual_source == "stock_issue"
+                )
             )
             if not matching_moves:
                 continue
