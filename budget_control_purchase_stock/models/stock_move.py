@@ -118,4 +118,43 @@ class StockMove(models.Model):
         )
         for picking in outgoing:
             picking._sync_lot_traced_po_uncommit()
+        return_moves = self._get_budget_return_moves() | self.filtered(
+            lambda m: m.origin_returned_move_id and m.state == "done"
+        )
+        returns = return_moves.picking_id.filtered(lambda p: p._is_budget_po_return())
+        for picking in returns.sorted(
+            lambda p: (p.date_done or p.scheduled_date, p.id)
+        ):
+            picking._sync_return_po_recommit()
         return res
+
+    def _get_budget_return_moves(self):
+        """Return done returns, and returns of returns, of these issue moves.
+
+        A customer return targets the last move of the delivery chain (e.g.
+        OUT in pick-ship), not the move that committed the budget (PICK).
+        """
+        chain = self
+        todo = self.move_dest_ids.filtered(lambda m: not m.origin_returned_move_id)
+        while todo:
+            chain |= todo
+            todo = (
+                todo.move_dest_ids.filtered(lambda m: not m.origin_returned_move_id)
+                - chain
+            )
+        returns = self.browse()
+        todo = chain.returned_move_ids
+        while todo:
+            returns |= todo
+            todo = todo.returned_move_ids - returns
+        return returns.filtered(lambda m: m.state == "done")
+
+    def _get_budget_return_sign(self):
+        """Return 1 if this return brings issued stock back, -1 if it re-issues."""
+        self.ensure_one()
+        sign = 1
+        move = self.origin_returned_move_id
+        while move.origin_returned_move_id:
+            sign = -sign
+            move = move.origin_returned_move_id
+        return sign

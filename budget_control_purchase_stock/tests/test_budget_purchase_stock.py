@@ -133,6 +133,10 @@ class TestBudgetControlPurchaseStock(get_budget_common_class()):
         # Pin the price source so tests don't depend on ambient DB config.
         # These tests assert stock commit from move price_unit (50), not lots.
         cls.picking_type_out.budget_price_source = "standard_price"
+        # Customer returns use the receipt type, which never commits budget.
+        cls.picking_type_in = cls.warehouse.in_type_id
+        cls.picking_type_in.budget_commit = False
+        cls.picking_type_out.return_picking_type_id = cls.picking_type_in
         cls.location_src = cls.picking_type_out.default_location_src_id
         cls.location_dest = cls.env.ref("stock.stock_location_customers")
 
@@ -250,6 +254,42 @@ class TestBudgetControlPurchaseStock(get_budget_common_class()):
                     "location_dest_id": do.location_dest_id.id,
                 }
             )
+
+    def _return_picking(self, picking, lots, quantity=1.0):
+        """Return ``quantity`` of ``lots`` (1 unit each) from ``picking``."""
+        wizard = (
+            self.env["stock.return.picking"]
+            .with_context(active_id=picking.id, active_model="stock.picking")
+            .create({"picking_id": picking.id})
+        )
+        for return_line in wizard.product_return_moves:
+            return_line.quantity = quantity
+        action = wizard.action_create_returns()
+        return_picking = self.env["stock.picking"].browse(action["res_id"])
+        self._assign_lots_to_delivery(return_picking, lots)
+        return_picking.with_context(skip_backorder=True).button_validate()
+        return return_picking
+
+    def _issue_lots(self, lots, analytic_distribution):
+        """Create, confirm and validate a delivery of ``lots`` (1 unit each)."""
+        delivery = self._create_delivery(
+            [
+                {
+                    "product_id": self.product_lot,
+                    "product_qty": len(lots),
+                    "price_unit": 50,
+                    "analytic_distribution": analytic_distribution,
+                }
+            ]
+        )
+        delivery.action_confirm()
+        self._assign_lots_to_delivery(delivery, lots)
+        delivery.with_context(skip_backorder=True).button_validate()
+        return delivery
+
+    def _po_commit(self, purchase):
+        purchase.order_line.invalidate_recordset()
+        return sum(purchase.order_line.amount_commit.values())
 
     @freeze_time("2001-02-01")
     def test_01_control_stock_from_po(self):
@@ -944,7 +984,11 @@ class TestBudgetControlPurchaseStock(get_budget_common_class()):
 
     @freeze_time("2001-02-01")
     def test_09_stock_return_reverses_actual(self):
-        """Returning an issued lot reverses Stock Issue actual, not the PO."""
+        """Returning an issued lot reverses actual and restores the PO.
+
+        The returned lot is unissued stock again, so its source PO commitment
+        comes back on a new entry dated on the return, not on the issue.
+        """
         self.env.company.budget_inventory_actual_source = "stock_issue"
         self.budget_control.action_submit()
         self.budget_control.action_done()
@@ -972,40 +1016,42 @@ class TestBudgetControlPurchaseStock(get_budget_common_class()):
         purchase.button_confirm()
         self._validate_receipt_with_lots(purchase, [lot])
 
-        delivery = self._create_delivery(
-            [
-                {
-                    "product_id": self.product_lot,
-                    "product_qty": 1,
-                    "price_unit": 50,
-                    "analytic_distribution": analytic_distribution,
-                }
-            ]
-        )
-        delivery.action_confirm()
-        self._assign_lots_to_delivery(delivery, [lot])
-        delivery.with_context(skip_backorder=True).button_validate()
+        delivery = self._issue_lots([lot], analytic_distribution)
         self.budget_control.invalidate_recordset()
         self.assertAlmostEqual(self.budget_control.amount_purchase, 0.0)
         self.assertAlmostEqual(self.budget_control.amount_actual, 50.0)
 
-        return_wiz = (
-            self.env["stock.return.picking"]
-            .with_context(active_id=delivery.id, active_model="stock.picking")
-            .create({"picking_id": delivery.id})
-        )
-        for return_line in return_wiz.product_return_moves:
-            return_line.quantity = return_line.move_id.product_uom_qty
-        action = return_wiz.action_create_returns()
-        return_picking = self.env["stock.picking"].browse(action["res_id"])
-        return_picking.with_context(skip_backorder=True).button_validate()
+        with freeze_time("2001-03-15"):
+            return_picking = self._return_picking(delivery, [lot])
+        self.assertFalse(return_picking.picking_type_id.budget_commit)
 
         return_jes = return_picking.move_ids.stock_valuation_layer_ids.account_move_id
         self.assertTrue(return_jes)
         self.assertFalse(any(return_jes.mapped("not_affect_budget")))
         self.budget_control.invalidate_recordset()
-        self.assertAlmostEqual(self.budget_control.amount_purchase, 0.0)
+        self.assertAlmostEqual(self.budget_control.amount_purchase, 50.0)
         self.assertAlmostEqual(self.budget_control.amount_actual, 0.0)
+
+        po_moves = purchase.order_line.budget_move_ids
+        issue_release = po_moves.filtered(lambda m: m.stock_picking_id == delivery)
+        restore = po_moves.filtered(lambda m: m.stock_picking_id == return_picking)
+        self.assertAlmostEqual(sum(issue_release.mapped("credit")), 50.0)
+        self.assertAlmostEqual(sum(restore.mapped("debit")), 50.0)
+        self.assertEqual(issue_release.date, fields.Date.to_date("2001-02-01"))
+        self.assertEqual(restore.date, fields.Date.to_date("2001-03-15"))
+
+        # Recompute from either side is idempotent.
+        purchase.order_line.recompute_budget_move()
+        delivery.recompute_budget_move()
+        self.assertAlmostEqual(self._po_commit(purchase), 50.0)
+        self.assertEqual(
+            len(
+                purchase.order_line.budget_move_ids.filtered(
+                    lambda m: m.stock_picking_id == return_picking
+                )
+            ),
+            1,
+        )
 
     @freeze_time("2001-02-01")
     def test_10_stock_issue_requires_automated_valuation(self):
@@ -1780,3 +1826,176 @@ class TestBudgetControlPurchaseStock(get_budget_common_class()):
         self.assertEqual(releases.analytic_account_id, self.costcenter1)
         self.assertAlmostEqual(sum(releases.mapped("credit")), 100)
         self.assertAlmostEqual(sum(purchase.order_line.amount_commit.values()), 100)
+
+    @freeze_time("2001-02-01")
+    def test_21_partial_return_then_reissue(self):
+        """Only returned lots are restored; reissuing them releases them again."""
+        analytic_distribution = {str(self.costcenter1.id): 100}
+        purchase = self._create_purchase(
+            [
+                {
+                    "product_id": self.product_lot,
+                    "product_qty": 4,
+                    "price_unit": 50,
+                    "analytic_distribution": analytic_distribution,
+                }
+            ]
+        ).with_context(force_date_commit=fields.Date.today())
+        purchase.button_confirm()
+        self._validate_receipt_with_lots(
+            purchase, [self.lot1, self.lot2, self.lot3, self.lot4]
+        )
+        delivery = self._issue_lots([self.lot1, self.lot2], analytic_distribution)
+        self.assertAlmostEqual(self._po_commit(purchase), 100.0)
+
+        self._return_picking(delivery, [self.lot1])
+        self.assertAlmostEqual(self._po_commit(purchase), 150.0)
+        purchase.order_line.recompute_budget_move()
+        self.assertAlmostEqual(self._po_commit(purchase), 150.0)
+
+        reissue = self._issue_lots([self.lot1], analytic_distribution)
+        self.assertAlmostEqual(self._po_commit(purchase), 100.0)
+        self.assertAlmostEqual(
+            sum(
+                purchase.order_line.budget_move_ids.filtered(
+                    lambda m: m.stock_picking_id == reissue
+                ).mapped("credit")
+            ),
+            50.0,
+        )
+        # Replaying issues and returns in date order keeps the same result.
+        purchase.order_line.recompute_budget_move()
+        self.assertAlmostEqual(self._po_commit(purchase), 100.0)
+        delivery.recompute_budget_move()
+        self.assertAlmostEqual(self._po_commit(purchase), 100.0)
+
+    @freeze_time("2001-02-01")
+    def test_22_return_of_return_releases_again(self):
+        """Delivering a returned lot back to the customer releases the PO again."""
+        analytic_distribution = {str(self.costcenter1.id): 100}
+        redelivery_type = self.picking_type_out.copy(
+            {"name": "Re-delivery", "sequence_code": "RDL", "budget_commit": False}
+        )
+        self.picking_type_in.return_picking_type_id = redelivery_type
+        purchase = self._create_purchase(
+            [
+                {
+                    "product_id": self.product_lot,
+                    "product_qty": 1,
+                    "price_unit": 50,
+                    "analytic_distribution": analytic_distribution,
+                }
+            ]
+        ).with_context(force_date_commit=fields.Date.today())
+        purchase.button_confirm()
+        self._validate_receipt_with_lots(purchase, [self.lot1])
+        delivery = self._issue_lots([self.lot1], analytic_distribution)
+        return_picking = self._return_picking(delivery, [self.lot1])
+        self.assertAlmostEqual(self._po_commit(purchase), 50.0)
+
+        redelivery = self._return_picking(return_picking, [self.lot1])
+        self.assertEqual(redelivery.picking_type_id, redelivery_type)
+        self.assertAlmostEqual(self._po_commit(purchase), 0.0)
+        self.assertAlmostEqual(
+            sum(
+                purchase.order_line.budget_move_ids.filtered(
+                    lambda m: m.stock_picking_id == redelivery
+                ).mapped("credit")
+            ),
+            50.0,
+        )
+        purchase.order_line.recompute_budget_move()
+        self.assertAlmostEqual(self._po_commit(purchase), 0.0)
+
+    @freeze_time("2001-02-01")
+    def test_23_pick_ship_return_restores_po(self):
+        """A customer return of OUT restores the PO released by PICK."""
+        analytic_distribution = {str(self.costcenter1.id): 100}
+        self.warehouse.delivery_steps = "pick_ship"
+        pick_type = self.warehouse.pick_type_id
+        pick_type.write(
+            {"budget_commit": True, "budget_price_source": "standard_price"}
+        )
+        self.picking_type_out.budget_commit = False
+        output = self.warehouse.wh_output_stock_loc_id
+        purchase = self._create_purchase(
+            [
+                {
+                    "product_id": self.product_lot,
+                    "product_qty": 1,
+                    "price_unit": 50,
+                    "analytic_distribution": analytic_distribution,
+                }
+            ]
+        ).with_context(force_date_commit=fields.Date.today())
+        purchase.button_confirm()
+        self._validate_receipt_with_lots(purchase, [self.lot1])
+
+        move_vals = {
+            "name": self.product_lot.name,
+            "product_id": self.product_lot.id,
+            "product_uom_qty": 1,
+            "product_uom": self.product_lot.uom_id.id,
+            "analytic_distribution": analytic_distribution,
+        }
+        out = self.env["stock.picking"].create(
+            {
+                "picking_type_id": self.picking_type_out.id,
+                "location_id": output.id,
+                "location_dest_id": self.location_dest.id,
+                "move_ids_without_package": [
+                    Command.create(
+                        dict(
+                            move_vals,
+                            location_id=output.id,
+                            location_dest_id=self.location_dest.id,
+                            procure_method="make_to_order",
+                        )
+                    )
+                ],
+            }
+        )
+        pick = self.env["stock.picking"].create(
+            {
+                "picking_type_id": pick_type.id,
+                "location_id": self.location_src.id,
+                "location_dest_id": output.id,
+                "move_ids_without_package": [
+                    Command.create(
+                        dict(
+                            move_vals,
+                            location_id=self.location_src.id,
+                            location_dest_id=output.id,
+                            move_dest_ids=[Command.link(out.move_ids.id)],
+                        )
+                    )
+                ],
+            }
+        )
+        pick.action_confirm()
+        out.action_confirm()
+        self._assign_lots_to_delivery(pick, [self.lot1])
+        pick.with_context(skip_backorder=True).button_validate()
+        self.assertAlmostEqual(self._po_commit(purchase), 0.0)
+        out.action_assign()
+        self.assertEqual(out.move_line_ids.lot_id, self.lot1)
+        out.with_context(skip_backorder=True).button_validate()
+        self.budget_control.invalidate_recordset()
+        self.assertAlmostEqual(self.budget_control.amount_actual, 50.0)
+        self.assertAlmostEqual(self._po_commit(purchase), 0.0)
+
+        return_picking = self._return_picking(out, [self.lot1])
+        self.budget_control.invalidate_recordset()
+        self.assertAlmostEqual(self.budget_control.amount_actual, 0.0)
+        self.assertAlmostEqual(self._po_commit(purchase), 50.0)
+        self.assertAlmostEqual(
+            sum(
+                purchase.order_line.budget_move_ids.filtered(
+                    lambda m: m.stock_picking_id == return_picking
+                ).mapped("debit")
+            ),
+            50.0,
+        )
+        # Recomputing the PICK (as a later JE change would) keeps the restore.
+        pick.recompute_budget_move()
+        self.assertAlmostEqual(self._po_commit(purchase), 50.0)

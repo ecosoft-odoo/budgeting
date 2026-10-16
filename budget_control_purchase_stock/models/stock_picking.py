@@ -3,6 +3,7 @@
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 _STOCK_COMMIT_STATES = frozenset(
     {"waiting", "confirmed", "assigned", "partially_available", "done"}
@@ -31,9 +32,26 @@ class StockPicking(models.Model):
         )
         if not outgoing_lines:
             return {}
+        sources_by_lot, source_analytics = self._get_lot_purchase_sources(
+            outgoing_lines.lot_id
+        )
+        move_line_po_map = {}
+        for line in outgoing_lines:
+            source = self._select_lot_purchase_source(
+                sources_by_lot.get(line.lot_id.id, []),
+                source_analytics,
+                line.move_id._convert_analytics(),
+            )
+            if source:
+                move_line_po_map[line.id] = source
+        return move_line_po_map
+
+    def _get_lot_purchase_sources(self, lots):
+        """Return receipt-FIFO PO sources per lot and their analytic accounts."""
+        self.ensure_one()
         incoming_mls = self.env["stock.move.line"].search(
             [
-                ("lot_id", "in", outgoing_lines.lot_id.ids),
+                ("lot_id", "in", lots.ids),
                 ("state", "=", "done"),
                 ("move_id.purchase_line_id", "!=", False),
                 (
@@ -53,25 +71,35 @@ class StockPicking(models.Model):
             sources_by_lot.setdefault(receipt_line.lot_id.id, []).append(po_line)
             if po_line.id not in source_analytics:
                 source_analytics[po_line.id] = set(po_line._convert_analytics().ids)
-        move_line_po_map = {}
-        for line in outgoing_lines:
-            sources = sources_by_lot.get(line.lot_id.id, [])
-            if not sources:
-                continue
-            analytic_ids = set(line.move_id._convert_analytics().ids)
-            move_line_po_map[line.id] = next(
-                (
-                    source
-                    for source in sources
-                    if source_analytics[source.id] == analytic_ids
-                ),
-                sources[0],
-            )
-        return move_line_po_map
+        return sources_by_lot, source_analytics
+
+    @api.model
+    def _select_lot_purchase_source(self, sources, source_analytics, analytics):
+        """Prefer the source with the same analytics, else the oldest receipt."""
+        if not sources:
+            return False
+        analytic_ids = set(analytics.ids)
+        return next(
+            (
+                source
+                for source in sources
+                if source_analytics[source.id] == analytic_ids
+            ),
+            sources[0],
+        )
 
     @api.model
     def _batch_po_uncommit(self, pairs):
         """Create reverse purchase budget moves for all pairs in one batch."""
+        return self._batch_po_budget_move(pairs, reverse=True)
+
+    @api.model
+    def _batch_po_budget_move(self, pairs, reverse):
+        """Create purchase budget moves for all pairs in one batch.
+
+        ``reverse=True`` releases PO commitment (stock issued);
+        ``reverse=False`` restores it (issued stock returned).
+        """
         PurchaseLine = self.env["purchase.order.line"]
         BudgetMove = self.env["purchase.budget.move"]
         if not pairs:
@@ -96,12 +124,19 @@ class StockPicking(models.Model):
             ctx = {"product_qty": po_qty}
             if extra_ctx:
                 ctx.update(extra_ctx)
+            move_date = picking.date_done or fields.Date.today()
             line_vals = po_line.with_context(**ctx)._prepare_commit_vals(
-                reverse=True,
+                reverse=reverse,
                 stock_picking_id=picking.id,
-                date=picking.date_done or fields.Date.today(),
+                date=move_date,
             )
-            period_date = preserved_dates.get(po_line.id) or po_line.date_commit
+            # A release nets against the PO period; a restore belongs to the
+            # period of the return.
+            period_date = (
+                preserved_dates.get(po_line.id) or po_line.date_commit
+                if reverse
+                else fields.Date.to_date(move_date)
+            )
             budget_vals.extend(line_vals)
             move_period_dates.extend([period_date] * len(line_vals))
         if not budget_vals:
@@ -109,8 +144,9 @@ class StockPicking(models.Model):
         budget_moves = BudgetMove.create(budget_vals)
         period_dates = dict(zip(budget_moves.ids, move_period_dates, strict=False))
         po_lines._update_template_line_batch(budget_moves, period_dates=period_dates)
-        for po_line in to_commit:
-            self.env["budget.period"].check_over_returned_budget(po_line)
+        if reverse:
+            for po_line in to_commit:
+                self.env["budget.period"].check_over_returned_budget(po_line)
         return budget_moves
 
     def _uncommit_source_po_by_lots(self):
@@ -439,9 +475,130 @@ class StockPicking(models.Model):
             )
 
     def _apply_po_uncommit_for_line(self, purchase_line):
-        """Re-apply lot and non-lot uncommit for one PO line."""
-        self._apply_lot_traced_po_uncommit_for_line(purchase_line)
-        self._apply_non_lot_po_uncommit_for_line(purchase_line)
+        """Re-apply lot and non-lot uncommit for one PO line.
+
+        When returns are involved, replay issues and returns in date order so
+        a re-issue after a return releases the restored commitment again.
+        """
+        returns = self.filtered(lambda p: p._is_budget_po_return())
+        if not returns:
+            self._apply_lot_traced_po_uncommit_for_line(purchase_line)
+            self._apply_non_lot_po_uncommit_for_line(purchase_line)
+            return
+        for picking in self.sorted(lambda p: (p.date_done or p.scheduled_date, p.id)):
+            if picking in returns:
+                picking._apply_return_po_budget_for_line(purchase_line)
+            else:
+                picking._apply_lot_traced_po_uncommit_for_line(purchase_line)
+                picking._apply_non_lot_po_uncommit_for_line(purchase_line)
+
+    def _is_budget_po_return(self):
+        """Whether this picking returns stock issued by a budget operation.
+
+        Returns on an operation type with budget commit are handled as a new
+        stock issue instead.
+        """
+        self.ensure_one()
+        return not self.picking_type_id.budget_commit and any(
+            self.move_ids.mapped("origin_returned_move_id")
+        )
+
+    def _get_return_lot_po_qty(self):
+        """Return {purchase.order.line: signed qty in product UoM}.
+
+        Positive quantity brings issued lots back to stock (restore PO
+        commitment); negative quantity is a return of a return that issues
+        them again (release PO commitment). The source PO line is resolved
+        with the analytics of the move that committed the issue, so it
+        matches the line released by the original stock issue.
+        """
+        self.ensure_one()
+        lines = self.move_line_ids.filtered(
+            lambda line: (
+                line.lot_id
+                and line.move_id.state == "done"
+                and line.move_id.origin_returned_move_id
+            )
+        )
+        if not lines:
+            return {}
+        sources_by_lot, source_analytics = self._get_lot_purchase_sources(lines.lot_id)
+        qty_by_po_line = {}
+        for line in lines:
+            move = line.move_id
+            if not move._should_valuation_affect_budget():
+                continue
+            issue_moves = move._get_budget_commit_source_moves()
+            issue_move = (
+                issue_moves.filtered(
+                    lambda m, lot=line.lot_id: lot in m.move_line_ids.lot_id
+                )[:1]
+                or issue_moves[:1]
+            )
+            source = self._select_lot_purchase_source(
+                sources_by_lot.get(line.lot_id.id, []),
+                source_analytics,
+                issue_move._convert_analytics(),
+            )
+            if not source:
+                continue
+            qty_by_po_line[source] = (
+                qty_by_po_line.get(source, 0.0)
+                + move._get_budget_return_sign() * line.quantity_product_uom
+            )
+        return qty_by_po_line
+
+    def _get_return_po_pairs(self, purchase_line=None):
+        """Return (restore_pairs, release_pairs) capped by the PO line state.
+
+        Restore never exceeds what stock operations have released, and a
+        re-issue never releases more than the remaining commitment.
+        """
+        self.ensure_one()
+        restore_pairs = []
+        release_pairs = []
+        for po_line, qty in self._get_return_lot_po_qty().items():
+            if purchase_line and po_line != purchase_line:
+                continue
+            po_qty = po_line.product_id.uom_id._compute_quantity(
+                abs(qty), po_line.product_uom, round=False
+            )
+            if qty > 0:
+                po_qty = min(po_qty, po_line._get_stock_released_budget_qty())
+                pairs = restore_pairs
+            else:
+                po_qty = min(po_qty, po_line._get_remaining_budget_commit_qty())
+                pairs = release_pairs
+            if (
+                float_compare(
+                    po_qty, 0.0, precision_rounding=po_line.product_uom.rounding
+                )
+                > 0
+            ):
+                pairs.append((po_line, self, po_qty, {}))
+        return restore_pairs, release_pairs
+
+    def _sync_return_po_recommit(self):
+        """Full sync of PO commitment restored by this return picking.
+
+        Restored commitment is a new entry dated on the return, so a return
+        in a later period does not reopen the period of the original issue.
+        """
+        self.ensure_one()
+        PBM = self.env["purchase.budget.move"]
+        PBM.search([("stock_picking_id", "=", self.id)]).unlink()
+        if self.state != "done" or not self._is_budget_po_return():
+            return PBM
+        restore_pairs, release_pairs = self._get_return_po_pairs()
+        budget_moves = self._batch_po_budget_move(restore_pairs, reverse=False)
+        return budget_moves | self._batch_po_uncommit(release_pairs)
+
+    def _apply_return_po_budget_for_line(self, purchase_line):
+        """Re-apply this return's PO budget entries for one PO line."""
+        self.ensure_one()
+        restore_pairs, release_pairs = self._get_return_po_pairs(purchase_line)
+        budget_moves = self._batch_po_budget_move(restore_pairs, reverse=False)
+        return budget_moves | self._batch_po_uncommit(release_pairs)
 
     def _apply_non_lot_po_uncommit_for_line(self, purchase_line):
         """Re-apply non-lot uncommit using a shared remaining PO quantity."""

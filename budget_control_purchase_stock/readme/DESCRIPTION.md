@@ -30,5 +30,13 @@ can therefore release different PO lines even when they share one lot.
 Non-lot products use company- and budget-period-scoped product FIFO across
 received PO lines, ordered by PO date. Quantity is converted between stock
 and purchase UoMs, and remaining commitment caps use company-currency values.
-Cancelling an outgoing operation restores its PO commitment, while a stock
-return reverses the issue actual without recreating the fulfilled PO commitment.
+Cancelling an outgoing operation restores its PO commitment. A stock return
+reverses the issue actual and, for lot-tracked products, restores the source PO
+commitment for the returned lots: they are unissued stock again. The restore is
+a new entry dated on the return, so a return in a later period does not reopen
+the period of the original issue. Returns of multi-step deliveries (e.g. OUT
+after PICK) follow the delivery chain to the operation that committed budget.
+Returning a return issues the lots again and releases the commitment again.
+Non-lot product returns do not restore PO commitment yet. Returned stock that
+is later scrapped or sent back to the vendor keeps its PO commitment until it
+is closed manually.
