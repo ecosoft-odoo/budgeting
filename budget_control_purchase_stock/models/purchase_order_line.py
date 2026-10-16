@@ -150,6 +150,16 @@ class PurchaseOrderLine(models.Model):
         unit_amount = self._get_budget_unit_amount_company_currency()
         return total_committed / unit_amount if unit_amount else 0.0
 
+    def _get_stock_released_budget_qty(self):
+        """Return commitment currently released by stock operations, in PO UoM."""
+        self.ensure_one()
+        stock_moves = self.budget_move_ids.filtered("stock_picking_id")
+        released = sum(stock_moves.mapped("credit")) - sum(stock_moves.mapped("debit"))
+        unit_amount = self._get_budget_unit_amount_company_currency()
+        if released <= 0 or not unit_amount:
+            return 0.0
+        return released / unit_amount
+
     def recompute_budget_move(self):
         """Remember stock handoffs, then retain the base batched recompute."""
         pickings_by_line = dict(self.env.context.get(_STOCK_PICKINGS_CONTEXT_KEY, {}))
