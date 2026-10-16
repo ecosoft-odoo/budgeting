@@ -17,7 +17,15 @@ class BudgetMonitorReport(models.Model):
         ]
 
     def _where_expense(self):
-        return ""
+        visible_company = self.env.context.get("allowed_company_ids")
+        if not visible_company:
+            return ""
+
+        if len(visible_company) > 1:
+            companies = tuple(visible_company)
+        else:
+            companies = "({})".format(tuple(visible_company)[0])
+        return "where a.company_id in {}".format(companies)
 
     def _get_sql(self):
         select_ex_query = self._select_statement("50_ex_commit")

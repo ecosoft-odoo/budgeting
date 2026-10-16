@@ -22,6 +22,17 @@ class BudgetMonitorReport(models.Model):
         where_purchase = "where a.is_agreement is not true"
         if self._context.get("is_agreement", False):
             where_purchase = "where a.is_agreement"
+
+        visible_company = self.env.context.get("allowed_company_ids")
+        if not visible_company:
+            return where_purchase
+
+        if len(visible_company) > 1:
+            companies = tuple(visible_company)
+        else:
+            companies = "({})".format(tuple(visible_company)[0])
+
+        where_purchase += " AND a.company_id in {}".format(companies)
         return where_purchase
 
     def _get_sql(self):

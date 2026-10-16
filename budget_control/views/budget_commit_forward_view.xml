@@ -7,6 +7,7 @@
             <tree>
                 <field name="name" />
                 <field name="to_budget_period_id" />
+                <field name="company_id" groups="base.group_multi_company" />
                 <field
                     name="state"
                     widget="badge"
@@ -129,6 +130,10 @@
                             </div>
                         </group>
                         <group>
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
                             <field name="to_date_commit" />
                             <field name="total_commitment" />
                         </group>

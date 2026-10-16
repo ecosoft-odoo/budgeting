@@ -103,9 +103,12 @@ class BudgetBalanceForward(models.Model):
         """Retrieve Analytic Account relevant to from_budget_period"""
         self.ensure_one()
         # Ensure that budget info will be based on this period, and no_fwd_commit
+        # allowed_company_ids is what budget.monitor.report filters on, and the
+        # forward covers every company, so it must not follow the current user
         self = self.with_context(
             budget_period_ids=self.from_budget_period_id.ids,
             no_fwd_commit=True,
+            allowed_company_ids=self.env["res.company"].sudo().search([]).ids,
         )
         # Analyic Account from budget control sheet of the previous year
         BudgetControl = self.env["budget.control"]

@@ -15,6 +15,11 @@ class BudgetMonitorReport(models.Model):
         select_budget_query[70] = "b.revision_number::text as revision_number"
         return select_budget_query
 
+    def _groupby_budget(self):
+        groupby_budget = super()._groupby_budget()
+        groupby_budget += ", b.revision_number"
+        return groupby_budget
+
     # All consumed
     def _select_statement(self, amount_type):
         select_statement = super()._select_statement(amount_type)

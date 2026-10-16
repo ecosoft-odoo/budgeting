@@ -24,7 +24,9 @@ class BudgetMonitorRevisionReport(models.Model):
         select_budget = ", ".join(
             select_budget_query[x] for x in key_select_budget_list
         )
-        return "(select {} {})".format(
+        return "(select {} {} {} {})".format(
             select_budget,
             self._from_budget(),
+            self._where_budget(),
+            self._groupby_budget(),
         )
