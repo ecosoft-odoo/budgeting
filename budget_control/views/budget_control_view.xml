@@ -125,17 +125,17 @@
                 <header>
                     <button
                         id="action_submit"
+                        class="btn-primary"
                         name="action_submit"
                         string="Submit"
-                        class="btn-primary"
                         type="object"
                         invisible="state != 'draft'"
                     />
                     <button
                         id="action_done"
+                        class="btn-primary"
                         name="action_done"
                         string="Control"
-                        class="btn-primary"
                         type="object"
                         invisible="state != 'submit'"
                     />
@@ -259,8 +259,8 @@
                             <div class="d-flex justify-content-end" name="buttons">
                                 <button
                                     id="reset_plan"
-                                    name="prepare_budget_control_matrix"
                                     class="btn-danger"
+                                    name="prepare_budget_control_matrix"
                                     type="object"
                                     string="Hard Reset"
                                     icon="fa-refresh"

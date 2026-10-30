@@ -258,14 +258,16 @@ class BudgetDoclineMixin(models.AbstractModel):
                 for aa in analytic.split(",")
             }
             budget_moves = rec.budget_move_ids.filtered(
-                lambda move, analytic_ids=analytic_ids: move.analytic_account_id.id
-                in analytic_ids
+                lambda move, analytic_ids=analytic_ids: (
+                    move.analytic_account_id.id in analytic_ids
+                )
             )
 
             for analytic_id in analytic_ids:
                 filtered_moves = budget_moves.filtered(
-                    lambda move, analytic_id=analytic_id: move.analytic_account_id.id
-                    == analytic_id
+                    lambda move, analytic_id=analytic_id: (
+                        move.analytic_account_id.id == analytic_id
+                    )
                 )
                 amount_commit_json[str(analytic_id)] = sum(
                     filtered_moves.mapped("debit")
@@ -568,10 +570,12 @@ class BudgetDoclineMixin(models.AbstractModel):
                 active_id = self.env.context.get("active_id", False)
                 fwd_lines.filtered(
                     lambda line, active_id=active_id: (
-                        line.forward_id.state == "review"
-                        and line.forward_id.id == active_id
+                        (
+                            line.forward_id.state == "review"
+                            and line.forward_id.id == active_id
+                        )
+                        or line.forward_id.state == "done"
                     )
-                    or line.forward_id.state == "done"
                 )
             else:  # recompute budget
                 fwd_lines.filtered(lambda line: line.forward_id.state == "done")
@@ -610,9 +614,11 @@ class BudgetDoclineMixin(models.AbstractModel):
                 # this code removes the forward commitment,
                 # allowing the line to be forwarded again in the following year.
                 budget_move_previous_forward = self[self._budget_field()].filtered(
-                    lambda line, fwd_line=fwd_line: line.fwd_commit
-                    and line.date < fwd_line.forward_id.to_date_commit
-                    and line.debit > 0.0
+                    lambda line, fwd_line=fwd_line: (
+                        line.fwd_commit
+                        and line.date < fwd_line.forward_id.to_date_commit
+                        and line.debit > 0.0
+                    )
                 )
                 if budget_move_previous_forward:
                     budget_move_previous_forward.write({"fwd_commit": False})
@@ -725,8 +731,10 @@ class BudgetDoclineMixin(models.AbstractModel):
         if force_date:
             force_date = fields.Date.to_date(force_date)
         eligible = self.filtered(
-            lambda line: line[line._doc_rel].state not in line._no_date_commit_states
-            or self.env.context.get("force_commit")
+            lambda line: (
+                line[line._doc_rel].state not in line._no_date_commit_states
+                or self.env.context.get("force_commit")
+            )
         )
         groups = {}
         for docline in eligible:
@@ -783,8 +791,10 @@ class BudgetDoclineMixin(models.AbstractModel):
         doclines.prepare_commit_batch(preserved_dates=preserved_dates)
 
         to_commit = doclines.filtered(
-            lambda line: line.can_commit
-            and (self.env.context.get("force_commit") or line._valid_commit_state())
+            lambda line: (
+                line.can_commit
+                and (self.env.context.get("force_commit") or line._valid_commit_state())
+            )
         )
         budget_vals = []
         for docline in to_commit:

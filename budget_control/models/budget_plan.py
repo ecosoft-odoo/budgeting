@@ -153,13 +153,15 @@ class BudgetPlan(models.Model):
         dp = self.currency_id.decimal_places
         for line in plan_line:
             budget_control = line.budget_control_ids.filtered(
-                lambda control, line=line: control.active
-                and control.budget_period_id == line.budget_period_id
+                lambda control, line=line: (
+                    control.active and control.budget_period_id == line.budget_period_id
+                )
             )
             if not budget_control:
                 budget_control = line.budget_control_ids.filtered(
-                    lambda control, line=line: control.budget_period_id
-                    == line.budget_period_id
+                    lambda control, line=line: (
+                        control.budget_period_id == line.budget_period_id
+                    )
                 ).sorted("id")[-1:]
             if not budget_control:
                 continue
@@ -225,8 +227,9 @@ class BudgetPlan(models.Model):
                 target_controls |= active_control
                 continue
             reusable_control = candidates.filtered(
-                lambda control: not control.budget_plan_id
-                or control.budget_plan_id == self
+                lambda control: (
+                    not control.budget_plan_id or control.budget_plan_id == self
+                )
             )[-1:]
             target_controls |= reusable_control
 
@@ -279,8 +282,9 @@ class BudgetPlan(models.Model):
         for line in self.mapped("line_ids"):
             amount = line.allocated_amount
             active_controls = line.budget_control_ids.filtered(
-                lambda control, line=line: control.active
-                and control.budget_period_id == line.budget_period_id
+                lambda control, line=line: (
+                    control.active and control.budget_period_id == line.budget_period_id
+                )
             )
             transferred_amount = sum(active_controls.mapped("transferred_amount"))
             released_amount = amount + transferred_amount
@@ -310,8 +314,10 @@ class BudgetPlan(models.Model):
             for line in rec.line_ids:
                 # find consumed amount from budget control
                 active_control = line.budget_control_ids.filtered(
-                    lambda control, line=line: control.active
-                    and control.budget_period_id == line.budget_period_id
+                    lambda control, line=line: (
+                        control.active
+                        and control.budget_period_id == line.budget_period_id
+                    )
                 )
                 if not active_control:
                     continue

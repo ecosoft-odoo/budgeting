@@ -177,11 +177,12 @@ class AccountAnalyticAccount(models.Model):
                 lambda control: control.active and control.state != "cancel"
             )
             incompatible = active_controls.filtered(
-                lambda control, rec=rec: control.budget_scope
-                != rec.budget_control_scope
-                or (
-                    rec.budget_control_scope == "lifetime"
-                    and control.budget_period_id != rec.budget_period_id
+                lambda control, rec=rec: (
+                    control.budget_scope != rec.budget_control_scope
+                    or (
+                        rec.budget_control_scope == "lifetime"
+                        and control.budget_period_id != rec.budget_period_id
+                    )
                 )
             )
             if incompatible:

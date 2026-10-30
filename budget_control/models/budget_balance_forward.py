@@ -157,9 +157,7 @@ class BudgetBalanceForward(models.Model):
                     "analytic_account_id": analytic.id,
                     "method_type": method_type,
                     "amount_balance": analytic.amount_balance,
-                    "amount_balance_forward": 0
-                    if analytic.amount_balance < 0
-                    else analytic.amount_balance,
+                    "amount_balance_forward": max(analytic.amount_balance, 0),
                 }
             )
         return value_dict
@@ -353,23 +351,25 @@ class BudgetBalanceForward(models.Model):
             if not rec_target_analytics:
                 continue
             rec_plans = plans.filtered(
-                lambda plan,
-                period=rec.to_budget_period_id,
-                analytics=rec_target_analytics: plan.budget_period_id == period
-                and plan.line_ids.mapped("analytic_account_id") & analytics
+                lambda plan, period=rec.to_budget_period_id, analytics=rec_target_analytics: (
+                    plan.budget_period_id == period
+                    and plan.line_ids.mapped("analytic_account_id") & analytics
+                )
             )
             rec_controls = controls.filtered(
-                lambda control,
-                period=rec.to_budget_period_id,
-                analytics=rec_target_analytics: control.budget_period_id == period
-                and control.analytic_account_id in analytics
+                lambda control, period=rec.to_budget_period_id, analytics=rec_target_analytics: (
+                    control.budget_period_id == period
+                    and control.analytic_account_id in analytics
+                )
             )
             submitted_controls = rec_controls.filtered(
                 lambda control: control.state in ("submit", "done")
             )
             distributed_controls = rec_controls.filtered(
-                lambda control: control.line_ids
-                and not control.currency_id.is_zero(control.amount_budget)
+                lambda control: (
+                    control.line_ids
+                    and not control.currency_id.is_zero(control.amount_budget)
+                )
             )
             used_controls = rec_controls.filtered(
                 lambda control: not control.currency_id.is_zero(control.amount_consumed)

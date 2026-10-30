@@ -188,11 +188,10 @@ class BudgetPeriod(models.Model):
             )
             if msg_error:
                 error_messages.extend(msg_error)
-        else:
-            # If the loop completed without being interrupted, raise a UserError
-            # with the concatenated error messages.
-            if error_messages:
-                raise UserError("\n".join(error_messages))
+        # If the loop completed without being interrupted, raise a UserError
+        # with the concatenated error messages.
+        if error_messages:
+            raise UserError("\n".join(error_messages))
         return True
 
     def _get_budget_constraint(self):
@@ -407,9 +406,13 @@ class BudgetPeriod(models.Model):
 
         if analytic and analytic.budget_control_scope == "lifetime":
             budget_period = analytic.budget_period_id.filtered(
-                lambda period: period.budget_scope == "lifetime"
-                and period.bm_date_from <= date <= period.bm_date_to
-                and (not period.company_ids or self.env.company in period.company_ids)
+                lambda period: (
+                    period.budget_scope == "lifetime"
+                    and period.bm_date_from <= date <= period.bm_date_to
+                    and (
+                        not period.company_ids or self.env.company in period.company_ids
+                    )
+                )
             )
         else:
             budget_period = BudgetPeriod.search(
@@ -435,8 +438,10 @@ class BudgetPeriod(models.Model):
         # if doctype is account, check special control too.
         if doc_type == "account":
             return budget_period.filtered(
-                lambda bp: (bp.control_budget and bp.account)
-                or (not bp.control_budget and bp.account)
+                lambda bp: (
+                    (bp.control_budget and bp.account)
+                    or (not bp.control_budget and bp.account)
+                )
             )
         # Other module control budget must hook it for filter
         return budget_period
@@ -453,9 +458,10 @@ class BudgetPeriod(models.Model):
             )
         # Get budget moves from the period only
         budget_moves_period = budget_moves.filtered(
-            lambda move, budget_period=budget_period: move.date
-            >= budget_period.bm_date_from
-            and move.date <= budget_period.bm_date_to
+            lambda move, budget_period=budget_period: (
+                move.date >= budget_period.bm_date_from
+                and move.date <= budget_period.bm_date_to
+            )
         )
         budget_control_key = self.env.company.budget_control_key
         need_control = self.env.context.get("need_control")
@@ -721,8 +727,9 @@ class BudgetPeriod(models.Model):
         for col, (amount_type, is_commit) in query["info_cols"].items():
             info = list(
                 filter(
-                    lambda dataset, amount_type=amount_type: dataset["amount_type"]
-                    == amount_type,
+                    lambda dataset, amount_type=amount_type: (
+                        dataset["amount_type"] == amount_type
+                    ),
                     dataset,
                 )
             )

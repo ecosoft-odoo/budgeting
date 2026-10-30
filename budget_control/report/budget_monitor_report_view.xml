@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <record id="view_budget_monitor_report_list" model="ir.ui.view">
         <field name="name">budget.monitor.report.list</field>
@@ -133,9 +133,9 @@
         <field name="search_view_id" ref="view_budget_monitor_report_search" />
     </record>
     <menuitem
+        id="menu_action_budget_monitor_report_all"
         name="Budget Monitoring"
         action="action_budget_monitor_report_all"
-        id="menu_action_budget_monitor_report_all"
         parent="budget_menu_monitoring"
         sequence="10"
     />

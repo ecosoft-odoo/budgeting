@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <record id="budget_lifetime_setup_view_form" model="ir.ui.view">
         <field name="name">budget.lifetime.setup.form</field>
