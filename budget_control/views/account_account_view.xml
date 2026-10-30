@@ -5,7 +5,7 @@
         <field name="model">account.account</field>
         <field name="inherit_id" ref="account.view_account_form" />
         <field name="arch" type="xml">
-            <field name="deprecated" position="after">
+            <field name="active" position="after">
                 <field name="budget_bypass" />
             </field>
         </field>

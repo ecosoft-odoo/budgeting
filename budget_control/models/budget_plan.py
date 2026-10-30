@@ -299,8 +299,8 @@ class BudgetPlan(models.Model):
             ):
                 raise UserError(
                     self.env._(
-                        f"{line.analytic_account_id.display_name} "
-                        f"has amount less than consumed."
+                        "%s has amount less than consumed.",
+                        line.analytic_account_id.display_name,
                     )
                 )
             # Released is allocated plus the current transfers. Allocated is
@@ -325,8 +325,8 @@ class BudgetPlan(models.Model):
                 if len(active_control) > 1:
                     raise UserError(
                         self.env._(
-                            f"{line.analytic_account_id.display_name} should have "
-                            f"only 1 active budget control"
+                            "%s should have only 1 active budget control",
+                            line.analytic_account_id.display_name,
                         )
                     )
                 line.amount_consumed = active_control.amount_consumed
@@ -543,22 +543,18 @@ class BudgetPlanLine(models.Model):
         analytic_ids = self.mapped("analytic_account_id.id")
 
         # Group by analytic_account_id and count occurrences
-        duplicates = PlanLine.read_group(
+        duplicates = PlanLine._read_group(
             [
                 ("analytic_account_id", "in", analytic_ids),
                 ("plan_id", "=", self.plan_id.id),
             ],
             ["analytic_account_id"],
-            ["analytic_account_id"],
+            having=[("__count", ">", 1)],
         )
 
         # Check for duplicates
-        duplicate_analytics = {
-            dup["analytic_account_id"][1]
-            for dup in duplicates
-            if dup["analytic_account_id_count"] > 1
-        }
+        duplicate_analytics = {analytic.display_name for (analytic,) in duplicates}
         if duplicate_analytics:
             raise UserError(
-                self.env._(f"Duplicate analytic account found: {duplicate_analytics}")
+                self.env._("Duplicate analytic account found: %s", duplicate_analytics)
             )

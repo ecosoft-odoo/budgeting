@@ -79,7 +79,7 @@
                     string="Archived"
                     domain="[('active', '=', False)]"
                 />
-                <group expand="1" string="Group By">
+                <group>
                     <filter
                         string="Budget Period"
                         name="group_by_res_id"

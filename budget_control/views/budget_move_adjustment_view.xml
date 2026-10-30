@@ -22,7 +22,7 @@
                     name="transfer"
                     domain="[('state', '=', 'cancel')]"
                 />
-                <group expand="0" string="Group By">
+                <group>
                     <filter
                         string="Status"
                         name="groupby_state"
@@ -167,14 +167,15 @@
                                     type="object"
                                     name="recompute_budget_move"
                                     string="Recompute"
-                                    icon="fa-refresh"
+                                    icon="refresh"
                                     groups="budget_control.group_budget_control_manager"
                                 />
                                 <button
                                     type="object"
                                     name="close_budget_move"
                                     string="Close Budget"
-                                    icon="fa-times-circle"
+                                    icon="cancel"
+                                    icon_class="oi-filled"
                                     groups="budget_control.group_budget_control_manager"
                                 />
                             </div>

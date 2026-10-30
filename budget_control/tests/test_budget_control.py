@@ -1,11 +1,9 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from datetime import datetime
-
 from freezegun import freeze_time
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import Form, tagged
 
@@ -215,7 +213,6 @@ class TestBudgetControl(get_budget_common_class()):
         # Add account code in template
         self.template_line1.account_ids = [(4, self.account_kpiX.id)]
         # Post again, it should not error
-        bill1.button_draft()
         bill1.action_post()
 
         # Step2: Control budget in period, but budget control is not control
@@ -230,7 +227,6 @@ class TestBudgetControl(get_budget_common_class()):
         )
         with self.assertRaisesRegex(UserError, message_error):
             bill1.action_post()
-        bill1.button_draft()
 
         # Step3: Delete template line1 for test KPI not in control
         self.budget_control.template_line_ids = [
@@ -374,7 +370,7 @@ class TestBudgetControl(get_budget_common_class()):
         invoice = self._create_invoice(
             "in_refund",
             self.vendor,
-            datetime.today(),
+            fields.Date.today(),
             analytic_distribution,
             [{"account": self.account_kpi1.id, "price_unit": 100}],
         )
@@ -573,11 +569,11 @@ class TestBudgetControl(get_budget_common_class()):
         transfer.action_reverse()
         self.budget_control._compute_transferred_amount()
         self.assertEqual(transfer.state, "reverse")
-        self.assertEqual(len(self.budget_control.transfer_item_ids), 1)
+        self.assertFalse(self.budget_control.transfer_item_ids)
         self.assertAlmostEqual(self.budget_control.released_amount, 2400.0)
         self.assertAlmostEqual(self.budget_control.transferred_amount, 0.0)
         self.budget_control2._compute_transferred_amount()
-        self.assertEqual(len(self.budget_control2.transfer_item_ids), 1)
+        self.assertFalse(self.budget_control2.transfer_item_ids)
         self.assertAlmostEqual(self.budget_control2.released_amount, 2400.0)
         self.assertAlmostEqual(self.budget_control2.transferred_amount, 0.0)
         self.budget_plan.check_plan_consumed()
@@ -755,23 +751,21 @@ class TestBudgetControl(get_budget_common_class()):
 
         fields = ["budget_period_id", "amount_type", "amount"]
         groupby = ["budget_period_id", "amount_type"]
-        source_data = MonitorReport.read_group(
+        source_data = MonitorReport._read_group_dataset(
             [
                 ("analytic_account_id", "=", self.costcenter1.id),
                 ("budget_period_id", "=", self.budget_period.id),
             ],
             fields,
             groupby,
-            lazy=False,
         )
-        target_data = MonitorReport.read_group(
+        target_data = MonitorReport._read_group_dataset(
             [
                 ("analytic_account_id", "=", self.costcenter1.id),
                 ("budget_period_id", "=", next_period.id),
             ],
             fields,
             groupby,
-            lazy=False,
         )
         source_amounts = {row["amount_type"]: row["amount"] for row in source_data}
         target_amounts = {row["amount_type"]: row["amount"] for row in target_data}
@@ -1000,25 +994,23 @@ class TestBudgetControl(get_budget_common_class()):
         # only exposes its budget line (forward_in stays out to avoid duplicates).
         report_fields = ["amount_type", "amount"]
         groupby = ["amount_type"]
-        source_data = MonitorReport.read_group(
+        source_data = MonitorReport._read_group_dataset(
             [
                 ("analytic_account_id", "=", self.costcenter1.id),
                 ("budget_period_id", "=", self.budget_period.id),
             ],
             report_fields,
             groupby,
-            lazy=False,
         )
         source_amounts = {row["amount_type"]: row["amount"] for row in source_data}
         self.assertEqual(source_amounts["12_forward_out"], -300.0)
-        target_data = MonitorReport.read_group(
+        target_data = MonitorReport._read_group_dataset(
             [
                 ("analytic_account_id", "=", next_analytic.id),
                 ("budget_period_id", "=", next_period.id),
             ],
             report_fields,
             groupby,
-            lazy=False,
         )
         target_amounts = {row["amount_type"]: row["amount"] for row in target_data}
         self.assertNotIn("11_forward_in", target_amounts)
@@ -1215,7 +1207,6 @@ class TestBudgetControl(get_budget_common_class()):
         )
         with self.assertRaisesRegex(UserError, "Budget not sufficient"):
             bill_a2.action_post()
-        bill_a2.button_draft()  # clean up budget moves from failed post
 
         # Step 3: Company B posts 500 -> error (same shared pool, 400 remaining)
         bill_b1 = self.Move.with_company(company_b).create(
@@ -1238,7 +1229,6 @@ class TestBudgetControl(get_budget_common_class()):
         )
         with self.assertRaisesRegex(UserError, "Budget not sufficient"):
             bill_b1.action_post()
-        bill_b1.button_draft()  # clean up budget moves from failed post
 
         # Step 4: Company B posts 300 -> ok (300 < 400 remaining), remaining = 100
         bill_b2 = self.Move.with_company(company_b).create(
@@ -1422,7 +1412,6 @@ class TestBudgetControl(get_budget_common_class()):
         )
         with self.assertRaisesRegex(UserError, "Budget not sufficient"):
             bill_a2.action_post()
-        bill_a2.button_draft()  # clean up budget moves from failed post
 
         # Step 3: Company B posts 500 to analytic_b -> ok, B remaining = 1900
         bill_b = self.Move.with_company(company_b).create(
@@ -1587,7 +1576,7 @@ class TestBudgetControl(get_budget_common_class()):
         """
         # Enable the "Required Analytic Account" setting for the current user.
         required_group = self.env.ref("budget_control.group_required_analytic")
-        self.env.user.groups_id = [Command.link(required_group.id)]
+        self.env.user.group_ids = [Command.link(required_group.id)]
         self.assertTrue(
             self.env.user.has_group("budget_control.group_required_analytic")
         )

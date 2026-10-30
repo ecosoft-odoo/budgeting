@@ -1,11 +1,9 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from datetime import datetime
-
 from dateutil.rrule import MONTHLY
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.tests.common import TransactionCase
 
 
@@ -25,7 +23,7 @@ class BudgetControlCommon(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.env.company.budget_include_tax = False  # Not Tax Included
-        cls.year = datetime.now().year
+        cls.year = fields.Date.today().year
         cls.RangeType = cls.env["date.range.type"]
         cls.Analytic = cls.env["account.analytic.account"]
         cls.AnalyticPlan = cls.env["account.analytic.plan"]
@@ -215,7 +213,7 @@ class BudgetControlCommon(TransactionCase):
             {
                 "move_type": "in_invoice",
                 "partner_id": self.vendor.id,
-                "invoice_date": datetime.today(),
+                "invoice_date": fields.Date.today(),
                 "invoice_line_ids": [
                     Command.create(
                         {

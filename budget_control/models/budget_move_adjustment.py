@@ -67,7 +67,8 @@ class BudgetMoveAdjustment(models.Model):
                 )
         return super().create(vals_list)
 
-    def unlink(self):
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_not_draft(self):
         """Check that only records with state 'draft' can be deleted."""
         if any(rec.state != "draft" for rec in self):
             raise UserError(
@@ -75,7 +76,6 @@ class BudgetMoveAdjustment(models.Model):
                     "You are trying to delete a record that is still referenced!"
                 )
             )
-        return super().unlink()
 
     def action_draft(self):
         return self.write({"state": "draft"})

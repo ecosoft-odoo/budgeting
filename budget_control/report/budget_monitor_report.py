@@ -40,8 +40,8 @@ class BudgetMonitorReport(models.Model):
     companies = fields.Char()
 
     @property
-    def _table_query(self) -> SQL:
-        return SQL("%s %s %s", self._select(), self._from(), self._where())
+    def _table_sql(self) -> SQL:
+        return SQL("(%s %s %s)", self._select(), self._from(), self._where())
 
     @api.model
     def _select(self) -> SQL:

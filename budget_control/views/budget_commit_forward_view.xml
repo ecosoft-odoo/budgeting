@@ -150,14 +150,16 @@
                                 <button
                                     name="action_filter_lines"
                                     string="Filter"
-                                    class="fa fa-filter"
+                                    class="oi oi-filled"
+                                    data-icon="filter_alt"
                                     type="object"
                                     invisible="state != 'review'"
                                 />
                                 <button
                                     name="action_reset_filter_lines"
                                     string="Reset"
-                                    class="fa fa-refresh"
+                                    class="oi"
+                                    data-icon="refresh"
                                     type="object"
                                     invisible="state != 'review'"
                                 />

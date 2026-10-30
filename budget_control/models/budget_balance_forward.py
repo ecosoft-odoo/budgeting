@@ -3,7 +3,7 @@
 
 from collections import Counter
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
 
@@ -63,9 +63,10 @@ class BudgetBalanceForward(models.Model):
         string="Companies",
         help="Restrict to specific companies. Empty = all companies.",
     )
-    _sql_constraints = [
-        ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
-    ]
+    _name_uniq = models.Constraint(
+        "UNIQUE(name)",
+        "Name must be unique!",
+    )
 
     @api.constrains("from_budget_period_id", "to_budget_period_id")
     def _check_budget_period(self):
@@ -123,23 +124,23 @@ class BudgetBalanceForward(models.Model):
         """Retrieve Analytic Account relevant to from_budget_period"""
         self.ensure_one()
         # Ensure that budget info will be based on this period, and no_fwd_commit
-        self = self.with_context(
+        forward = self.with_context(
             budget_period_ids=self.from_budget_period_id.ids,
             no_fwd_commit=True,
         )
         # Analyic Account from budget control sheet of the previous year
-        BudgetControl = self.env["budget.control"]
+        BudgetControl = forward.env["budget.control"]
         bc_domain = [
-            ("budget_period_id", "=", self.from_budget_period_id.id),
+            ("budget_period_id", "=", forward.from_budget_period_id.id),
             ("active", "=", True),
             ("state", "!=", "cancel"),
         ]
-        if self.company_ids:
-            bc_domain += [("company_ids", "in", self.company_ids.ids)]
+        if forward.company_ids:
+            bc_domain += [("company_ids", "in", forward.company_ids.ids)]
         budget_controls = BudgetControl.search(bc_domain)
         analytics = budget_controls.mapped("analytic_account_id")
         # Find document forward balance is used. it should skip it.
-        query_analytic = self._get_other_forward()
+        query_analytic = forward._get_other_forward()
         analytic_dup_ids = [x["analytic_account_id"] for x in query_analytic]
         value_dict = []
         for analytic in analytics:
@@ -148,12 +149,12 @@ class BudgetBalanceForward(models.Model):
             method_type = False
             if (
                 analytic.bm_date_to
-                and analytic.bm_date_to < self.to_budget_period_id.bm_date_from
+                and analytic.bm_date_to < forward.to_budget_period_id.bm_date_from
             ):
                 method_type = "new"
             value_dict.append(
                 {
-                    "forward_id": self.id,
+                    "forward_id": forward.id,
                     "analytic_account_id": analytic.id,
                     "method_type": method_type,
                     "amount_balance": analytic.amount_balance,
@@ -169,9 +170,9 @@ class BudgetBalanceForward(models.Model):
 
     def get_budget_balance_forward(self):
         """Get budget balance on each analytic account."""
-        self = self.sudo()
-        Line = self.env["budget.balance.forward.line"]
-        for rec in self:
+        forwards = self.sudo()
+        Line = forwards.env["budget.balance.forward.line"]
+        for rec in forwards:
             vals = rec._prepare_vals_forward()
             Line.create(vals)
 
@@ -188,7 +189,7 @@ class BudgetBalanceForward(models.Model):
         self.ensure_one()
         if self.missing_analytic:
             raise UserError(
-                _(
+                self.env._(
                     "Some carry forward analytic accounts are missing.\n"
                     "Click 'Create Missing Analytics' button to create "
                     "for next budget period."
@@ -197,7 +198,7 @@ class BudgetBalanceForward(models.Model):
         wizard = self.env.ref("budget_control.view_budget_balance_forward_info_form")
         forward_vals = self._get_forward_initial_balance()
         return {
-            "name": _("Preview Budget Balance"),
+            "name": self.env._("Preview Budget Balance"),
             "type": "ir.actions.act_window",
             "view_mode": "form",
             "res_model": "budget.balance.forward.info",
@@ -350,14 +351,15 @@ class BudgetBalanceForward(models.Model):
             ) + rec.forward_line_ids.mapped("accumulate_analytic_account_id")
             if not rec_target_analytics:
                 continue
+            target_period = rec.to_budget_period_id
             rec_plans = plans.filtered(
-                lambda plan, period=rec.to_budget_period_id, analytics=rec_target_analytics: (
+                lambda plan, period=target_period, analytics=rec_target_analytics: (
                     plan.budget_period_id == period
                     and plan.line_ids.mapped("analytic_account_id") & analytics
                 )
             )
             rec_controls = controls.filtered(
-                lambda control, period=rec.to_budget_period_id, analytics=rec_target_analytics: (
+                lambda control, period=target_period, analytics=rec_target_analytics: (
                     control.budget_period_id == period
                     and control.analytic_account_id in analytics
                 )
@@ -376,7 +378,7 @@ class BudgetBalanceForward(models.Model):
             )
             if rec_plans or submitted_controls or distributed_controls or used_controls:
                 raise UserError(
-                    _(
+                    self.env._(
                         "You cannot cancel this Forward Balance because its target "
                         "budget has already been confirmed, submitted, controlled, "
                         "or consumed. Use the Reverse Forward process to preserve "

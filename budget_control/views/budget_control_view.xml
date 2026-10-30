@@ -87,7 +87,7 @@
                 <filter
                     name="current_period"
                     string="Current Period"
-                    domain="[('date_to', '&gt;=', context_today().strftime('%Y-%m-%d')), ('date_from', '&lt;=', context_today().strftime('%Y-%m-%d'))]"
+                    domain="[('date_to', '&gt;=', 'today'), ('date_from', '&lt;=', 'today')]"
                 />
                 <separator />
                 <filter
@@ -95,7 +95,7 @@
                     string="Archived"
                     domain="[('active', '=', False)]"
                 />
-                <group expand="0" string="Group By">
+                <group>
                     <filter
                         name="analytic"
                         string="Analytic Account"
@@ -171,14 +171,14 @@
                             name="action_view_monitoring"
                             class="oe_stat_button"
                             string="Monitoring"
-                            icon="fa-bar-chart-o"
+                            icon="bar_chart"
                             type="object"
                         />
                         <button
                             type="object"
                             name="action_open_budget_transfer_item"
                             class="oe_stat_button"
-                            icon="fa-exchange"
+                            icon="swap_horiz"
                         >
                             <div class="o_field_widget o_stat_info">
                                 <span class="o_stat_value">
@@ -196,7 +196,7 @@
                             name="%(budget_control.budget_control_line_action)d"
                             type="action"
                             string="Budget Lines"
-                            icon="fa-bars"
+                            icon="menu"
                         />
                     </div>
                     <group>
@@ -263,7 +263,7 @@
                                     name="prepare_budget_control_matrix"
                                     type="object"
                                     string="Hard Reset"
-                                    icon="fa-refresh"
+                                    icon="refresh"
                                     confirm="This operation cannot be undone. Are you sure to continue?"
                                     title="Reset lines and clear all the planned amount."
                                 />
@@ -272,7 +272,7 @@
                                     name="prepare_budget_control_matrix"
                                     type="object"
                                     string="Soft Reset"
-                                    icon="fa-refresh"
+                                    icon="refresh"
                                     context="{'keep_item_amount': True, 'edit_amount': True}"
                                     confirm="This operation cannot be undone. Are you sure to continue?"
                                     title="Reset lines but not clear the planned amount."
@@ -385,7 +385,7 @@
         <field name="binding_model_id" ref="budget_control.model_budget_control" />
         <field name="state">code</field>
         <field
-            name="groups_id"
+            name="group_ids"
             eval="[(4, ref('budget_control.group_budget_control_manager'))]"
         />
         <field name="binding_view_types">list</field>

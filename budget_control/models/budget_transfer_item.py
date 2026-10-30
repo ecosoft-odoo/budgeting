@@ -1,7 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import float_compare
 
@@ -109,8 +109,9 @@ class BudgetTransferItem(models.Model):
             > 0
         ):
             raise UserError(
-                self.env._("Transfer amount can not be exceeded {:,.2f}").format(
-                    self.amount_from_available
+                self.env._(
+                    "Transfer amount can not be exceeded %s",
+                    f"{self.amount_from_available:,.2f}",
                 )
             )
 
@@ -122,8 +123,9 @@ class BudgetTransferItem(models.Model):
             # Check if released amount is negative
             if transfer.budget_control_from_id.released_amount < 0:
                 raise ValidationError(
-                    _("Negative balance for {} after transfer!").format(
-                        transfer.budget_control_from_id.display_name
+                    self.env._(
+                        "Negative balance for %s after transfer!",
+                        transfer.budget_control_from_id.display_name,
                     )
                 )
 
@@ -160,6 +162,7 @@ class BudgetTransferItem(models.Model):
                 raise UserError(
                     self.env._(
                         "Following budget controls must be in state 'Draft', "
-                        "before transferring.\n{}"
-                    ).format(budget_not_draft)
+                        "before transferring.\n%s",
+                        budget_not_draft,
+                    )
                 )

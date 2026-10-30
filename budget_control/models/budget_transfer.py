@@ -67,7 +67,8 @@ class BudgetTransfer(models.Model):
                 )
         return super().create(vals_list)
 
-    def unlink(self):
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_not_draft(self):
         """Check state draft can delete only."""
         if any(rec.state != "draft" for rec in self):
             raise UserError(
@@ -75,7 +76,6 @@ class BudgetTransfer(models.Model):
                     "You are trying to delete a record that is still referenced!"
                 )
             )
-        return super().unlink()
 
     def action_cancel(self):
         return self.write({"state": "cancel"})
@@ -116,9 +116,9 @@ class BudgetTransfer(models.Model):
             ):
                 raise ValidationError(
                     self.env._(
-                        "This transfer will result in negative budget balance for %s"
+                        "This transfer will result in negative budget balance for %s",
+                        budget_ctrl.name,
                     )
-                    % budget_ctrl.name
                 )
         return True
 

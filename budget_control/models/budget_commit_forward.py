@@ -1,7 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -61,9 +61,10 @@ class BudgetCommitForward(models.Model):
         string="Companies",
         help="Restrict to specific companies. Empty = all companies.",
     )
-    _sql_constraints = [
-        ("name_uniq", "UNIQUE(name)", "Name must be unique!"),
-    ]
+    _name_uniq = models.Constraint(
+        "UNIQUE(name)",
+        "Name must be unique!",
+    )
 
     def _compute_missing_analytic(self):
         for rec in self:
@@ -167,9 +168,9 @@ class BudgetCommitForward(models.Model):
 
     def get_budget_commit_forward(self, res_model):
         """Get budget commitment forward for each new commit document type."""
-        self = self.sudo()
-        Line = self.env["budget.commit.forward.line"]
-        for rec in self:
+        forwards = self.sudo()
+        Line = forwards.env["budget.commit.forward.line"]
+        for rec in forwards:
             docs = rec._get_commit_docline(res_model)
             vals = rec._prepare_vals_forward(docs, res_model)
             Line.create(vals)
@@ -215,26 +216,26 @@ class BudgetCommitForward(models.Model):
         """Get analytic of all analytic accounts for this budget carry forward
         + all the "done" budget carry forward"""
         self.ensure_one()
-        forwards = self.env["budget.commit.forward.line"].read_group(
+        forwards = self.env["budget.commit.forward.line"]._read_group(
             domain,
-            ["to_analytic_account_id", "amount_commit"],
             ["to_analytic_account_id"],
-            orderby="to_analytic_account_id",
+            ["amount_commit:sum"],
+            order="to_analytic_account_id",
         )
         res = [
             {
-                "analytic_account_id": f["to_analytic_account_id"][0],
-                "initial_commit": f["amount_commit"],
+                "analytic_account_id": analytic.id,
+                "initial_commit": amount_commit,
             }
-            for f in forwards
+            for analytic, amount_commit in forwards
         ]
         return res
 
     def _do_forward_commit(self, reverse=False):
         """Create carry forward budget move to all related documents"""
-        self = self.sudo()
+        forwards = self.sudo()
         _analytic_field = "analytic_account_id" if reverse else "to_analytic_account_id"
-        for rec in self:
+        for rec in forwards:
             group_document = {}
 
             # Group by document
@@ -338,7 +339,9 @@ class BudgetCommitForward(models.Model):
                 rec.to_date_commit < max_date_commit for rec in self
             ):
                 raise UserError(
-                    _("Unable to cancel this document as it belongs to a past period.")
+                    self.env._(
+                        "Unable to cancel this document as it belongs to a past period."
+                    )
                 )
         self.filtered(lambda fwd: fwd.state == "done")._do_forward_commit(reverse=True)
         self.write({"state": "cancel"})
@@ -356,7 +359,7 @@ class BudgetCommitForward(models.Model):
 class BudgetCommitForwardLine(models.Model):
     _name = "budget.commit.forward.line"
     _description = "Budget Commit Forward Line"
-    _rec_names_search = ["document_number", "analytic_account_id"]
+    _rec_names_search = ("document_number", "analytic_account_id")
 
     forward_id = fields.Many2one(
         comodel_name="budget.commit.forward",

@@ -11,7 +11,7 @@ from odoo.exceptions import UserError
 
 class AccountAnalyticAccount(models.Model):
     _inherit = "account.analytic.account"
-    _rec_names_search = ["name", "code", "budget_period_id"]
+    _rec_names_search = ("name", "code", "budget_period_id")
 
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
@@ -161,9 +161,11 @@ class AccountAnalyticAccount(models.Model):
                 names = ", ".join(rec.budget_company_ids.mapped("name"))
                 raise UserError(
                     self.env._(
-                        f"Companies {names} assigned to analytic {rec.display_name} "
+                        "Companies %(names)s assigned to analytic %(analytic)s "
                         "use different currencies. All companies sharing a budget "
                         "must use the same currency.",
+                        names=names,
+                        analytic=rec.display_name,
                     )
                 )
 
@@ -305,9 +307,7 @@ class AccountAnalyticAccount(models.Model):
         }
 
     def _filter_by_analytic_account(self, val):
-        if val["analytic_account_id"][0] == self.id:
-            return True
-        return False
+        return val["analytic_account_id"][0] == self.id
 
     def _compute_amount_budget_info(self):
         """Note: This method is similar to BCS._compute_budget_info"""
@@ -325,15 +325,10 @@ class AccountAnalyticAccount(models.Model):
             domain.append(("budget_period_id", "in", ctx["budget_period_ids"]))
         # --
         admin_uid = self.env.ref("base.user_admin").id
-        dataset_all = MonitorReport.with_user(admin_uid).read_group(
-            domain=domain,
-            fields=[
-                "analytic_account_id",
-                "amount_type",
-                "amount",
-            ],
-            groupby=["analytic_account_id", "amount_type"],
-            lazy=False,
+        dataset_all = MonitorReport.with_user(admin_uid)._read_group_dataset(
+            domain,
+            ["analytic_account_id", "amount_type", "amount"],
+            ["analytic_account_id", "amount_type"],
         )
         dataset_map = defaultdict(list)
         for data in dataset_all:
@@ -421,7 +416,8 @@ class AccountAnalyticAccount(models.Model):
             raise UserError(
                 self.env._(
                     "No budget control sheet found for the selected analytics:\n"
-                    f"{names}"
+                    "%(names)s",
+                    names=names,
                 )
             )
 
@@ -437,7 +433,8 @@ class AccountAnalyticAccount(models.Model):
             names = ", ".join(no_bc_analytics.mapped("display_name"))
             raise UserError(
                 self.env._(
-                    f"Following analytics have no budget control sheet:\n{names}"
+                    "Following analytics have no budget control sheet:\n%(names)s",
+                    names=names,
                 )
             )
 
@@ -453,8 +450,9 @@ class AccountAnalyticAccount(models.Model):
             names = ", ".join(no_cbc_analytics.mapped("display_name"))
             raise UserError(
                 self.env._(
-                    f"Budget control sheets for the following analytics "
-                    f"are not in control:\n{names}"
+                    "Budget control sheets for the following analytics "
+                    "are not in control:\n%(names)s",
+                    names=names,
                 )
             )
 

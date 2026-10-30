@@ -87,14 +87,14 @@
                 <filter
                     name="current_period"
                     string="Current Period"
-                    domain="[('date_to', '&gt;=', context_today().strftime('%Y-%m-%d')), ('date_from', '&lt;=', context_today().strftime('%Y-%m-%d'))]"
+                    domain="[('date_to', '&gt;=', 'today'), ('date_from', '&lt;=', 'today')]"
                 />
                 <filter
                     name="archived"
                     string="Archived"
                     domain="[('active', '=', False)]"
                 />
-                <group expand="0" string="Group By">
+                <group>
                     <filter
                         name="group_budget_period"
                         string="Budget Period"
@@ -184,7 +184,7 @@
                             name="button_open_budget_control"
                             type="object"
                             class="oe_stat_button"
-                            icon="fa-bars"
+                            icon="menu"
                             invisible="budget_control_count == 0"
                         >
                             <field
@@ -244,7 +244,7 @@
                                 <button
                                     name="action_update_plan"
                                     string="Refresh"
-                                    icon="fa-refresh"
+                                    icon="refresh"
                                     type="object"
                                     invisible="state not in ['draft', 'confirm', 'done']"
                                     title="Refresh released and consumed amount"

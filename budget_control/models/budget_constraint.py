@@ -15,7 +15,6 @@ class BudgetConstraint(models.Model):
     description = fields.Text(tracking=True)
     server_action_id = fields.Many2one(
         comodel_name="ir.actions.server",
-        string="Server Action",
         domain=[
             ("usage", "=", "ir_actions_server"),
             ("model_id.model", "=", "budget.constraint"),

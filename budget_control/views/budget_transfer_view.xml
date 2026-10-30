@@ -28,7 +28,7 @@
                     name="reverse"
                     domain="[('state', '=', 'reverse')]"
                 />
-                <group expand="0" string="Group By">
+                <group>
                     <filter
                         string="Budget Year"
                         name="groupby_budget_period_id"

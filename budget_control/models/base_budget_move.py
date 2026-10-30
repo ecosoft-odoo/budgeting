@@ -45,21 +45,19 @@ class BaseBudgetMove(models.AbstractModel):
     )
     account_id = fields.Many2one(
         comodel_name="account.account",
-        string="Account",
-        auto_join=True,
+        bypass_search_access=True,
         index=True,
         readonly=True,
     )
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
-        string="Analytic Account",
-        auto_join=True,
+        bypass_search_access=True,
         index=True,
         readonly=True,
     )
     analytic_plan = fields.Many2one(
         comodel_name="account.analytic.plan",
-        auto_join=True,
+        bypass_search_access=True,
         index=True,
         readonly=True,
     )
@@ -78,7 +76,6 @@ class BaseBudgetMove(models.AbstractModel):
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
-        string="Company",
         required=True,
         default=lambda self: self.env.user.company_id.id,
         index=True,
@@ -133,9 +130,7 @@ class BudgetDoclineMixinBase(models.AbstractModel):
         # Check analytic from distribution it send data with JSON type 'dict'
         # and we need convert it to analytic object
         if self._budget_analytic_field == "analytic_distribution":
-            account_analytic_ids = [
-                int(v) for k in analytics.keys() for v in k.split(",")
-            ]
+            account_analytic_ids = [int(v) for k in analytics for v in k.split(",")]
             analytics = Analytic.browse(account_analytic_ids)
         return analytics
 
@@ -319,7 +314,7 @@ class BudgetDoclineMixin(models.AbstractModel):
             rec.json_budget_popover = dumps(
                 {
                     "title": self.env._("Budget Figure"),
-                    "icon": "fa-info-circle",
+                    "icon": "info",
                     "popoverTemplate": "budget_control.budgetPopOver",
                     "analytic": analytic_values,
                 }
@@ -417,10 +412,12 @@ class BudgetDoclineMixin(models.AbstractModel):
         if bc_currency and bc_currency != document_company.currency_id:
             raise UserError(
                 self.env._(
-                    f"Company {document_company.name} "
-                    f"({document_company.currency_id.name}) cannot commit to a "
-                    f"{bc_currency.name} budget. "
+                    "Company %(company)s (%(company_currency)s) cannot commit to a "
+                    "%(budget_currency)s budget. "
                     "All companies sharing a budget must use the same currency.",
+                    company=document_company.name,
+                    company_currency=document_company.currency_id.name,
+                    budget_currency=bc_currency.name,
                 )
             )
         if (
@@ -550,24 +547,24 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     def forward_commit(self):
         # allow all user can do it because this is common function
-        self = self.sudo()
-        ForwardLine = self.env["budget.commit.forward.line"]
-        BudgetPeriod = self.env["budget.period"]
-        for docline in self:
+        doclines = self.sudo()
+        ForwardLine = doclines.env["budget.commit.forward.line"]
+        BudgetPeriod = doclines.env["budget.period"]
+        for docline in doclines:
             if not docline.fwd_analytic_distribution or not docline.fwd_date_commit:
                 continue
             if (
-                docline[self._budget_analytic_field]
+                docline[doclines._budget_analytic_field]
                 == docline.fwd_analytic_distribution
                 and docline.date_commit == docline.fwd_date_commit
             ):  # no forward to same date
                 continue
-            domain_fwd_line = self._get_domain_fwd_line(docline)
+            domain_fwd_line = doclines._get_domain_fwd_line(docline)
             fwd_lines = ForwardLine.search(domain_fwd_line)
             # NOTE: this function will support commit forward more than 1 time
             # carry forward - get line with it self or other year
-            if self.env.context.get("active_model") == "budget.commit.forward":
-                active_id = self.env.context.get("active_id", False)
+            if doclines.env.context.get("active_model") == "budget.commit.forward":
+                active_id = doclines.env.context.get("active_id", False)
                 fwd_lines.filtered(
                     lambda line, active_id=active_id: (
                         (
@@ -587,7 +584,7 @@ class BudgetDoclineMixin(models.AbstractModel):
                 # create commitment carry (credit)
                 budget_move = docline.with_context(
                     use_amount_commit=True,
-                    commit_note=self.env._("Commitment carry forward"),
+                    commit_note=doclines.env._("Commitment carry forward"),
                     fwd_commit=True,
                     fwd_amount_commit=fwd_line.amount_commit,
                 ).commit_budget(
@@ -613,7 +610,9 @@ class BudgetDoclineMixin(models.AbstractModel):
                 # for that year is not utilized,
                 # this code removes the forward commitment,
                 # allowing the line to be forwarded again in the following year.
-                budget_move_previous_forward = self[self._budget_field()].filtered(
+                budget_move_previous_forward = doclines[
+                    doclines._budget_field()
+                ].filtered(
                     lambda line, fwd_line=fwd_line: (
                         line.fwd_commit
                         and line.date < fwd_line.forward_id.to_date_commit
@@ -914,9 +913,9 @@ class BudgetDoclineMixin(models.AbstractModel):
                 ):
                     raise UserError(
                         self.env._(
-                            "Budget date commit is not within date range of - %s"
+                            "Budget date commit is not within date range of - %s",
+                            analytic.display_name,
                         )
-                        % analytic.display_name
                     )
         else:
             if docline.date_commit:

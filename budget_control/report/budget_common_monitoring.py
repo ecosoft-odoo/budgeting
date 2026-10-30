@@ -1,7 +1,7 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class BudgetCommonMonitoring(models.AbstractModel):
@@ -33,6 +33,24 @@ class BudgetCommonMonitoring(models.AbstractModel):
     )
     active = fields.Boolean()
     amount = fields.Float()
+
+    @api.model
+    def _read_group_dataset(self, domain, fields, groupby):
+        """Group monitoring rows, returning one dict per group with
+        many2one values as ``(id, display_name)`` and summed amounts,
+        i.e. the format of ``read_group(..., lazy=False)`` before 19.0."""
+        aggregates = [f"{fname}:sum" for fname in fields if fname not in groupby]
+        dataset = []
+        for row in self._read_group(domain, groupby, aggregates):
+            data = {}
+            for fname, value in zip(groupby, row, strict=False):
+                if isinstance(value, models.BaseModel):
+                    value = (value.id, value.display_name) if value else False
+                data[fname] = value
+            for spec, value in zip(aggregates, row[len(groupby) :], strict=True):
+                data[spec.split(":")[0]] = value
+            dataset.append(data)
+        return dataset
 
     def _get_budget_amount_type(self):
         """Return list of all amount_type selection"""

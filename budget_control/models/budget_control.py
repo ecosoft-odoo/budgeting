@@ -27,7 +27,7 @@ class BudgetControl(models.Model):
         string="Assigned To",
         domain=lambda self: [
             (
-                "groups_id",
+                "group_ids",
                 "in",
                 [self.env.ref("budget_control.group_budget_control_user").id],
             )
@@ -221,8 +221,8 @@ class BudgetControl(models.Model):
         analytics = self.env["account.analytic.account"].browse(analytic_ids)
         raise UserError(
             self.env._(
-                f"Multiple budget control on the same period for: "
-                f"{', '.join(analytics.mapped('name'))}"
+                "Multiple budget control on the same period for: %(analytics)s",
+                analytics=", ".join(analytics.mapped("name")),
             )
         )
 
@@ -239,9 +239,11 @@ class BudgetControl(models.Model):
                 names = ", ".join(bad.mapped("name"))
                 raise ValidationError(
                     self.env._(
-                        f"Companies {names} use a different currency than "
-                        f"this budget control ({rec.currency_id.name}). All companies "
+                        "Companies %(names)s use a different currency than "
+                        "this budget control (%(currency)s). All companies "
                         "sharing a budget must use the same currency.",
+                        names=names,
+                        currency=rec.currency_id.name,
                     )
                 )
 
@@ -293,8 +295,9 @@ class BudgetControl(models.Model):
                 if budget_info["amount_balance"] < 0:
                     raise UserError(
                         self.env._(
-                            f"Total amount in KPI {line.kpi_id.name} will result in "
-                            f"{budget_info['amount_balance']:,.2f}"
+                            "Total amount in KPI %(kpi)s will result in %(balance)s",
+                            kpi=line.kpi_id.name,
+                            balance=f"{budget_info['amount_balance']:,.2f}",
                         )
                     )
 
@@ -312,7 +315,7 @@ class BudgetControl(models.Model):
             "res_model": "budget.state.confirmation",
             "view_mode": "form",
             "target": "new",
-            "context": self._context,
+            "context": self.env.context,
         }
 
     @api.depends("allocated_amount")
@@ -359,11 +362,8 @@ class BudgetControl(models.Model):
         ctx = self._get_context_monitoring()
         query = BudgetPeriod._budget_info_query()
         domain = self._get_domain_dataset_all()
-        dataset_all = MonitorReport.with_context(**ctx).read_group(
-            domain=domain,
-            fields=query["fields"],
-            groupby=query["groupby"],
-            lazy=False,
+        dataset_all = MonitorReport.with_context(**ctx)._read_group_dataset(
+            domain, query["fields"], query["groupby"]
         )
         return query, dataset_all
 
@@ -450,8 +450,10 @@ class BudgetControl(models.Model):
                 raise UserError(
                     self.env._(
                         "Planning amount should equal to the "
-                        "released amount {amount:,.2f} {symbol}"
-                    ).format(amount=rec.released_amount, symbol=rec.currency_id.symbol)
+                        "released amount %(amount)s %(symbol)s",
+                        amount=f"{rec.released_amount:,.2f}",
+                        symbol=rec.currency_id.symbol,
+                    )
                 )
 
     def action_draft(self):
@@ -489,7 +491,7 @@ class BudgetControl(models.Model):
     def _get_budget_lines(self, date_range, template_line):
         self.ensure_one()
         dict_value = self._get_dict_budget_lines(date_range, template_line)
-        if self._context.get("keep_item_amount", False):
+        if self.env.context.get("keep_item_amount", False):
             # convert dict to list
             domain_item = [(k, "=", v) for k, v in dict_value.items()]
             line_amount = self.line_ids.search_read(
