@@ -1,5 +1,5 @@
 # Do NOT update manually; changes here will be overwritten by Copier
-_commit: v1.44
+_commit: v1.48
 _src_path: gh:oca/oca-addons-repo-template
 additional_ruff_rules: []
 convert_readme_fragments_to_markdown: true
@@ -13,7 +13,7 @@ github_enable_stale_action: true
 github_enforce_dev_status_compatibility: true
 include_wkhtmltopdf: false
 odoo_test_flavor: Both
-odoo_version: 18.0
+odoo_version: 20.0
 org_name: Ecosoft
 org_slug: ecosoft-odoo
 postgres_image: ''

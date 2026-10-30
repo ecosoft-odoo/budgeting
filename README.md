@@ -2,9 +2,9 @@
 
 # Budgeting
 <!-- /!\ Non OCA Context : Set here the badge of your runbot / runboat instance. -->
-[![Pre-commit Status](https://github.com/ecosoft-odoo/budgeting/actions/workflows/pre-commit.yml/badge.svg?branch=18.0)](https://github.com/ecosoft-odoo/budgeting/actions/workflows/pre-commit.yml?query=branch%3A18.0)
-[![Build Status](https://github.com/ecosoft-odoo/budgeting/actions/workflows/test.yml/badge.svg?branch=18.0)](https://github.com/ecosoft-odoo/budgeting/actions/workflows/test.yml?query=branch%3A18.0)
-[![codecov](https://codecov.io/gh/ecosoft-odoo/budgeting/branch/18.0/graph/badge.svg)](https://codecov.io/gh/ecosoft-odoo/budgeting)
+[![Pre-commit Status](https://github.com/ecosoft-odoo/budgeting/actions/workflows/pre-commit.yml/badge.svg?branch=20.0)](https://github.com/ecosoft-odoo/budgeting/actions/workflows/pre-commit.yml?query=branch%3A20.0)
+[![Build Status](https://github.com/ecosoft-odoo/budgeting/actions/workflows/test.yml/badge.svg?branch=20.0)](https://github.com/ecosoft-odoo/budgeting/actions/workflows/test.yml?query=branch%3A20.0)
+[![codecov](https://codecov.io/gh/ecosoft-odoo/budgeting/branch/20.0/graph/badge.svg)](https://codecov.io/gh/ecosoft-odoo/budgeting)
 <!-- /!\ Non OCA Context : Set here the badge of your translation instance. -->
 
 <!-- /!\ do not modify above this line -->
