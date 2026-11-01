@@ -4,7 +4,7 @@
         <field name="name">view.budget.commit.forward.form</field>
         <field name="model">budget.commit.forward</field>
         <field name="inherit_id" ref="budget_control.view_budget_commit_forward_form" />
-        <field name="priority">20</field>
+        <field name="priority" eval="20" />
         <field name="arch" type="xml">
             <div name="docs" position="inside">
                 <div>

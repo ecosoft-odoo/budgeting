@@ -121,7 +121,7 @@ class PurchaseOrderLine(models.Model):
 
     def _recompute_budget_move_before_invoice_uncommit(self):
         """Hook after PO/forward commitments and before invoice uncommit."""
-        return None
+        return
 
     def _can_batch_budget_precommit(self):
         return True
