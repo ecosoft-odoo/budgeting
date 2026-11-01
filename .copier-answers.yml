@@ -17,9 +17,7 @@ odoo_version: 20.0
 org_name: Ecosoft
 org_slug: ecosoft-odoo
 postgres_image: ''
-rebel_module_groups:
-- account_move_name_sequence
-- account_sequence_option
+rebel_module_groups: []
 repo_description: The Budgeting module for Odoo provides a structured and efficient
     way to manage budgets within an organization. It allows users to define, track,
     and control budget allocations while ensuring financial transparency.
