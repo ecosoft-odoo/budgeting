@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Budget control sheets are created from the budget plan -->
+    <record id="budget_control_view_list" model="ir.ui.view">
+        <field name="name">budget.control.view.list.plan</field>
+        <field name="model">budget.control</field>
+        <field name="inherit_id" ref="budget_control.budget_control_view_list" />
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="create">0</attribute>
+            </list>
+            <field name="analytic_plan" position="after">
+                <field name="budget_plan_id" optional="hide" />
+            </field>
+        </field>
+    </record>
+    <record id="budget_control_view_form" model="ir.ui.view">
+        <field name="name">budget.control.view.form.plan</field>
+        <field name="model">budget.control</field>
+        <field name="inherit_id" ref="budget_control.budget_control_view_form" />
+        <field name="arch" type="xml">
+            <form position="attributes">
+                <attribute name="create">0</attribute>
+            </form>
+            <div name="button_box" position="inside">
+                <button
+                    name="action_view_budget_plan"
+                    type="object"
+                    class="oe_stat_button"
+                    string="Budget Plan"
+                    icon="edit_square"
+                    invisible="not budget_plan_id"
+                    groups="budget_control.group_budget_control_manager"
+                />
+            </div>
+            <field name="budget_period_id" position="before">
+                <field name="budget_plan_id" invisible="1" />
+            </field>
+            <page name="options" position="before">
+                <page
+                    name="allocations"
+                    string="Allocations"
+                    invisible="not allocation_ids"
+                >
+                    <field name="allocation_ids" readonly="1" />
+                </page>
+            </page>
+            <field name="analytic_account_id" position="attributes">
+                <attribute
+                    name="readonly"
+                >state != 'draft' or budget_plan_id or line_ids</attribute>
+            </field>
+            <field name="budget_period_id" position="attributes">
+                <attribute
+                    name="readonly"
+                >state != 'draft' or budget_plan_id or line_ids</attribute>
+            </field>
+            <xpath
+                expr="//group[@name='budget_control_right']/field[@name='currency_id']"
+                position="attributes"
+            >
+                <attribute
+                    name="readonly"
+                >state != 'draft' or budget_plan_id</attribute>
+            </xpath>
+            <field name="allocated_amount" position="attributes">
+                <attribute
+                    name="readonly"
+                >state != 'draft' or budget_plan_id</attribute>
+            </field>
+        </field>
+    </record>
+</odoo>

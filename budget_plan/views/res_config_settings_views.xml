@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form_budget" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.budget.plan</field>
+        <field name="model">res.config.settings</field>
+        <field
+            name="inherit_id"
+            ref="budget_control.res_config_settings_view_form_budget"
+        />
+        <field name="arch" type="xml">
+            <block name="budget_period_container" position="before">
+                <!-- Extension modules add their plan options here -->
+                <block
+                    title="Budget Plan Options"
+                    name="budget_plan_options_container"
+                />
+            </block>
+        </field>
+    </record>
+</odoo>

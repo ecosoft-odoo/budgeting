@@ -1,0 +1,27 @@
+id,name,model_id,group_id/id,operation,domain
+access_budget_plan,access_budget_plan,budget.plan,budget_control.group_budget_control_manager,crud,
+rule_budget_plan_budget_multi_company,Budget Plan multi-company,budget.plan,,crud,"
+            [
+                '|',
+                ('company_ids', '=', False),
+                ('company_ids', 'parent_of', company_ids)
+            ]
+        "
+access_budget_plan_line,access_budget_plan_line,budget.plan.line,budget_control.group_budget_control_manager,crud,
+rule_budget_plan_line_budget_multi_company,Budget Plan Line multi-company,budget.plan.line,,crud,"
+            [
+                '|',
+                ('company_ids', '=', False),
+                ('company_ids', 'parent_of', company_ids)
+            ]
+        "
+access_budget_plan_line_detail,access_budget_plan_line_detail,budget.plan.line.detail,budget_control.group_budget_control_manager,crud,
+access_budget_plan_line_detail_user,access_budget_plan_line_detail_user,budget.plan.line.detail,budget_control.group_budget_control_user,r,
+rule_budget_plan_line_detail_budget_multi_company,Budget Plan Line Detail multi-company,budget.plan.line.detail,,crud,"
+            [
+                '|',
+                ('company_ids', '=', False),
+                ('company_ids', 'parent_of', company_ids)
+            ]
+        "
+access_budget_plan_analytic_select,access_budget_plan_analytic_select,budget.plan.analytic.select,budget_control.group_budget_control_manager,crud,
