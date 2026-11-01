@@ -136,6 +136,7 @@
     </record>
     <record id="action_budget_transfer" model="ir.actions.act_window">
         <field name="name">Budget Transfer</field>
+        <field name="path">budget-transfer</field>
         <field name="view_id" ref="view_budget_transfer_list" />
         <field name="res_model">budget.transfer</field>
         <field name="view_mode">list,form</field>

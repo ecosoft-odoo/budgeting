@@ -27,6 +27,16 @@ class AccountMove(models.Model):
     )
 
     @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        arch, view = super()._get_view(view_id, view_type, **options)
+        if view_type == "form":
+            for node in arch.iterfind('.//field[@name="budget_move_ids"]/list'):
+                self.env["account.analytic.plan"]._patch_budget_plan_view(
+                    node, "list", "account.budget.move"
+                )
+        return arch, view
+
+    @api.model
     def default_get(self, field_list):
         res = super().default_get(field_list)
         if res.get("journal_id"):

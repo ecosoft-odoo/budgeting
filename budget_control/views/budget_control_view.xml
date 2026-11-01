@@ -29,14 +29,12 @@
         <field name="model">budget.control</field>
         <field name="arch" type="xml">
             <list
-                create="0"
                 decoration-muted="active == False or state == 'cancel'"
                 decoration-danger="diff_amount != 0.0 and active == True"
             >
                 <field name="name" />
                 <field name="analytic_account_id" />
                 <field name="analytic_plan" optional="show" />
-                <field name="budget_plan_id" optional="hide" />
                 <field name="assignee_ids" optional="show" widget="many2many_tags" />
                 <field name="amount_forward_in" optional="hide" />
                 <field name="amount_new_budget" optional="hide" />
@@ -121,7 +119,7 @@
         <field name="name">budget.control.view.form</field>
         <field name="model">budget.control</field>
         <field name="arch" type="xml">
-            <form string="Budget Control Sheet" create="0">
+            <form string="Budget Control Sheet">
                 <header>
                     <button
                         id="action_submit"
@@ -199,17 +197,18 @@
                             icon="menu"
                         />
                     </div>
-                    <group>
-                        <div class="oe_title" colspan="2">
-                            <label for="name" />
-                            <h1>
-                                <field name="name" readonly="state != 'draft'" />
-                            </h1>
-                        </div>
-                    </group>
+                    <div class="oe_title">
+                        <label for="name" />
+                        <h1>
+                            <field name="name" readonly="state != 'draft'" />
+                        </h1>
+                    </div>
                     <group>
                         <group name="budget_control_left">
-                            <field name="analytic_account_id" readonly="1" />
+                            <field
+                                name="analytic_account_id"
+                                readonly="state != 'draft' or line_ids"
+                            />
                             <field
                                 name="assignee_ids"
                                 widget="many2many_tags"
@@ -219,11 +218,10 @@
                         <group name="budget_control_right">
                             <field name="active" invisible="1" />
                             <field
-                                name="budget_plan_id"
-                                readonly="1"
-                                invisible="not budget_plan_id"
+                                name="budget_period_id"
+                                readonly="state != 'draft' or line_ids"
+                                required="1"
                             />
-                            <field name="budget_period_id" readonly="1" />
                             <field name="budget_scope" readonly="1" />
                             <label for="date_from" string="Date Range" />
                             <div name="date_range" class="o_row">
@@ -240,13 +238,17 @@
                                 name="company_ids"
                                 widget="many2many_tags"
                                 groups="base.group_multi_company"
+                                placeholder="All companies"
                             />
                             <field
                                 name="currency_id"
                                 groups="base.group_multi_currency"
-                                readonly="1"
+                                readonly="state != 'draft'"
                             />
-                            <field name="allocated_amount" readonly="1" />
+                            <field
+                                name="allocated_amount"
+                                readonly="state != 'draft'"
+                            />
                             <field name="released_amount" />
                             <field
                                 name="diff_amount"
@@ -298,11 +300,6 @@
                                     name="amount_budget"
                                     class="oe_subtotal_footer oe_right"
                                 >
-                                    <div
-                                        class="oe_subtotal_footer_separator oe_inline o_td_label"
-                                    >
-                                        <!-- <label for="amount_budget" /> -->
-                                    </div>
                                     <field name="amount_forward_in" />
                                     <field name="amount_new_budget" />
                                     <field
@@ -372,6 +369,7 @@
     </record>
     <record id="budget_control_action_filter_period" model="ir.actions.act_window">
         <field name="name">Budget Control Sheet</field>
+        <field name="path">budget-control</field>
         <field name="view_id" ref="budget_control_view_list" />
         <field name="res_model">budget.control</field>
         <field name="context">{'search_default_current_period': 1}</field>

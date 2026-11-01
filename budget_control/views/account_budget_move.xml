@@ -5,7 +5,7 @@
         <field name="name">view.account.budget.move.form</field>
         <field name="model">account.budget.move</field>
         <field name="arch" type="xml">
-            <form>
+            <form create="0" edit="0" delete="0">
                 <group name="reference" string="Reference">
                     <group name="group_left">
                         <field name="move_line_id" />

@@ -47,6 +47,16 @@ Budget Control Core Features:
   this budget_control module, there is no extension for budget
   commitment yet.
 
+  Budget moves and the Budget Monitoring report have one column
+  (``x_plan<id>_id``) per root analytic plan without Control Budget,
+  created with the plan, holding the other analytic accounts of the
+  distribution row the move comes from; the account of a controlled plan
+  is the move's Analytic Account. Commitment forward lines have the same
+  columns. A module that adds a budget move model calls
+  ``account.analytic.plan._sync_budget_columns`` from its data, as
+  ``data/analytic_plan_data.xml`` does. Moves created before a plan
+  existed have an empty column; recompute the document to fill it.
+
 - **Budget Template (budget.template)**
 
   A Budget Template in the budget control system serves as a framework
@@ -83,9 +93,8 @@ Budget Control Core Features:
   nothing too fancy. Once we have budget allocations, the system is
   ready to perform budget check.
 
-  Budget Controls created or adopted by a Budget Plan keep a direct link
-  to that plan. This makes ownership of the allocated amount explicit
-  and prevents another plan from taking over the same active control.
+  Sheets are created directly, or from a Budget Plan with the module
+  budget_plan.
 
 - **Budget Checking**
 
@@ -119,7 +128,9 @@ Budget Control Core Features:
   In case budget commitment is being used. Sometime user has committed
   budget withing this year but not ready to use it and want to move the
   commitment amount to next year budget. Budget Commitment Forward can
-  be use to change the budget move's date to the designated year.
+  be use to change the budget move's date to the designated year, on the
+  analytic each analytic continues as: itself for an analytic used for
+  years, or the next analytic of a yearly one (Continues As).
 
 - **Budget Transfer**
 
@@ -130,9 +141,10 @@ Budget Control Core Features:
 
   Active controls from a Fiscal Period are proposed in the audited
   Forward Budget Balance document. A budget manager reviews the
-  analytics and amounts before posting them to the next Fiscal Period.
-  Lifetime periods already span their complete duration and cannot use
-  carry forward.
+  analytics and amounts before posting them to the next Fiscal Period,
+  on the analytic each continues as. Once the commitments are forwarded,
+  the balance carries their budget too. Lifetime periods already span
+  their complete duration and cannot use carry forward.
 
 Extended Modules:
 -----------------
@@ -199,6 +211,31 @@ Before start using this module, following access right must be set.
 
 Followings are sample steps to start with,
 
+0. Set up the analytic plans
+
+   - Keep **Control Budget** ticked on the root plans whose accounts own
+     budgets (e.g. Departments, Projects) and untick it on plans used
+     for reporting only (e.g. Fund).
+
+   - One row of an analytic distribution can hold only one account of a
+     controlled plan, and one account of each plan. To charge two
+     budgets, split the line into rows by percentage. The same account
+     may be in several rows, e.g. Department 1 / Fund A 60% and
+     Department 1 / Fund B 40%: each row commits its own part.
+
+   - Budget moves and the Budget Monitoring report get one column per
+     root plan without Control Budget, so they can be grouped by it,
+     e.g. by Fund. The account of a controlled plan is the Analytic
+     Account of the move. Control Budget cannot change once budget moves
+     use the plan.
+
+   - Budgets follow the company of their analytic account, as in Odoo:
+     an analytic account without company can be used by every company,
+     one with a company by that company and its branches. To share a
+     budget between some companies only, use an analytic account without
+     company and set the **Allowed Companies** of its budget control
+     sheet; documents of other companies cannot consume it.
+
 1. Create new Budget KPI
 
    To create budget KPI using in budget template
@@ -222,17 +259,13 @@ Followings are sample steps to start with,
 
 4. Create Budget Control Sheet
 
-   To create budget control sheet, you can either create manually one by
-   one or by using the helper, Action > Create Budget Control Sheet
+   Menu > Budgeting > Budget Control Sheet, create one sheet per
+   analytic account and budget period, with its Allocated amount. Its
+   name and Plan Date Range come from the period. Choose its KPIs and
+   click **Soft Reset** to create the plan table.
 
-      - Choose Analytic budget_control_purchase_tag_dimension
-      - Check All Analytic Account, this will list all analytic account
-        in selected groups
-      - Uncheck Initial Budget By Commitment, this is used only on
-        following year to init budget allocation if they were committed
-        amount carried over.
-      - Click "Create Budget Control Sheet", and then view the newly
-        created control sheets.
+   With the module budget_plan, sheets are created from a Budget Plan
+   instead, which then manages their Allocated amount.
 
 5. Allocate amount in Budget Control Sheets
 
@@ -284,17 +317,129 @@ Followings are sample steps to start with,
    **Refresh** and **Get All Analytic Accounts** actions; allocate them
    directly on their dedicated Budget Control instead.
 
-9. Carry an unused balance to the next period
+9. Close a year: carry commitments and balances to the next period
 
-   - Create a **Forward Budget Balance** document and select the source
-     and target Fiscal Periods, then click **Review Budget Balance**.
-   - Review the proposed active analytics. Adjust the amounts or remove
-     lines that must lapse before completing the forward.
-   - Create the target-period Budget Plan. Its Forward Balance is
-     included in the amount available for the new Budget Control Sheet.
+   An analytic is used in one of two ways:
 
-   Lifetime periods cannot be selected because their balance remains
-   available for their complete duration.
+   - **Continuing**: the same analytic for years, without Budget Period.
+     It continues as itself while it is open: leave its Date To empty,
+     or extend it. Each period has its own Budget Control Sheet for it.
+   - **Yearly**: a new analytic each period, with that Budget Period. It
+     continues as the analytic in its **Continues As** field, an
+     analytic of the next period.
+
+   **Continue in Budget Period**, from the analytics list (Action) or
+   the forwards (**Continue Analytics**), proposes it for the analytics
+   that do not continue yet: it extends continuing analytics that end
+   before the period, links yearly ones to the only analytic of the
+   period with the same name, code, root plan and company, or creates
+   their copy for the period. Choose the analytic when several match.
+
+   Then:
+
+   - **Forward Budget Commitment** carries the open commitments to the
+     period, on the analytic each continues as (editable by line, e.g.
+     to carry some documents elsewhere) and their Forward Dimensions. A
+     commitment not used in that period is carried again by the next
+     one.
+   - **Forward Budget Balance** carries the available balance of each
+     analytic, after the commitments are forwarded: their budget comes
+     with them. Its preview warns of commitments still in the period.
+     Adjust the amounts or remove lines that must lapse before
+     completing the forward.
+   - Create the target-period Budget Plan. It takes the yearly analytics
+     of the period and the continuing ones budgeted the period before,
+     and its Forward Balance is included in the amount available for the
+     new Budget Control Sheet.
+
+   Lifetime analytics are not carried forward: their commitments and
+   balance remain available for their complete duration.
+
+Development
+===========
+
+Extension modules, e.g. budgets of purchases or expenses, build on these
+hooks.
+
+**Document lines** inherit ``budget.docline.mixin`` and set
+``_budget_move_model``, ``_doc_rel`` and ``_budget_date_commit_fields``
+(``_budget_analytic_field`` is ``analytic_distribution`` by default).
+
+- A row of the analytic distribution commits one budget analytic, an
+  account of a plan with Control Budget, with its full percentage. In
+  ``_init_docline_budget_vals(budget_vals, analytic_id)``, take the
+  percentage of the row being committed from
+  ``_get_budget_analytic_percent(analytic_id)``, not from
+  ``distribution[str(analytic_id)]``.
+- ``amount_commit`` is keyed by row, ``budget_row_key()`` of
+  ``odoo.addons.budget_control.models.analytic_plan``, and
+  ``return_amount_commit`` in context may be such a dict.
+- ``commit_budget()`` creates one budget move per row and calls
+  ``_update_template_line(budget_move)`` for each.
+- ``recompute_budget_move_batch()``, used by journal items and budget
+  adjustments, and the batch precommit of models whose
+  ``_can_batch_budget_precommit()`` is true, do not call
+  ``commit_budget()``: extend ``_prepare_commit_vals()`` or
+  ``_init_docline_budget_vals()``.
+- ``_get_budget_company()`` is the company of the document, whose budget
+  settings apply: use it in ``_get_included_tax()``.
+
+**Budget move models** inherit ``base.budget.move``. Their plan columns
+``x_plan<id>_id``, one per root plan without Control Budget, are created
+by ``account.analytic.plan._sync_budget_columns()``: call it from the
+data of the module, as ``data/analytic_plan_data.xml`` does.
+
+**Budget check** (``budget.period``):
+
+- ``_get_control_budget_moves(budget_period, doclines)`` selects the
+  budget moves a period checks, and ``_prepare_controls()`` their
+  controls.
+- ``_get_where_domain(analytic_id, template_lines)`` returns an ``SQL``
+  object. Extensions adding filters to it also override
+  ``_can_use_budget_available_cache()`` to return ``False`` for them.
+- ``_get_analytic_budget_control(analytic, date_commit, company)`` of
+  document lines gives the budget control sheet; its ``currency_id``
+  replaces ``_get_analytic_budget_currency()``.
+- Budget Constraints run a server action with ``doclines`` in context,
+  whose ``action`` is the list of error messages.
+
+**Continuation**:
+``account.analytic.account._get_forward_analytic(period)`` gives the
+analytic the budgets and commitments of an analytic are carried forward
+to in a period: itself when ``_is_forward_target(period)`` (fiscal, of a
+plan with Control Budget, of that period or without Budget Period, open
+when it starts), else along ``next_analytic_id``; none for Lifetime
+analytics. The ``budget.analytic.continue`` wizard extends
+(``_extend_budget_analytic()``), links
+(``_get_next_analytic_matches()``) or creates
+(``_prepare_next_analytic_vals()``) them, and
+``_get_continue_action(period, analytics)`` opens it. Commitment and
+balance forward lines default their forward analytic to it.
+
+**Commitment forwards** carry each analytic row to the forward analytic
+and the Forward Dimensions of its line (``to_dimension_ids``, those of
+the row by default): ``_get_target_row_key()`` and
+``_get_target_column_vals()`` give the target row,
+``_get_budget_row_key()`` the source row. On document lines,
+``_get_budget_forward_date()`` and ``_get_budget_rows_at(date)`` give
+where the done forwards carried the commitment, e.g. to check the rows
+of a bill. Before anything changes, ``_check_forward_targets()`` refuses
+the lines ``_get_target_error()`` returns a message for, e.g. when the
+target row fails ``_check_budget_forward_row(row_key)`` of the document
+line: the check of its own ``_validate_analytic_distribution()``, such
+as its mandatory plans. Rows of Lifetime analytics are not forwarded,
+and
+``budget.commit.forward.line._get_commit_forward_in_map(period_ids, analytic_ids)``
+sums the commitments the done forwards carried in.
+
+**Monitoring** (``budget.monitor.report``): its query is ``_table_sql``.
+A source of consumption is added to ``_get_consumed_sources()``, and its
+branch to ``_get_sql_branches()`` with
+``_get_consumed_sql(amount_type, where)``, instead of appending SQL text
+to ``_get_sql()``. Branches without plan columns select
+``_select_plan_columns_null()``. The monitoring shows the amount types
+in the order of their keys, e.g. ``30_po_commit`` before ``80_actual``:
+a commitment takes a key before ``80_``.
 
 Bug Tracker
 ===========

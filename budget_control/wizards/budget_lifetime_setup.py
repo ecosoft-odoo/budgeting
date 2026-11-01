@@ -53,18 +53,11 @@ class BudgetLifetimeSetup(models.TransientModel):
         help="Total amount that must be distributed on the Budget Control lines.",
     )
 
-    @api.depends(
-        "analytic_account_id",
-        "analytic_account_id.company_id.currency_id",
-        "analytic_account_id.budget_company_ids.currency_id",
-    )
+    @api.depends("analytic_account_id", "analytic_account_id.company_id.currency_id")
     def _compute_currency_id(self):
         for setup in self:
-            analytic = setup.analytic_account_id
             setup.currency_id = (
-                analytic.currency_id
-                or analytic.budget_company_ids[:1].currency_id
-                or self.env.company.currency_id
+                setup.analytic_account_id.currency_id or self.env.company.currency_id
             )
 
     @api.constrains("date_from", "date_to")
@@ -95,7 +88,7 @@ class BudgetLifetimeSetup(models.TransientModel):
                     "plan_date_range_type_id": self.plan_date_range_type_id.id,
                     "control_level": self.control_level,
                     "unmatched_account_policy": self.unmatched_account_policy,
-                    "company_ids": [Command.set(analytic.budget_company_ids.ids)],
+                    "company_ids": [Command.set(analytic.company_id.ids)],
                 }
             )
             control = self.env["budget.control"].create(

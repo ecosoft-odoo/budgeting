@@ -8,49 +8,26 @@ access_budget_template_line_user,access_budget_template_line_user,budget.templat
 access_budget_kpi_manager,access_budget_kpi_manager,budget.kpi,budget_control.group_budget_control_manager,crud,
 access_budget_kpi,access_budget_kpi,budget.kpi,budget_control.group_budget_control_user,ru,
 access_budget_period_manager,access_budget_period_manager,budget.period,budget_control.group_budget_control_manager,crud,
-access_budget_period_user,access_budget_period_user,budget.period,base.group_user,r,
-rule_budget_period_multi_company,Budget Period multi-company,budget.period,,crud,"
-        [
-            '|',
-            ('company_ids', '=', False),
-            ('company_ids', 'in', company_ids)
-        ]
-        "
 access_budget_constraint,access_budget_constraint,budget.constraint,base.group_user,r,
 access_budget_constraint_manager,access_budget_constraint_manager,budget.constraint,budget_control.group_budget_control_manager,crud,
-access_budget_control,access_budget_control,budget.control,budget_control.group_budget_control_user,cd,
-rule_budget_control_budget_user,Budget Control Rule For Budget Users,budget.control,budget_control.group_budget_control_user,ru,"[('assignee_ids', 'in', [user.id])]"
+access_budget_control,access_budget_control,budget.control,budget_control.group_budget_control_user,c,
+rule_budget_control_budget_user,Budget Control Rule For Budget Users,budget.control,budget_control.group_budget_control_user,rud,"[('assignee_ids', 'in', [user.id])]"
 rule_budget_control_budget_manager,Budget Control Rule For Budget Manager,budget.control,budget_control.group_budget_control_manager,crud,
 rule_budget_control_budget_multi_company,Budget Control multi-company,budget.control,,crud,"
         [
             '|',
             ('company_ids', '=', False),
-            ('company_ids', 'in', company_ids)
+            ('company_ids', 'parent_of', company_ids)
         ]
     "
-access_budget_control_line,access_budget_control_line,budget.control.line,budget_control.group_budget_control_user,crud,
-access_budget_plan,access_budget_plan,budget.plan,budget_control.group_budget_control_manager,crud,
-rule_budget_plan_budget_multi_company,Budget Plan multi-company,budget.plan,,crud,"
-            [
-                '|',
-                ('company_ids', '=', False),
-                ('company_ids', 'in', company_ids)
-            ]
-        "
-access_budget_plan_line,access_budget_plan_line,budget.plan.line,budget_control.group_budget_control_manager,crud,
-rule_budget_plan_line_budget_multi_company,Budget Plan Line multi-company,budget.plan.line,,crud,"
-            [
-                '|',
-                ('company_ids', '=', False),
-                ('company_ids', 'in', company_ids)
-            ]
-        "
+access_budget_control_line,access_budget_control_line,budget.control.line,budget_control.group_budget_control_user,crud,"[('budget_control_id.assignee_ids', 'in', [user.id])]"
+access_budget_control_line_manager,access_budget_control_line_manager,budget.control.line,budget_control.group_budget_control_manager,crud,
 access_budget_transfer_user,access_budget_transfer_user,budget.transfer,base.group_user,crud,
 rule_budget_transfer_budget_multi_company,Budget Transfer multi-company,budget.transfer,,crud,"
             [
                 '|',
                 ('company_ids', '=', False),
-                ('company_ids', 'in', company_ids)
+                ('company_ids', 'parent_of', company_ids)
             ]
         "
 access_budget_transfer_item_user,access_budget_transfer_item_user,budget.transfer.item,base.group_user,crud,
@@ -62,7 +39,7 @@ rule_budget_commit_forward_multi_company,Budget Commit Forward multi-company,bud
         [
             '|',
             ('company_ids', '=', False),
-            ('company_ids', 'in', company_ids)
+            ('company_ids', 'parent_of', company_ids)
         ]
         "
 access_budget_commit_forward_line,access_budget_commit_forward_line,budget.commit.forward.line,budget_control.group_budget_control_manager,crud,
@@ -71,19 +48,22 @@ rule_budget_balance_forward_multi_company,Budget Balance Forward multi-company,b
         [
             '|',
             ('company_ids', '=', False),
-            ('company_ids', 'in', company_ids)
+            ('company_ids', 'parent_of', company_ids)
         ]
         "
 access_budget_balance_forward_line,access_budget_balance_forward_line,budget.balance.forward.line,budget_control.group_budget_control_manager,crud,
 access_budget_state_confirmation,access_budget_state_confirmation,budget.state.confirmation,budget_control.group_budget_control_manager,crud,
 access_analytic_budget_info,access_analytic_budget_info,analytic.budget.info,base.group_user,r,
-access_budget_plan_analytic_select,access_budget_plan_analytic_select,budget.plan.analytic.select,budget_control.group_budget_control_manager,crud,
 access_budget_lifetime_setup,access_budget_lifetime_setup,budget.lifetime.setup,budget_control.group_budget_control_manager,crud,
 access_budget_commit_forward_info,access_budget_commit_forward_info,budget.commit.forward.info,budget_control.group_budget_control_manager,crud,
 access_budget_commit_forward_info_line,access_budget_commit_forward_info_line,budget.commit.forward.info.line,budget_control.group_budget_control_manager,crud,
 access_budget_balance_forward_info,access_budget_balance_forward_info,budget.balance.forward.info,budget_control.group_budget_control_manager,crud,
 access_budget_balance_forward_info_line,access_budget_balance_forward_info_line,budget.balance.forward.info.line,budget_control.group_budget_control_manager,crud,
-access_budget_monitor_report,access_budget_monitor_report,budget.monitor.report,base.group_user,crd,
-access_account_budget_move_user,access_account_budget_move_user,account.budget.move,base.group_user,crud,
+access_budget_monitor_report,access_budget_monitor_report,budget.monitor.report,budget_control.group_budget_control_user,r,
+rule_budget_monitor_report_multi_company,Budget Monitoring multi-company,budget.monitor.report,,r,"['|', ('analytic_account_id.company_id', '=', False), ('analytic_account_id.company_id', 'parent_of', company_ids)]"
+access_account_budget_move_user,access_account_budget_move_user,account.budget.move,base.group_user,r,
+rule_account_budget_move_multi_company,Budget Move multi-company,account.budget.move,,r,"[('company_id', 'in', company_ids)]"
 access_account_analytic_account_budget,access_account_analytic_account_budget,account.analytic.account,budget_control.group_budget_control_manager,crud,
 analytic.access_account_analytic_account,access_account_analytic_account,account.analytic.account,analytic.group_analytic_accounting,r,
+access_budget_analytic_continue,access_budget_analytic_continue,budget.analytic.continue,budget_control.group_budget_control_manager,crud,
+access_budget_analytic_continue_line,access_budget_analytic_continue_line,budget.analytic.continue.line,budget_control.group_budget_control_manager,crud,

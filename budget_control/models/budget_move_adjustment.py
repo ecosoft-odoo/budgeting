@@ -183,7 +183,7 @@ class BudgetMoveAdjustmentItem(models.Model):
 
     def _init_docline_budget_vals(self, budget_vals, analytic_id):
         self.ensure_one()
-        percent_analytic = self[self._budget_analytic_field].get(str(analytic_id))
+        percent_analytic = self._get_budget_analytic_percent(analytic_id)
         amount_budget = self.amount * (percent_analytic / 100)
         budget_vals["amount_currency"] = (
             -amount_budget if self.adjust_type == "release" else amount_budget

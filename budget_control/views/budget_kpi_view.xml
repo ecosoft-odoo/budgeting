@@ -34,6 +34,7 @@
     </record>
     <record id="budget_kpi_action" model="ir.actions.act_window">
         <field name="name">Budget KPI</field>
+        <field name="path">budget-kpi</field>
         <field name="view_id" ref="budget_kpi_view_list" />
         <field name="res_model">budget.kpi</field>
         <field name="view_mode">list,form</field>

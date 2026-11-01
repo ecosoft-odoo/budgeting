@@ -4,6 +4,28 @@ Before start using this module, following access right must be set.
 
 Followings are sample steps to start with,
 
+0.  Set up the analytic plans
+
+    - Keep **Control Budget** ticked on the root plans whose accounts own
+      budgets (e.g. Departments, Projects) and untick it on plans used for
+      reporting only (e.g. Fund).
+    - One row of an analytic distribution can hold only one account of a
+      controlled plan, and one account of each plan. To charge two budgets,
+      split the line into rows by percentage. The same account may be in
+      several rows, e.g. Department 1 / Fund A 60% and Department 1 /
+      Fund B 40%: each row commits its own part.
+    - Budget moves and the Budget Monitoring report get one column per root
+      plan without Control Budget, so they can be grouped by it, e.g. by
+      Fund. The account of a controlled plan is the Analytic Account of the
+      move. Control Budget cannot change once budget moves use the plan.
+
+    - Budgets follow the company of their analytic account, as in Odoo: an
+      analytic account without company can be used by every company, one with
+      a company by that company and its branches. To share a budget between
+      some companies only, use an analytic account without company and set the
+      **Allowed Companies** of its budget control sheet; documents of other
+      companies cannot consume it.
+
 1.  Create new Budget KPI
 
     To create budget KPI using in budget template
@@ -26,17 +48,13 @@ Followings are sample steps to start with,
 
 4.  Create Budget Control Sheet
 
-    To create budget control sheet, you can either create manually one
-    by one or by using the helper, Action \> Create Budget Control Sheet
+    Menu \> Budgeting \> Budget Control Sheet, create one sheet per
+    analytic account and budget period, with its Allocated amount. Its
+    name and Plan Date Range come from the period. Choose its KPIs and click
+    **Soft Reset** to create the plan table.
 
-    > - Choose Analytic budget_control_purchase_tag_dimension
-    > - Check All Analytic Account, this will list all analytic account
-    >   in selected groups
-    > - Uncheck Initial Budget By Commitment, this is used only on
-    >   following year to init budget allocation if they were committed
-    >   amount carried over.
-    > - Click "Create Budget Control Sheet", and then view the newly
-    >   created control sheets.
+    With the module budget_plan, sheets are created from a Budget Plan
+    instead, which then manages their Allocated amount.
 
 5.  Allocate amount in Budget Control Sheets
 
@@ -88,14 +106,38 @@ Followings are sample steps to start with,
     Analytic Accounts** actions; allocate them directly on their dedicated
     Budget Control instead.
 
-9.  Carry an unused balance to the next period
+9.  Close a year: carry commitments and balances to the next period
 
-    - Create a **Forward Budget Balance** document and select the source and
-      target Fiscal Periods, then click **Review Budget Balance**.
-    - Review the proposed active analytics. Adjust the amounts or remove lines
-      that must lapse before completing the forward.
-    - Create the target-period Budget Plan. Its Forward Balance is included in
-      the amount available for the new Budget Control Sheet.
+    An analytic is used in one of two ways:
 
-    Lifetime periods cannot be selected because their balance remains available
-    for their complete duration.
+    - **Continuing**: the same analytic for years, without Budget Period. It
+      continues as itself while it is open: leave its Date To empty, or extend
+      it. Each period has its own Budget Control Sheet for it.
+    - **Yearly**: a new analytic each period, with that Budget Period. It
+      continues as the analytic in its **Continues As** field, an analytic of
+      the next period.
+
+    **Continue in Budget Period**, from the analytics list (Action) or the
+    forwards (**Continue Analytics**), proposes it for the analytics that do
+    not continue yet: it extends continuing analytics that end before the
+    period, links yearly ones to the only analytic of the period with the
+    same name, code, root plan and company, or creates their copy for the
+    period. Choose the analytic when several match.
+
+    Then:
+
+    - **Forward Budget Commitment** carries the open commitments to the
+      period, on the analytic each continues as (editable by line, e.g. to
+      carry some documents elsewhere) and their Forward Dimensions. A
+      commitment not used in that period is carried again by the next one.
+    - **Forward Budget Balance** carries the available balance of each
+      analytic, after the commitments are forwarded: their budget comes with
+      them. Its preview warns of commitments still in the period. Adjust the
+      amounts or remove lines that must lapse before completing the forward.
+    - Create the target-period Budget Plan. It takes the yearly analytics of
+      the period and the continuing ones budgeted the period before, and its
+      Forward Balance is included in the amount available for the new Budget
+      Control Sheet.
+
+    Lifetime analytics are not carried forward: their commitments and
+    balance remain available for their complete duration.

@@ -66,6 +66,7 @@
     </record>
     <record id="budget_constraint_action" model="ir.actions.act_window">
         <field name="name">Budget Constraint</field>
+        <field name="path">budget-constraint</field>
         <field name="view_id" ref="budget_constraint_view_list" />
         <field name="res_model">budget.constraint</field>
         <field name="view_mode">list,form</field>

@@ -1,48 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <record id="budget_period_view_list" model="ir.ui.view">
-        <field name="name">budget.period.view.list</field>
-        <field name="model">budget.period</field>
-        <field name="arch" type="xml">
-            <list>
-                <field name="name" />
-                <field name="budget_scope" />
-                <field name="bm_date_from" />
-                <field name="bm_date_to" />
-            </list>
-        </field>
-    </record>
+    <!-- Keep this id: extension modules inherit it -->
     <record id="budget_period_view_form" model="ir.ui.view">
         <field name="name">budget.period.view.form</field>
         <field name="model">budget.period</field>
+        <field name="inherit_id" ref="base_budget.budget_period_view_form" />
         <field name="arch" type="xml">
-            <form string="Budget Period">
-                <sheet>
-                    <div class="oe_button_box" name="button_box" />
-                    <div class="oe_title">
-                        <div class="oe_edit_only">
-                            <label for="name" />
-                        </div>
-                        <h1>
-                            <field name="name" placeholder="Name" />
-                        </h1>
-                    </div>
+            <notebook name="settings" position="inside">
+                <page name="budget_control" string="Budget Control">
                     <group>
-                        <group>
-                            <field name="template_id" />
-                            <field name="budget_scope" readonly="1" />
-                        </group>
-                        <group>
-                            <field name="bm_date_from" />
-                            <field name="bm_date_to" />
-                            <field name="plan_date_range_type_id" />
-                        </group>
-                    </group>
-                    <group>
-                        <field name="company_ids" widget="many2many_tags" />
-                    </group>
-                    <group string="Budget Control">
                         <group name="budget_period_control">
+                            <field
+                                name="template_id"
+                                required="control_budget or account"
+                            />
+                            <field
+                                name="plan_date_range_type_id"
+                                required="control_budget or account"
+                            />
                             <field name="control_budget" widget="boolean_toggle" />
                             <label
                                 for="account"
@@ -54,7 +29,7 @@
                                 <label for="account" class="o_form_label oe_inline" />
                             </div>
                         </group>
-                        <group>
+                        <group name="budget_period_control_analytic">
                             <field name="control_all_analytic_accounts" />
                             <field
                                 name="control_analytic_account_ids"
@@ -65,31 +40,15 @@
                             <field name="unmatched_account_policy" />
                         </group>
                     </group>
-                    <!-- <notebook>
-                        <page name="analytic_ids" string="Analytic">
-                            <field
-                                name="analytic_ids"
-                                context="{'tree_view_ref': 'budget_control.view_budget_analytic_list'}"
-                                widget="many2many"
-                            />
-                        </page>
-                    </notebook> -->
-                </sheet>
-                <chatter />
-            </form>
+                </page>
+            </notebook>
         </field>
-    </record>
-    <record id="budget_period_action" model="ir.actions.act_window">
-        <field name="name">Budget Period</field>
-        <field name="view_id" ref="budget_period_view_list" />
-        <field name="res_model">budget.period</field>
-        <field name="view_mode">list,form</field>
     </record>
     <menuitem
         id="budget_period_menu"
         parent="budget_config_sub_menu"
         name="Budget Period"
-        action="budget_period_action"
+        action="base_budget.budget_period_action"
         sequence="20"
     />
 </odoo>

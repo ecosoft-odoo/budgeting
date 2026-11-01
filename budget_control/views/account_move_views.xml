@@ -52,7 +52,7 @@
                     nolabel="1"
                     string="Budget Figure"
                     width="12px"
-                    widget="popover_widget"
+                    widget="budget_popover"
                     groups="budget_control.group_budget_control_user"
                 />
             </xpath>
@@ -84,7 +84,7 @@
                     nolabel="1"
                     string="Budget Figure"
                     width="12px"
-                    widget="popover_widget"
+                    widget="budget_popover"
                     groups="budget_control.group_budget_control_user"
                 />
             </xpath>
@@ -131,7 +131,7 @@
                             <field name="analytic_account_id" optional="show" />
                             <field name="write_uid" optional="hide" />
                             <field name="write_date" optional="hide" />
-                            <field name="note" optionl="hide" />
+                            <field name="note" optional="hide" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
                         </list>

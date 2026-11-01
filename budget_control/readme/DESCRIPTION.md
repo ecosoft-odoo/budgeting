@@ -22,6 +22,15 @@ module,
   this budget_control module, there is no extension for budget
   commitment yet.
 
+  Budget moves and the Budget Monitoring report have one column
+  (`x_plan<id>_id`) per root analytic plan without Control Budget, created
+  with the plan, holding the other analytic accounts of the distribution row
+  the move comes from; the account of a controlled plan is the move's
+  Analytic Account. Commitment forward lines have the same columns. A module that adds a budget move model calls
+  `account.analytic.plan._sync_budget_columns` from its data, as
+  `data/analytic_plan_data.xml` does. Moves created before a plan existed
+  have an empty column; recompute the document to fill it.
+
 - **Budget Template (budget.template)**
 
   A Budget Template in the budget control system serves as a framework
@@ -58,10 +67,8 @@ module,
   nothing too fancy. Once we have budget allocations, the system is
   ready to perform budget check.
 
-  Budget Controls created or adopted by a Budget Plan keep a direct
-  link to that plan. This makes ownership of the allocated amount
-  explicit and prevents another plan from taking over the same active
-  control.
+  Sheets are created directly, or from a Budget Plan with the module
+  budget_plan.
 
 - **Budget Checking**
 
@@ -95,7 +102,9 @@ module,
   In case budget commitment is being used. Sometime user has committed
   budget withing this year but not ready to use it and want to move the
   commitment amount to next year budget. Budget Commitment Forward can
-  be use to change the budget move's date to the designated year.
+  be use to change the budget move's date to the designated year, on the
+  analytic each analytic continues as: itself for an analytic used for
+  years, or the next analytic of a yearly one (Continues As).
 
 - **Budget Transfer**
 
@@ -106,8 +115,10 @@ module,
 
   Active controls from a Fiscal Period are proposed in the audited Forward
   Budget Balance document. A budget manager reviews the analytics and amounts
-  before posting them to the next Fiscal Period. Lifetime periods already span
-  their complete duration and cannot use carry forward.
+  before posting them to the next Fiscal Period, on the analytic each
+  continues as. Once the commitments are forwarded, the balance carries
+  their budget too. Lifetime periods already span their complete duration
+  and cannot use carry forward.
 
 ## Extended Modules:
 

@@ -10,22 +10,23 @@
     "website": "https://github.com/ecosoft-odoo/budgeting",
     "depends": [
         "account",
+        "base_budget",
         "date_range",
         "web_widget_x2many_2d_matrix",
     ],
     "data": [
-        "security/analytic_security.xml",
         "security/budget_control_security_groups.xml",
         "security/ir.access.csv",
         "data/budget_data.xml",
         "data/sequence_data.xml",
+        "data/analytic_plan_data.xml",
         # Wizards
         "wizards/analytic_budget_info_view.xml",
         "wizards/confirm_state_budget_view.xml",
         "wizards/budget_commit_forward_info_view.xml",
         "wizards/budget_balance_forward_info_view.xml",
-        "wizards/budget_plan_analytic_select_view.xml",
         "wizards/budget_lifetime_setup_view.xml",
+        "wizards/budget_analytic_continue_view.xml",
         # Budget
         "views/budget_menuitem.xml",
         "views/res_config_settings_views.xml",
@@ -34,7 +35,7 @@
         "views/budget_period_view.xml",
         "views/budget_constraint_view.xml",
         "views/analytic_account_views.xml",
-        "views/budget_plan_view.xml",
+        "views/analytic_plan_views.xml",
         "views/budget_control_view.xml",
         "views/budget_transfer_view.xml",
         "views/budget_transfer_item_view.xml",
@@ -56,7 +57,7 @@
     ],
     "assets": {
         "web.assets_backend": [
-            "budget_control/static/src/xml/budget_popover.xml",
+            "budget_control/static/src/components/**/*",
             "budget_control/static/src/scss/pivot_wrap.scss",
         ],
     },

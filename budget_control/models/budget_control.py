@@ -16,6 +16,10 @@ class BudgetControl(models.Model):
     _order = "analytic_account_id"
 
     name = fields.Char(
+        compute="_compute_name",
+        store=True,
+        readonly=False,
+        precompute=True,
         required=True,
         tracking=True,
     )
@@ -32,6 +36,7 @@ class BudgetControl(models.Model):
                 [self.env.ref("budget_control.group_budget_control_user").id],
             )
         ],
+        default=lambda self: self._default_assignee_ids(),
         tracking=True,
         copy=False,
     )
@@ -42,14 +47,6 @@ class BudgetControl(models.Model):
     )
     budget_scope = fields.Selection(
         related="budget_period_id.budget_scope",
-    )
-    budget_plan_id = fields.Many2one(
-        comodel_name="budget.plan",
-        index=True,
-        copy=False,
-        ondelete="restrict",
-        tracking=True,
-        help="Budget Plan that owns and manages this control's allocated amount.",
     )
     date_from = fields.Date(related="budget_period_id.bm_date_from")
     date_to = fields.Date(related="budget_period_id.bm_date_to")
@@ -75,6 +72,10 @@ class BudgetControl(models.Model):
     plan_date_range_type_id = fields.Many2one(
         comodel_name="date.range.type",
         string="Plan Date Range",
+        compute="_compute_plan_date_range_type_id",
+        store=True,
+        readonly=False,
+        precompute=True,
         required=True,
     )
     init_budget_commit = fields.Boolean(
@@ -84,16 +85,21 @@ class BudgetControl(models.Model):
     )
     company_ids = fields.Many2many(
         comodel_name="res.company",
-        related="analytic_account_id.budget_company_ids",
         relation="budget_control_company_rel",
         column1="budget_control_id",
         column2="company_id",
+        string="Allowed Companies",
+        compute="_compute_company_ids",
         store=True,
-        string="Companies",
+        readonly=False,
         tracking=True,
+        help="Companies, with their branches, that may consume this budget: "
+        "the company of the analytic account, or for an analytic account "
+        "without company, the companies sharing it (empty: all companies).",
     )
     currency_id = fields.Many2one(
         comodel_name="res.currency",
+        default=lambda self: self.env.company.currency_id,
         required=True,
         tracking=True,
     )
@@ -193,6 +199,28 @@ class BudgetControl(models.Model):
         compute="_compute_transferred_amount",
     )
 
+    @api.model
+    def _default_assignee_ids(self):
+        """A Budget User manages the sheets they create."""
+        user = self.env.user
+        if user.has_group(
+            "budget_control.group_budget_control_user"
+        ) and not user.has_group("budget_control.group_budget_control_manager"):
+            return user
+        return user.browse()
+
+    @api.depends("budget_period_id", "analytic_account_id")
+    def _compute_name(self):
+        for rec in self.filtered(
+            lambda r: r.budget_period_id and r.analytic_account_id
+        ):
+            rec.name = f"{rec.budget_period_id.name} :: {rec.analytic_account_id.name}"
+
+    @api.depends("budget_period_id")
+    def _compute_plan_date_range_type_id(self):
+        for rec in self.filtered("budget_period_id.plan_date_range_type_id"):
+            rec.plan_date_range_type_id = rec.budget_period_id.plan_date_range_type_id
+
     @api.constrains("active", "state", "analytic_account_id", "budget_period_id")
     def _check_budget_control_unique(self):
         """Not allow multiple active budget control on same period"""
@@ -225,6 +253,37 @@ class BudgetControl(models.Model):
                 analytics=", ".join(analytics.mapped("name")),
             )
         )
+
+    @api.constrains("analytic_account_id")
+    def _check_analytic_control_budget(self):
+        self.analytic_account_id._check_control_budget_plan()
+
+    @api.depends("analytic_account_id")
+    def _compute_company_ids(self):
+        for rec in self:
+            rec.company_ids = rec.analytic_account_id.company_id or rec.company_ids
+
+    @api.constrains("analytic_account_id", "company_ids")
+    def _check_companies_vs_analytic(self):
+        """A company analytic only serves its company and branches."""
+        for rec in self:
+            company = rec.analytic_account_id.company_id
+            if company and any(
+                company not in allowed.parent_ids for allowed in rec.company_ids
+            ):
+                raise ValidationError(
+                    self.env._(
+                        "The allowed companies of %(budget)s must be %(company)s "
+                        "or its branches, as its analytic account belongs to it.",
+                        budget=rec.display_name,
+                        company=company.display_name,
+                    )
+                )
+
+    def _is_company_allowed(self, company):
+        """Whether ``company`` may consume this budget."""
+        self.ensure_one()
+        return not self.company_ids or bool(company.parent_ids & self.company_ids)
 
     @api.constrains("currency_id", "company_ids")
     def _check_currency_vs_companies(self):
@@ -276,21 +335,31 @@ class BudgetControl(models.Model):
 
     @api.constrains("line_ids")
     def _check_budget_control_over_consumed(self):
-        BudgetPeriod = self.env["budget.period"]
         if self.env.context.get("edit_amount", False):
             return
-
+        BudgetPeriod = self.env["budget.period"]
+        MonitorReport = self.env["budget.monitor.report"]
+        query = BudgetPeriod._budget_info_query()
+        self.env.flush_all()
         for rec in self.filtered(
             lambda control: control.budget_period_id.control_level == "analytic_kpi"
         ):
+            # One query per sheet, split by KPI (lines without KPI included)
+            control = rec.with_context(
+                filter_kpi_ids=list({line.kpi_id.id for line in rec.line_ids})
+            )
+            dataset_by_kpi = defaultdict(list)
+            for data in MonitorReport.with_context(
+                **control._get_context_monitoring()
+            )._read_group_dataset(
+                control._get_domain_dataset_all(),
+                query["fields"] + ["kpi_id"],
+                query["groupby"] + ["kpi_id"],
+            ):
+                dataset_by_kpi[data["kpi_id"] and data["kpi_id"][0]].append(data)
             for line in rec.line_ids:
-                # Filter according to budget_control parameter
-                query, dataset_all = rec.with_context(
-                    filter_kpi_ids=[line.kpi_id.id]
-                )._get_query_dataset_all()
-                # Get data from dataset
                 budget_info = BudgetPeriod.get_budget_info_from_dataset(
-                    query, dataset_all
+                    query, dataset_by_kpi[line.kpi_id.id]
                 )
                 if budget_info["amount_balance"] < 0:
                     raise UserError(
@@ -343,8 +412,6 @@ class BudgetControl(models.Model):
             ("budget_period_id", "in", budget_period_ids),
         ]
         # Optional filters by context
-        if self.env.context.get("no_fwd_commit"):
-            domain.append(("fwd_commit", "=", False))
         if self.env.context.get("filter_kpi_ids"):
             domain.append(("kpi_id", "in", self.env.context.get("filter_kpi_ids")))
         return domain
@@ -456,6 +523,37 @@ class BudgetControl(models.Model):
                     )
                 )
 
+    def write(self, vals):
+        if "analytic_account_id" in vals or "budget_period_id" in vals:
+            self._check_plan_table_unchanged(vals)
+        return super().write(vals)
+
+    def _check_plan_table_unchanged(self, vals):
+        """The plan table holds the analytic and dates of its sheet."""
+        for rec in self.filtered("line_ids"):
+            if vals.get("analytic_account_id", rec.analytic_account_id.id) != (
+                rec.analytic_account_id.id
+            ) or vals.get("budget_period_id", rec.budget_period_id.id) != (
+                rec.budget_period_id.id
+            ):
+                raise UserError(
+                    self.env._(
+                        "Budget Control %(control)s has a plan table: its analytic "
+                        "account and budget period cannot change. Create another "
+                        "sheet instead.",
+                        control=rec.display_name,
+                    )
+                )
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_not_draft(self):
+        if any(rec.state not in ("draft", "cancel") for rec in self):
+            raise UserError(
+                self.env._(
+                    "Only draft or cancelled budget control sheets can be deleted."
+                )
+            )
+
     def action_draft(self):
         return self.write({"state": "draft"})
 
@@ -501,8 +599,8 @@ class BudgetControl(models.Model):
                 dict_value["amount"] = line_amount[0].get("amount", 0.0)
         return dict_value
 
-    def _check_lifetime_date_range_coverage(self, date_ranges):
-        """Avoid silently creating an incomplete multi-year planning matrix."""
+    def _check_date_range_coverage(self, date_ranges):
+        """Avoid silently creating an incomplete planning matrix."""
         self.ensure_one()
         next_date = self.date_from
         for date_range in date_ranges:
@@ -516,9 +614,11 @@ class BudgetControl(models.Model):
                 return
         raise UserError(
             self.env._(
-                "Plan Date Range %(range)s does not cover the complete Lifetime "
-                "period. Generate the missing range starting on %(date)s first.",
+                "Plan Date Range %(range)s does not cover the complete period "
+                "of %(budget)s. Generate the missing range starting on %(date)s "
+                "first.",
                 range=self.plan_date_range_type_id.display_name,
+                budget=self.display_name,
                 date=next_date,
             )
         )
@@ -544,8 +644,8 @@ class BudgetControl(models.Model):
                     ("date_end", "<=", bc.date_to),
                 ]
             date_ranges = DateRange.search(date_domain, order="date_start, id")
-            if bc.budget_scope == "lifetime":
-                bc._check_lifetime_date_range_coverage(date_ranges)
+            if bc.date_from and bc.date_to:
+                bc._check_date_range_coverage(date_ranges)
             items += [
                 bc._get_budget_lines(date_range, template_line)
                 for date_range in date_ranges  # Loop1

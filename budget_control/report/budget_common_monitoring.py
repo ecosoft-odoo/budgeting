@@ -53,8 +53,9 @@ class BudgetCommonMonitoring(models.AbstractModel):
         return dataset
 
     def _get_budget_amount_type(self):
-        """Return list of all amount_type selection"""
-        return [x["type"] for x in self._get_consumed_sources()]
+        """Return list of all amount_type selection, in the order of their
+        keys: the monitoring shows commitments before actuals."""
+        return sorted(x["type"] for x in self._get_consumed_sources())
 
     def _get_budget_docline_model(self):
         """Return list of all res_id models selection"""

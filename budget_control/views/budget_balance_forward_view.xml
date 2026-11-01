@@ -21,23 +21,16 @@
         <field name="name">view.budget.balance.forward.line.list</field>
         <field name="model">budget.balance.forward.line</field>
         <field name="arch" type="xml">
-            <list editable="bottom" create="0">
+            <list editable="bottom" create="0" decoration-info="forward_changed">
+                <field name="forward_changed" column_invisible="1" />
                 <field name="analytic_account_id" />
                 <field name="currency_id" column_invisible="1" />
                 <field name="amount_balance" />
-                <field name="bm_date_to" column_invisible="1" />
-                <field
-                    name="method_type"
-                    optional="show"
-                    required="bm_date_to"
-                    readonly="not bm_date_to"
-                />
+                <widget name="budget_forward_arrow" width="32px" />
                 <field
                     name="to_analytic_account_id"
-                    force_save="1"
-                    options="{'no_create': 1}"
+                    options="{'no_create': 1, 'no_open': 1}"
                     optional="show"
-                    readonly="1"
                 />
                 <field name="amount_balance_forward" />
                 <field
@@ -73,12 +66,11 @@
                     />
                     <field name="missing_analytic" invisible="1" />
                     <button
-                        name="create_missing_analytic"
-                        string="Create Missing Analytics"
+                        name="action_continue_analytics"
+                        string="Continue Analytics"
                         class="btn-primary"
                         type="object"
                         invisible="not missing_analytic or state != 'review'"
-                        confirm="This action will create next year 'Carry Forward Analytic' for every line missing"
                     />
                     <button
                         name="action_draft"
@@ -125,6 +117,8 @@
                             name="company_ids"
                             widget="many2many_tags"
                             readonly="state != 'draft'"
+                            groups="base.group_multi_company"
+                            placeholder="All companies"
                         />
                     </group>
                     <notebook>
@@ -139,25 +133,18 @@
                         <page name="help" string="Help">
                             <div name="help">
                                 <p>
-                                    This operation will find amount balance (planned - consumed) in current analtyic,
-                                    and set as <b
-                                >Initial Available</b> in Carry Forward Analytic (and Accumulate Analytic)
+                                    This operation finds the available balance of each analytic in the source period,
+                                    and carries it as <b
+                                >Initial Available</b> to its Carry Forward Analytic (and Accumulate Analytic).
+                                    Forward the commitments of the period first: the balance then carries their budget too.
                                 </p>
                                 <p>
                                     <ol>
                                         <li>Click <b
                                         >Review Budget Balance</b> button, to find current balance of all analtyics.</li>
-                                        <li>Review <b
-                                        >method</b> to forward, if required, click Create Missing Analytic.
-                                            <ul>
-                                            <li
-                                            >Blank: Analytic is open end, use the same analytic</li>
-                                            <li
-                                            >New: To Analytic Account is next year analytic (need to create if missing)</li>
-                                            <li
-                                            >Extend: Use same analtyic but extend end date to next year</li>
-                                        </ul>
-                                        </li>
+                                        <li
+                                        >Review the Carry Forward Analytic of the lines: where their analytic continues in the target period, see Continues As on analytics. For the lines without one, click <b
+                                        >Continue Analytics</b> to extend, link or create those analytics, or choose the analytic.</li>
                                         <li
                                         >Fill in amount, both forward and accumulate (optional), and click <b
                                         >Forward Budget Balance</b></li>
@@ -173,6 +160,7 @@
     </record>
     <record id="action_budget_balance_forward" model="ir.actions.act_window">
         <field name="name">Forward Budget Balance</field>
+        <field name="path">budget-balance-forward</field>
         <field name="res_model">budget.balance.forward</field>
         <field name="view_id" ref="view_budget_balance_forward_list" />
         <field name="view_mode">list,form</field>

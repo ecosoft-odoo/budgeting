@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<odoo>
-    <function model="ir.access" name="write">
-        <value eval="[ref('analytic.analytic_comp_rule')]" />
-        <value
-            eval="{'domain': &quot;['|', ('budget_company_ids', 'in', company_ids), ('budget_company_ids', '=', False)]&quot;}"
-        />
-    </function>
-</odoo>

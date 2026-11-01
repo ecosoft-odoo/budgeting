@@ -60,6 +60,7 @@
     </record>
     <record id="budget_template_action" model="ir.actions.act_window">
         <field name="name">Budget Template</field>
+        <field name="path">budget-template</field>
         <field name="view_id" ref="budget_template_view_list" />
         <field name="res_model">budget.template</field>
         <field name="view_mode">list,form</field>

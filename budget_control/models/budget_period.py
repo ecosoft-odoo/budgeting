@@ -9,39 +9,12 @@ from odoo.tools import SQL, float_compare, format_amount
 
 
 class BudgetPeriod(models.Model):
-    _name = "budget.period"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
-    _description = "For each fiscal year, manage how budget is controlled"
+    _inherit = "budget.period"
 
-    name = fields.Char(required=True, tracking=True)
-    budget_scope = fields.Selection(
-        selection=[
-            ("fiscal", "Fiscal Period"),
-            ("lifetime", "Lifetime"),
-        ],
-        required=True,
-        default="fiscal",
-        index=True,
-        tracking=True,
-        help="Fiscal periods are selected by document date. Lifetime periods are "
-        "selected only for their assigned analytic account, so they "
-        "may safely overlap fiscal years.",
-    )
-    bm_date_from = fields.Date(
-        string="Date From",
-        required=True,
-        tracking=True,
-    )
-    bm_date_to = fields.Date(
-        string="Date To",
-        required=True,
-        tracking=True,
-    )
     template_id = fields.Many2one(
         comodel_name="budget.template",
         string="Budget Template",
         ondelete="restrict",
-        required=True,
         tracking=True,
     )
     control_budget = fields.Boolean(
@@ -83,7 +56,7 @@ class BudgetPeriod(models.Model):
     plan_date_range_type_id = fields.Many2one(
         comodel_name="date.range.type",
         string="Plan Date Range",
-        required=True,
+        ondelete="restrict",
         tracking=True,
         help="Budget control sheet in this budget control year, will use this "
         "data range to plan the budget.",
@@ -99,14 +72,6 @@ class BudgetPeriod(models.Model):
         help="Policy when a transaction account is not found in the budget template.\n"
         "- Block: raise an error (strict mode)\n"
         "- Allow: skip budget check and let the transaction pass through",
-    )
-    company_ids = fields.Many2many(
-        comodel_name="res.company",
-        relation="budget_period_company_rel",
-        column1="budget_period_id",
-        column2="company_id",
-        string="Companies",
-        help="Restrict this period to specific companies. Empty = all companies.",
     )
 
     @api.model
@@ -158,12 +123,20 @@ class BudgetPeriod(models.Model):
                     )
                 )
 
-    @api.constrains("bm_date_from", "bm_date_to")
-    def _check_period_dates(self):
-        for period in self:
-            if period.bm_date_from > period.bm_date_to:
+    @api.constrains(
+        "control_budget", "account", "template_id", "plan_date_range_type_id"
+    )
+    def _check_budget_control_setup(self):
+        """A period without control may serve other budget applications only
+        (e.g. budget proposals), so the control setup is required on use."""
+        for period in self.filtered(lambda rec: rec.control_budget or rec.account):
+            if not period.template_id or not period.plan_date_range_type_id:
                 raise ValidationError(
-                    self.env._("Budget Period start date must be before its end date.")
+                    self.env._(
+                        "Budget Period %(period)s needs a Budget Template and a "
+                        "Plan Date Range to control budget.",
+                        period=period.display_name,
+                    )
                 )
 
     @api.depends("control_budget")
@@ -201,38 +174,18 @@ class BudgetPeriod(models.Model):
 
     @api.model
     def _group_doclines_by_analytic(self, doclines):
-        """Group document lines by every analytic in their distribution.
+        """Group document lines by each budget analytic of their distribution.
 
-        Odoo stores analytics from multiple plans in comma-separated JSON keys,
-        for example ``{"12,34": 100}``.  Build all groups in one pass so those
-        keys are handled correctly without repeatedly filtering every docline.
+        A row of a distribution (``{"12,34": 100}``) charges at most one budget
+        analytic, an account of a plan with Control Budget ticked; accounts of
+        other plans are ignored.
         """
         grouped_line_ids = defaultdict(list)
         analytic_field = doclines._budget_analytic_field
         for line in doclines:
-            distribution = line[analytic_field] or {}
-            # Check percent analytic account must be 100% only
-            total_sum = sum(distribution.values())
-            if (
-                float_compare(
-                    total_sum,
-                    100.0,
-                    precision_rounding=2,
-                )
-                != 0
-            ):
-                raise UserError(
-                    self.env._(
-                        "The total sum percent of Analytic Account must 100%. "
-                        "Please check again."
-                    )
-                )
-            analytic_ids = {
-                int(analytic_id)
-                for key in distribution
-                for analytic_id in key.split(",")
-            }
-            for analytic_id in sorted(analytic_ids):
+            distribution = line[analytic_field]
+            line._check_budget_analytic_distribution(distribution)
+            for analytic_id in sorted(line._get_budget_analytic_percents(distribution)):
                 grouped_line_ids[analytic_id].append(line.id)
         return [
             (analytic_id, doclines.browse(line_ids))
@@ -262,16 +215,26 @@ class BudgetPeriod(models.Model):
         groups = []
         period_cache = {}
         controls_cache = {}
-        for analytic_id, aa_doclines in BudgetPeriod._group_doclines_by_analytic(
-            doclines
-        ):
+        # Each document company checks the budget of its own periods
+        company_groups = [
+            (analytic_id, company, lines)
+            for analytic_id, analytic_doclines in (
+                BudgetPeriod._group_doclines_by_analytic(doclines)
+            )
+            for company, lines in analytic_doclines.grouped(
+                lambda line: line[line._doc_rel].company_id
+            ).items()
+        ]
+        for analytic_id, company, aa_doclines in company_groups:
             # Find active budget.period based on latest doclines date_commit
             date_commit = aa_doclines.filtered("date_commit").mapped("date_commit")
             if not date_commit:
                 continue
             date_commit = max(date_commit)
-            period_key = (analytic_id, date_commit)
-            scoped_period = BudgetPeriod.with_context(budget_analytic_id=analytic_id)
+            period_key = (analytic_id, date_commit, company.id)
+            scoped_period = BudgetPeriod.with_company(company).with_context(
+                budget_analytic_id=analytic_id
+            )
             if period_key not in period_cache:
                 period_cache[period_key] = scoped_period._get_eligible_budget_period(
                     date_commit, doc_type=doc_type
@@ -293,12 +256,12 @@ class BudgetPeriod(models.Model):
             ]
             if not controls:
                 continue
-            groups.append((aa_doclines, date_commit, budget_period, controls))
+            groups.append((aa_doclines, date_commit, budget_period, controls, company))
         if not groups:
             return
         # Validate each period's analytics in one query before the monitor scan.
         analytic_ids_by_period = defaultdict(set)
-        for _doclines, _date, budget_period, controls in groups:
+        for _doclines, _date, budget_period, controls, _company in groups:
             analytic_ids_by_period[budget_period.id].update(
                 control["analytic_id"] for control in controls
             )
@@ -310,16 +273,17 @@ class BudgetPeriod(models.Model):
         all_controls = [c for group in groups for c in group[3]]
         avail_cache = BudgetPeriod._prefetch_budget_available(all_controls)
         BudgetPeriod = BudgetPeriod.with_context(_budget_avail_cache=avail_cache)
-        for aa_doclines, date_commit, budget_period, controls in groups:
+        for aa_doclines, date_commit, budget_period, controls, company in groups:
+            CompanyPeriod = BudgetPeriod.with_company(company)
             # Check budget on each control element against each KPI/avail (period)
             currency = (
                 "currency_id" in aa_doclines
                 and aa_doclines.mapped("currency_id")[:1]
-                or BudgetPeriod.env.context.get(
-                    "doc_currency", BudgetPeriod.env.company.currency_id
+                or CompanyPeriod.env.context.get(
+                    "doc_currency", CompanyPeriod.env.company.currency_id
                 )
             )
-            warnings = BudgetPeriod.with_context(
+            warnings = CompanyPeriod.with_context(
                 date_commit=date_commit, doc_currency=currency, doclines=aa_doclines
             )._check_budget_available(controls, budget_period)
             if warnings:
@@ -327,7 +291,7 @@ class BudgetPeriod(models.Model):
                 raise UserError(msg)
             # Check budget constraint following your customize condition
             elif aa_doclines and budget_constraints and budget_period:
-                BudgetPeriod.check_budget_constraint(budget_constraints, aa_doclines)
+                CompanyPeriod.check_budget_constraint(budget_constraints, aa_doclines)
         return
 
     @api.model
@@ -376,22 +340,30 @@ class BudgetPeriod(models.Model):
 
     @api.model
     def check_over_returned_budget(self, docline, reverse=False):
-        BudgetPeriod = self.sudo()
-        doc = docline[docline._doc_rel]
-        budget_moves = doc[docline._budget_field()]
-        credit = sum(budget_moves.mapped("credit"))
-        debit = sum(budget_moves.mapped("debit"))
-        amount_credit = debit if reverse else credit
-        amount_debit = credit if reverse else debit
-        # For now, when any over returned budget, make immediate adjustment
-        if float_compare(amount_credit, amount_debit, 2) == 1:
-            docline.with_context(
-                use_amount_commit=True,
-                commit_note=BudgetPeriod.env._(
-                    "Over returned auto adjustment, %s", docline.display_name
-                ),
-                adj_commit=True,
-            ).commit_budget(reverse=True)
+        """Adjust the analytic rows of ``docline`` whose commitment is over
+        returned, back to zero."""
+        sign = 1 if reverse else -1
+        rows = {
+            key: 0.0
+            for key, amount in (docline.amount_commit or {}).items()
+            if float_compare(sign * amount, 0.0, 2) == 1
+        }
+        if not rows:
+            return
+        # Reverse the outstanding balances, not the amounts being returned
+        ctx = {
+            key: value
+            for key, value in docline.env.context.items()
+            if key not in ("return_amount_commit", "fwd_amount_commit")
+        }
+        docline.with_context(
+            ctx,
+            use_amount_commit=True,
+            commit_note=self.env._(
+                "Over returned auto adjustment, %s", docline.display_name
+            ),
+            adj_commit=True,
+        ).commit_budget(reverse=True, analytic_distribution=rows)
 
     @api.model
     def _get_eligible_budget_period(self, date=False, doc_type=False):
@@ -402,7 +374,6 @@ class BudgetPeriod(models.Model):
             date = fields.Date.context_today(self)
         date = fields.Date.to_date(date)
         BudgetPeriod = self.env["budget.period"]
-        company_id = self.env.company.id
         analytic = self.env["account.analytic.account"]
         analytic_id = self.env.context.get("budget_analytic_id")
         if analytic_id:
@@ -414,29 +385,13 @@ class BudgetPeriod(models.Model):
                     period.budget_scope == "lifetime"
                     and period.bm_date_from <= date <= period.bm_date_to
                     and (
-                        not period.company_ids or self.env.company in period.company_ids
+                        not period.company_ids
+                        or self.env.company.parent_ids & period.company_ids
                     )
                 )
             )
         else:
-            budget_period = BudgetPeriod.search(
-                [
-                    ("budget_scope", "=", "fiscal"),
-                    ("bm_date_from", "<=", date),
-                    ("bm_date_to", ">=", date),
-                    "|",
-                    ("company_ids", "=", False),
-                    ("company_ids", "in", company_id),
-                ]
-            )
-        if budget_period and len(budget_period) > 1:
-            raise ValidationError(
-                self.env._(
-                    "Multiple Budget Periods found for date %(date)s.\nPlease ensure "
-                    "there is only one Budget Period valid for this date.",
-                    date=date,
-                )
-            )
+            budget_period = BudgetPeriod._get_fiscal_period(date)
         if not doc_type:
             return budget_period
         # Get period control budget.
@@ -452,27 +407,26 @@ class BudgetPeriod(models.Model):
         return budget_period
 
     @api.model
+    def _get_control_budget_moves(self, budget_period, doclines):
+        """Budget moves of ``doclines`` that ``budget_period`` checks: in the
+        period, of the analytic of context ``budget_analytic_id`` if any, and
+        not on accounts bypassing the budget."""
+        analytic_id = self.env.context.get("budget_analytic_id")
+        return doclines.mapped(doclines._budget_field()).filtered(
+            lambda move: (
+                (not analytic_id or move.analytic_account_id.id == analytic_id)
+                and budget_period.bm_date_from <= move.date <= budget_period.bm_date_to
+                and not move.account_id.budget_bypass
+            )
+        )
+
+    @api.model
     def _prepare_controls(self, budget_period, doclines):
         controls = set()
         control_analytics = budget_period.control_analytic_account_ids
-        budget_moves = doclines.mapped(doclines._budget_field())
-        analytic_id = self.env.context.get("budget_analytic_id")
-        if analytic_id:
-            budget_moves = budget_moves.filtered(
-                lambda move: move.analytic_account_id.id == analytic_id
-            )
-        # Get budget moves from the period only
-        budget_moves_period = budget_moves.filtered(
-            lambda move, budget_period=budget_period: (
-                move.date >= budget_period.bm_date_from
-                and move.date <= budget_period.bm_date_to
-            )
-        )
         budget_control_key = self.env.company.budget_control_key
         need_control = self.env.context.get("need_control")
-        for budget_move in budget_moves_period:
-            if budget_move.account_id.budget_bypass:
-                continue
+        for budget_move in self._get_control_budget_moves(budget_period, doclines):
             if budget_period.control_all_analytic_accounts:
                 if budget_move.analytic_account_id and budget_move[budget_control_key]:
                     controls.add(
@@ -543,18 +497,15 @@ class BudgetPeriod(models.Model):
         )
 
     def _get_where_domain(self, analytic_id, template_lines):
-        """Return the WHERE clause for the budget monitoring query."""
+        """Return the WHERE clause (an SQL object) of the budget monitoring
+        query."""
+        where = SQL("analytic_account_id = %s", analytic_id)
         if (
             not template_lines
             or self.env.context.get("control_level", False) == "analytic"
         ):
-            return f"analytic_account_id = {analytic_id}"
-        kpi_domain = (
-            f"= {template_lines.kpi_id.id}"
-            if len(template_lines) == 1
-            else f"in {tuple(template_lines.kpi_id.ids)}"
-        )
-        return f"analytic_account_id = {analytic_id} and kpi_id {kpi_domain}"
+            return where
+        return SQL("%s AND kpi_id IN %s", where, tuple(template_lines.kpi_id.ids))
 
     def _get_budget_monitor_report(self):
         """Hook for add context"""
@@ -570,9 +521,10 @@ class BudgetPeriod(models.Model):
         return not template_lines or template_lines._name == "budget.template.line"
 
     def _prefetch_budget_available(self, controls):
-        """One monitor-report scan for all controls' analytic accounts, keyed
-        by analytic_id. ``check_budget()`` can then serve every control from
-        this dict instead of running one SQL query per control.
+        """One monitor-report scan for all controls' analytic accounts, summed
+        per KPI, period and amount type and keyed by analytic_id.
+        ``check_budget()`` can then serve every control from this dict instead
+        of running one SQL query per control.
 
         Only the base filter shape (``analytic_account_id IN (...)``) is
         served here; ``_get_where_domain()`` overrides that add extra clauses
@@ -594,9 +546,11 @@ class BudgetPeriod(models.Model):
                         kpi_id,
                         budget_period_id,
                         amount_type,
-                        amount
+                        SUM(amount) AS amount
                     FROM %s report
                     WHERE analytic_account_id IN %s
+                    GROUP BY
+                        analytic_account_id, kpi_id, budget_period_id, amount_type
                 """,
                 report_sql,
                 tuple(analytic_ids),
@@ -629,12 +583,13 @@ class BudgetPeriod(models.Model):
             self.env.flush_all()
         self.env.cr.execute(
             SQL(
-                f"""
+                """
                     SELECT *
                     FROM %s report
-                    WHERE {self._get_where_domain(analytic_id, template_lines)}
+                    WHERE %s
                 """,
                 self._get_budget_monitor_report()._table_sql,
+                self._get_where_domain(analytic_id, template_lines),
             )
         )
         return self.env.cr.dictfetchall()
@@ -652,7 +607,7 @@ class BudgetPeriod(models.Model):
         warnings = []
         Analytic = self.env["account.analytic.account"]
         template_lines = all_template_lines = budget_period.template_id.line_ids
-        company = self.env.user.company_id
+        company = self.env.company
         doc_currency = self.env.context.get("doc_currency")
         date_commit = self.env.context.get("date_commit")
         # A shared cache is built only after flushing, and nothing is written

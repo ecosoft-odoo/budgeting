@@ -29,16 +29,33 @@
         <field name="inherit_id" ref="analytic.view_account_analytic_account_list" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='code']" position="after">
-                <field name="budget_period_id" optional="show" />
-                <field name="budget_control_scope" optional="show" />
-                <field name="bm_date_from" optional="hide" />
-                <field name="bm_date_to" optional="hide" />
+                <field name="control_budget" column_invisible="1" />
+                <field
+                    name="budget_period_id"
+                    optional="show"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="budget_control_scope"
+                    optional="show"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="bm_date_from"
+                    optional="hide"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="bm_date_to"
+                    optional="hide"
+                    invisible="not control_budget"
+                />
                 <field
                     name="budget_control_ids"
                     widget="many2many_tags"
                     optional="show"
+                    invisible="not control_budget"
                 />
-                <field name="initial_commit" optional="show" />
             </xpath>
         </field>
     </record>
@@ -48,12 +65,15 @@
         <field name="inherit_id" ref="analytic.view_account_analytic_account_form" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='code']" position="after">
+                <!-- Only accounts of plans with Control Budget have budgets -->
+                <field name="control_budget" invisible="1" />
                 <field
                     name="budget_period_id"
                     readonly="budget_control_scope == 'lifetime'"
+                    invisible="not control_budget"
                 />
-                <label for="budget_control_scope" />
-                <div class="o_row">
+                <label for="budget_control_scope" invisible="not control_budget" />
+                <div class="o_row" invisible="not control_budget">
                     <field name="budget_control_scope" readonly="1" />
                     <button
                         name="action_open_lifetime_budget_setup"
@@ -64,23 +84,21 @@
                         invisible="budget_control_scope != 'fiscal'"
                     />
                 </div>
-                <field name="bm_date_from" />
-                <field name="bm_date_to" />
-                <field name="budget_control_ids" widget="many2many_tags" />
-            </xpath>
-            <xpath
-                expr="//group[@name='main']//field[@name='company_id']"
-                position="after"
-            >
+                <field name="bm_date_from" invisible="not control_budget" />
+                <field name="bm_date_to" invisible="not control_budget" />
                 <field
-                    name="budget_company_ids"
+                    name="next_analytic_id"
+                    invisible="not control_budget or budget_control_scope != 'fiscal'"
+                    options="{'no_create': True}"
+                />
+                <field
+                    name="budget_control_ids"
                     widget="many2many_tags"
-                    groups="base.group_multi_company"
+                    invisible="not control_budget"
                 />
             </xpath>
             <xpath expr="//group[@name='main']/group[2]" position="inside">
-                <field name="auto_adjust_date_commit" />
-                <field name="initial_commit" />
+                <field name="auto_adjust_date_commit" invisible="not control_budget" />
             </xpath>
         </field>
     </record>
@@ -92,14 +110,37 @@
             <list>
                 <field name="name" string="Name" />
                 <field name="code" />
-                <field name="budget_period_id" optional="show" />
-                <field name="budget_control_scope" optional="show" />
-                <field name="bm_date_from" optional="hide" />
-                <field name="bm_date_to" optional="hide" />
+                <field name="control_budget" column_invisible="1" />
+                <field
+                    name="budget_period_id"
+                    optional="show"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="budget_control_scope"
+                    optional="show"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="bm_date_from"
+                    optional="hide"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="bm_date_to"
+                    optional="hide"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="next_analytic_id"
+                    optional="hide"
+                    invisible="not control_budget"
+                />
                 <field
                     name="budget_control_ids"
                     widget="many2many_tags"
                     optional="show"
+                    invisible="not control_budget"
                 />
                 <field name="partner_id" optional="hide" />
                 <field name="active" invisible="1" />
@@ -109,29 +150,31 @@
                     optional="show"
                 />
                 <field
-                    name="budget_company_ids"
-                    widget="many2many_tags"
-                    groups="base.group_multi_company"
-                    optional="show"
-                />
-                <field
                     name="currency_id"
                     groups="base.group_multi_currency"
                     optional="show"
                 />
                 <field
-                    name="initial_commit"
-                    sum="Total Commit Initial"
-                    optional="show"
+                    name="amount_budget"
+                    sum="Total Budget"
+                    invisible="not control_budget"
                 />
-                <field name="amount_budget" sum="Total Budget" />
-                <field name="amount_consumed" sum="Total Consumed" />
-                <field name="amount_balance" sum="Balance" />
+                <field
+                    name="amount_consumed"
+                    sum="Total Consumed"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="amount_balance"
+                    sum="Balance"
+                    invisible="not control_budget"
+                />
             </list>
         </field>
     </record>
     <record id="action_budget_analytic_form" model="ir.actions.act_window">
         <field name="name">Analytic Accounts</field>
+        <field name="path">budget-analytic</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">account.analytic.account</field>
         <field

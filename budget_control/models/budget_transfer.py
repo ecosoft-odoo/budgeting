@@ -77,10 +77,20 @@ class BudgetTransfer(models.Model):
                 )
             )
 
+    def _check_transfer_state(self, states):
+        if any(rec.state not in states for rec in self):
+            raise UserError(
+                self.env._(
+                    "This action is not allowed on a budget transfer in this state."
+                )
+            )
+
     def action_cancel(self):
+        self._check_transfer_state(("draft", "submit"))
         return self.write({"state": "cancel"})
 
     def action_submit(self):
+        self._check_transfer_state(("draft",))
         item_ids = self.mapped("transfer_item_ids")
         if not item_ids:
             raise UserError(self.env._("You need to add a line before submit."))
@@ -90,22 +100,32 @@ class BudgetTransfer(models.Model):
         return self.write({"state": "submit"})
 
     def action_transfer(self):
+        self._check_transfer_state(("submit",))
         self.mapped("transfer_item_ids").transfer()
         self._check_budget_control()
         return self.write({"state": "transfer"})
 
     def action_reverse(self):
+        self._check_transfer_state(("transfer",))
         self.mapped("transfer_item_ids").reverse()
         self._check_budget_control()
         return self.write({"state": "reverse"})
 
     def _check_budget_available_analytic(self, budget_controls):
-        BudgetPeriod = self.env["budget.period"]
+        # Flush once, not for each budget control
+        self.env.flush_all()
+        BudgetPeriod = self.env["budget.period"].with_context(skip_budget_flush=True)
         for budget_ctrl in budget_controls:
             query_data = BudgetPeriod._get_budget_avaiable(
                 budget_ctrl.analytic_account_id.id, budget_ctrl.template_line_ids
             )
-            balance = sum(q["amount"] for q in query_data if q["amount"] is not None)
+            # The balance of the period of the budget control only
+            balance = sum(
+                q["amount"]
+                for q in query_data
+                if q["amount"] is not None
+                and q["budget_period_id"] == budget_ctrl.budget_period_id.id
+            )
             if (
                 float_compare(
                     balance,

@@ -3,16 +3,19 @@
 
 from collections import defaultdict
 
-from dateutil.relativedelta import relativedelta
-
 from odoo import Command, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
+from odoo.tools import frozendict
 
 
 class AccountAnalyticAccount(models.Model):
     _inherit = "account.analytic.account"
     _rec_names_search = ("name", "code", "budget_period_id")
 
+    control_budget = fields.Boolean(
+        related="root_plan_id.control_budget",
+        help="Accounts of plans with Control Budget have budgets.",
+    )
     budget_period_id = fields.Many2one(
         comodel_name="budget.period",
     )
@@ -35,6 +38,19 @@ class AccountAnalyticAccount(models.Model):
         comodel_name="budget.control",
         inverse_name="analytic_account_id",
         readonly=True,
+    )
+    next_analytic_id = fields.Many2one(
+        comodel_name="account.analytic.account",
+        string="Continues As",
+        copy=False,
+        index="btree_not_null",
+        tracking=True,
+        domain="[('id', '!=', id), ('control_budget', '=', True), "
+        "('budget_control_scope', '=', 'fiscal')]",
+        help="Analytic the budgets and commitments of this one are carried "
+        "forward to once it ends, e.g. the analytic of the next year of a yearly "
+        "analytic. An analytic without Budget Period continues as itself while "
+        "it is open.",
     )
     bm_date_from = fields.Date(
         string="Date From",
@@ -59,16 +75,6 @@ class AccountAnalyticAccount(models.Model):
         "this analytic account when using with budgeting system. If this data range "
         "is setup, but the budget system set date_commit out of this date range "
         "it it can be adjusted automatically.",
-    )
-    budget_company_ids = fields.Many2many(
-        comodel_name="res.company",
-        compute="_compute_budget_company",
-        store=True,
-        readonly=False,
-        string="Allowed Budget Companies",
-        help="Companies allowed to consume budget under this analytic. "
-        "Must always include the analytic's own company. "
-        "Leave empty to allow all companies (global analytic).",
     )
     amount_budget = fields.Monetary(
         string="Budgeted",
@@ -95,13 +101,6 @@ class AccountAnalyticAccount(models.Model):
         compute="_compute_amount_budget_info",
         help="Available = Total Budget - Forward Out - Consumed",
     )
-    initial_commit = fields.Monetary(
-        string="Initial Commitment",
-        copy=False,
-        readonly=True,
-        tracking=True,
-        help="Initial Balance from carry forward commitment",
-    )
 
     @api.depends("code", "partner_id", "budget_period_id")
     def _compute_display_name(self):
@@ -124,50 +123,162 @@ class AccountAnalyticAccount(models.Model):
             rec.bm_date_from = rec.budget_period_id.bm_date_from
             rec.bm_date_to = rec.budget_period_id.bm_date_to
 
-    @api.depends("company_id")
-    def _compute_budget_company(self):
-        for rec in self:
-            if not rec.budget_company_ids:
-                rec.budget_company_ids = rec.company_id
+    def _check_control_budget_plan(self):
+        """Budgets can only be set on accounts of plans with Control Budget."""
+        not_controlled = self.filtered(
+            lambda analytic: not analytic.root_plan_id.control_budget
+        )
+        if not_controlled:
+            raise ValidationError(
+                self.env._(
+                    "%s must belong to a plan with Control Budget ticked to have "
+                    "a budget.",
+                    ", ".join(not_controlled.mapped("display_name")),
+                )
+            )
 
-    @api.constrains("company_id", "budget_company_ids")
-    def _check_budget_company(self):
-        """
-        If analytic account is in company,
-        then it must be in Allowed Budget Companies only
-        """
-        for rec in self:
-            if not rec.company_id:
-                continue
-
-            if rec.company_id and rec.company_id not in rec.budget_company_ids:
-                raise UserError(
+    def write(self, vals):
+        if "plan_id" in vals:
+            # Budget moves keep the account in the column of its root plan
+            root = self.env["account.analytic.plan"].browse(vals["plan_id"]).root_id
+            moved = self.filtered(lambda analytic: analytic.root_plan_id != root)
+            if moved:
+                self.env["account.analytic.plan"]._check_budget_moves_unused(
+                    moved,
                     self.env._(
-                        "Analytic Account Company must be in Allowed Budget Companies"
+                        "%s is used on budget moves, so it cannot move to "
+                        "another root plan.",
+                        moved[:1].display_name,
+                    ),
+                )
+        res = super().write(vals)
+        if "plan_id" in vals:
+            self.env.transaction.invalidate_ormcache()
+        return res
+
+    def unlink(self):
+        res = super().unlink()
+        self.env.transaction.invalidate_ormcache()
+        return res
+
+    @api.model
+    @api.ormcache("analytic_ids")
+    def _get_analytic_control_budget(self, analytic_ids):
+        """``{analytic_id: Control Budget of its root plan}`` for the accounts
+        of ``analytic_ids`` (a sorted tuple) that exist: analytic distributions
+        may keep deleted accounts."""
+        analytics = self.sudo().browse(analytic_ids).exists()
+        return frozendict(
+            {
+                analytic.id: analytic.root_plan_id.control_budget
+                for analytic in analytics
+            }
+        )
+
+    @api.constrains("plan_id")
+    def _check_plan_control_budget(self):
+        self.with_context(active_test=False).filtered(
+            "budget_control_ids"
+        )._check_control_budget_plan()
+
+    @api.constrains("next_analytic_id")
+    def _check_next_analytic(self):
+        if self._has_cycle("next_analytic_id"):
+            raise ValidationError(
+                self.env._(
+                    "An analytic cannot continue as itself, even through others."
+                )
+            )
+        for analytic in self.filtered("next_analytic_id"):
+            next_analytic = analytic.next_analytic_id
+            if (
+                not next_analytic.control_budget
+                or next_analytic.budget_control_scope != "fiscal"
+            ):
+                raise ValidationError(
+                    self.env._(
+                        "%(analytic)s cannot continue as %(next)s: choose an "
+                        "analytic of a plan with Control Budget and a Fiscal "
+                        "scope.",
+                        analytic=analytic.display_name,
+                        next=next_analytic.display_name,
                     )
                 )
 
-    @api.constrains("budget_company_ids")
-    def _check_budget_company_currency(self):
-        """Companies sharing a budget must all use the same currency.
-        Checked here because budget_control.company_ids is a stored related
-        field. its constraints don't re-trigger when this analytic changes.
-        """
-        for rec in self:
-            if not rec.budget_company_ids:
-                continue
-            currencies = rec.budget_company_ids.mapped("currency_id")
-            if len(set(currencies.ids)) > 1:
-                names = ", ".join(rec.budget_company_ids.mapped("name"))
-                raise UserError(
-                    self.env._(
-                        "Companies %(names)s assigned to analytic %(analytic)s "
-                        "use different currencies. All companies sharing a budget "
-                        "must use the same currency.",
-                        names=names,
-                        analytic=rec.display_name,
-                    )
+    def _is_budget_open(self, date):
+        """Whether this analytic takes commitments on ``date``."""
+        self.ensure_one()
+        return (not self.bm_date_from or self.bm_date_from <= date) and (
+            not self.bm_date_to or self.bm_date_to >= date
+        )
+
+    def _is_forward_target(self, budget_period):
+        """Whether budgets and commitments can be carried forward to this
+        analytic in ``budget_period``: a fiscal analytic of a plan with Control
+        Budget, of that period or of none, open when it starts."""
+        self.ensure_one()
+        return (
+            self.control_budget
+            and self.budget_control_scope == "fiscal"
+            and (not self.budget_period_id or self.budget_period_id == budget_period)
+            and self._is_budget_open(budget_period.bm_date_from)
+        )
+
+    def _get_forward_analytic(self, budget_period):
+        """Analytic the budgets and commitments of this one are carried
+        forward to in ``budget_period``: itself if it can take them, else the
+        first analytic it continues as that can. None for Lifetime analytics,
+        which keep them for their whole duration, or when none can."""
+        self.ensure_one()
+        if self.budget_control_scope == "lifetime":
+            return self.browse()
+        # No loop: see _check_next_analytic()
+        analytic = self
+        while analytic and not analytic._is_forward_target(budget_period):
+            analytic = analytic.next_analytic_id
+        return analytic
+
+    def _extend_budget_analytic(self, budget_period):
+        """Keep these analytics open to the end of ``budget_period``. Only
+        analytics without Budget Period, i.e. continuing ones, have their own
+        end date to extend."""
+        yearly = self.filtered("budget_period_id")
+        if yearly:
+            raise UserError(
+                self.env._(
+                    "%s has a Budget Period: it continues as the analytic of the "
+                    "next period instead of being extended.",
+                    yearly[:1].display_name,
                 )
+            )
+        for analytic in self.filtered("bm_date_to"):
+            analytic.bm_date_to = max(analytic.bm_date_to, budget_period.bm_date_to)
+
+    def _get_next_analytic_matches(self, budget_period):
+        """Analytics that may be the one of ``budget_period`` this yearly
+        analytic continues as: same name, code, root plan and company."""
+        self.ensure_one()
+        return self.search(
+            [
+                ("id", "!=", self.id),
+                ("budget_period_id", "=", budget_period.id),
+                ("name", "=", self.name),
+                ("code", "=", self.code),
+                ("root_plan_id", "=", self.root_plan_id.id),
+                ("company_id", "=", self.company_id.id),
+            ]
+        )
+
+    def _prepare_next_analytic_vals(self, budget_period):
+        """Values of the copy of this yearly analytic for ``budget_period``."""
+        self.ensure_one()
+        # The dates of the analytic would be copied as they are
+        return {
+            "name": self.name,
+            "budget_period_id": budget_period.id,
+            "bm_date_from": budget_period.bm_date_from,
+            "bm_date_to": budget_period.bm_date_to,
+        }
 
     @api.constrains(
         "budget_control_scope",
@@ -309,23 +420,24 @@ class AccountAnalyticAccount(models.Model):
     def _filter_by_analytic_account(self, val):
         return val["analytic_account_id"][0] == self.id
 
+    @api.depends_context("budget_period_ids")
     def _compute_amount_budget_info(self):
         """Note: This method is similar to BCS._compute_budget_info"""
         BudgetPeriod = self.env["budget.period"]
         MonitorReport = self.env["budget.monitor.report"]
         query = BudgetPeriod._budget_info_query()
         analytic_ids = self.ids
+        # The monitoring is a view of the budget moves
+        self.env.flush_all()
         # Retrieve budgeting data for a list of budget_control
         domain = [("analytic_account_id", "in", analytic_ids)]
         # Optional filters by context
         ctx = self.env.context.copy()
-        if ctx.get("no_fwd_commit"):
-            domain.append(("fwd_commit", "=", False))
         if ctx.get("budget_period_ids"):
             domain.append(("budget_period_id", "in", ctx["budget_period_ids"]))
         # --
-        admin_uid = self.env.ref("base.user_admin").id
-        dataset_all = MonitorReport.with_user(admin_uid)._read_group_dataset(
+        # The whole pool counts, whatever the user may read
+        dataset_all = MonitorReport.sudo()._read_group_dataset(
             domain,
             ["analytic_account_id", "amount_type", "amount"],
             ["analytic_account_id", "amount_type"],
@@ -352,54 +464,6 @@ class AccountAnalyticAccount(models.Model):
             rec.amount_forward_out = budget_info["amount_forward_out"]
             rec.amount_consumed = budget_info["amount_consumed"]
             rec.amount_balance = budget_info["amount_balance"]
-
-    def _find_next_analytic(self, next_date_range):
-        self.ensure_one()
-        Analytic = self.env["account.analytic.account"]
-        next_analytic = Analytic.search(
-            [("name", "=", self.name), ("bm_date_from", "=", next_date_range)]
-        )
-        return next_analytic
-
-    def _update_val_analytic(self, next_analytic, next_date_range):
-        BudgetPeriod = self.env["budget.period"]
-        vals_update = {}
-        type_id = next_analytic.budget_period_id.plan_date_range_type_id
-        period_id = BudgetPeriod.search(
-            [
-                ("bm_date_from", "=", next_date_range),
-                ("plan_date_range_type_id", "=", type_id.id),
-            ]
-        )
-        if period_id:
-            vals_update = {"budget_period_id": period_id.id}
-        else:
-            # No budget period found, update date_from and date_to
-            vals_update = {
-                "bm_date_from": next_date_range,
-                "bm_date_to": next_analytic.bm_date_to + relativedelta(years=1),
-            }
-        return vals_update
-
-    def _auto_create_next_analytic(self, next_date_range):
-        self.ensure_one()
-        # Core odoo will add (copy) after name, but we need same name
-        next_analytic = self.copy(default={"name": self.name})
-        val_update = self._update_val_analytic(next_analytic, next_date_range)
-        next_analytic.write(val_update)
-        return next_analytic
-
-    def next_year_analytic(self, auto_create=True):
-        """Find next analytic from analytic date_to + 1,
-        if bm_date_to = False, this is an open end analytic, always return False"""
-        self.ensure_one()
-        if not self.bm_date_to:
-            return False
-        next_date_range = self.bm_date_to + relativedelta(days=1)
-        next_analytic = self._find_next_analytic(next_date_range)
-        if not next_analytic and auto_create:
-            next_analytic = self._auto_create_next_analytic(next_date_range)
-        return next_analytic
 
     def _check_budget_control_status(self, budget_period_id=False):
         """Warning for budget_control on budget_period, but not in controlled"""

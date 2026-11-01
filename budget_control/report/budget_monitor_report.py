@@ -1,6 +1,8 @@
 # Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import re
+
 from odoo import api, fields, models
 from odoo.tools import SQL
 
@@ -46,7 +48,8 @@ class BudgetMonitorReport(models.Model):
     @api.model
     def _select(self) -> SQL:
         return SQL(
-            """SELECT a.*, p.id AS budget_period_id""",
+            """SELECT a.*, COALESCE(own_period.id, fiscal_period.id)
+                AS budget_period_id""",
         )
 
     @api.model
@@ -56,18 +59,44 @@ class BudgetMonitorReport(models.Model):
             FROM (%(table)s) a
             LEFT JOIN account_analytic_account analytic
                 ON analytic.id = a.analytic_account_id
-            LEFT JOIN budget_period p
-                ON (
-                    analytic.budget_control_scope = 'lifetime'
-                    AND p.id = analytic.budget_period_id
-                    AND a.date between p.bm_date_from AND p.bm_date_to
-                ) OR (
-                    COALESCE(analytic.budget_control_scope, 'fiscal') = 'fiscal'
-                    AND p.budget_scope = 'fiscal'
-                    AND a.date between p.bm_date_from AND p.bm_date_to
+            -- Budget and forward rows know their period, a lifetime
+            -- analytic has its own
+            LEFT JOIN budget_period own_period
+                ON own_period.id = COALESCE(
+                    a.source_period_id,
+                    CASE WHEN analytic.budget_control_scope = 'lifetime'
+                        THEN analytic.budget_period_id END
                 )
-            LEFT JOIN date_range d ON a.date between d.date_start AND d.date_end
-                AND d.type_id = p.plan_date_range_type_id
+                AND (
+                    a.source_period_id IS NOT NULL
+                    OR a.date BETWEEN own_period.bm_date_from
+                        AND own_period.bm_date_to
+                )
+            -- Other rows take the fiscal period of their date: the period of
+            -- the document company, or of a parent
+            LEFT JOIN res_company source_company
+                ON source_company.id = a.source_company_id
+            LEFT JOIN (
+                SELECT period.id, period.bm_date_from, period.bm_date_to,
+                    array_agg(pc.company_id) FILTER (
+                        WHERE pc.company_id IS NOT NULL
+                    ) AS company_ids
+                FROM budget_period period
+                LEFT JOIN budget_period_company_rel pc
+                    ON pc.budget_period_id = period.id
+                WHERE period.budget_scope = 'fiscal'
+                GROUP BY period.id
+            ) fiscal_period
+                ON a.source_period_id IS NULL
+                AND COALESCE(analytic.budget_control_scope, 'fiscal') = 'fiscal'
+                AND a.date BETWEEN fiscal_period.bm_date_from
+                    AND fiscal_period.bm_date_to
+                AND (
+                    fiscal_period.company_ids IS NULL
+                    OR fiscal_period.company_ids && string_to_array(
+                        rtrim(source_company.parent_path, '/'), '/'
+                    )::integer[]
+                )
             """,
             table=self._get_sql(),
         )
@@ -77,32 +106,36 @@ class BudgetMonitorReport(models.Model):
         return SQL("")
 
     @api.model
-    def _get_sql(self) -> SQL:
-        select_budget_query = self._select_budget()
-        key_select_budget_list = sorted(select_budget_query.keys())
-        select_budget = ", ".join(
-            select_budget_query[x] for x in key_select_budget_list
-        )
-        select_actual_query = self._select_statement("80_actual")
-        key_select_actual_list = sorted(select_budget_query.keys())
-        select_actual = ", ".join(
-            select_actual_query[x] for x in key_select_actual_list
-        )
+    def _get_consumed_sql(self, amount_type, where=None) -> SQL:
+        """UNION branch of the budget moves of ``amount_type``, a source of
+        ``_get_consumed_sources()``, filtered by ``where``."""
+        select = self._select_statement(amount_type)
         return SQL(
-            """
-            (SELECT %(select_budget)s %(from_budget)s)
-            UNION ALL
-            (SELECT %(select_actual)s %(from_actual)s %(where_actual)s)
-            UNION ALL
-            (%(select_forward_balance)s)
-            """,
-            select_budget=SQL(select_budget),
-            from_budget=self._from_budget(),
-            select_actual=SQL(select_actual),
-            from_actual=self._from_statement("80_actual"),
-            where_actual=self._where_actual(),
-            select_forward_balance=self._select_forward_balance(),
+            "(SELECT %s %s %s)",
+            SQL(", ".join(select[key] for key in sorted(select))),
+            self._from_statement(amount_type),
+            where or SQL(""),
         )
+
+    @api.model
+    def _get_sql_branches(self) -> list:
+        """UNION ALL branches of the monitoring: budgets, actuals and forward
+        balances. Extensions add theirs, e.g. the branch of a commitment
+        source with ``_get_consumed_sql()``."""
+        select_budget = self._select_budget()
+        return [
+            SQL(
+                "(SELECT %s %s)",
+                SQL(", ".join(select_budget[key] for key in sorted(select_budget))),
+                self._from_budget(),
+            ),
+            self._get_consumed_sql("80_actual", self._where_actual()),
+            SQL("(%s)", self._select_forward_balance()),
+        ]
+
+    @api.model
+    def _get_sql(self) -> SQL:
+        return SQL(" UNION ALL ").join(self._get_sql_branches())
 
     @api.model
     def _select_forward_balance(self) -> SQL:
@@ -162,9 +195,36 @@ class BudgetMonitorReport(models.Model):
         )
 
     @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        arch, view = super()._get_view(view_id, view_type, **options)
+        self.env["account.analytic.plan"]._patch_budget_plan_view(
+            arch, view_type, self._name
+        )
+        return arch, view
+
+    @api.model
     def _select_forward_balance_extra(self):
         """Hook for extension dimensions on every forward UNION branch."""
-        return {}
+        select = {
+            95: "forward.from_budget_period_id AS source_period_id, "
+            "NULL::integer AS source_company_id"
+        }
+        if self._budget_plan_fnames():
+            select[90] = self._select_plan_columns_null()
+        return select
+
+    def _budget_plan_fnames(self):
+        """``x_plan<id>_id`` columns, one per root plan, in a fixed order."""
+        return sorted(
+            fname for fname in self._fields if re.fullmatch(r"x_plan\d+_id", fname)
+        )
+
+    def _select_plan_columns_null(self):
+        """Budget and forward rows only know their budget analytic, which is
+        never in a plan column."""
+        return ", ".join(
+            f"NULL::integer AS {fname}" for fname in self._budget_plan_fnames()
+        )
 
     def _get_select_amount_types(self):
         sql_select = {}
@@ -192,7 +252,30 @@ class BudgetMonitorReport(models.Model):
                 1::boolean as active
                 """
             }
+            sql_select[amount_type][95] = (
+                "NULL::integer AS source_period_id, a.company_id AS source_company_id"
+            )
+            plan_fnames = self._budget_plan_fnames()
+            if plan_fnames:
+                move_fields = self._get_budget_move_fields(source["budget_move"][0])
+                sql_select[amount_type][90] = ", ".join(
+                    f"a.{fname}"
+                    if fname in move_fields
+                    else f"NULL::integer AS {fname}"
+                    for fname in plan_fnames
+                )
         return sql_select
+
+    def _get_budget_move_fields(self, table):
+        """Fields of the budget move model stored in ``table``."""
+        return next(
+            (
+                model._fields
+                for model in self.env.registry.values()
+                if not model._abstract and model._table == table
+            ),
+            {},
+        )
 
     def _get_from_amount_types(self):
         sql_from = {}
@@ -209,6 +292,15 @@ class BudgetMonitorReport(models.Model):
         return sql_from
 
     def _select_budget(self):
+        select = self._select_budget_base()
+        select[95] = (
+            "b.budget_period_id AS source_period_id, NULL::integer AS source_company_id"
+        )
+        if self._budget_plan_fnames():
+            select[90] = self._select_plan_columns_null()
+        return select
+
+    def _select_budget_base(self):
         return {
             0: """
             10000000000 + a.id as id,
@@ -243,7 +335,7 @@ class BudgetMonitorReport(models.Model):
             GROUP BY
                 a.id, a.kpi_id, a.analytic_account_id,
                 b.analytic_plan, a.date_to, a.amount,
-                b.name, b.state, a.active
+                b.name, b.state, a.active, b.budget_period_id
             """,
         )
 

@@ -127,7 +127,7 @@
                                         nolabel="1"
                                         string="Budget Figure"
                                         width="12px"
-                                        widget="popover_widget"
+                                        widget="budget_popover"
                                         groups="budget_control.group_budget_control_user"
                                     />
                                     <field name="amount" />
@@ -226,6 +226,7 @@
 
     <record id="action_budget_move_adjustment" model="ir.actions.act_window">
         <field name="name">Budget Moves Adjustment</field>
+        <field name="path">budget-adjustment</field>
         <field name="view_id" ref="view_budget_move_adjustment_list" />
         <field name="res_model">budget.move.adjustment</field>
         <field name="view_mode">list,form</field>

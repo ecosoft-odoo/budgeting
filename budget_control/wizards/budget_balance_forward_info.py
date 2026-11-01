@@ -24,6 +24,11 @@ class BudgetBalanceForwardInfo(models.TransientModel):
     currency_id = fields.Many2one(
         related="forward_id.currency_id",
     )
+    open_commitment = fields.Monetary(
+        readonly=True,
+        help="Commitments still in the source period on the analytics: once "
+        "forwarded, the balance carries their budget too.",
+    )
 
     def action_budget_balance_forward(self):
         self.ensure_one()
@@ -56,8 +61,9 @@ class BudgetBalanceForwardInfoLine(models.TransientModel):
     )
     initial_commit = fields.Monetary(
         string="Initial Commitment",
-        related="analytic_account_id.initial_commit",
         readonly=True,
+        help="Commitments the done commitment forwards carried to the analytic "
+        "in the period.",
     )
     amount_balance = fields.Monetary(
         string="Balance",

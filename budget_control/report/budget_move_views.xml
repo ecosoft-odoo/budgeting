@@ -4,7 +4,7 @@
         <field name="name">account.budget.move.list</field>
         <field name="model">account.budget.move</field>
         <field name="arch" type="xml">
-            <list>
+            <list create="0" edit="0" delete="0">
                 <field name="reference" />
                 <field name="source_document" />
                 <field name="move_line_id" />
@@ -81,6 +81,7 @@
     </record>
     <record id="action_account_budget_move" model="ir.actions.act_window">
         <field name="name">Actual Budget Commitment</field>
+        <field name="path">budget-move</field>
         <field name="res_model">account.budget.move</field>
         <field name="view_mode">pivot,list</field>
         <field name="search_view_id" ref="view_account_budget_move_report_search" />

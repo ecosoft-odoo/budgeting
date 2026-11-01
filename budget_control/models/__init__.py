@@ -8,13 +8,13 @@ from . import budget_kpi
 from . import budget_template
 from . import budget_period
 from . import budget_constraint
+from . import analytic_plan
 from . import analytic_account
 
 # Base Model
 from . import base_budget_move
 
 # Operation Data
-from . import budget_plan
 from . import budget_control
 from . import budget_transfer
 from . import budget_transfer_item

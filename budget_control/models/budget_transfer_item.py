@@ -89,6 +89,16 @@ class BudgetTransferItem(models.Model):
             raise UserError(
                 self.env._("You can not transfer from the same budget control sheet!")
             )
+        if (
+            self.budget_control_from_id.currency_id
+            != self.budget_control_to_id.currency_id
+        ):
+            raise UserError(
+                self.env._(
+                    "You can not transfer between budget control sheets "
+                    "in different currencies!"
+                )
+            )
         # check amount transfer must be positive
         if (
             float_compare(
@@ -116,6 +126,7 @@ class BudgetTransferItem(models.Model):
             )
 
     def transfer(self):
+        self.transfer_id._check_transfer_state(("submit",))
         for transfer in self:
             transfer._check_constraint_transfer()
             # Update released amounts
@@ -132,6 +143,7 @@ class BudgetTransferItem(models.Model):
             transfer.budget_control_to_id.released_amount += transfer.amount
 
     def reverse(self):
+        self.transfer_id._check_transfer_state(("transfer",))
         for transfer in self:
             transfer.budget_control_from_id.released_amount += transfer.amount
             transfer.budget_control_to_id.released_amount -= transfer.amount

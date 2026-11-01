@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates id="template" xml:space="preserve">
+    <t t-name="budget_control.BudgetForwardArrow">
+        <i
+            class="oi"
+            t-att-class="this.props.record.data.forward_changed ? 'text-primary fw-bold' : 'text-muted'"
+            data-icon="arrow_forward"
+            role="img"
+            aria-label="Forward to"
+            title="Forward to"
+        />
+    </t>
+</templates>
