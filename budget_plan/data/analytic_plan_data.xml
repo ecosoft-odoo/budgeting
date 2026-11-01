@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- One analytic column per root plan without Control Budget on plan line
+         details, created on install and kept in sync on every update -->
+    <function model="account.analytic.plan" name="_sync_budget_columns" />
+</odoo>

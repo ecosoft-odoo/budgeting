@@ -1,0 +1,84 @@
+# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
+from odoo import api, fields, models
+
+
+class AccountMoveLine(models.Model):
+    _name = "account.move.line"
+    _inherit = ["account.move.line", "budget.docline.mixin"]
+    _budget_date_commit_fields = ["move_id.date"]
+    _budget_move_model = "account.budget.move"
+    _doc_rel = "move_id"
+
+    budget_move_ids = fields.One2many(
+        comodel_name="account.budget.move",
+        inverse_name="move_line_id",
+        string="Account Budget Moves",
+    )
+    return_amount_commit = fields.Boolean(
+        related="move_id.return_amount_commit",
+    )
+    not_affect_budget = fields.Boolean(
+        help="If checked, this line will not commit budget.",
+    )
+
+    @api.depends(
+        "move_id.not_affect_budget", "not_affect_budget", "analytic_distribution"
+    )
+    def _compute_can_commit(self):
+        """
+        Compute whether this account move line can commit budget.
+        - Header not_affect_budget is the master switch: all lines skip budget.
+        - Line not_affect_budget is effective when header is False.
+        """
+        res = super()._compute_can_commit()
+        # Header is master switch
+        no_budget_moves = self.mapped("move_id").filtered("not_affect_budget")
+        if no_budget_moves:
+            lines_to_update = no_budget_moves.mapped("line_ids").filtered("can_commit")
+            if lines_to_update:
+                lines_to_update.write({"can_commit": False})
+        # Line-level flag (only effective when header is False)
+        lines_to_update = self.filtered(
+            lambda line: line.not_affect_budget and line.can_commit
+        )
+        if lines_to_update:
+            lines_to_update.write({"can_commit": False})
+        return res
+
+    def recompute_budget_move(self):
+        return self.recompute_budget_move_batch()
+
+    def _can_batch_budget_precommit(self):
+        return True
+
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
+        self.ensure_one()
+        if self.move_id.move_type == "entry":
+            total_amount = self.amount_currency
+        else:
+            sign = -1 if self.is_refund else 1
+            discount = (100 - self.discount) / 100 if self.discount else 1
+            total_amount = sign * self.price_unit * self.quantity * discount
+
+        percent_analytic = self._get_budget_analytic_percent(analytic_id)
+        budget_vals["amount_currency"] = total_amount * (percent_analytic / 100)
+        budget_vals["tax_ids"] = self.tax_ids.ids
+        # Document specific vals
+        budget_vals.update(
+            {
+                "move_line_id": self.id,
+            }
+        )
+        return super()._init_docline_budget_vals(budget_vals, analytic_id)
+
+    def _valid_commit_state(self):
+        return self.move_id.state == "posted"
+
+    def _get_included_tax(self):
+        return self._get_budget_company().budget_include_tax_account
+
+    def uncommit_purchase_budget(self):
+        """This function for hooks"""
+        return

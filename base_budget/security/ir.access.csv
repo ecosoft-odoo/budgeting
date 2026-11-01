@@ -1,0 +1,10 @@
+id,name,model_id,group_id/id,operation,domain
+access_budget_period_user,access_budget_period_user,budget.period,base.group_user,r,
+access_budget_period_system,access_budget_period_system,budget.period,base.group_system,crud,
+rule_budget_period_multi_company,Budget Period multi-company,budget.period,,crud,"
+        [
+            '|',
+            ('company_ids', '=', False),
+            ('company_ids', 'parent_of', company_ids)
+        ]
+        "

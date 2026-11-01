@@ -1,0 +1,134 @@
+# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
+from odoo import api, fields, models
+
+
+class AccountMove(models.Model):
+    _inherit = "account.move"
+    _docline_rel = "line_ids"
+    _docline_type = "account"
+
+    not_affect_budget = fields.Boolean(
+        help="If checked, lines does not create budget move",
+    )
+    budget_move_ids = fields.One2many(
+        comodel_name="account.budget.move",
+        inverse_name="move_id",
+        string="Account Budget Moves",
+    )
+    return_amount_commit = fields.Boolean(
+        help="This technical field is used to determine how to return budget "
+        "to the original document (i.e., return back to PO).\n"
+        "By default, system will use quantity to calculated for the returning amount. "
+        "But with this flag, the amount commit of this document will be used instead.\n"
+        "This is good when we want to ignore the quantity.\n"
+        "This flag usually passed in when this invoice is created.",
+    )
+
+    @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        arch, view = super()._get_view(view_id, view_type, **options)
+        if view_type == "form":
+            for node in arch.iterfind('.//field[@name="budget_move_ids"]/list'):
+                self.env["account.analytic.plan"]._patch_budget_plan_view(
+                    node, "list", "account.budget.move"
+                )
+        return arch, view
+
+    @api.model
+    def default_get(self, field_list):
+        res = super().default_get(field_list)
+        if res.get("journal_id"):
+            journal = self.env["account.journal"].browse(res["journal_id"])
+            res["not_affect_budget"] = journal.not_affect_budget
+        return res
+
+    @api.onchange("journal_id")
+    def _onchange_not_affect_budget(self):
+        self.not_affect_budget = self.journal_id.not_affect_budget
+
+    @api.onchange("not_affect_budget")
+    def _onchange_not_affect_budget_header(self):
+        if self.not_affect_budget:
+            self.line_ids.not_affect_budget = True
+        else:
+            self.line_ids.not_affect_budget = False
+
+    def recompute_budget_move(self):
+        self.mapped("invoice_line_ids").recompute_budget_move()
+
+    def close_budget_move(self):
+        self.mapped("invoice_line_ids").close_budget_move()
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """The default value of "Not affect budget" depends on journal.
+        except in the case of a manaully created journal entry.
+        """
+        for vals in vals_list:
+            if "not_affect_budget" not in vals and "journal_id" in vals:
+                journal = self.env["account.journal"].browse(vals["journal_id"])
+                vals["not_affect_budget"] = journal.not_affect_budget
+        moves = super().create(vals_list)
+        # Apply journal's default when not_affect_budget wasn't explicitly provided
+        # (journal_id is resolved later by _compute_journal_id for SO/PO-created moves).
+        for move, vals in zip(moves, vals_list, strict=False):
+            if (
+                "not_affect_budget" not in vals
+                and "journal_id" not in vals
+                and move.journal_id.not_affect_budget
+            ):
+                move.not_affect_budget = True
+        # Propagate header flag to lines for data consistency
+        for move in moves.filtered("not_affect_budget"):
+            lines_to_update = move.line_ids.filtered(
+                lambda line: not line.not_affect_budget
+            )
+            if lines_to_update:
+                lines_to_update.write({"not_affect_budget": True})
+        return moves
+
+    def write(self, vals):
+        """
+        - Commit budget when state changes to actual
+        - Cancel/Draft document should delete all budget commitment
+        - Propagate not_affect_budget header flag to lines
+        """
+        res = super().write(vals)
+        if "not_affect_budget" in vals:
+            self.line_ids.write({"not_affect_budget": vals["not_affect_budget"]})
+        if vals.get("state") in ("cancel", "draft"):
+            doclines = self.mapped("invoice_line_ids")
+            # skip_account_move_synchronization = True, as this is account.move.line
+            # skipping to avoid warning error when update date_commit
+            doclines.with_context(skip_account_move_synchronization=True).write(
+                {"date_commit": False}
+            )
+        # Recompute once when state changes OR not_affect_budget changes
+        if vals.get("state") in ("posted", "cancel", "draft") or vals.get(
+            "not_affect_budget"
+        ):
+            self.mapped("invoice_line_ids")._call_budget_method_guarded(
+                "recompute_budget_move"
+            )
+        return res
+
+    def _filtered_move_check_budget(self):
+        """For hooks, default check budget following
+        - Vedor Bills
+        - Customer Refund
+        - Journal Entries
+        """
+        return self.filtered_domain(
+            [("move_type", "in", ["in_invoice", "out_refund", "entry"])]
+        )
+
+    def action_post(self):
+        res = super().action_post()
+        # Update database, then check budget
+        # self.flush_model()
+        BudgetPeriod = self.env["budget.period"]
+        for move in self._filtered_move_check_budget():
+            BudgetPeriod.check_budget(move.line_ids)
+        return res

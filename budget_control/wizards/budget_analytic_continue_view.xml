@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="budget_analytic_continue_view_form" model="ir.ui.view">
+        <field name="name">budget.analytic.continue.form</field>
+        <field name="model">budget.analytic.continue</field>
+        <field name="arch" type="xml">
+            <form string="Continue Analytics">
+                <group>
+                    <field name="budget_period_id" />
+                    <field name="analytic_ids" invisible="1" />
+                </group>
+                <p class="text-muted">
+                    Analytics without Budget Period continue as themselves while they are open: extend those that end before the period.
+                    Yearly analytics, with a Budget Period, continue as an analytic of the period: the matching one, by name, code, root plan and company, or a new copy.
+                </p>
+                <field name="line_ids" nolabel="1">
+                    <list editable="bottom" create="0">
+                        <field name="analytic_account_id" />
+                        <field name="budget_period_id" optional="show" />
+                        <field name="action" />
+                        <field
+                            name="next_analytic_id"
+                            invisible="action != 'link'"
+                            required="action == 'link'"
+                            options="{'no_create': True}"
+                        />
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        string="Confirm"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_budget_analytic_continue" model="ir.actions.act_window">
+        <field name="name">Continue in Budget Period</field>
+        <field name="res_model">budget.analytic.continue</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="analytic.model_account_analytic_account" />
+        <field name="binding_view_types">list</field>
+        <field
+            name="group_ids"
+            eval="[Command.set([ref('budget_control.group_budget_control_manager')])]"
+        />
+    </record>
+</odoo>

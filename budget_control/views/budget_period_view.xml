@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Keep this id: extension modules inherit it -->
+    <record id="budget_period_view_form" model="ir.ui.view">
+        <field name="name">budget.period.view.form</field>
+        <field name="model">budget.period</field>
+        <field name="inherit_id" ref="base_budget.budget_period_view_form" />
+        <field name="arch" type="xml">
+            <notebook name="settings" position="inside">
+                <page name="budget_control" string="Budget Control">
+                    <group>
+                        <group name="budget_period_control">
+                            <field
+                                name="template_id"
+                                required="control_budget or account"
+                            />
+                            <field
+                                name="plan_date_range_type_id"
+                                required="control_budget or account"
+                            />
+                            <field name="control_budget" widget="boolean_toggle" />
+                            <label
+                                for="account"
+                                class="d-none"
+                                invisible="not control_budget"
+                            />
+                            <div invisible="not control_budget">
+                                <field name="account" class="oe_inline" nolabel="1" />
+                                <label for="account" class="o_form_label oe_inline" />
+                            </div>
+                        </group>
+                        <group name="budget_period_control_analytic">
+                            <field name="control_all_analytic_accounts" />
+                            <field
+                                name="control_analytic_account_ids"
+                                widget="many2many_tags"
+                                invisible="control_all_analytic_accounts"
+                            />
+                            <field name="control_level" />
+                            <field name="unmatched_account_policy" />
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+    <menuitem
+        id="budget_period_menu"
+        parent="budget_config_sub_menu"
+        name="Budget Period"
+        action="base_budget.budget_period_action"
+        sequence="20"
+    />
+</odoo>

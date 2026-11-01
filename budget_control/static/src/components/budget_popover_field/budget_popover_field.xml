@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates id="template" xml:space="preserve">
+    <t t-name="budget_control.BudgetPopoverField">
+        <button
+            t-if="this.jsonValue().analytic"
+            class="btn border-0 oi p-1 text-primary"
+            t-on-click.stop="this.showPopup"
+            data-icon="info"
+            title="Budget Figure"
+        />
+    </t>
+
+    <div t-name="budget_control.BudgetPopover" class="m-3">
+        <h6 t-out="this.props.title" />
+        <div class="p-2">
+            <t t-foreach="this.props.analytic" t-as="item" t-key="item.id">
+                <div class="mb-3 p-2 border rounded shadow-sm">
+                    <div class="fw-bold mb-2 text-primary">
+                        <t t-out="item.name" />
+                    </div>
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="text-muted">Planned</td>
+                                <td class="text-end text-nowrap">
+                                    <t t-out="item.budget" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Used</td>
+                                <td class="text-end text-nowrap text-danger">
+                                    - <t t-out="item.consumed" />
+                                </td>
+                            </tr>
+                            <tr class="bg-light">
+                                <td class="fw-bold">Available</td>
+                                <td class="text-end text-nowrap fw-bold text-success">
+                                    = <t t-out="item.balance" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </div>
+    </div>
+</templates>

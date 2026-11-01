@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_balance_forward_list" model="ir.ui.view">
+        <field name="name">view.budget.balance.forward.list</field>
+        <field name="model">budget.balance.forward</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="from_budget_period_id" />
+                <field name="to_budget_period_id" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-success="state == 'done'"
+                    decoration-info="state == 'draft'"
+                />
+            </list>
+        </field>
+    </record>
+    <record id="view_budget_balance_forward_line_list" model="ir.ui.view">
+        <field name="name">view.budget.balance.forward.line.list</field>
+        <field name="model">budget.balance.forward.line</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" create="0" decoration-info="forward_changed">
+                <field name="forward_changed" column_invisible="1" />
+                <field name="analytic_account_id" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="amount_balance" />
+                <widget name="budget_forward_arrow" width="32px" />
+                <field
+                    name="to_analytic_account_id"
+                    options="{'no_create': 1, 'no_open': 1}"
+                    optional="show"
+                />
+                <field name="amount_balance_forward" />
+                <field
+                    name="accumulate_analytic_account_id"
+                    force_save="1"
+                    options="{'no_create': 1}"
+                    optional="show"
+                    required="amount_balance_accumulate > 0.0"
+                />
+                <field name="amount_balance_accumulate" />
+            </list>
+        </field>
+    </record>
+    <record id="view_budget_balance_forward_form" model="ir.ui.view">
+        <field name="name">view.budget.balance.forward.form</field>
+        <field name="model">budget.balance.forward</field>
+        <field name="arch" type="xml">
+            <form string="Budget Balance Forward">
+                <header>
+                    <button
+                        name="action_review_budget_balance"
+                        string="Review Budget Balance"
+                        class="btn-primary"
+                        type="object"
+                        invisible="state != 'draft'"
+                    />
+                    <button
+                        name="preview_budget_balance_forward_info"
+                        string="Forward Budget Balance"
+                        class="btn-primary"
+                        type="object"
+                        invisible="state != 'review'"
+                    />
+                    <field name="missing_analytic" invisible="1" />
+                    <button
+                        name="action_continue_analytics"
+                        string="Continue Analytics"
+                        class="btn-primary"
+                        type="object"
+                        invisible="not missing_analytic or state != 'review'"
+                    />
+                    <button
+                        name="action_draft"
+                        string="Set to Draft"
+                        type="object"
+                        invisible="state not in ['review', 'cancel']"
+                    />
+                    <button
+                        name="action_cancel"
+                        string="Cancel"
+                        type="object"
+                        confirm="This action will cancel for every line in document. Are you sure to continue?"
+                        invisible="state not in ['draft', 'review', 'done']"
+                    />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,review,done"
+                    />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" />
+                        <h1>
+                            <field name="name" readonly="state != 'draft'" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field
+                                name="from_budget_period_id"
+                                readonly="state != 'draft'"
+                            />
+                        </group>
+                        <group>
+                            <field
+                                name="to_budget_period_id"
+                                readonly="state != 'draft'"
+                            />
+                        </group>
+                    </group>
+                    <group>
+                        <field
+                            name="company_ids"
+                            widget="many2many_tags"
+                            readonly="state != 'draft'"
+                            groups="base.group_multi_company"
+                            placeholder="All companies"
+                        />
+                    </group>
+                    <notebook>
+                        <page name="analytic" string="Analytic Accounts">
+                            <field
+                                name="forward_line_ids"
+                                readonly="state != 'review'"
+                                list_view_ref="budget_control.view_budget_balance_forward_line_list"
+                                form_view_ref="budget_control.view_budget_balance_forward_line_form"
+                            />
+                        </page>
+                        <page name="help" string="Help">
+                            <div name="help">
+                                <p>
+                                    This operation finds the available balance of each analytic in the source period,
+                                    and carries it as <b
+                                >Initial Available</b> to its Carry Forward Analytic (and Accumulate Analytic).
+                                    Forward the commitments of the period first: the balance then carries their budget too.
+                                </p>
+                                <p>
+                                    <ol>
+                                        <li>Click <b
+                                        >Review Budget Balance</b> button, to find current balance of all analtyics.</li>
+                                        <li
+                                        >Review the Carry Forward Analytic of the lines: where their analytic continues in the target period, see Continues As on analytics. For the lines without one, click <b
+                                        >Continue Analytics</b> to extend, link or create those analytics, or choose the analytic.</li>
+                                        <li
+                                        >Fill in amount, both forward and accumulate (optional), and click <b
+                                        >Forward Budget Balance</b></li>
+                                    </ol>
+                                </p>
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+    <record id="action_budget_balance_forward" model="ir.actions.act_window">
+        <field name="name">Forward Budget Balance</field>
+        <field name="path">budget-balance-forward</field>
+        <field name="res_model">budget.balance.forward</field>
+        <field name="view_id" ref="view_budget_balance_forward_list" />
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem
+        id="menu_budget_balance_forward"
+        parent="budget_menu_carry_forward"
+        name="Forward Budget Balance"
+        action="action_budget_balance_forward"
+        sequence="60"
+    />
+</odoo>

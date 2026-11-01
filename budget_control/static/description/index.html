@@ -1,0 +1,809 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils: https://docutils.sourceforge.io/" />
+<title>Budget Control</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 9511 2024-01-13 09:50:07Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+Despite the name, some widely supported CSS2 features are used.
+
+See https://docutils.sourceforge.io/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+.subscript {
+  vertical-align: sub;
+  font-size: smaller }
+
+.superscript {
+  vertical-align: super;
+  font-size: smaller }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
+  overflow: hidden;
+}
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title, .code .error {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left, object.align-left, table.align-left {
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right, object.align-right, table.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+table.align-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: inherit }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+.align-top    {
+  vertical-align: top }
+
+.align-middle {
+  vertical-align: middle }
+
+.align-bottom {
+  vertical-align: bottom }
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block, pre.math, pre.code {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+pre.code .ln { color: gray; } /* line numbers */
+pre.code, code { background-color: #eeeeee }
+pre.code .comment, code .comment { color: #5C6576 }
+pre.code .keyword, code .keyword { color: #3B0D06; font-weight: bold }
+pre.code .literal.string, code .literal.string { color: #0C5404 }
+pre.code .name.builtin, code .name.builtin { color: #352B84 }
+pre.code .deleted, code .deleted { background-color: #DEB0A1}
+pre.code .inserted, code .inserted { background-color: #A3D289}
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic, pre.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+/* "booktabs" style (no vertical lines) */
+table.docutils.booktabs {
+  border: 0px;
+  border-top: 2px solid;
+  border-bottom: 2px solid;
+  border-collapse: collapse;
+}
+table.docutils.booktabs * {
+  border: 0px;
+}
+table.docutils.booktabs th {
+  border-bottom: thin solid;
+  text-align: left;
+}
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="budget-control">
+<h1 class="title">Budget Control</h1>
+
+<!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This file is generated by oca-gen-addon-readme !!
+!! changes will be overwritten.                   !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! source digest: sha256:7a76662a9d6905d9de90657587b1e957b8a541d56d22e5a260b811debcdc970c
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+<p><a class="reference external image-reference" href="https://odoo-community.org/page/development-status"><img alt="Alpha" src="https://img.shields.io/badge/maturity-Alpha-red.png" /></a> <a class="reference external image-reference" href="http://www.gnu.org/licenses/agpl-3.0-standalone.html"><img alt="License: AGPL-3" src="https://img.shields.io/badge/license-AGPL--3-blue.png" /></a> <a class="reference external image-reference" href="https://github.com/ecosoft-odoo/budgeting/tree/20.0/budget_control"><img alt="ecosoft-odoo/budgeting" src="https://img.shields.io/badge/github-ecosoft--odoo%2Fbudgeting-lightgray.png?logo=github" /></a></p>
+<p>This module is the main module from a set of budget control modules.
+This module alone will allow you to work in full cycle of budget control
+process. Other modules, each one are the small enhancement of this
+module, to fullfill additional needs. Having said that, following will
+describe the full cycle of budget control already provided by this
+module,</p>
+<div class="section" id="budget-control-core-features">
+<h1>Budget Control Core Features:</h1>
+<ul>
+<li><p class="first"><strong>Budget Commitment (base.budget.move)</strong></p>
+<p>Probably the most crucial part of budget_control.</p>
+<ul class="simple">
+<li>Budget Balance = Budget Allocated - (Budget Actuals - Budget
+Commitments)</li>
+</ul>
+<p>Actual amount are from account.move.line from posted invoice.
+Commitments can be sales/purchase, expense, purchase request, etc.
+Document required to be budget commitment can extend base.budget.move.
+For example, the module budget_control_expense will create budget
+commitment expense.budget.move for approved expense. Note that, in
+this budget_control module, there is no extension for budget
+commitment yet.</p>
+<p>Budget moves and the Budget Monitoring report have one column
+(<tt class="docutils literal">x_plan&lt;id&gt;_id</tt>) per root analytic plan without Control Budget,
+created with the plan, holding the other analytic accounts of the
+distribution row the move comes from; the account of a controlled plan
+is the move’s Analytic Account. Commitment forward lines have the same
+columns. A module that adds a budget move model calls
+<tt class="docutils literal">account.analytic.plan._sync_budget_columns</tt> from its data, as
+<tt class="docutils literal">data/analytic_plan_data.xml</tt> does. Moves created before a plan
+existed have an empty column; recompute the document to fill it.</p>
+</li>
+<li><p class="first"><strong>Budget Template (budget.template)</strong></p>
+<p>A Budget Template in the budget control system serves as a framework
+for controlling the budget, allowing for the budget to be managed
+according to the pre-defined template. The budget template has a
+relationship with the accounting, and is used to control spending
+based on pre-configured accounts.</p>
+</li>
+<li><p class="first"><strong>Budget Period (budget.period)</strong></p>
+<p>Budget Period is the first thing to do for new budget year, and is
+used to govern how budget will be controlled over the defined date
+range, i.e.,</p>
+<ul class="simple">
+<li>Duration of budget year</li>
+<li>Template to control (budget.template)</li>
+<li>Document to do budget checking</li>
+<li>Analytic account in controlled</li>
+<li>Control Level</li>
+</ul>
+<p>Although not mandatory, an organization will most likely use a fiscal
+year as its normal budget period. A Lifetime analytic, such as a
+campaign, grant, or one-off initiative, may instead use one dedicated
+multi-year period. Because that period is scoped to one analytic
+account, it may overlap the organization’s fiscal periods without
+making document-period selection ambiguous.</p>
+</li>
+<li><p class="first"><strong>Budget Control Sheet (budget.control)</strong></p>
+<p>Each fiscal analytic account can have one budget control sheet per
+budget period. A Lifetime analytic has one sheet for its dedicated
+period. The budget control is used to allocate budget amount in a
+simpler way. In the backend it simply create budget.control.line,
+nothing too fancy. Once we have budget allocations, the system is
+ready to perform budget check.</p>
+<p>Sheets are created directly, or from a Budget Plan with the module
+budget_plan.</p>
+</li>
+<li><p class="first"><strong>Budget Checking</strong></p>
+<p>By calling function – check_budget(), system will check whether the
+confirmation of such document can result in negative budget balance.
+If so, it throw error message. In this module, budget check occur
+during posting of invoice and journal entry. To check budget also on
+more documents, do install budget_control_xxx relevant to that
+document.</p>
+</li>
+<li><p class="first"><strong>Budget Constraint</strong></p>
+<p>To make the function – check_budget() more flexible, additional rules
+or limitations can be added to the budget checking process. The system
+will perform the regular budget check and will also check the
+additional conditions specified in the added rules. An example of
+using budget constraints can be seen from the budget_allocation
+module.</p>
+</li>
+<li><p class="first"><strong>Budget Reports</strong></p>
+<p>Currently there are 2 types of report.</p>
+<ol class="arabic simple">
+<li>Budget Monitoring: combine all budget related transactions, and
+show them in Standard Odoo BI view.</li>
+<li>Actual Budget Moves: combine all actual commit transactions, and
+show them in Standard Odoo BI view.</li>
+</ol>
+</li>
+<li><p class="first"><strong>Budget Commitment Move Forward</strong></p>
+<p>In case budget commitment is being used. Sometime user has committed
+budget withing this year but not ready to use it and want to move the
+commitment amount to next year budget. Budget Commitment Forward can
+be use to change the budget move’s date to the designated year, on the
+analytic each analytic continues as: itself for an analytic used for
+years, or the next analytic of a yearly one (Continues As).</p>
+</li>
+<li><p class="first"><strong>Budget Transfer</strong></p>
+<p>This module allow transferring allocated budget from one budget
+control sheet to other</p>
+</li>
+<li><p class="first"><strong>Budget Balance Forward</strong></p>
+<p>Active controls from a Fiscal Period are proposed in the audited
+Forward Budget Balance document. A budget manager reviews the
+analytics and amounts before posting them to the next Fiscal Period,
+on the analytic each continues as. Once the commitments are forwarded,
+the balance carries their budget too. Lifetime periods already span
+their complete duration and cannot use carry forward.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="extended-modules">
+<h1>Extended Modules:</h1>
+<p>Following are brief explanation of what the extended module will do.</p>
+<p><strong>Budget Move extension</strong></p>
+<p>These modules extend base.budget.move for other document budget
+commitment.</p>
+<ul class="simple">
+<li>budget_control_expense</li>
+<li>budget_control_purchase</li>
+<li>budget_control_purchase_request</li>
+<li>budget_control_sale</li>
+</ul>
+<p><strong>Budget Allocation</strong></p>
+<p>This module is the main module for manage allocation (source of fund,
+analytic tag and analytic account) until set budget control. and allow
+create Master Data source of fund, analytic tag dimension. Users can
+view source of fund monitoring report</p>
+<ul class="simple">
+<li>budget_allocation</li>
+</ul>
+<p><strong>Tier Validation</strong></p>
+<p>Extend base_tier_validation for budget control sheet</p>
+<ul class="simple">
+<li>budget_control_tier_validation</li>
+</ul>
+<p><strong>Analytic Tag Dimension Enhancements</strong></p>
+<p>When 1 dimension (analytic account) is not enough, we can use dimension
+to create persistent dimension columns</p>
+<ul class="simple">
+<li>analytic_tag_dimension</li>
+<li>analytic_tag_dimension_enhanced</li>
+</ul>
+<p>Following modules ensure that, analytic_tag_dimension will work with all
+new budget control objects. These are important for reporting purposes.</p>
+<ul class="simple">
+<li>budget_allocation</li>
+<li>budget_allocation_expense</li>
+<li>budget_allocation_purchase</li>
+</ul>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">This is an alpha version, the data model and design can change at any time without warning.
+Only for development or testing purpose, do not use in production.
+<a class="reference external" href="https://odoo-community.org/page/development-status">More details on development status</a></p>
+</div>
+<p><strong>Table of contents</strong></p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#usage" id="toc-entry-1">Usage</a></li>
+<li><a class="reference internal" href="#development" id="toc-entry-2">Development</a></li>
+<li><a class="reference internal" href="#bug-tracker" id="toc-entry-3">Bug Tracker</a></li>
+<li><a class="reference internal" href="#credits" id="toc-entry-4">Credits</a></li>
+</ul>
+</div>
+<div class="section" id="usage">
+<h2><a class="toc-backref" href="#toc-entry-1">Usage</a></h2>
+<p>Before start using this module, following access right must be set.</p>
+<ul class="simple">
+<li>Budget User for Budget Control Sheet, Budget Report</li>
+<li>Budget Manager for Budget Period</li>
+</ul>
+<p>Followings are sample steps to start with,</p>
+<ol class="arabic" start="0">
+<li><p class="first">Set up the analytic plans</p>
+<ul class="simple">
+<li>Keep <strong>Control Budget</strong> ticked on the root plans whose accounts own
+budgets (e.g. Departments, Projects) and untick it on plans used
+for reporting only (e.g. Fund).</li>
+<li>One row of an analytic distribution can hold only one account of a
+controlled plan, and one account of each plan. To charge two
+budgets, split the line into rows by percentage. The same account
+may be in several rows, e.g. Department 1 / Fund A 60% and
+Department 1 / Fund B 40%: each row commits its own part.</li>
+<li>Budget moves and the Budget Monitoring report get one column per
+root plan without Control Budget, so they can be grouped by it,
+e.g. by Fund. The account of a controlled plan is the Analytic
+Account of the move. Control Budget cannot change once budget moves
+use the plan.</li>
+<li>Budgets follow the company of their analytic account, as in Odoo:
+an analytic account without company can be used by every company,
+one with a company by that company and its branches. To share a
+budget between some companies only, use an analytic account without
+company and set the <strong>Allowed Companies</strong> of its budget control
+sheet; documents of other companies cannot consume it.</li>
+</ul>
+</li>
+<li><p class="first">Create new Budget KPI</p>
+<p>To create budget KPI using in budget template</p>
+</li>
+<li><p class="first">Create new Budget Template</p>
+<ul class="simple">
+<li>Add new template for controlling Budget following kpi-account</li>
+</ul>
+</li>
+<li><p class="first">Create new Budget Period</p>
+<blockquote>
+<ul class="simple">
+<li>Choose Budget template</li>
+<li>Identify date range, i.e., 1 fiscal year</li>
+<li>Plan Date Range, i.e., Quarter, the slot to fill allocation in
+budget control will split by quarter</li>
+<li>Control Budget = True (if not check = not check budget for this
+period)</li>
+</ul>
+</blockquote>
+<p>Normal periods use the <strong>Fiscal Period</strong> scope. Lifetime periods are
+restricted to one analytic account and may overlap fiscal periods
+safely.</p>
+</li>
+<li><p class="first">Create Budget Control Sheet</p>
+<p>Menu &gt; Budgeting &gt; Budget Control Sheet, create one sheet per
+analytic account and budget period, with its Allocated amount. Its
+name and Plan Date Range come from the period. Choose its KPIs and
+click <strong>Soft Reset</strong> to create the plan table.</p>
+<p>With the module budget_plan, sheets are created from a Budget Plan
+instead, which then manages their Allocated amount.</p>
+</li>
+<li><p class="first">Allocate amount in Budget Control Sheets</p>
+<p>Each analytic account will have its own sheet. Form Budget Period,
+click on the icon “Budget Control Sheets” or by Menu &gt; Budgeting &gt;
+Budget Control Sheet, to open them.</p>
+<blockquote>
+<ul class="simple">
+<li>Based on “Plan Date Range” period, Plan table will show all KPI
+split by Plan Date Range</li>
+<li>Allocate budget amount as appropriate.</li>
+<li>Click Control button, state will change to Controlled.</li>
+</ul>
+</blockquote>
+<p>Note: Make sure the Plan Date Rang period already has date ranges
+that covers entire budget period. Once ready, you can click on “Reset
+Plan” anytime.</p>
+</li>
+<li><p class="first">Budget Reports</p>
+<p>After some document transaction (i.e., invoice for actuals), you can
+view report anytime.</p>
+<blockquote>
+<ul class="simple">
+<li>On Budget Control sheet, click on Monitoring for see this budget
+report</li>
+<li>Menu Budgeting &gt; Budget Monitoring, to show budget report in
+standard Odoo BI view.</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first">Budget Checking</p>
+<p>As we have checked Control Budget = True in third step, checking will
+occur every time an invoice is validated. You can test by validate
+invoice with big amount to exceed.</p>
+</li>
+<li><p class="first">Create a Lifetime budget without a Project</p>
+<ul class="simple">
+<li>Open the Analytic Account and click <strong>Create Lifetime Budget</strong>.</li>
+<li>Enter the fixed Start Date, End Date, Budget Template, planning
+range, and Total Budget.</li>
+<li>Ensure the selected planning range has Date Ranges covering the
+complete Lifetime duration. The setup stops without creating
+partial records when a range is missing.</li>
+<li>The system creates one dedicated Lifetime Period and one draft
+Budget Control. Distribute the total on its control lines, then
+submit and control it normally.</li>
+</ul>
+<p>Lifetime is suitable for a campaign, grant, contract, or other
+one-off initiative that can span several fiscal years. It does not
+use a Budget Plan or carry forward. Lifetime analytics are therefore
+excluded from Fiscal Budget Plan allocation, including the
+<strong>Refresh</strong> and <strong>Get All Analytic Accounts</strong> actions; allocate them
+directly on their dedicated Budget Control instead.</p>
+</li>
+<li><p class="first">Close a year: carry commitments and balances to the next period</p>
+<p>An analytic is used in one of two ways:</p>
+<ul class="simple">
+<li><strong>Continuing</strong>: the same analytic for years, without Budget Period.
+It continues as itself while it is open: leave its Date To empty,
+or extend it. Each period has its own Budget Control Sheet for it.</li>
+<li><strong>Yearly</strong>: a new analytic each period, with that Budget Period. It
+continues as the analytic in its <strong>Continues As</strong> field, an
+analytic of the next period.</li>
+</ul>
+<p><strong>Continue in Budget Period</strong>, from the analytics list (Action) or
+the forwards (<strong>Continue Analytics</strong>), proposes it for the analytics
+that do not continue yet: it extends continuing analytics that end
+before the period, links yearly ones to the only analytic of the
+period with the same name, code, root plan and company, or creates
+their copy for the period. Choose the analytic when several match.</p>
+<p>Then:</p>
+<ul class="simple">
+<li><strong>Forward Budget Commitment</strong> carries the open commitments to the
+period, on the analytic each continues as (editable by line, e.g.
+to carry some documents elsewhere) and their Forward Dimensions. A
+commitment not used in that period is carried again by the next
+one.</li>
+<li><strong>Forward Budget Balance</strong> carries the available balance of each
+analytic, after the commitments are forwarded: their budget comes
+with them. Its preview warns of commitments still in the period.
+Adjust the amounts or remove lines that must lapse before
+completing the forward.</li>
+<li>Create the target-period Budget Plan. It takes the yearly analytics
+of the period and the continuing ones budgeted the period before,
+and its Forward Balance is included in the amount available for the
+new Budget Control Sheet.</li>
+</ul>
+<p>Lifetime analytics are not carried forward: their commitments and
+balance remain available for their complete duration.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="development">
+<h2><a class="toc-backref" href="#toc-entry-2">Development</a></h2>
+<p>Extension modules, e.g. budgets of purchases or expenses, build on these
+hooks.</p>
+<p><strong>Document lines</strong> inherit <tt class="docutils literal">budget.docline.mixin</tt> and set
+<tt class="docutils literal">_budget_move_model</tt>, <tt class="docutils literal">_doc_rel</tt> and <tt class="docutils literal">_budget_date_commit_fields</tt>
+(<tt class="docutils literal">_budget_analytic_field</tt> is <tt class="docutils literal">analytic_distribution</tt> by default).</p>
+<ul class="simple">
+<li>A row of the analytic distribution commits one budget analytic, an
+account of a plan with Control Budget, with its full percentage. In
+<tt class="docutils literal">_init_docline_budget_vals(budget_vals, analytic_id)</tt>, take the
+percentage of the row being committed from
+<tt class="docutils literal">_get_budget_analytic_percent(analytic_id)</tt>, not from
+<tt class="docutils literal">distribution[str(analytic_id)]</tt>.</li>
+<li><tt class="docutils literal">amount_commit</tt> is keyed by row, <tt class="docutils literal">budget_row_key()</tt> of
+<tt class="docutils literal">odoo.addons.budget_control.models.analytic_plan</tt>, and
+<tt class="docutils literal">return_amount_commit</tt> in context may be such a dict.</li>
+<li><tt class="docutils literal">commit_budget()</tt> creates one budget move per row and calls
+<tt class="docutils literal">_update_template_line(budget_move)</tt> for each.</li>
+<li><tt class="docutils literal">recompute_budget_move_batch()</tt>, used by journal items and budget
+adjustments, and the batch precommit of models whose
+<tt class="docutils literal">_can_batch_budget_precommit()</tt> is true, do not call
+<tt class="docutils literal">commit_budget()</tt>: extend <tt class="docutils literal">_prepare_commit_vals()</tt> or
+<tt class="docutils literal">_init_docline_budget_vals()</tt>.</li>
+<li><tt class="docutils literal">_get_budget_company()</tt> is the company of the document, whose budget
+settings apply: use it in <tt class="docutils literal">_get_included_tax()</tt>.</li>
+</ul>
+<p><strong>Budget move models</strong> inherit <tt class="docutils literal">base.budget.move</tt>. Their plan columns
+<tt class="docutils literal">x_plan&lt;id&gt;_id</tt>, one per root plan without Control Budget, are created
+by <tt class="docutils literal">account.analytic.plan._sync_budget_columns()</tt>: call it from the
+data of the module, as <tt class="docutils literal">data/analytic_plan_data.xml</tt> does.</p>
+<p><strong>Budget check</strong> (<tt class="docutils literal">budget.period</tt>):</p>
+<ul class="simple">
+<li><tt class="docutils literal">_get_control_budget_moves(budget_period, doclines)</tt> selects the
+budget moves a period checks, and <tt class="docutils literal">_prepare_controls()</tt> their
+controls.</li>
+<li><tt class="docutils literal">_get_where_domain(analytic_id, template_lines)</tt> returns an <tt class="docutils literal">SQL</tt>
+object. Extensions adding filters to it also override
+<tt class="docutils literal">_can_use_budget_available_cache()</tt> to return <tt class="docutils literal">False</tt> for them.</li>
+<li><tt class="docutils literal">_get_analytic_budget_control(analytic, date_commit, company)</tt> of
+document lines gives the budget control sheet; its <tt class="docutils literal">currency_id</tt>
+replaces <tt class="docutils literal">_get_analytic_budget_currency()</tt>.</li>
+<li>Budget Constraints run a server action with <tt class="docutils literal">doclines</tt> in context,
+whose <tt class="docutils literal">action</tt> is the list of error messages.</li>
+</ul>
+<p><strong>Continuation</strong>:
+<tt class="docutils literal">account.analytic.account._get_forward_analytic(period)</tt> gives the
+analytic the budgets and commitments of an analytic are carried forward
+to in a period: itself when <tt class="docutils literal">_is_forward_target(period)</tt> (fiscal, of a
+plan with Control Budget, of that period or without Budget Period, open
+when it starts), else along <tt class="docutils literal">next_analytic_id</tt>; none for Lifetime
+analytics. The <tt class="docutils literal">budget.analytic.continue</tt> wizard extends
+(<tt class="docutils literal">_extend_budget_analytic()</tt>), links
+(<tt class="docutils literal">_get_next_analytic_matches()</tt>) or creates
+(<tt class="docutils literal">_prepare_next_analytic_vals()</tt>) them, and
+<tt class="docutils literal">_get_continue_action(period, analytics)</tt> opens it. Commitment and
+balance forward lines default their forward analytic to it.</p>
+<p><strong>Commitment forwards</strong> carry each analytic row to the forward analytic
+and the Forward Dimensions of its line (<tt class="docutils literal">to_dimension_ids</tt>, those of
+the row by default): <tt class="docutils literal">_get_target_row_key()</tt> and
+<tt class="docutils literal">_get_target_column_vals()</tt> give the target row,
+<tt class="docutils literal">_get_budget_row_key()</tt> the source row. On document lines,
+<tt class="docutils literal">_get_budget_forward_date()</tt> and <tt class="docutils literal">_get_budget_rows_at(date)</tt> give
+where the done forwards carried the commitment, e.g. to check the rows
+of a bill. Before anything changes, <tt class="docutils literal">_check_forward_targets()</tt> refuses
+the lines <tt class="docutils literal">_get_target_error()</tt> returns a message for, e.g. when the
+target row fails <tt class="docutils literal">_check_budget_forward_row(row_key)</tt> of the document
+line: the check of its own <tt class="docutils literal">_validate_analytic_distribution()</tt>, such
+as its mandatory plans. Rows of Lifetime analytics are not forwarded,
+and
+<tt class="docutils literal">budget.commit.forward.line._get_commit_forward_in_map(period_ids, analytic_ids)</tt>
+sums the commitments the done forwards carried in.</p>
+<p><strong>Monitoring</strong> (<tt class="docutils literal">budget.monitor.report</tt>): its query is <tt class="docutils literal">_table_sql</tt>.
+A source of consumption is added to <tt class="docutils literal">_get_consumed_sources()</tt>, and its
+branch to <tt class="docutils literal">_get_sql_branches()</tt> with
+<tt class="docutils literal">_get_consumed_sql(amount_type, where)</tt>, instead of appending SQL text
+to <tt class="docutils literal">_get_sql()</tt>. Branches without plan columns select
+<tt class="docutils literal">_select_plan_columns_null()</tt>. The monitoring shows the amount types
+in the order of their keys, e.g. <tt class="docutils literal">30_po_commit</tt> before <tt class="docutils literal">80_actual</tt>:
+a commitment takes a key before <tt class="docutils literal">80_</tt>.</p>
+</div>
+<div class="section" id="bug-tracker">
+<h2><a class="toc-backref" href="#toc-entry-3">Bug Tracker</a></h2>
+<p>Bugs are tracked on <a class="reference external" href="https://github.com/ecosoft-odoo/budgeting/issues">GitHub Issues</a>.
+In case of trouble, please check there if your issue has already been reported.
+If you spotted it first, help us to smash it by providing a detailed and welcomed
+<a class="reference external" href="https://github.com/ecosoft-odoo/budgeting/issues/new?body=module:%20budget_control%0Aversion:%2020.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**">feedback</a>.</p>
+<p>Do not contact contributors directly about support or help with technical issues.</p>
+</div>
+<div class="section" id="credits">
+<h2><a class="toc-backref" href="#toc-entry-4">Credits</a></h2>
+</div>
+</div>
+<div class="section" id="authors">
+<h1>Authors</h1>
+<ul class="simple">
+<li>Ecosoft</li>
+</ul>
+</div>
+<div class="section" id="contributors">
+<h1>Contributors</h1>
+<ul class="simple">
+<li>Kitti Upariphutthiphong &lt;<a class="reference external" href="mailto:kittiu&#64;ecosoft.co.th">kittiu&#64;ecosoft.co.th</a>&gt;</li>
+<li>Saran Lim. &lt;<a class="reference external" href="mailto:saranl&#64;ecosoft.co.th">saranl&#64;ecosoft.co.th</a>&gt;</li>
+</ul>
+</div>
+<div class="section" id="maintainers">
+<h1>Maintainers</h1>
+<p>Current maintainers:</p>
+<p><a class="reference external image-reference" href="https://github.com/kittiu"><img alt="kittiu" src="https://github.com/kittiu.png?size=40px" /></a> <a class="reference external image-reference" href="https://github.com/ru3ix-bbb"><img alt="ru3ix-bbb" src="https://github.com/ru3ix-bbb.png?size=40px" /></a> <a class="reference external image-reference" href="https://github.com/Saran440"><img alt="Saran440" src="https://github.com/Saran440.png?size=40px" /></a></p>
+<p>This module is part of the <a class="reference external" href="https://github.com/ecosoft-odoo/budgeting/tree/20.0/budget_control">ecosoft-odoo/budgeting</a> project on GitHub.</p>
+<p>You are welcome to contribute.</p>
+</div>
+</div>
+</body>
+</html>

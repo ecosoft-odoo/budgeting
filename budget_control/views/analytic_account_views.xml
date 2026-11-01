@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_account_analytic_account_search" model="ir.ui.view">
+        <field name="name">account.analytic.account.search</field>
+        <field name="model">account.analytic.account</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_account_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//search/field[@name='name']" position="after">
+                <field name="budget_period_id" />
+                <field name="budget_control_scope" />
+            </xpath>
+            <xpath expr="//search/group" position="inside">
+                <filter
+                    name="group_by_budget_period"
+                    string="Budget Period"
+                    context="{'group_by': 'budget_period_id'}"
+                />
+                <filter
+                    name="group_by_plan_id"
+                    string="Analytic Plan"
+                    context="{'group_by': 'plan_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_account_analytic_account_list" model="ir.ui.view">
+        <field name="name">account.analytic.account.list</field>
+        <field name="model">account.analytic.account</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_account_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='code']" position="after">
+                <field name="control_budget" column_invisible="1" />
+                <field
+                    name="budget_period_id"
+                    optional="show"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="budget_control_scope"
+                    optional="show"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="bm_date_from"
+                    optional="hide"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="bm_date_to"
+                    optional="hide"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="budget_control_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    invisible="not control_budget"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="view_account_analytic_account_form" model="ir.ui.view">
+        <field name="name">analytic.analytic.account.form</field>
+        <field name="model">account.analytic.account</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_account_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='code']" position="after">
+                <!-- Only accounts of plans with Control Budget have budgets -->
+                <field name="control_budget" invisible="1" />
+                <field
+                    name="budget_period_id"
+                    readonly="budget_control_scope == 'lifetime'"
+                    invisible="not control_budget"
+                />
+                <label for="budget_control_scope" invisible="not control_budget" />
+                <div class="o_row" invisible="not control_budget">
+                    <field name="budget_control_scope" readonly="1" />
+                    <button
+                        name="action_open_lifetime_budget_setup"
+                        string="Create Lifetime Budget"
+                        type="object"
+                        class="btn-secondary"
+                        groups="budget_control.group_budget_control_manager"
+                        invisible="budget_control_scope != 'fiscal'"
+                    />
+                </div>
+                <field name="bm_date_from" invisible="not control_budget" />
+                <field name="bm_date_to" invisible="not control_budget" />
+                <field
+                    name="next_analytic_id"
+                    invisible="not control_budget or budget_control_scope != 'fiscal'"
+                    options="{'no_create': True}"
+                />
+                <field
+                    name="budget_control_ids"
+                    widget="many2many_tags"
+                    invisible="not control_budget"
+                />
+            </xpath>
+            <xpath expr="//group[@name='main']/group[2]" position="inside">
+                <field name="auto_adjust_date_commit" invisible="not control_budget" />
+            </xpath>
+        </field>
+    </record>
+    <!-- Show Analytic Accounting on Budgeting-->
+    <record id="view_budget_analytic_list" model="ir.ui.view">
+        <field name="name">view.budget.analytic.list</field>
+        <field name="model">account.analytic.account</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" string="Name" />
+                <field name="code" />
+                <field name="control_budget" column_invisible="1" />
+                <field
+                    name="budget_period_id"
+                    optional="show"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="budget_control_scope"
+                    optional="show"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="bm_date_from"
+                    optional="hide"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="bm_date_to"
+                    optional="hide"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="next_analytic_id"
+                    optional="hide"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="budget_control_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    invisible="not control_budget"
+                />
+                <field name="partner_id" optional="hide" />
+                <field name="active" invisible="1" />
+                <field
+                    name="company_id"
+                    groups="base.group_multi_company"
+                    optional="show"
+                />
+                <field
+                    name="currency_id"
+                    groups="base.group_multi_currency"
+                    optional="show"
+                />
+                <field
+                    name="amount_budget"
+                    sum="Total Budget"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="amount_consumed"
+                    sum="Total Consumed"
+                    invisible="not control_budget"
+                />
+                <field
+                    name="amount_balance"
+                    sum="Balance"
+                    invisible="not control_budget"
+                />
+            </list>
+        </field>
+    </record>
+    <record id="action_budget_analytic_form" model="ir.actions.act_window">
+        <field name="name">Analytic Accounts</field>
+        <field name="path">budget-analytic</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">account.analytic.account</field>
+        <field
+            name="search_view_id"
+            ref="analytic.view_account_analytic_account_search"
+        />
+        <field name="view_id" ref="view_budget_analytic_list" />
+        <field name="context">{'search_default_active':1}</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+            Add a new analytic account
+            </p>
+        </field>
+    </record>
+    <!-- Add menu analytic for budgeting -->
+    <menuitem
+        id="budget_menu_analytic_account"
+        name="Analytic Accounts"
+        parent="budget_control.budget_menu_analytic_accounting"
+        sequence="1"
+        action="budget_control.action_budget_analytic_form"
+        groups="analytic.group_analytic_accounting"
+    />
+    <menuitem
+        id="budget_menu_analytic_plan"
+        name="Analytic Plans"
+        parent="budget_control.budget_menu_analytic_accounting"
+        sequence="2"
+        action="analytic.account_analytic_plan_action"
+        groups="analytic.group_analytic_accounting"
+    />
+</odoo>

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_budget_commit_forward_list" model="ir.ui.view">
+        <field name="name">view.budget.commit.forward.list</field>
+        <field name="model">budget.commit.forward</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" />
+                <field name="to_budget_period_id" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-success="state == 'done'"
+                    decoration-info="state == 'draft'"
+                />
+            </list>
+        </field>
+    </record>
+    <record id="view_budget_commit_forward_line_list" model="ir.ui.view">
+        <field name="name">view.budget.commit.forward.line.list</field>
+        <field name="model">budget.commit.forward.line</field>
+        <field name="arch" type="xml">
+            <list
+                editable="bottom"
+                create="0"
+                multi_edit="1"
+                decoration-info="forward_changed"
+            >
+                <header>
+                    <button
+                        name="action_keep_only_selected"
+                        string="Keep Only Selected"
+                        type="object"
+                        confirm="The other lines of the forward will be removed. Continue?"
+                    />
+                </header>
+                <field name="document_id" column_invisible="1" />
+                <field name="document_name" column_invisible="1" />
+                <field name="forward_changed" column_invisible="1" />
+                <field name="analytic_account_id" />
+                <field name="dimension_ids" widget="many2many_tags" optional="show" />
+                <field name="analytic_percent" widget="percentage" optional="show" />
+                <widget name="budget_forward_arrow" width="32px" />
+                <field
+                    name="to_analytic_account_id"
+                    optional="show"
+                    options="{'no_create': True, 'no_open': True}"
+                />
+                <field
+                    name="to_dimension_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                />
+                <field name="document_number" optional="show" />
+                <field name="date_commit" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="amount_commit" sum="Total Commitment" />
+            </list>
+        </field>
+    </record>
+    <record id="view_budget_commit_forward_line_search" model="ir.ui.view">
+        <field name="name">view.budget.commit.forward.line.search</field>
+        <field name="model">budget.commit.forward.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="document_name" string="Document" />
+                <field name="analytic_account_id" />
+                <field name="to_analytic_account_id" />
+                <field name="date_commit" />
+                <filter
+                    name="missing_analytic"
+                    string="Missing Forward Analytic"
+                    domain="[('to_analytic_account_id', '=', False)]"
+                />
+                <group>
+                    <filter
+                        name="group_by_document"
+                        string="Document"
+                        context="{'group_by': 'document_name'}"
+                    />
+                    <filter
+                        name="group_by_res_model"
+                        string="Document Type"
+                        context="{'group_by': 'res_model'}"
+                    />
+                    <filter
+                        name="group_by_analytic_account"
+                        string="Analytic Account"
+                        context="{'group_by': 'analytic_account_id'}"
+                    />
+                    <filter
+                        name="group_by_to_analytic"
+                        string="Forward to Analytic"
+                        context="{'group_by': 'to_analytic_account_id'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="view_budget_commit_forward_line_form" model="ir.ui.view">
+        <field name="name">view.budget.commit.forward.line.form</field>
+        <field name="model">budget.commit.forward.line</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group>
+                        <field name="document_id" invisible="1" />
+                        <field name="analytic_account_id" />
+                        <field
+                            name="to_analytic_account_id"
+                            options="{'no_create': True}"
+                        />
+                        <field name="to_dimension_ids" widget="many2many_tags" />
+                    </group>
+                    <group>
+                        <field name="document_number" />
+                        <field name="date_commit" />
+                        <field name="amount_commit" />
+                    </group>
+                </group>
+            </form>
+        </field>
+    </record>
+    <record id="view_budget_commit_forward_form" model="ir.ui.view">
+        <field name="name">view.budget.commit.forward.form</field>
+        <field name="model">budget.commit.forward</field>
+        <field name="arch" type="xml">
+            <form string="Budget Commit Forward">
+                <header>
+                    <button
+                        name="action_review_budget_commit"
+                        string="Review Budget Commitment"
+                        class="btn-primary"
+                        type="object"
+                        invisible="state != 'draft'"
+                    />
+                    <button
+                        name="preview_budget_commit_forward_info"
+                        string="Forward Budget Commitment"
+                        class="btn-primary"
+                        type="object"
+                        invisible="state != 'review'"
+                    />
+                    <field name="missing_analytic" invisible="1" />
+                    <button
+                        name="action_continue_analytics"
+                        string="Continue Analytics"
+                        class="btn-primary"
+                        type="object"
+                        invisible="not missing_analytic or state != 'review'"
+                    />
+                    <button
+                        name="action_draft"
+                        string="Set to Draft"
+                        type="object"
+                        invisible="state not in ['review', 'cancel']"
+                    />
+                    <button
+                        name="action_cancel"
+                        string="Cancel"
+                        type="object"
+                        invisible="state not in ['draft', 'review', 'done']"
+                        confirm="This action will cancel for every line in document. Are you sure to continue?"
+                    />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,review,done"
+                    />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_forward_lines"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="format_list_bulleted"
+                            invisible="not forward_line_count"
+                        >
+                            <field
+                                name="forward_line_count"
+                                widget="statinfo"
+                                string="Lines"
+                            />
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only" />
+                        <h1>
+                            <field name="name" readonly="state != 'draft'" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field
+                                name="to_budget_period_id"
+                                readonly="state != 'draft'"
+                            />
+                            <field
+                                name="company_ids"
+                                widget="many2many_tags"
+                                readonly="state != 'draft'"
+                                groups="base.group_multi_company"
+                                placeholder="All companies"
+                            />
+                            <label for="name" string="Forward Budget Commitment" />
+                            <div name="docs" />
+                        </group>
+                        <group>
+                            <field name="to_date_commit" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="help" string="Help">
+                            <div name="help">
+                                <p>
+                                    This operation will move budget commitment of all documents below to the new commitment date.
+                                    The amount will be set in <b
+                                >Initial Commitment</b> in Analytic.
+                                </p>
+                                <p>
+                                    <ol>
+                                        <li>Select document type to <b
+                                        >Forward Budget Commitment</b>.</li>
+                                        <li>Click <b
+                                        >Review Budget Commitment</b>, to pull all commited documents.</li>
+                                        <li
+                                        >Review the Forward Analytic of the lines: where their analytic continues in the period, see Continues As on analytics. An analytic without Budget Period continues as itself while it is open; a yearly one, with a Budget Period, as the analytic of the period it continues as. For the lines without one, click <b
+                                        >Continue Analytics</b> to extend, link or create those analytics, or choose the analytic. The Forward Dimensions, e.g. a fund, are those of the document by default: change them to carry the commitment to others, on several lines at once by selecting them in the Lines. To forward some documents only, open the Lines, search and select them, then Keep Only Selected, or select the others and delete them (Set to Draft and Review again to start over).
+                                        </li>
+                                        <li>When ready, click <b
+                                        >Forward Budget Commitment</b> to move commitment.</li>
+                                    </ol>
+                                </p>
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+    <record id="action_budget_commit_forward" model="ir.actions.act_window">
+        <field name="name">Forward Budget Commitment</field>
+        <field name="path">budget-commit-forward</field>
+        <field name="res_model">budget.commit.forward</field>
+        <field name="view_id" ref="view_budget_commit_forward_list" />
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem
+        id="menu_budget_commit_forward"
+        parent="budget_menu_carry_forward"
+        name="Forward Budget Commitment"
+        action="action_budget_commit_forward"
+        sequence="50"
+    />
+</odoo>
