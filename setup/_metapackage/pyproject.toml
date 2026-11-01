@@ -1,0 +1,13 @@
+[project]
+name = "odoo-addons-ecosoft-odoo-budgeting"
+version = "20.0.20261101.0"
+dependencies = [
+    "odoo-addon-base_budget==20.0.*",
+    "odoo-addon-budget_control==20.0.*",
+    "odoo-addon-budget_plan==20.0.*",
+]
+classifiers=[
+    "Programming Language :: Python",
+    "Framework :: Odoo",
+    "Framework :: Odoo :: 20.0",
+]
