@@ -14,6 +14,16 @@ class PurchaseOrder(models.Model):
         string="Purchase Budget Moves",
     )
 
+    @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        arch, view = super()._get_view(view_id, view_type, **options)
+        if view_type == "form":
+            for node in arch.iterfind('.//field[@name="budget_move_ids"]/list'):
+                self.env["account.analytic.plan"]._patch_budget_plan_view(
+                    node, "list", "purchase.budget.move"
+                )
+        return arch, view
+
     # Allow trigger, because purchase order line is editable even when approved.
     @api.constrains("order_line")
     def recompute_budget_move(self):
@@ -135,14 +145,12 @@ class PurchaseOrderLine(models.Model):
         self.ensure_one()
         # Use product qty from context, if not, use line product_qty
         product_qty = self.env.context.get("product_qty") or self.product_qty
-        # If not analytic_id, use 100% of the line
-        percent_analytic = (
-            self[self._budget_analytic_field].get(str(analytic_id)) or 100
-        )
+        # The percentage of the analytic row being committed
+        percent_analytic = self._get_budget_analytic_percent(analytic_id)
         budget_vals["amount_currency"] = (
             self.price_unit * product_qty * (percent_analytic / 100)
         )
-        budget_vals["tax_ids"] = self.taxes_id.ids
+        budget_vals["tax_ids"] = self.tax_ids.ids
         # Document specific vals
         budget_vals.update(
             {
@@ -154,14 +162,10 @@ class PurchaseOrderLine(models.Model):
     def _valid_commit_state(self):
         return self.state in ["purchase", "done"]
 
-    def _prepare_account_move_line(self, move=False):
-        self.ensure_one()
-        res = super()._prepare_account_move_line(move)
-        if res.get("analytic_distribution") and self.fwd_analytic_distribution:
-            res["analytic_distribution"] = self.fwd_analytic_distribution
-        return res
-
     def _get_included_tax(self):
-        if self._name == "purchase.order.line":
-            return self.env.company.budget_include_tax_purchase
-        return super()._get_included_tax()
+        return self._get_budget_company().budget_include_tax_purchase
+
+    def uncommit_purchase_request_budget(self):
+        """Hook of purchase requests, for the precommit check of purchases:
+        uncommit the requests of these lines, return the budget moves."""
+        return False

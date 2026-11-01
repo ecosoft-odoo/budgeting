@@ -17,7 +17,7 @@
                     <field
                         name="forward_purchase_ids"
                         readonly="state != 'review'"
-                        tree_view_ref="budget_control.view_budget_commit_forward_line_list"
+                        list_view_ref="budget_control.view_budget_commit_forward_line_list"
                         form_view_ref="budget_control.view_budget_commit_forward_line_form"
                     />
                 </page>

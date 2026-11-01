@@ -13,16 +13,7 @@ class BudgetMonitorReport(models.Model):
         return SQL("")
 
     @api.model
-    def _get_sql(self) -> SQL:
-        select_po_query = self._select_statement("30_po_commit")
-        key_select_list = sorted(select_po_query.keys())
-        select_po = ", ".join(select_po_query[x] for x in key_select_list)
-        query_string = super()._get_sql()
-        query_string = SQL(
-            query_string.code
-            + "UNION ALL (SELECT %(select_po)s %(from_po)s %(where_po)s)",
-            select_po=SQL(select_po),
-            from_po=self._from_statement("30_po_commit"),
-            where_po=self._where_purchase(),
-        )
-        return query_string
+    def _get_sql_branches(self) -> list:
+        return super()._get_sql_branches() + [
+            self._get_consumed_sql("30_po_commit", self._where_purchase())
+        ]

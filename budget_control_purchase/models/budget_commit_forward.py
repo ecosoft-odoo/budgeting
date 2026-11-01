@@ -28,10 +28,15 @@ class BudgetCommitForward(models.Model):
             return f"{doc.order_id._name},{doc.order_id.id}"
         return super()._get_document_number(doc)
 
-    def _get_base_domain_extension(self, res_model):
-        """For module extension"""
+    def _get_base_from_extension(self, res_model):
+        # The state of purchase lines is the one of their order
         if res_model == "purchase.order.line":
-            return " AND a.state != 'cancel'"
+            return "JOIN purchase_order po ON po.id = a.order_id"
+        return super()._get_base_from_extension(res_model)
+
+    def _get_base_domain_extension(self, res_model):
+        if res_model == "purchase.order.line":
+            return " AND po.state != 'cancel'"
         return super()._get_base_domain_extension(res_model)
 
 

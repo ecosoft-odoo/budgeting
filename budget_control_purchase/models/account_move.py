@@ -15,6 +15,10 @@ class AccountMove(models.Model):
             # invoice reversal.  Update only the reversal owned by these invoice
             # lines; draft/cancel removes it and posted creates it.
             invoice_lines = self.mapped("invoice_line_ids").filtered("purchase_line_id")
+            if vals["state"] == "posted":
+                invoice_lines.filtered(
+                    lambda line: line.move_id.move_type in ("in_invoice", "in_refund")
+                )._check_purchase_forward_date()
             invoice_lines._call_budget_method_guarded("uncommit_purchase_budget")
             # Budget totals are non-stored SQL aggregates and their declared
             # dependency is the budget plan lines.  Incremental PO reversals do

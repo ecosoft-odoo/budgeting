@@ -21,7 +21,7 @@
                     nolabel="1"
                     string="Budget Figure"
                     width="12px"
-                    widget="popover_widget"
+                    widget="budget_popover"
                     groups="budget_control.group_budget_control_user"
                 />
             </xpath>
@@ -41,6 +41,7 @@
                     name="fwd_analytic_distribution"
                     widget="analytic_distribution"
                     optional="hide"
+                    readonly="1"
                     groups="budget_control.group_budget_control_manager"
                 />
                 <field
@@ -60,14 +61,15 @@
                             type="object"
                             name="recompute_budget_move"
                             string="Recompute"
-                            icon="fa-refresh"
+                            icon="refresh"
                             groups="budget_control.group_budget_control_manager"
                         />
                         <button
                             type="object"
                             name="close_budget_move"
                             string="Close Budget"
-                            icon="fa-times-circle"
+                            icon="cancel"
+                            icon_class="oi-filled"
                             groups="budget_control.group_budget_control_manager"
                         />
                     </div>
@@ -80,7 +82,7 @@
                             <field name="analytic_account_id" optional="show" />
                             <field name="write_uid" optional="hide" />
                             <field name="write_date" optional="hide" />
-                            <field name="note" optionl="show" />
+                            <field name="note" optional="show" />
                             <field name="debit" sum="Total Debit" />
                             <field name="credit" sum="Total Credit" />
                         </list>

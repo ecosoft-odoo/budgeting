@@ -3,10 +3,26 @@
 
 from odoo import models
 from odoo.exceptions import UserError
+from odoo.tools import format_date
+
+from odoo.addons.budget_control.models.analytic_plan import budget_row_key
 
 
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
+
+    def _related_analytic_distribution(self):
+        """A purchase commitment carried forward is billed on the analytic
+        distribution it was carried to."""
+        vals = super()._related_analytic_distribution()
+        purchase_line = self.purchase_line_id
+        if purchase_line.fwd_analytic_distribution:
+            vals = {
+                key: percent
+                for key, percent in vals.items()
+                if key not in (purchase_line.analytic_distribution or {})
+            } | purchase_line.fwd_analytic_distribution
+        return vals
 
     def _get_po_line_amount_commit(self):
         """For hook, addition filter or condition i.e. purchase deposit"""
@@ -21,7 +37,7 @@ class AccountMoveLine(models.Model):
     def _get_qty_commit(self, purchase_line):
         """For hook, addition filter or condition i.e. purchase deposit"""
         qty = self.product_uom_id._compute_quantity(
-            self.quantity, purchase_line.product_uom, round=False
+            self.quantity, purchase_line.uom_id, round=False
         )
         qty_bf_invoice = purchase_line.qty_invoiced - qty
         qty_balance = purchase_line.product_qty - qty_bf_invoice
@@ -37,7 +53,7 @@ class AccountMoveLine(models.Model):
             move_type = ml.move_id.move_type
             # State Cancel or draft and not context force commit, not commitment line
             if not self.env.context.get("force_commit") and inv_state != "posted":
-                self.env["purchase.budget.move"].search(
+                self.env["purchase.budget.move"].sudo().search(
                     [("move_line_id", "=", ml.id)]
                 ).unlink()
                 continue
@@ -50,20 +66,18 @@ class AccountMoveLine(models.Model):
             qty = ml._get_qty_commit(purchase_line)
             if qty <= 0 and not ml._check_skip_negative_qty():
                 continue
-            # Check analytic distribution,
-            # Not allow to change analytic distribution is not depend on PO
-            purchase_analytic = purchase_line[purchase_line._budget_analytic_field]
-            # Add analytic_distribution from forward_commit
-            if purchase_line.fwd_analytic_distribution:
-                for (
-                    analytic_id,
-                    aa_percent,
-                ) in purchase_line.fwd_analytic_distribution.items():
-                    purchase_analytic[analytic_id] = aa_percent
 
-            ml_analytic_ids = [x for x in ml.analytic_distribution]
-            purchase_analytic_ids = [x for x in purchase_analytic]
-            if any(aa not in purchase_analytic_ids for aa in ml_analytic_ids):
+            # The rows of the bill line must be those of the purchase
+            # commitment at its date, e.g. the rows a forward carried it to
+            def row(key):
+                return budget_row_key(int(aid) for aid in str(key).split(","))
+
+            purchase_rows = purchase_line._get_budget_rows_at(
+                ml.date_commit or ml.move_id.date
+            )
+            if any(
+                row(key) not in purchase_rows for key in ml.analytic_distribution or {}
+            ):
                 raise UserError(
                     self.env._(
                         "Analytic distribution mismatch. "
@@ -83,3 +97,18 @@ class AccountMoveLine(models.Model):
                 move_line_id=ml.id,
                 date=ml.date_commit,
             )
+
+    def _check_purchase_forward_date(self):
+        """A purchase commitment carried forward is billed from the forward
+        date: an earlier bill would return a commitment no longer there."""
+        for ml in self.filtered("purchase_line_id"):
+            forward_date = ml.purchase_line_id._get_budget_forward_date()
+            if forward_date and (ml.date_commit or ml.move_id.date) < forward_date:
+                raise UserError(
+                    self.env._(
+                        "%(purchase)s is carried forward to %(date)s: date its bills "
+                        "from then, or reverse the forward.",
+                        purchase=ml.purchase_line_id.order_id.display_name,
+                        date=format_date(self.env, forward_date),
+                    )
+                )

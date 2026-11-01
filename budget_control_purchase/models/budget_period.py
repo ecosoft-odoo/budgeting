@@ -31,12 +31,7 @@ class BudgetPeriod(models.Model):
         # Get period control budget.
         # if doctype is purchase, check special control too.
         if doc_type == "purchase":
-            return budget_period.filtered(
-                lambda bp: (
-                    (bp.control_budget and bp.purchase)
-                    or (not bp.control_budget and bp.purchase)
-                )
-            )
+            return budget_period.filtered("purchase")
         return budget_period
 
     @api.model
@@ -50,5 +45,5 @@ class BudgetPeriod(models.Model):
             ).uncommit_purchase_request_budget()
         res = super().check_budget_precommit(doclines, doc_type=doc_type)
         if budget_moves:
-            budget_moves.unlink()
+            budget_moves.sudo().unlink()
         return res
