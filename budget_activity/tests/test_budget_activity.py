@@ -182,12 +182,14 @@ class TestBudgetActivity(get_budget_common_class()):
             bill1.budget_move_ids[0].account_id = self.account_kpi3.id
 
         # Check change account in activity, after commit. it should not allow
-        with self.assertRaisesRegex(
-            UserError,
-            "You cannot change the account because it is already used in a commit.",
+        with (
+            self.assertRaisesRegex(
+                UserError,
+                "You cannot change the account because it is already used in a commit.",
+            ),
+            Form(self.activity1) as activity,
         ):
-            with Form(self.activity1) as activity:
-                activity.account_id = self.account_kpi2
+            activity.account_id = self.account_kpi2
 
     @freeze_time("2001-02-01")
     def test_02_budget_adjustment_activity(self):

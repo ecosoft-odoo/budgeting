@@ -19,7 +19,8 @@ class BudgetPeriod(models.Model):
         control_id = control[budget_control_key]
         if budget_control_key == "activity_id":
             return all_template_lines.filtered(
-                lambda line, control_id=control_id: control_id
-                in line.budget_activity_ids.ids
+                lambda line, control_id=control_id: (
+                    control_id in line.budget_activity_ids.ids
+                )
             )
         return super()._get_filter_template_line(all_template_lines, control)
