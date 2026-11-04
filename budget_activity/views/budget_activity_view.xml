@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Keep these ids: extension modules inherit them -->
+    <record id="budget_activity_view_list" model="ir.ui.view">
+        <field name="name">budget.activity.view.list</field>
+        <field name="model">budget.activity</field>
+        <field name="inherit_id" ref="base_budget_activity.budget_activity_view_list" />
+        <field name="mode">extension</field>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="kpi_id" />
+                <field name="account_id" />
+            </field>
+        </field>
+    </record>
+    <record id="view_budget_activity_filter" model="ir.ui.view">
+        <field name="name">view.budget.activity.filter</field>
+        <field name="model">budget.activity</field>
+        <field
+            name="inherit_id"
+            ref="base_budget_activity.view_budget_activity_filter"
+        />
+        <field name="mode">extension</field>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="kpi_id" string="KPI" />
+                <field name="account_id" string="Account" />
+            </field>
+            <group name="groupby" position="inside">
+                <filter
+                    string="Account"
+                    name="groupby_account"
+                    context="{'group_by': 'account_id'}"
+                />
+                <filter
+                    string="KPI"
+                    name="groupby_budget_kpi"
+                    context="{'group_by': 'kpi_id'}"
+                />
+            </group>
+        </field>
+    </record>
+    <record id="budget_activity_view_form" model="ir.ui.view">
+        <field name="name">budget.activity.view.form</field>
+        <field name="model">budget.activity</field>
+        <field name="inherit_id" ref="base_budget_activity.budget_activity_view_form" />
+        <field name="mode">extension</field>
+        <field name="arch" type="xml">
+            <div name="title" position="inside">
+                <h4>
+                    <field name="kpi_id" placeholder="KPI" />
+                </h4>
+            </div>
+            <field name="keyword_ids" position="before">
+                <field name="account_id" />
+            </field>
+        </field>
+    </record>
+</odoo>
