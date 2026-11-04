@@ -1,8 +1,10 @@
 [project]
 name = "odoo-addons-ecosoft-odoo-budgeting"
-version = "20.0.20261101.0"
+version = "20.0.20261104.0"
 dependencies = [
     "odoo-addon-base_budget==20.0.*",
+    "odoo-addon-base_budget_activity==20.0.*",
+    "odoo-addon-budget_activity==20.0.*",
     "odoo-addon-budget_control==20.0.*",
     "odoo-addon-budget_plan==20.0.*",
 ]
