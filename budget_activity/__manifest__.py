@@ -3,15 +3,14 @@
 
 {
     "name": "Budget Activity",
-    "version": "18.0.2.0.0",
+    "version": "20.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/ecosoft-odoo/budgeting",
-    "depends": ["budget_control"],
+    "depends": ["base_budget_activity", "budget_control"],
     "data": [
-        "security/budget_activity_security.xml",
-        "security/ir.model.access.csv",
+        "security/ir.access.csv",
         # Master Data
         "views/budget_activity_view.xml",
         "views/budget_menuitem.xml",

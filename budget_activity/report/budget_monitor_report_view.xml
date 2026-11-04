@@ -6,7 +6,7 @@
         <field name="inherit_id" ref="budget_control.view_budget_monitor_report_list" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='analytic_account_id']" position="after">
-                <field name="activity" />
+                <field name="activity_id" optional="show" />
             </xpath>
         </field>
     </record>
@@ -18,6 +18,9 @@
             ref="budget_control.view_budget_monitor_report_search"
         />
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_account_id']" position="after">
+                <field name="activity_id" />
+            </xpath>
             <xpath
                 expr="//separator[@orientation='vertical_groupby']"
                 position="before"
@@ -25,7 +28,7 @@
                 <filter
                     string="Activity"
                     name="group_by_activity"
-                    context="{'group_by':'activity'}"
+                    context="{'group_by': 'activity_id'}"
                 />
             </xpath>
         </field>

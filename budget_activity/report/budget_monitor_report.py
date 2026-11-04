@@ -7,30 +7,24 @@ from odoo import fields, models
 class BudgetMonitorReport(models.Model):
     _inherit = "budget.monitor.report"
 
-    activity = fields.Char()
+    activity_id = fields.Many2one(
+        comodel_name="budget.activity",
+    )
 
     def _select_forward_balance_extra(self):
         select = super()._select_forward_balance_extra()
-        select[20] = "null::char as activity"
+        select[20] = "NULL::integer AS activity_id"
         return select
 
     # Budget
     def _select_budget(self):
-        select_budget_query = super()._select_budget()
-        # Budget can't find activity
-        select_budget_query[20] = "null::char as activity"
-        return select_budget_query
+        select = super()._select_budget()
+        # Budgets are planned by KPI, not by activity
+        select[20] = "NULL::integer AS activity_id"
+        return select
 
     # All consumed
     def _select_statement(self, amount_type):
-        select_statement = super()._select_statement(amount_type)
-        select_statement[20] = "ba.name as activity"
-        return select_statement
-
-    def _get_from_amount_types(self):
-        sql_from = super()._get_from_amount_types()
-        for sql_from_key in sql_from:
-            sql_from[sql_from_key] += (
-                "LEFT OUTER JOIN budget_activity ba ON a.activity_id = ba.id\n"
-            )
-        return sql_from
+        select = super()._select_statement(amount_type)
+        select[20] = "a.activity_id"
+        return select

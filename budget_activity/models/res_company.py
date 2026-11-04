@@ -9,5 +9,5 @@ class ResCompany(models.Model):
 
     budget_control_key = fields.Selection(
         selection_add=[("activity_id", "Activity")],
-        ondelete={"activity_id": "cascade"},
+        ondelete={"activity_id": "set default"},
     )

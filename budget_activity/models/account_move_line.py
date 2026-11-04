@@ -1,59 +1,45 @@
 # Copyright 2021 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import api, models
 
 
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
-    activity_id = fields.Many2one(
-        comodel_name="budget.activity",
-    )
-
-    def _is_realtime_inventory_product(self):
-        # Case non-realtime inventory product
-        # activity's account takes priority over product's account
-        if self.product_id.type != "consu":
-            return False
-        if not hasattr(self.product_id.categ_id, "property_valuation"):
-            return False
-        return self.product_id.categ_id.property_valuation == "real_time"
-
     @api.depends("activity_id")
     def _compute_account_id(self):
-        """Activity's account takes priority over product's account.
-
-        For Realtime Inventory Product with Anglo-Saxon accounting, the
-        activity's account must be read in the journal's company context
-        (not the line's company) to support multi-company setups correctly.
-        """
+        """Activity's account takes priority over product's account, except
+        on purchases that Odoo books on the stock valuation account of their
+        product (real-time valuation)."""
         res = super()._compute_account_id()
-        # Realtime + Anglo-Saxon lines: switch to journal's company so that
-        # activity.account_id is read in the right company context.
-        realtime_lines = self.filtered(
-            lambda line: (
-                line._is_realtime_inventory_product()
-                and line.move_id.company_id.anglo_saxon_accounting
-            )
-        ).with_prefetch(
-            ["move_id", "move_id.company_id", "move_id.journal_id.company_id"]
-        )
-        for line in realtime_lines:
-            line = line.with_company(line.move_id.journal_id.company_id)
-            if line.activity_id:
-                line.account_id = line.activity_id.account_id
-        # All other lines with activity: simple override
-        for line in self - realtime_lines:
-            if line.activity_id:
+        for line in self.filtered("activity_id.account_id"):
+            if not line._is_stock_valuation_line():
                 line.account_id = line.activity_id.account_id
         return res
+
+    def _is_stock_valuation_line(self):
+        """Whether Odoo books this line on the stock valuation account of its
+        product, as ``_compute_account_id()`` does."""
+        self.ensure_one()
+        if not (
+            self.display_type == "product"
+            and self.product_id
+            and self.move_id.is_purchase_document(include_receipts=True)
+            and self._use_inventory_valuation()
+        ):
+            return False
+        accounts = self.with_company(
+            self.company_id
+        ).product_id.product_tmpl_id.get_product_accounts(
+            fiscal_pos=self.move_id.fiscal_position_id
+        )
+        return bool(accounts["stock_valuation"])
 
     def _prepare_analytic_lines(self):
         """Add activity_id to analytic line"""
         analytic_line_vals = super()._prepare_analytic_lines()
-        self.ensure_one()
-        if self.activity_id:  # Check if activity_id is set
+        if self.activity_id:
             for analytic_line in analytic_line_vals:
                 analytic_line["activity_id"] = self.activity_id.id
         return analytic_line_vals

@@ -9,6 +9,5 @@ class AccountAnalyticLine(models.Model):
 
     activity_id = fields.Many2one(
         comodel_name="budget.activity",
-        string="Activity",
         index=True,
     )
