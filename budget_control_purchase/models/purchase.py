@@ -1,0 +1,171 @@
+# Copyright 2020 Ecosoft Co., Ltd. (http://ecosoft.co.th)
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+from odoo import api, fields, models
+
+
+class PurchaseOrder(models.Model):
+    _inherit = "purchase.order"
+    _docline_rel = "order_line"
+    _docline_type = "purchase"
+
+    budget_move_ids = fields.One2many(
+        comodel_name="purchase.budget.move",
+        inverse_name="purchase_id",
+        string="Purchase Budget Moves",
+    )
+
+    @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        arch, view = super()._get_view(view_id, view_type, **options)
+        if view_type == "form":
+            for node in arch.iterfind('.//field[@name="budget_move_ids"]/list'):
+                self.env["account.analytic.plan"]._patch_budget_plan_view(
+                    node, "list", "purchase.budget.move"
+                )
+        return arch, view
+
+    # Allow trigger, because purchase order line is editable even when approved.
+    @api.constrains("order_line")
+    def recompute_budget_move(self):
+        if self.env.context.get("_skip_auto_recompute_budget_move"):
+            return
+        self.mapped("order_line").recompute_budget_move()
+
+    def close_budget_move(self):
+        self.mapped("order_line").close_budget_move()
+
+    def write(self, vals):
+        """
+        - Commit budget when state changes to purchase
+        - Cancel/Draft document should delete all budget commitment
+        """
+        # The write() below re-runs recompute_budget_move() explicitly, so skip
+        # the @api.constrains auto-trigger for those states to avoid doing it
+        # twice (the constrains fires on order_line writes done by super().write).
+        ctx_self = self
+        if vals.get("state") in ("purchase", "cancel", "draft"):
+            ctx_self = self.with_context(_skip_auto_recompute_budget_move=True)
+        res = super(PurchaseOrder, ctx_self).write(vals)
+        if vals.get("state") in ("purchase", "cancel", "draft"):
+            doclines = self.mapped("order_line")
+            if vals.get("state") in ("cancel", "draft"):
+                doclines.write({"date_commit": False})
+            doclines.recompute_budget_move()
+        # Special for purchase, as line can change even on state purchase
+        # make sure budget is checked when line changes
+        if "order_line" in vals:
+            BudgetPeriod = self.env["budget.period"]
+            for doc in self:
+                BudgetPeriod.check_budget(doc.order_line, doc_type="purchase")
+        return res
+
+    def button_confirm(self):
+        res = super().button_confirm()
+        self.flush_model()
+        BudgetPeriod = self.env["budget.period"]
+        for doc in self.filtered(lambda po: po.state == "purchase"):
+            BudgetPeriod.check_budget(doc.order_line, doc_type="purchase")
+        return res
+
+
+class PurchaseOrderLine(models.Model):
+    _name = "purchase.order.line"
+    _inherit = ["purchase.order.line", "budget.docline.mixin"]
+    _budget_date_commit_fields = ["order_id.write_date"]
+    _budget_move_model = "purchase.budget.move"
+    _doc_rel = "order_id"
+
+    budget_move_ids = fields.One2many(
+        comodel_name="purchase.budget.move",
+        inverse_name="purchase_line_id",
+        string="Purchase Budget Moves",
+    )
+    account_id = fields.Many2one(
+        comodel_name="account.account",
+        compute="_compute_account_id",
+    )
+
+    def _compute_account_id(self):
+        for rec in self:
+            rec.account_id = rec._get_po_line_account()
+
+    @api.depends("budget_move_ids", "budget_move_ids.date")
+    def _compute_commit(self):
+        """Move amount commit negative to first line positive, per analytic account"""
+        res = super()._compute_commit()
+
+        negative_lines = self.filtered(lambda po: po.price_subtotal < 0.0)
+        for purchase_line in negative_lines:
+            amount_commit_dict = dict(purchase_line.amount_commit or {})
+
+            # Get all positive lines in the same order (computed once per purchase_line)
+            available_lines = purchase_line.order_id.order_line.filtered(
+                lambda line: line.price_subtotal > 0.0 and line.amount_commit
+            )
+
+            # Check amount commit each analytic account, each line
+            for analytic_id, value in list(amount_commit_dict.items()):
+                if not isinstance(value, int | float) or value >= 0:
+                    continue
+                amount_commit = abs(value)
+                for line in available_lines:
+                    line_commit_dict = dict(line.amount_commit or {})
+                    line_amount = line_commit_dict.get(analytic_id, 0.0)
+                    if amount_commit <= 0 or line_amount <= 0:
+                        continue
+                    amount_to_commit = min(amount_commit, line_amount)
+                    amount_commit_dict[analytic_id] += amount_to_commit
+                    line_commit_dict[analytic_id] = line_amount - amount_to_commit
+                    line.amount_commit = line_commit_dict
+                    amount_commit -= amount_to_commit
+            purchase_line.amount_commit = amount_commit_dict
+        return res
+
+    def recompute_budget_move(self):
+        self.recompute_budget_move_batch()
+        for purchase_line in self.filtered("fwd_analytic_distribution"):
+            # credit will not over debit (auto adjust)
+            purchase_line.forward_commit()
+        self._recompute_budget_move_before_invoice_uncommit()
+        self.mapped("invoice_lines").uncommit_purchase_budget()
+
+    def _recompute_budget_move_before_invoice_uncommit(self):
+        """Hook after PO/forward commitments and before invoice uncommit."""
+        return
+
+    def _can_batch_budget_precommit(self):
+        return True
+
+    def _get_po_line_account(self):
+        fpos = self.order_id.fiscal_position_id
+        account = self.product_id.product_tmpl_id.get_product_accounts(fpos)["expense"]
+        return account
+
+    def _init_docline_budget_vals(self, budget_vals, analytic_id):
+        self.ensure_one()
+        # Use product qty from context, if not, use line product_qty
+        product_qty = self.env.context.get("product_qty") or self.product_qty
+        # The percentage of the analytic row being committed
+        percent_analytic = self._get_budget_analytic_percent(analytic_id)
+        budget_vals["amount_currency"] = (
+            self.price_unit * product_qty * (percent_analytic / 100)
+        )
+        budget_vals["tax_ids"] = self.tax_ids.ids
+        # Document specific vals
+        budget_vals.update(
+            {
+                "purchase_line_id": self.id,
+            }
+        )
+        return super()._init_docline_budget_vals(budget_vals, analytic_id)
+
+    def _valid_commit_state(self):
+        return self.state in ["purchase", "done"]
+
+    def _get_included_tax(self):
+        return self._get_budget_company().budget_include_tax_purchase
+
+    def uncommit_purchase_request_budget(self):
+        """Hook of purchase requests, for the precommit check of purchases:
+        uncommit the requests of these lines, return the budget moves."""
+        return False
