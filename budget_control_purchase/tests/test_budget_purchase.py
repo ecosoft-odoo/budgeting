@@ -233,3 +233,115 @@ class TestBudgetControlPurchase(BudgetControlCommon):
         self.budget_control.invalidate_cache()
         self.assertEqual(self.budget_control.amount_purchase, 0)
         self.assertEqual(self.budget_control.amount_actual, 0)
+
+    @freeze_time("2001-02-01")
+    def test_04_balance_forward_after_commit_forward(self):
+        """At year end, the budget officer forwards the open purchase
+        commitments, including one carried in from last year, and then the
+        balance. The balance forwarded is the one the monitoring shows."""
+        BudgetPeriod = self.env["budget.period"]
+        period_vals = {
+            "template_id": self.budget_period.template_id.id,
+            "plan_date_range_type_id": self.date_range_type.id,
+            "control_level": "analytic",
+            "purchase": True,
+        }
+        prev_year, next_year = self.year - 1, self.year + 1
+        prev_period = BudgetPeriod.create(
+            dict(
+                period_vals,
+                name="Budget for FY%s" % prev_year,
+                bm_date_from="%s-01-01" % prev_year,
+                bm_date_to="%s-12-31" % prev_year,
+            )
+        )
+        next_period = BudgetPeriod.create(
+            dict(
+                period_vals,
+                name="Budget for FY%s" % next_year,
+                bm_date_from="%s-01-01" % next_year,
+                bm_date_to="%s-12-31" % next_year,
+            )
+        )
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        # Last year PO of 40, still open, is forwarded into this year
+        po_prev = self._create_purchase(
+            [
+                {
+                    "product_id": self.product1,
+                    "product_qty": 1,
+                    "price_unit": 40,
+                    "analytic_id": self.costcenter1,
+                }
+            ]
+        )
+        # Last year has no budget control sheet here, skip its check
+        po_prev.with_context(
+            force_date_commit=prev_period.bm_date_from,
+            force_no_budget_check=True,
+        ).button_confirm()
+        self._forward_commit(self.budget_period)
+        self._refresh_balance()
+        self.assertEqual(self.budget_control.amount_balance, 260)
+        # This year PO of 70
+        po = self._create_purchase(
+            [
+                {
+                    "product_id": self.product2,
+                    "product_qty": 1,
+                    "price_unit": 70,
+                    "analytic_id": self.costcenter1,
+                }
+            ]
+        )
+        po.with_context(force_date_commit=po.date_order).button_confirm()
+        self._refresh_balance()
+        self.assertEqual(self.budget_control.amount_balance, 190)
+        # Previewing the balance forward first warns of the open commitments,
+        # so the officer discards it
+        balance_forward = self._review_balance_forward(next_period)
+        preview = balance_forward.preview_budget_balance_forward_info()
+        self.assertEqual(preview["context"]["default_open_commitment"], 110)
+        balance_forward.unlink()
+        # Both POs are forwarded, the year gets their budget back
+        self._forward_commit(next_period)
+        self._refresh_balance()
+        self.assertEqual(self.budget_control.amount_balance, 300)
+        # The balance forward now carries what the monitoring shows
+        balance_forward = self._review_balance_forward(next_period)
+        line = balance_forward.forward_line_ids
+        self.assertEqual(line.amount_balance, 300)
+        self.assertEqual(line.amount_balance_forward, 300)
+        preview = balance_forward.preview_budget_balance_forward_info()
+        self.assertEqual(preview["context"]["default_open_commitment"], 0)
+        balance_forward.action_budget_balance_forward()
+        self.assertEqual(balance_forward.state, "done")
+
+    def _refresh_balance(self):
+        # Monitoring is an SQL view of the budget moves
+        self.budget_control.flush()
+        self.budget_control.invalidate_cache()
+
+    def _review_balance_forward(self, to_period):
+        forward = self.env["budget.balance.forward"].create(
+            {
+                "name": "Balance Forward %s" % to_period.name,
+                "from_budget_period_id": self.budget_period.id,
+                "to_budget_period_id": to_period.id,
+            }
+        )
+        forward.action_review_budget_balance()
+        return forward
+
+    def _forward_commit(self, to_period):
+        forward = self.env["budget.commit.forward"].create(
+            {
+                "name": "Commit Forward %s" % to_period.name,
+                "to_budget_period_id": to_period.id,
+                "purchase": True,
+            }
+        )
+        forward.action_review_budget_commit()
+        forward.action_budget_commit_forward()
+        return forward
