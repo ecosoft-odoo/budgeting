@@ -100,13 +100,11 @@ class BudgetBalanceForward(models.Model):
         return self.env.cr.dictfetchall()
 
     def _prepare_vals_forward(self):
-        """Retrieve Analytic Account relevant to from_budget_period"""
+        """One line per analytic of the period, with its available balance.
+        Commitments forwarded out no longer consume it, so the balance
+        carries their budget; commitments forwarded in still consume it."""
         self.ensure_one()
-        # Ensure that budget info will be based on this period, and no_fwd_commit
-        self = self.with_context(
-            budget_period_ids=self.from_budget_period_id.ids,
-            no_fwd_commit=True,
-        )
+        self = self.with_context(budget_period_ids=self.from_budget_period_id.ids)
         # Analyic Account from budget control sheet of the previous year
         BudgetControl = self.env["budget.control"]
         budget_controls = BudgetControl.search(
@@ -182,9 +180,38 @@ class BudgetBalanceForward(models.Model):
             "target": "new",
             "context": {
                 "default_forward_id": self.id,
+                "default_open_commitment": self._get_open_commitment(),
                 "default_forward_info_line_ids": forward_vals,
             },
         }
+
+    def _get_open_commitment(self):
+        """Commitments still open in the source period on the analytics of
+        the lines: forward them first, so the balance carries their budget."""
+        self.ensure_one()
+        self.flush()
+        groups = (
+            self.env["budget.monitor.report"]
+            .sudo()
+            .read_group(
+                [
+                    ("budget_period_id", "=", self.from_budget_period_id.id),
+                    (
+                        "analytic_account_id",
+                        "in",
+                        self.forward_line_ids.mapped("analytic_account_id").ids,
+                    ),
+                    (
+                        "amount_type",
+                        "not in",
+                        ("10_budget", "12_forward_out", "80_actual"),
+                    ),
+                ],
+                ["amount"],
+                [],
+            )
+        )
+        return -(groups[0]["amount"] or 0.0) if groups else 0.0
 
     def _get_forward_initial_balance(self):
         """Get analytic accounts from both to_analtyic_account_id
