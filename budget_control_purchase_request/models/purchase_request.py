@@ -92,7 +92,10 @@ class PurchaseRequestLine(models.Model):
             pr_line.purchase_lines.uncommit_purchase_request_budget()
 
     def _get_pr_line_account(self):
-        account = self.product_id.product_tmpl_id.get_product_accounts()["expense"]
+        company = self.request_id.company_id
+        account = self.product_id.product_tmpl_id.with_company(
+            company
+        ).get_product_accounts()["expense"]
         return account
 
     def _init_docline_budget_vals(self, budget_vals):
