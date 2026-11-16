@@ -987,3 +987,59 @@ class TestBudgetControlPurchase(get_budget_common_class()):
             self.assertEqual(commitments(purchase), [20.0, 60.0])
             self.assertFalse(returns(purchase))
             self.assertFalse(bill.budget_move_ids)
+
+    @freeze_time("2001-02-01")
+    def test_14_bill_refund_and_no_amount(self):
+        """A refund commits the purchase again; a purchase line without
+        amount has no commitment to return."""
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        analytic_distribution = {str(self.costcenter1.id): 100}
+
+        def bill_purchase(prices):
+            purchase = self._create_purchase(
+                [
+                    {
+                        "product_id": self.product1,
+                        "product_qty": 2,
+                        "price_unit": price,
+                        "analytic_distribution": analytic_distribution,
+                    }
+                    for price in prices
+                ]
+            )
+            purchase.button_confirm()
+            purchase.action_create_invoice()
+            bill = purchase.invoice_ids
+            bill.invoice_date = bill.date
+            bill.action_post()
+            return purchase, bill
+
+        def moves(purchase):
+            return sorted(
+                (move.debit, move.credit)
+                for move in purchase.budget_move_ids.filtered("move_line_id")
+            )
+
+        def commitments(purchase):
+            return [
+                sum((line.amount_commit or {}).values()) for line in purchase.order_line
+            ]
+
+        # Billed: the commitment is returned. Refunded: it is committed again
+        purchase, bill = bill_purchase([10.0])
+        self.assertEqual(moves(purchase), [(0.0, 20.0)])
+        self.assertEqual(commitments(purchase), [0.0])
+        refund = bill._reverse_moves()
+        refund.invoice_date = refund.date
+        refund.action_post()
+        self.assertEqual(moves(purchase), [(0.0, 20.0), (20.0, 0.0)])
+        self.assertEqual(commitments(purchase), [20.0])
+        # Only the line with an amount has a commitment to return
+        purchase, bill = bill_purchase([0.0, 10.0])
+        self.assertEqual(bill.state, "posted")
+        self.assertEqual(moves(purchase), [(0.0, 20.0)])
+        self.assertEqual(commitments(purchase), [0.0, 0.0])
+        purchase, bill = bill_purchase([0.0])
+        self.assertEqual(bill.state, "posted")
+        self.assertFalse(moves(purchase))
