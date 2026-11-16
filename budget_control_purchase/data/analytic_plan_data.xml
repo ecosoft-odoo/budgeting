@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- One analytic column per root plan on purchase budget moves -->
+    <function model="account.analytic.plan" name="_sync_budget_columns" />
+</odoo>
