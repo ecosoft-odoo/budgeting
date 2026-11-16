@@ -54,7 +54,10 @@ class PurchaseOrder(models.Model):
         # Special for purchase, as line can change even on state purchase
         # make sure budget is checked when line changes
         if "order_line" in vals:
-            BudgetPeriod = self.env["budget.period"]
+            # The orders are all written: their checks read each analytic once
+            BudgetPeriod = self.env["budget.period"].with_context(
+                _budget_avail_shared={}
+            )
             for doc in self:
                 BudgetPeriod.check_budget(doc.order_line, doc_type="purchase")
         return res
@@ -62,7 +65,8 @@ class PurchaseOrder(models.Model):
     def button_confirm(self):
         res = super().button_confirm()
         self.flush_model()
-        BudgetPeriod = self.env["budget.period"]
+        # The orders are all confirmed: their checks read each analytic once
+        BudgetPeriod = self.env["budget.period"].with_context(_budget_avail_shared={})
         for doc in self.filtered(lambda po: po.state == "purchase"):
             BudgetPeriod.check_budget(doc.order_line, doc_type="purchase")
         return res

@@ -916,3 +916,74 @@ class TestBudgetControlPurchase(get_budget_common_class()):
             ),
             (2400.0, 300.0, 2100.0),
         )
+
+    @freeze_time("2001-02-01")
+    def test_13_bill_not_affect_budget(self):
+        """A bill returns the purchase commitment of all its lines, and is an
+        actual for the lines that affect the budget only."""
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        analytic_distribution = {str(self.costcenter1.id): 100}
+
+        def bill_purchase(line_flag=False, header_flag=False):
+            purchase = self._create_purchase(
+                [
+                    {
+                        "product_id": self.product1,
+                        "product_qty": 2,
+                        "price_unit": 10,
+                        "analytic_distribution": analytic_distribution,
+                    },
+                    {
+                        "product_id": self.product2,
+                        "product_qty": 3,
+                        "price_unit": 20,
+                        "analytic_distribution": analytic_distribution,
+                    },
+                ]
+            )
+            purchase.button_confirm()
+            purchase.action_create_invoice()
+            bill = purchase.invoice_ids
+            bill.invoice_date = bill.date
+            if line_flag:
+                bill.invoice_line_ids[0].not_affect_budget = True
+            if header_flag:
+                bill.not_affect_budget = True
+            return purchase, bill
+
+        def commitments(purchase):
+            return [
+                sum((line.amount_commit or {}).values()) for line in purchase.order_line
+            ]
+
+        def returns(purchase):
+            return sorted(
+                purchase.budget_move_ids.filtered("move_line_id").mapped("credit")
+            )
+
+        for line_flag, header_flag, actuals in (
+            (False, False, [20.0, 60.0]),
+            (True, False, [60.0]),
+            (False, True, []),
+        ):
+            purchase, bill = bill_purchase(line_flag, header_flag)
+            self.assertEqual(commitments(purchase), [20.0, 60.0])
+            # Posted: all commitments returned, actuals of the affecting lines
+            bill.action_post()
+            self.assertEqual(commitments(purchase), [0.0, 0.0])
+            self.assertEqual(returns(purchase), [20.0, 60.0])
+            self.assertEqual(sorted(bill.budget_move_ids.mapped("debit")), actuals)
+            # Back to draft: the commitments are back
+            bill.button_draft()
+            self.assertEqual(commitments(purchase), [20.0, 60.0])
+            self.assertFalse(returns(purchase))
+            self.assertFalse(bill.budget_move_ids)
+            # Posted again, then cancelled
+            bill.action_post()
+            self.assertEqual(commitments(purchase), [0.0, 0.0])
+            self.assertEqual(sorted(bill.budget_move_ids.mapped("debit")), actuals)
+            bill.button_cancel()
+            self.assertEqual(commitments(purchase), [20.0, 60.0])
+            self.assertFalse(returns(purchase))
+            self.assertFalse(bill.budget_move_ids)

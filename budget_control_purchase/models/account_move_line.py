@@ -45,18 +45,25 @@ class AccountMoveLine(models.Model):
         return qty
 
     def uncommit_purchase_budget(self):
-        """For vendor bill in valid state, do uncommit for related purchase."""
-        for ml in self.filtered(
+        """For vendor bill in valid state, do uncommit for related purchase.
+
+        The budget moves of all the lines are created together: a bill of
+        many lines costs a few queries, not a few per line."""
+        bill_lines = self.filtered(
             lambda line: line.move_id.move_type in ("in_invoice", "in_refund")
-        ):
-            inv_state = ml.move_id.state
-            move_type = ml.move_id.move_type
-            # State Cancel or draft and not context force commit, not commitment line
-            if not self.env.context.get("force_commit") and inv_state != "posted":
+        )
+        # State Cancel or draft and not context force commit, not commitment line
+        if not self.env.context.get("force_commit"):
+            not_posted = bill_lines.filtered(
+                lambda line: line.move_id.state != "posted"
+            )
+            if not_posted:
                 self.env["purchase.budget.move"].sudo().search(
-                    [("move_line_id", "=", ml.id)]
+                    [("move_line_id", "in", not_posted.ids)]
                 ).unlink()
-                continue
+            bill_lines -= not_posted
+        commits = []  # (bill line, purchase line, quantity)
+        for ml in bill_lines:
             # Vendor bills and purchase order must be related
             # and po must commit budget already
             purchase_line = ml._get_po_line_amount_commit()
@@ -66,12 +73,28 @@ class AccountMoveLine(models.Model):
             qty = ml._get_qty_commit(purchase_line)
             if qty <= 0 and not ml._check_skip_negative_qty():
                 continue
+            commits.append((ml, purchase_line, qty))
+        if not commits:
+            return
 
+        def row(key):
+            return budget_row_key(int(aid) for aid in str(key).split(","))
+
+        # The forwards and the budget controls are looked up once
+        purchase_lines = (
+            self.env["purchase.order.line"]
+            .union(purchase_line for _ml, purchase_line, _qty in commits)
+            ._with_budget_forward_lines_cache()
+            .with_context(_budget_control_cache={})
+        )
+        cached_lines = {line.id: line for line in purchase_lines}
+        budget_vals = []
+        returned = purchase_lines.browse()
+        for ml, purchase_line, qty in commits:
+            purchase_line = cached_lines[purchase_line.id]
+            move_type = ml.move_id.move_type
             # The rows of the bill line must be those of the purchase
             # commitment at its date, e.g. the rows a forward carried it to
-            def row(key):
-                return budget_row_key(int(aid) for aid in str(key).split(","))
-
             purchase_rows = purchase_line._get_budget_rows_at(
                 ml.date_commit or ml.move_id.date
             )
@@ -91,18 +114,49 @@ class AccountMoveLine(models.Model):
                 context["return_amount_commit"] = ml.amount_commit
             # Confirm vendor bill, do uncommit budget
             context["product_qty"] = qty
-            purchase_line.with_context(**context).commit_budget(
-                reverse=move_type == "in_invoice",
+            reverse = move_type == "in_invoice"
+            docline = purchase_line.with_context(**context)
+            line_vals = docline._prepare_commit_budget(
+                reverse=reverse,
                 analytic_distribution=ml.analytic_distribution,
                 move_line_id=ml.id,
                 date=ml.date_commit,
             )
+            if not line_vals:
+                continue
+            budget_vals.extend(line_vals)
+            if reverse:
+                returned |= purchase_line
+        if not budget_vals:
+            return
+        budget_moves = (
+            self.env[purchase_lines._budget_model()].sudo().create(budget_vals)
+        )
+        # The KPI is the one of the period of the purchase commitment, whose
+        # date follows its budget moves
+        purchase_lines._update_template_line_batch(
+            budget_moves,
+            period_dates={
+                move.id: move.purchase_line_id.date_commit for move in budget_moves
+            },
+        )
+        # On reverse, make sure not over returned
+        BudgetPeriod = self.env["budget.period"]
+        for purchase_line in returned:
+            BudgetPeriod.check_over_returned_budget(purchase_line)
 
     def _check_purchase_forward_date(self):
         """A purchase commitment carried forward is billed from the forward
         date: an earlier bill would return a commitment no longer there."""
-        for ml in self.filtered("purchase_line_id"):
-            forward_date = ml.purchase_line_id._get_budget_forward_date()
+        bill_lines = self.filtered("purchase_line_id")
+        purchase_lines = {
+            line.id: line
+            for line in bill_lines.purchase_line_id._with_budget_forward_lines_cache()
+        }
+        for ml in bill_lines:
+            forward_date = purchase_lines[
+                ml.purchase_line_id.id
+            ]._get_budget_forward_date()
             if forward_date and (ml.date_commit or ml.move_id.date) < forward_date:
                 raise UserError(
                     self.env._(
