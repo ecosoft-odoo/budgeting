@@ -508,6 +508,7 @@ class BudgetCommitForwardLine(models.Model):
         string="Res ID",
         required=True,
         readonly=True,
+        index=True,
     )
     document_id = fields.Reference(
         selection=[],

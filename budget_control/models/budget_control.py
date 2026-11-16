@@ -44,6 +44,7 @@ class BudgetControl(models.Model):
         comodel_name="budget.period",
         help="Budget Period that inline with date from/to",
         ondelete="restrict",
+        index=True,
     )
     budget_scope = fields.Selection(
         related="budget_period_id.budget_scope",
@@ -56,6 +57,7 @@ class BudgetControl(models.Model):
         required=True,
         tracking=True,
         ondelete="restrict",
+        index=True,
     )
     analytic_plan = fields.Many2one(
         comodel_name="account.analytic.plan",
@@ -590,14 +592,35 @@ class BudgetControl(models.Model):
         self.ensure_one()
         dict_value = self._get_dict_budget_lines(date_range, template_line)
         if self.env.context.get("keep_item_amount", False):
-            # convert dict to list
-            domain_item = [(k, "=", v) for k, v in dict_value.items()]
-            line_amount = self.line_ids.search_read(
-                domain=domain_item, fields=["amount"], limit=1
-            )
-            if line_amount:
-                dict_value["amount"] = line_amount[0].get("amount", 0.0)
+            amounts = self._get_line_amounts(list(dict_value))
+            key = tuple(dict_value.values())
+            if key in amounts:
+                dict_value["amount"] = amounts[key]
         return dict_value
+
+    def _get_line_amounts(self, fnames):
+        """``{values of fnames: amount}`` of the lines of this sheet, read
+        once for the whole matrix (see ``prepare_budget_control_matrix()``)
+        instead of once per cell."""
+        self.ensure_one()
+        cache = self.env.context.get("_budget_line_amounts")
+        key = (self.id, tuple(fnames))
+        if cache is not None and key in cache:
+            return cache[key]
+        amounts = {}
+        for line in self.line_ids.search_read(
+            domain=[("budget_control_id", "=", self.id)],
+            fields=[*fnames, "amount"],
+        ):
+            values = tuple(
+                value[0] if isinstance(value, tuple) else value
+                for value in (line[fname] for fname in fnames)
+            )
+            # The first line found, as a search with a limit would
+            amounts.setdefault(values, line.get("amount", 0.0))
+        if cache is not None:
+            cache[key] = amounts
+        return amounts
 
     def _check_date_range_coverage(self, date_ranges):
         """Avoid silently creating an incomplete planning matrix."""
@@ -627,7 +650,7 @@ class BudgetControl(models.Model):
         BudgetTemplateLine = self.env["budget.template.line"]
         DateRange = self.env["date.range"]
         items = []
-        for bc in self:
+        for bc in self.with_context(_budget_line_amounts={}):
             if not bc.plan_date_range_type_id:
                 raise UserError(self.env._("Please select range"))
 
@@ -752,7 +775,10 @@ class BudgetControlLine(models.Model):
     )
     date_from = fields.Date(required=True, string="From")
     date_to = fields.Date(required=True, string="To")
-    analytic_account_id = fields.Many2one(comodel_name="account.analytic.account")
+    analytic_account_id = fields.Many2one(
+        comodel_name="account.analytic.account",
+        index=True,
+    )
     amount = fields.Float(
         digits="Budget Precision",
     )

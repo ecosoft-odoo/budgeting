@@ -390,30 +390,57 @@ class BudgetDoclineMixin(models.AbstractModel):
 
     def _compute_json_budget_popover(self):
         FloatConverter = self.env["ir.qweb.field.float"]
+        Analytic = self.env["account.analytic.account"]
+        BudgetPeriod = self.env["budget.period"]
         periods = {}  # (analytic id, date commit, company id): budget period
+        # Pass 1: the budget period of each analytic of each line
+        line_analytic_ids = {
+            rec: rec._convert_analytics(
+                analytic_distribution=rec[self._budget_analytic_field]
+            ).ids
+            for rec in self
+        }
+        # The analytics of all the lines are read together
+        analytics = Analytic.browse(sorted(set().union(*line_analytic_ids.values())))
+        analytics_by_id = {analytic.id: analytic for analytic in analytics}
+        line_analytics = {}  # line: [(analytic, budget period ids)]
+        period_analytic_ids = defaultdict(set)  # budget period ids: analytic ids
         for rec in self:
-            analytic_distribution = rec[self._budget_analytic_field]
-            analytic_account = rec._convert_analytics(
-                analytic_distribution=analytic_distribution
-            )
-            if not analytic_account:
+            company = rec[rec._doc_rel].company_id
+            line_analytics[rec] = []
+            for analytic_id in line_analytic_ids[rec]:
+                analytic = analytics_by_id[analytic_id]
+                # Only a lifetime analytic has a period of its own: the
+                # others share the fiscal period of the date and company
+                lifetime = analytic.budget_control_scope == "lifetime"
+                key = (lifetime and analytic.id, rec.date_commit, company.id)
+                if key not in periods:
+                    CompanyPeriod = BudgetPeriod.with_company(company)
+                    if lifetime:
+                        CompanyPeriod = CompanyPeriod.with_context(
+                            budget_analytic_id=analytic.id
+                        )
+                    periods[key] = CompanyPeriod._get_eligible_budget_period(
+                        date=rec.date_commit
+                    )
+                period_ids = tuple(periods[key].ids)
+                line_analytics[rec].append((analytic, period_ids))
+                period_analytic_ids[period_ids].add(analytic.id)
+        # Pass 2: the figures of all the analytics of a period are computed
+        # together, in one read of the monitoring
+        scoped_analytics = {}  # (analytic id, budget period ids): analytic
+        for period_ids, analytic_ids in period_analytic_ids.items():
+            for analytic in Analytic.browse(sorted(analytic_ids)).with_context(
+                budget_period_ids=list(period_ids)
+            ):
+                scoped_analytics[(analytic.id, period_ids)] = analytic
+        for rec in self:
+            if not line_analytics[rec]:
                 rec.json_budget_popover = False
                 continue
             analytic_values = []
-            company = rec[rec._doc_rel].company_id
-            for analytic in analytic_account:
-                key = (analytic.id, rec.date_commit, company.id)
-                if key not in periods:
-                    periods[key] = (
-                        self.env["budget.period"]
-                        .with_company(company)
-                        .with_context(budget_analytic_id=analytic.id)
-                        ._get_eligible_budget_period(date=rec.date_commit)
-                    )
-                budget_period = periods[key]
-                scoped_analytic = analytic.with_context(
-                    budget_period_ids=budget_period.ids
-                )
+            for analytic, period_ids in line_analytics[rec]:
+                scoped_analytic = scoped_analytics[(analytic.id, period_ids)]
                 analytic_values.append(
                     {
                         "id": analytic.id,
@@ -726,14 +753,42 @@ class BudgetDoclineMixin(models.AbstractModel):
         """Lines of the done commitment forwards of this docline, those to
         ``date`` or before if given."""
         self.ensure_one()
-        lines = (
-            self.env["budget.commit.forward.line"]
-            .sudo()
-            .search(self._get_domain_fwd_line(self))
-        )
+        cache = self.env.context.get("_budget_forward_lines_cache")
+        if cache is not None and (self._name, self.id) in cache:
+            lines = cache[(self._name, self.id)]
+        else:
+            lines = (
+                self.env["budget.commit.forward.line"]
+                .sudo()
+                .search(self._get_domain_fwd_line(self))
+            )
         if date:
             lines = lines.filtered(lambda line: line.forward_id.to_date_commit <= date)
         return lines
+
+    def _with_budget_forward_lines_cache(self):
+        """Return these doclines with the lines of their done commitment
+        forwards in context, read in one search: batches then look the
+        forwards of each docline up without a query. Nothing may complete or
+        reverse a forward while the result is in use.
+
+        The search is the one of ``_get_domain_fwd_line()`` for all doclines:
+        a model extending that domain extends this method too."""
+        lines = (
+            self.env["budget.commit.forward.line"]
+            .sudo()
+            .search(
+                [
+                    ("res_model", "=", self._name),
+                    ("res_id", "in", self.ids),
+                    ("forward_id.state", "=", "done"),
+                ]
+            )
+        )
+        cache = {(self._name, docline_id): lines.browse() for docline_id in self.ids}
+        for line in lines:
+            cache[(self._name, line.res_id)] |= line
+        return self.with_context(_budget_forward_lines_cache=cache)
 
     def _get_budget_forward_date(self):
         """Date the commitment of this docline is carried forward to, if any."""
@@ -888,8 +943,12 @@ class BudgetDoclineMixin(models.AbstractModel):
             and is_product_line
         )
 
-    def commit_budget(self, reverse=False, **vals):
-        """Create budget commit for each docline"""
+    def _prepare_commit_budget(self, reverse=False, **vals):
+        """Check that this docline can commit, as ``commit_budget()`` does,
+        and return the values of its budget moves, for callers creating the
+        moves of several doclines together. A docline that cannot commit has
+        its budget moves removed: None is returned."""
+        self.ensure_one()
         if not reverse:
             # Budget moves are written with sudo(): commit own documents only
             self.check_access("write")
@@ -898,21 +957,25 @@ class BudgetDoclineMixin(models.AbstractModel):
         self.prepare_commit()
         to_commit = self.env.context.get("force_commit") or self._valid_commit_state()
         if self.can_commit and to_commit:
-            budget_commit_vals = self._prepare_commit_vals(reverse=reverse, **vals)
-            if not budget_commit_vals:
-                return False
-            budget_moves = (
-                self.env[self._budget_model()].sudo().create(budget_commit_vals)
-            )
-            # Update Template Line, of each move: one per analytic row
-            budget_move = budget_moves.browse().union(
-                self._update_template_line(move) for move in budget_moves
-            )
-            if reverse:  # On reverse, make sure not over returned
-                self.env["budget.period"].check_over_returned_budget(self)
-            return budget_move
-        else:
-            self[self._budget_field()].sudo().unlink()
+            return self._prepare_commit_vals(reverse=reverse, **vals)
+        self[self._budget_field()].sudo().unlink()
+        return None
+
+    def commit_budget(self, reverse=False, **vals):
+        """Create budget commit for each docline"""
+        budget_commit_vals = self._prepare_commit_budget(reverse=reverse, **vals)
+        if budget_commit_vals is None:
+            return None
+        if not budget_commit_vals:
+            return False
+        budget_moves = self.env[self._budget_model()].sudo().create(budget_commit_vals)
+        # Update Template Line, of each move: one per analytic row
+        budget_move = budget_moves.browse().union(
+            self._update_template_line(move) for move in budget_moves
+        )
+        if reverse:  # On reverse, make sure not over returned
+            self.env["budget.period"].check_over_returned_budget(self)
+        return budget_move
 
     def _get_budget_commit_rows(self, vals):
         """Return ``[(analytic_id, account_ids, percent)]``, the rows of the

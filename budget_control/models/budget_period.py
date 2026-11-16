@@ -271,7 +271,10 @@ class BudgetPeriod(models.Model):
             )._check_budget_control_status(budget_period_id=budget_period_id)
         # Pass 2: one shared prefetch instead of one scan per control.
         all_controls = [c for group in groups for c in group[3]]
-        avail_cache = BudgetPeriod._prefetch_budget_available(all_controls)
+        periods = BudgetPeriod.browse(
+            sorted({period_id for group in groups for period_id in group[2].ids})
+        )
+        avail_cache = periods._get_budget_available_cache(all_controls)
         BudgetPeriod = BudgetPeriod.with_context(_budget_avail_cache=avail_cache)
         for aa_doclines, date_commit, budget_period, controls, company in groups:
             CompanyPeriod = BudgetPeriod.with_company(company)
@@ -520,11 +523,37 @@ class BudgetPeriod(models.Model):
         """
         return not template_lines or template_lines._name == "budget.template.line"
 
+    def _get_budget_available_cache(self, controls):
+        """``_prefetch_budget_available()`` of ``controls`` for these periods.
+
+        A caller checking several documents in a row, e.g. the bills posted
+        together, passes a dict in context ``_budget_avail_shared``: analytics
+        already read for the same periods are not read again. Nothing may
+        change budgets or commitments between those checks."""
+        shared = self.env.context.get("_budget_avail_shared")
+        if shared is None:
+            return self._prefetch_budget_available(controls)
+        cache = shared.setdefault(tuple(self.ids), {})
+        missing = [
+            control
+            for control in controls
+            if control.get("analytic_id") and control["analytic_id"] not in cache
+        ]
+        if missing:
+            fetched = self._prefetch_budget_available(missing)
+            for control in missing:
+                cache[control["analytic_id"]] = fetched.get(control["analytic_id"], [])
+        return cache
+
     def _prefetch_budget_available(self, controls):
         """One monitor-report scan for all controls' analytic accounts, summed
         per KPI, period and amount type and keyed by analytic_id.
         ``check_budget()`` can then serve every control from this dict instead
         of running one SQL query per control.
+
+        Called on the periods being checked, commitments and actuals are read
+        for their dates only, not for the whole history of the analytics: the
+        rows of a period are dated in it. Budgets are read for all periods.
 
         Only the base filter shape (``analytic_account_id IN (...)``) is
         served here; ``_get_where_domain()`` overrides that add extra clauses
@@ -538,6 +567,13 @@ class BudgetPeriod(models.Model):
             return {}
         self.env.flush_all()
         report_sql = self._get_budget_monitor_report()._table_sql
+        where_dates = SQL("")
+        if self:
+            where_dates = SQL(
+                "AND (date BETWEEN %s AND %s OR amount_type = '10_budget')",
+                min(self.mapped("bm_date_from")),
+                max(self.mapped("bm_date_to")),
+            )
         self.env.cr.execute(
             SQL(
                 """
@@ -548,12 +584,13 @@ class BudgetPeriod(models.Model):
                         amount_type,
                         SUM(amount) AS amount
                     FROM %s report
-                    WHERE analytic_account_id IN %s
+                    WHERE analytic_account_id IN %s %s
                     GROUP BY
                         analytic_account_id, kpi_id, budget_period_id, amount_type
                 """,
                 report_sql,
                 tuple(analytic_ids),
+                where_dates,
             )
         )
         cache = {}
