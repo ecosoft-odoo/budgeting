@@ -3,7 +3,7 @@
 
 {
     "name": "Budget Control",
-    "version": "20.0.1.0.0",
+    "version": "20.0.1.0.1",
     "category": "Accounting",
     "license": "AGPL-3",
     "author": "Ecosoft, Odoo Community Association (OCA)",
