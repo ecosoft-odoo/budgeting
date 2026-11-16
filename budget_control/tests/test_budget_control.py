@@ -285,6 +285,25 @@ class TestBudgetControl(get_budget_common_class()):
         # Test Hard Reset, Amount should be 0
         self.budget_control.prepare_budget_control_matrix()
         self.assertAlmostEqual(self.budget_control.amount_balance, 0.0)
+        # Soft Reset with a new KPI: its cells are new, the others keep
+        # their amount
+        self.budget_control.template_line_ids = self.template_line1
+        self.budget_control.prepare_budget_control_matrix()
+        self.budget_control.line_ids.write({"amount": 100.0})
+        self.budget_control.template_line_ids = (
+            self.template_line1 + self.template_line2
+        )
+        soft_reset = self.budget_control.with_context(keep_item_amount=1)
+        soft_reset.prepare_budget_control_matrix()
+        lines = self.budget_control.line_ids
+        kept_lines = lines.filtered(lambda line: line.kpi_id == self.kpi1)
+        self.assertEqual(set(kept_lines.mapped("amount")), {100.0})
+        self.assertEqual(set((lines - kept_lines).mapped("amount")), {0.0})
+        # One cell, outside a reset
+        vals = soft_reset._get_budget_lines(
+            kept_lines[0].date_range_id, kept_lines[0].template_line_id
+        )
+        self.assertAlmostEqual(vals["amount"], 100.0)
 
     @freeze_time("2001-02-01")
     def test_07_control_level_analytic_kpi(self):
@@ -1824,6 +1843,20 @@ class TestBudgetControl(get_budget_common_class()):
             sum(len(line.budget_move_ids) for line in bill3.invoice_line_ids), 0
         )
 
+        # Case 4: A committed line that no longer affects the budget drops
+        # its commitment.
+        line2_kpi1.not_affect_budget = True
+        self.assertFalse(line2_kpi1.can_commit)
+        self.assertIsNone(line2_kpi1.commit_budget())
+        self.assertFalse(line2_kpi1.budget_move_ids)
+
+        # Case 5: A line without amount has nothing to commit.
+        bill5 = self._create_simple_bill(analytic_distribution, self.account_kpi1, 0.0)
+        bill5.action_post()
+        self.assertTrue(bill5.invoice_line_ids.can_commit)
+        self.assertIs(bill5.invoice_line_ids.commit_budget(), False)
+        self.assertFalse(bill5.budget_move_ids)
+
     @freeze_time("2001-02-01")
     def test_27_multi_analytic_budget_check(self):
         """Every analytic used by a document must be budget checked."""
@@ -2038,6 +2071,57 @@ class TestBudgetControl(get_budget_common_class()):
             guarded.plan_id = report_plan
 
     @freeze_time("2001-02-01")
+    def test_29_check_budget_documents_together(self):
+        """Bills posted together are checked on the budget they consume
+        together, and a check reads the commitments and actuals of its
+        period only."""
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        self.budget_control.action_submit()
+        self.budget_control.action_done()
+        analytic_distribution = {self.costcenter1.id: 100}
+
+        def create_bills(amount):
+            return self._create_simple_bill(
+                analytic_distribution, self.account_kpi1, amount
+            ) + self._create_simple_bill(
+                analytic_distribution, self.account_kpi2, amount
+            )
+
+        # Budget = 2400: 1300 + 1300 is over it, 1200 + 1200 is not
+        with self.assertRaisesRegex(UserError, "Budget not sufficient"):
+            create_bills(1300.0).action_post()
+        bills = create_bills(1200.0)
+        bills.action_post()
+        self.assertEqual(set(bills.mapped("state")), {"posted"})
+        self.budget_control.invalidate_recordset()
+        self.assertAlmostEqual(self.budget_control.amount_actual, 2400.0)
+        self.assertAlmostEqual(self.budget_control.amount_balance, 0.0)
+
+        # The check of a period reads the budgets, and the actuals dated in it
+        next_period = self.budget_period.copy(
+            {
+                "name": "Next Budget Period",
+                "bm_date_from": f"{self.year + 1}-01-01",
+                "bm_date_to": f"{self.year + 1}-12-31",
+            }
+        )
+        controls = [{"analytic_id": self.costcenter1.id}]
+
+        def get_amount_types(periods):
+            rows = periods._prefetch_budget_available(controls)
+            return {row["amount_type"] for row in rows[self.costcenter1.id]}
+
+        self.assertEqual(
+            get_amount_types(self.budget_period), {"10_budget", "80_actual"}
+        )
+        self.assertEqual(get_amount_types(next_period), {"10_budget"})
+        # Without period, all of them
+        self.assertEqual(
+            get_amount_types(self.env["budget.period"]), {"10_budget", "80_actual"}
+        )
+
+    @freeze_time("2001-02-01")
     def test_31_core_lifetime_setup_overrides_fiscal_period(self):
         """Core creates one multi-year budget without any Project module flow."""
         analytic = self.Analytic.create(
@@ -2148,6 +2232,13 @@ class TestBudgetControl(get_budget_common_class()):
         control.invalidate_recordset()
         self.assertAlmostEqual(control.amount_actual, 400.0)
         self.assertAlmostEqual(control.amount_balance, 100.0)
+        # Budget figure of a lifetime analytic: the one of its own period
+        popover = json.loads(bill.invoice_line_ids.json_budget_popover)
+        self.assertEqual(
+            [item["name"] for item in popover["analytic"]], [analytic.display_name]
+        )
+        self.assertIn("100.00", popover["analytic"][0]["balance"])
+        self.assertIn("400.00", popover["analytic"][0]["consumed"])
 
         excessive_bill = self._create_simple_bill(
             {str(analytic.id): 100}, self.account_kpi1, 101.0

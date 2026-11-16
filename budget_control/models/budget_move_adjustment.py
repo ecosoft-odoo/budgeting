@@ -85,7 +85,8 @@ class BudgetMoveAdjustment(models.Model):
 
     def action_adjust(self):
         res = self.write({"state": "done"})
-        BudgetPeriod = self.env["budget.period"]
+        # The documents are all adjusted: their checks read each analytic once
+        BudgetPeriod = self.env["budget.period"].with_context(_budget_avail_shared={})
         for doc in self:
             BudgetPeriod.check_budget(doc.adjust_item_ids)
         return res

@@ -33,18 +33,11 @@ class AccountMoveLine(models.Model):
         - Line not_affect_budget is effective when header is False.
         """
         res = super()._compute_can_commit()
-        # Header is master switch
-        no_budget_moves = self.mapped("move_id").filtered("not_affect_budget")
-        if no_budget_moves:
-            lines_to_update = no_budget_moves.mapped("line_ids").filtered("can_commit")
-            if lines_to_update:
-                lines_to_update.write({"can_commit": False})
-        # Line-level flag (only effective when header is False)
-        lines_to_update = self.filtered(
-            lambda line: line.not_affect_budget and line.can_commit
-        )
-        if lines_to_update:
-            lines_to_update.write({"can_commit": False})
+        # Assigned, not written: write() would run the whole journal item
+        # write() for a field that is not stored
+        for line in self:
+            if line.move_id.not_affect_budget or line.not_affect_budget:
+                line.can_commit = False
         return res
 
     def recompute_budget_move(self):

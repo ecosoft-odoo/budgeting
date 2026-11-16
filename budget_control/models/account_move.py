@@ -128,7 +128,8 @@ class AccountMove(models.Model):
         res = super().action_post()
         # Update database, then check budget
         # self.flush_model()
-        BudgetPeriod = self.env["budget.period"]
+        # The documents are all posted: their checks read each analytic once
+        BudgetPeriod = self.env["budget.period"].with_context(_budget_avail_shared={})
         for move in self._filtered_move_check_budget():
             BudgetPeriod.check_budget(move.line_ids)
         return res
