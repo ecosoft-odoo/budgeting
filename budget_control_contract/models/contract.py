@@ -25,6 +25,8 @@ class ContractContract(models.Model):
     # Allow trigger, because contract line is always editable.
     @api.constrains("contract_line_ids")
     def recompute_budget_move(self):
+        if self.env.context.get("_skip_auto_recompute_budget_move"):
+            return
         self.mapped("contract_line_ids").recompute_budget_move()
         # As there is no state changes, check_budget after done the budget moves
         BudgetPeriod = self.env["budget.period"]
@@ -42,7 +44,9 @@ class ContractContract(models.Model):
         - Commit budget when check commit budget
         - Archived ot not check commit budget, document should delete all budget commitment
         """
-        res = super().write(vals)
+        res = super(
+            ContractContract, self.with_context(_skip_auto_recompute_budget_move=True)
+        ).write(vals)
         contract_not_active = self.filtered(lambda l: not l.active)
         if contract_not_active:
             self.mapped("budget_move_ids").unlink()

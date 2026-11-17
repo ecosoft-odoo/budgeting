@@ -174,9 +174,7 @@ class BudgetMoveAdjustmentItem(models.Model):
             rec.amount = -rec.amount if rec.adjust_type == "release" else rec.amount
 
     def recompute_budget_move(self):
-        for item in self:
-            item.budget_move_ids.unlink()
-            item.commit_budget()
+        return self.recompute_budget_move_batch()
 
     def _init_docline_budget_vals(self, budget_vals):
         self.ensure_one()
