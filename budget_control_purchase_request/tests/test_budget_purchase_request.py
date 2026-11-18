@@ -389,3 +389,72 @@ class TestBudgetControlPurchaseRequest(BudgetControlCommon):
         self.assertEqual(lines[0].date_commit, manual_date1)
         self.assertEqual(lines[1].date_commit, manual_date2)
         self.assertFalse(lines[2].date_commit)
+
+    @freeze_time("2001-02-01")
+    def test_06_pr_returned_in_its_own_period(self):
+        """A PR approved this year and purchased next year returns its budget
+        on the last day of this year; once forwarded, on the PO date."""
+        next_year = self.year + 1
+        next_period = self.env["budget.period"].create(
+            {
+                "name": "Budget for FY%s" % next_year,
+                "template_id": self.budget_period.template_id.id,
+                "bm_date_from": "%s-01-01" % next_year,
+                "bm_date_to": "%s-12-31" % next_year,
+                "plan_date_range_type_id": self.date_range_type.id,
+                "control_level": "analytic",
+                "purchase": True,
+                "purchase_request": True,
+            }
+        )
+        self.budget_period.control_budget = True
+        self.budget_period.control_level = "analytic"
+        po_date = fields.Date.to_date("%s-01-15" % next_year)
+
+        def approve_pr(cost):
+            pr = self._create_purchase_request(
+                [
+                    {
+                        "product_id": self.product1,
+                        "product_qty": 1,
+                        "estimated_cost": cost,
+                        "analytic_id": self.costcenter1,
+                    }
+                ]
+            ).with_context(force_date_commit=self.budget_period.bm_date_from)
+            pr.button_to_approve()
+            pr.button_approved()
+            return pr.line_ids
+
+        def purchase_next_year(pr_line):
+            # Date the PO line only: force_date_commit would re-date the PR too
+            purchase = self._create_purchase_for_request_line(pr_line, 30).with_context(
+                force_date_commit=False, force_no_budget_check=True
+            )
+            purchase.order_line.date_commit = po_date
+            purchase.button_confirm()
+            self.assertEqual(purchase.order_line.date_commit, po_date)
+            return pr_line.budget_move_ids.filtered("purchase_line_id")
+
+        # Not forwarded: the return stays in this year
+        pr_line = approve_pr(30)
+        self.assertEqual(self.budget_control.amount_purchase_request, 30)
+        returned = purchase_next_year(pr_line)
+        self.assertEqual(returned.date, self.budget_period.bm_date_to)
+        self.budget_control.invalidate_cache()
+        self.assertEqual(self.budget_control.amount_purchase_request, 0)
+        # Forwarded to next year: the return follows the commitment there
+        pr_line = approve_pr(40)
+        forward = self.env["budget.commit.forward"].create(
+            {
+                "name": "Commit Forward FY%s" % next_year,
+                "to_budget_period_id": next_period.id,
+                "purchase": False,
+                "purchase_request": True,
+            }
+        )
+        forward.action_review_budget_commit()
+        forward.action_budget_commit_forward()
+        self.assertEqual(pr_line.fwd_date_commit, next_period.bm_date_from)
+        returned = purchase_next_year(pr_line)
+        self.assertEqual(returned.date, po_date)

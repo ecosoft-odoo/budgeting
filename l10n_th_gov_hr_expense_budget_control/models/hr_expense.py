@@ -30,7 +30,7 @@ class HRExpense(models.Model):
                     budget_moves = pr_line.commit_budget(
                         reverse=True,
                         expense_id=ex.id,
-                        date=ex.date_commit,
+                        date=pr_line._get_uncommit_date(ex.date_commit),
                     )
                     budget_moves |= budget_moves
             else:  # Cancel, Submit or draft, not commitment line

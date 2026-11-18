@@ -119,6 +119,7 @@ class PurchaseOrderLine(models.Model):
         for pr_line, vals in pairs:
             if pr_line.id not in to_commit_ids:
                 continue
+            vals = dict(vals, date=pr_line._get_uncommit_date(vals["date"]))
             line_vals = pr_line._prepare_commit_vals(reverse=True, **vals)
             if line_vals:
                 budget_vals.append(line_vals)
