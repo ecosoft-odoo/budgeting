@@ -360,7 +360,9 @@ class BudgetPlanLine(models.Model):
                 budget_control = all_controls.sorted("id")[-1:]  # last one
             # Update on if changed
             if (
-                budget_control.allocated_amount != rec.allocated_amount
+                rec.plan_id.currency_id.compare_amounts(
+                    budget_control.allocated_amount, rec.allocated_amount
+                )
                 or budget_control.active != rec.active_status
             ):
                 budget_control.write(

@@ -124,7 +124,7 @@ class BudgetAllocation(models.Model):
                 # Allocated = New Budget + both forwarded amounts.
                 target -= plan_line.amount_forward_in + plan_line.amount_forward_commit
             # A line without allocation keeps its forwards with New Budget = 0.
-            plan_line.amount = target
+            plan_line.amount = budget_plan.currency_id.round(target)
 
     def action_done(self):
         BudgetPlan = self.env["budget.plan"]
