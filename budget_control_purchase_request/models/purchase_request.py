@@ -117,5 +117,16 @@ class PurchaseRequestLine(models.Model):
         )
         return super()._init_docline_budget_vals(budget_vals)
 
+    def _get_uncommit_date(self, date):
+        """Keep a return of this line in the period its commitment lives in."""
+        self.ensure_one()
+        pr_date = self.fwd_date_commit or self.date_commit
+        if not date or not pr_date:
+            return date
+        period = self.env["budget.period"]._get_eligible_budget_period(pr_date)[:1]
+        if not period:
+            return date
+        return min(max(date, period.bm_date_from), period.bm_date_to)
+
     def _valid_commit_state(self):
         return self.request_id.state in ["approved", "done"]
